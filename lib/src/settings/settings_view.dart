@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:kelly_user_app/src/main/pages/pages.dart';
-import 'package:kelly_user_app/src/mot_var/model/string_labels.dart';
+import 'package:flutter/services.dart'; 
+import 'package:recase/recase.dart'; 
 
 import '../widgets/io_field.dart';
 import 'setting.dart';
@@ -17,7 +16,7 @@ class SettingFieldTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(children: [
       Text(setting.label, style: Theme.of(context).textTheme.bodyLarge),
-      Spacer(),
+      const Spacer(),
       LayoutBuilder(
         builder: (context, constraints) {
           return SizedBox(
@@ -57,16 +56,7 @@ abstract class SettingTypedWidget<T> extends StatelessWidget {
       return setting.callWithType(<G>() => SettingMenu<G>(setting: setting as Setting<G>, settingsController: settingsController) as SettingMenu<T>);
     }
     return setting.callWithType(<G>() => SettingTextField<G>(setting: setting as Setting<G>, settingsController: settingsController) as SettingTextField<T>);
-    // return switch (setting.type) {
-    //   // _ when (setting.enumValues != null) => SettingMenu<T>(setting: setting as Setting<T>, settingsController: settingsController),
-    //   // const (int) || const (double) || const (num) => SettingSlider<T>(setting: setting, settingsController: settingsController),
-    //   const (int) => SettingTextField<int>(setting: setting as Setting<int>, settingsController: settingsController),
-    //   const (double) => SettingTextField<double>(setting: setting as Setting<double>, settingsController: settingsController),
-    //   // const (bool) => SettingSwitch(setting: setting as Setting<bool>, settingsController: settingsController),
-    //   const (Enum) => SettingMenu<Enum>(setting: setting as Setting<Enum>, settingsController: settingsController),
-    //   const (String) => SettingTextField<String>(setting: setting as Setting<String>, settingsController: settingsController),
-    //   _ => throw UnsupportedError('$T'),
-    // } as SettingTypedWidget<T>;
+ 
   }
 }
 
@@ -95,7 +85,7 @@ class SettingMenu<T> extends SettingTypedWidget<T> {
 
   @override
   Widget build(BuildContext context) {
-    String string(T value) => switch (value) { Enum() => value.name.toTitleCase(), _ => value.toString() };
+    String string(T value) => switch (value) { Enum() => value.name.titleCase, _ => value.toString() };
 
     return IOFieldMenu<T>(
       decoration: const InputDecoration().applyDefaults(Theme.of(context).inputDecorationTheme).copyWith(isDense: true),

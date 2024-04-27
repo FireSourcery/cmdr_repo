@@ -1,5 +1,10 @@
+// ignore_for_file: annotate_overrides
+
 import 'bits.dart';
 import 'bitmask.dart';
+
+
+
 export 'bitmask.dart';
 
 /// operations on a range of bits

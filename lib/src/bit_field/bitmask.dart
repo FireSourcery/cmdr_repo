@@ -23,6 +23,8 @@ class Bitmask {
   int operator &(int value) => (value & bitmask);
   int operator ~() => (~bitmask);
   int operator *(int value) => ((value << offset) & bitmask); // apply as compile time const
+  // int operator () => bitmask;  
+  int call() => bitmask;  
 
   // if implemented using Enum
   static int maskOf(int offset, int width) => ((1 << width) - 1) << offset;
@@ -36,7 +38,7 @@ class Bitmask {
   static int modifyBit(int source, int index, bool value) => value ? onBit(source, index) : offBit(source, index);
   static bool flagOf(int source, int index) => maskBit(source, index) > 0;
   static int bitOf(int source, int index) => flagOf(source, index) ? 1 : 0;
-}
+} 
 
 // extend BitmasksBase for const
 abstract class Bitmasks<T extends Enum> {

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:recase/recase.dart';
+// import 'package:recase/recase.dart';
 
 abstract class FileStorage<T, K, V> with FileCodec<T, K, V> {
   FileStorage({this.allowedExtensions, this.saveName});
@@ -102,17 +102,17 @@ abstract mixin class FileCodec<T, K, V> {
   Future<File> writeFromMap(File file, Map<K, V> map) async => write(file, encodeFromMap(map));
 }
 
-enum FileStorageStatus implements Exception {
-  ok,
-  processing,
-  invalidFile,
-  fileReadError,
-  fileWriteError,
-  unknownError,
-  ;
+// enum FileStorageStatus implements Exception {
+//   ok,
+//   processing,
+//   invalidFile,
+//   fileReadError,
+//   fileWriteError,
+//   unknownError,
+//   ;
 
-  const FileStorageStatus();
-  String get message => name.sentenceCase;
-  @override
-  toString() => message;
-}
+//   const FileStorageStatus();
+//   String get message => name.sentenceCase;
+//   @override
+//   toString() => message;
+// }

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:kelly_user_app/src/common/widgets/time_chart/chart_data.dart';
 
 import '../../file_storage/csv_file_storage.dart';
 import '../../file_storage/file_storage_view.dart';
 import 'chart_controller.dart';
+import 'chart_data.dart';
 
 class ChartFileStorage extends CsvFileStorage {
   ChartFileStorage(this.chartController) : super(transposeToColumnMap: true);

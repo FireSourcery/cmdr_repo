@@ -8,9 +8,18 @@ environment:
   flutter: ">=1.17.0"
 
 dependencies:
+  collection: ^1.18.0
+  csv: ^6.0.0
   file_picker: ^8.0.3
+  fl_chart: ^0.67.0
   flutter:
     sdk: flutter
+  intel_hex: ^1.2.1
+  libserialport: ^0.3.0+1
+  meta: ^1.11.0
+  recase: ^4.1.0
+  shared_preferences: ^2.2.3
+  synchronized: ^3.1.0+1
 
 dev_dependencies:
   flutter_test:

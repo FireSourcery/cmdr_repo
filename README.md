@@ -11,12 +11,11 @@ and the Flutter guide for
 [developing packages and plugins](https://flutter.dev/developing-packages).
 -->
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+Commander/Host side utilities for interfacing with embedded devices + other general utilities.
 
 ## Features
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+TODO: List what your package cdartan do. Maybe include images, gifs, or videos.
 
 ## Getting started
 
