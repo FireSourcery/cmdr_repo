@@ -6,35 +6,10 @@ import 'package:flutter/foundation.dart';
 
 import 'file_storage.dart';
 
-////////////////////////////////////////////////////////////////////////////////
-/// with View State
-////////////////////////////////////////////////////////////////////////////////
-class FileStorageWithNotifier<T> extends FileStorage<T> with FileStorageNotifier<T> implements FileStorageNotifier<T> {
-  // FileStorageWithNotifier(super.fileCodec);
-  FileStorageWithNotifier.on(FileStorage<T> fileStorage)
-      : _fromContents = fileStorage.fromContents,
-        _toContents = fileStorage.toContents,
-        super(fileStorage.fileCodec, extensions: fileStorage.extensions, defaultName: fileStorage.defaultName);
-  // FileStorage<T> fileStorage;
-
-  final Object? Function(T contents)? _fromContents;
-  final T Function()? _toContents;
-
-  @override
-  Object? fromContents(T contents) => _fromContents?.call(contents);
-  @override
-  T toContents() => _toContents?.call() ?? (throw UnimplementedError());
-}
-
-extension FileStorageWithNotifierExtension on FileStorage {
-  FileStorageWithNotifier withNotifier() => FileStorageWithNotifier.on(this);
-}
-
 // app side extends FileStorage can mixin instead of creating controller
-// Notify with futures
 abstract mixin class FileStorageNotifier<T> implements FileStorage<T> {
-  // hold notifier values for caller update
-  // values are available once after resolving future. continued updates must use ValueNotifier
+  /// ValueNotifiers for caller update
+  // async values are available once after resolving future. continuous updates use ValueNotifier
   final ValueNotifier<File?> fileNotifier = ValueNotifier(null);
   set file(File? value) => fileNotifier.value = value;
   File? get file => fileNotifier.value;
@@ -45,120 +20,52 @@ abstract mixin class FileStorageNotifier<T> implements FileStorage<T> {
   set status(String value) => statusNotifier.value = status;
 // // FileStorageStatus status = FileStorageStatus.ok;
 
+  // normalize progress to 0-1
   final ValueNotifier<double> progressNotifier = ValueNotifier(0);
-  // set progress(double value) => progressNotifier.value = value;
-  // double get progress => progressNotifier.value;
+  set progress(double value) => progressNotifier.value = value;
+  double get progress => progressNotifier.value;
 
-  // async state notifiers
-  // @protected
-  // Completer<File?> pickCompleter = Completer();
-  // // Future<File?> get pickCompleted => Future.value();
-  // Future<File?> get pickCompleted => pickCompleter.future; // pick open and pick save
-  // Future<String?> get pickedFileName => pickCompleter.future.then((value) => value?.path);
-
+  /// async state notifiers for FutureBuilder
   Future<File?>? _pickedFile; // pick open and pick save
-  Future<String>? get pickedFileName => _pickedFile?.then((value) => value?.path ?? 'No file selected'); // ?? Future.value('');
+  set pickedFile(Future<File?> value) => (_pickedFile = value).then((value) => file = value);
+  Future<File?> get pickedFile => _pickedFile ?? Future.value(null);
+  Future<String>? get pickedFileName => _pickedFile?.then((value) => value?.path ?? 'No file selected') ?? Future.value('Error: Not initialized'); // ?? Future.value('');
 
-  void setFileAsync(Future<File?> value) => (_pickedFile = value).then((value) => file = value);
-
-  set pickedFile(Future<File?>? value) => (_pickedFile = value)?.then((value) => file = value);
-
-  @protected
-  Completer<Object?> operationCompleter = Completer(); // Load and operations common, returns value pass by user process function
-  Future<Object?> get operationCompleted => operationCompleter.future;
-  // Future<Object?>? operationCompleted;
+  Future<dynamic>? operationCompleted; // return of function pass to processWithNotify
 
   @protected
-  Completer<void> userConfirmation = Completer(); // on confirmation
+  Completer<void> userConfirmation = Completer();
   Future<void> get userConfirmed => userConfirmation.future;
+  void initUserConfirmation() => userConfirmation = Completer<void>();
   void confirm() => userConfirmation.complete();
 
-  // void initLoadingState() {
-  //   pickCompleter = Completer<File?>();
-  //   if (operationCompleter.isCompleted) operationCompleter = Completer();
-  // }
-
-  void initConfirmationState() {
-    userConfirmation = Completer<void>();
-    if (operationCompleter.isCompleted) operationCompleter = Completer();
-  }
-
   // process with notify, async status,
-  //  error thrown will pass to widget
-  Future<R?> processWithNotify<R>(FutureOr<R> Function() operation) async {
+  // error thrown will pass to widget
+  // statusNotifier and AsyncSnapshot error arrive at same result. although statusNotifier may transition through a number of update
+  Future<R?> processWithNotify<R>(Future<R> Function() operation) async {
     // status = FileStorageStatus.ok;
-    // _statusNotifier.value = null;
-    if (operationCompleter.isCompleted) operationCompleter = Completer();
+    statusNotifier.value = null;
     try {
-      R result = await operation();
-      // operationCompleted = operation();
-      operationCompleter.complete(result);
-      statusNotifier.value = null; // clear status on success
-      return result;
-      // return operation()..then(operationCompleter.complete);
+      operationCompleted = operation();
+      return await operationCompleted;
       // } on FileStorageStatus catch (e) {
       //   status = e;
-      //   operationCompleter.completeError(e);
     } on Exception catch (e) {
       statusNotifier.value = e.toString();
-      operationCompleter.completeError(e);
     } catch (e) {
-      // status = FileStorageStatus.unknownError; //or load error
+      // status = FileStorageStatus.unknownError;
       statusNotifier.value = 'Unknown Error: $e';
-      operationCompleter.completeError(e);
-    } finally {
-      // _statusNotifier.value = status.message;
-    }
+    } finally {}
     return null;
   }
 
-  // operationCompleted   include entire operation
-  // if operationCompleted is shared with caller operation, a stateless widget will load the last operation
-
   // full sequence for future builder
   // returns null for no file selected
-  Future<T?> openWithNotify(Future<File?> value) async {
-    // _pickedFile = value;
-    // file = await _pickedFile;
-    // return (file != null) ? processWithNotify<T?>(() async => openAsync(file!)) : null;
-    // _pickedFile = value;
-    // file = await _pickedFile;
-    // is async with notify is  processed under try?
-    return processWithNotify<T?>(() async => openAsync(pickedFile = value));
-  }
+  Future<T?> openWithNotify(Future<File?> value) async => processWithNotify<T?>(() async => openAsync(pickedFile = value));
+  Future<Object?> openParseWithNotify(Future<File?> value) async => processWithNotify<Object?>(() async => openParseAsync(pickedFile = value));
 
-  Future<Object?> openParseWithNotify(Future<File?> value) async {
-    return processWithNotify<Object?>(() async => openParseAsync(pickedFile = value));
-    // return openWithNotify(value).then((value) => processWithNotify<Object?>(() => fromNullableContents(value)));
-    // try {
-    //   //  fileStorage.fromContents(await openAsync());
-    //   return await openAsync(value).then((value) => (value != null) ? fileCodec.fromContents(value) : null);
-    // } catch (e) {
-    //   statusNotifier.value = e.toString();
-    // }
-    // return null;
-  }
-
-  // Future<void> saveFileAndNotify(Future<File?> value, Map<K, V> contents) async {
-  //   initLoadingState();
-  //   file = await pickSaveFile();
-  //   pickCompleter.complete(file);
-  //   await tryProcess(() async => await writeAsMap(contents));
-
-  //   // await tryProcess(() async {
-  //   //   if (file != null) await write(file!, contents);
-  //   // });
-  // }
-
-  // Future<void> buildSaveNotify(Future<File?> value, ) async {
-  //   // status = FileStorageStatus.ok;
-  //   _statusNotifier.value = null;
-  //   try {
-  //     await saveFileAndNotify(toContents());
-  //   } catch (e) {
-  //     _statusNotifier.value = e.toString();
-  //   }
-  // }
+  Future<File?> saveWithNotify(Future<File?> value, T contents) async => processWithNotify<File?>(() async => saveAsync(pickedFile = value, contents));
+  Future<File?> saveBuildWithNotify(Future<File?> value) async => processWithNotify<File?>(() async => saveBuildAsync(pickedFile = value));
 
   // remap status shared with exception
   // Future<T?> tryReadFile(File file) async {
@@ -187,4 +94,28 @@ abstract mixin class FileStorageNotifier<T> implements FileStorage<T> {
   //   }
   //   return file;
   // }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// with View State
+////////////////////////////////////////////////////////////////////////////////
+class FileStorageWithNotifier<T> extends FileStorage<T> with FileStorageNotifier<T> implements FileStorageNotifier<T> {
+  // FileStorageWithNotifier(super.fileCodec);
+  FileStorageWithNotifier.on(FileStorage<T> fileStorage)
+      : _fromContents = fileStorage.fromContents,
+        _toContents = fileStorage.toContents,
+        super(fileStorage.fileCodec, extensions: fileStorage.extensions, defaultName: fileStorage.defaultName);
+  // FileStorage<T> fileStorage;
+
+  final Object? Function(T contents)? _fromContents;
+  final T Function()? _toContents;
+
+  @override
+  Object? fromContents(T contents) => _fromContents?.call(contents);
+  @override
+  T toContents() => _toContents?.call() ?? (throw UnimplementedError());
+}
+
+extension FileStorageWithNotifierExtension on FileStorage {
+  FileStorageWithNotifier withNotifier() => FileStorageWithNotifier.on(this);
 }

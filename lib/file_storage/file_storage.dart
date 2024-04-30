@@ -2,14 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-/// Combine File with FileCodec
-/// FileStorageCodec
-///
 /// FileStorage contains
-///   abstract functions to handle file contents to application data
+///   abstract functions to handle file contents, interface with user application
 ///   a FileCodec for encoding/decoding, and File read/write
 ///   optionally mixin a notifier for UI updates
-///   optionally cache File handle, or user controller
+///   optionally cache contents or user controller
 abstract class FileStorage<T> {
   const FileStorage(this.fileCodec, {this.extensions, this.defaultName});
 
@@ -25,20 +22,17 @@ abstract class FileStorage<T> {
   Future<T> readContents(File file) async => fileCodec.read(file);
   Future<File> writeContents(File file, T contents) async => fileCodec.write(file, contents);
 
+  Object? fromNullableContents(T? contents) => (contents != null) ? fromContents(contents) : null;
+
   // full sequence for future builder
   // returns null for no file selected
   Future<T?> open(File? file) async => (file != null) ? readContents(file) : null;
   Future<T?> openAsync(Future<File?> file) async => file.then(open);
+  Future<Object?> openParseAsync(Future<File?> file) async => openAsync(file).then(fromNullableContents);
 
-  Object? fromNullableContents(T? contents) => (contents != null) ? fromContents(contents) : null;
-  Future<Object?> openParseAsync(Future<File?> value) async => await openAsync(value).then(fromNullableContents);
-
-  // final FileCodec<T> stringCodec;
-  // final FileMapCodec<K, V, T> mapCodec;
-  // Object? fromContents(Map<K, V> map) => throw UnimplementedError();
-  // Map<K, V> toContents() => throw UnimplementedError();
-  // Future<Map<K, V>> readToMap(File file) async => mapCodec.read(file);
-  // Future<File> writeFromMap(File file, Map<K, V> map) async => mapCodec.write(file, map);
+  Future<File?> save(File? file, T contents) async => (file != null) ? writeContents(file, contents) : null;
+  Future<File?> saveAsync(Future<File?> file, T contents) async => file.then((value) => save(value, contents));
+  Future<File?> saveBuildAsync(Future<File?> file) async => saveAsync(file, toContents());
 
   // FileStorage<T> copyWith({
   //   FileCodec<T, dynamic>? fileCodec,
@@ -108,10 +102,9 @@ class _FusedFileCodec<S, M, T> extends FileCodec<S, T> {
   Future<File> write(File file, S input) async => _second.write(file, _first.encode(input));
   Future<S> read(File file) async => _second.read(file).then((value) => _first.decode(value));
 
+  _FusedFileCodec(this._first, this._second);
   // Converter<S, T> get encoder => _first.encoder.fuse<T>(_second.encoder);
   // Converter<T, S> get decoder => _second.decoder.fuse<S>(_first.decoder);
-
-  _FusedFileCodec(this._first, this._second);
 }
 
 extension FileCodecExtension on File {
@@ -145,32 +138,3 @@ extension FileCodecExtension on File {
 
 // static T emptyCollection<T>() => switch (typeOf<T>()) { const (List) => [], const (Map) => {}, _ => throw Exception('Invalid Type') } as T;
 
-// abstract mixin class FileCodec<T, K, V> {
-//   String encode(T input);
-//   T decode(String encoded);
-
-//   T encodeFromMap(Map<K, V> map); // buildContents, encodeOuter
-//   Map<K, V> decodeToMap(T contents); // parseContents, decodeInner
-
-//   Future<T> read(File file) async => decode(await file.readAsString());
-//   Future<File> write(File file, T contents) async => file.writeAsString(encode(contents));
-
-//   Future<Map<K, V>> readToMap(File file) async => decodeToMap(await read(file));
-//   Future<File> writeFromMap(File file, Map<K, V> map) async => write(file, encodeFromMap(map));
-// }
-
-/// Map from T
-// implements Codec<Map, T>
-// abstract mixin class FileMapCodec<K, V, T> implements FileCodec<Map<K, V>, T> {
-//   const FileMapCodec();
-
-//   FileStringCodec<T> get stringCodec;
-//   T encode(Map<K, V> map); // buildContents, encodeOuter
-//   Map<K, V> decode(T contents); // parseContents, decodeInner
-
-//   // Future<File> write(File file, Map<K, V> map) async => stringCodec.write(file, encode(map));
-//   // Future<Map<K, V>> read(File file) async => decode(await stringCodec.read(file));
-
-//   Future<File> write(File file, Map<K, V> map) async => _FusedFileCodec(this, stringCodec).write(file, map);
-//   Future<Map<K, V>> read(File file) async => _FusedFileCodec(this, stringCodec).read(file);
-// }
