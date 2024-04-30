@@ -3,17 +3,19 @@ description: "Commander/Host side utilities for interfacing with embedded device
 version: 0.0.1
 homepage:
 
+# publish_to: 'none'
+
 environment:
   sdk: '>=3.3.3 <4.0.0'
   flutter: ">=1.17.0"
 
 dependencies:
+  flutter:
+    sdk: flutter
   collection: ^1.18.0
   csv: ^6.0.0
   file_picker: ^8.0.3
   fl_chart: ^0.67.0
-  flutter:
-    sdk: flutter
   intel_hex: ^1.2.1
   libserialport: ^0.3.0+1
   meta: ^1.11.0

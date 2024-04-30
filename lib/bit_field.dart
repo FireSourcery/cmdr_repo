@@ -1,4 +1,4 @@
-export 'src/bit_field/bitmask.dart';
-export 'src/bit_field/bits.dart';
-export 'src/bit_field/bit_field.dart';
-export 'src/bit_field/bit_flags.dart';
+export 'bit_field/bitmask.dart';
+export 'bit_field/bits.dart';
+export 'bit_field/bit_field.dart';
+export 'bit_field/bit_flags.dart';

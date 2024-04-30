@@ -1,5 +1,5 @@
-export 'src/var_notifier/var_cache.dart';
-export 'src/var_notifier/var_context.dart';
-export 'src/var_notifier/var_conversion.dart';
-export 'src/var_notifier/var_key.dart';
-export 'src/var_notifier/var_notifier.dart';
+export 'var_notifier/var_cache.dart';
+export 'var_notifier/var_context.dart';
+export 'var_notifier/var_conversion.dart';
+export 'var_notifier/var_key.dart';
+export 'var_notifier/var_notifier.dart';
