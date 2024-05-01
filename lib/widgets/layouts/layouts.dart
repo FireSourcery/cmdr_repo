@@ -92,6 +92,7 @@ class ExpandedCard extends StatelessWidget {
   Widget build(BuildContext context) => Expanded(child: Card(child: Padding(padding: const EdgeInsets.all(20), child: Center(child: child))));
 }
 
+//todo with grid3 with adaptive
 class Grid6 extends StatelessWidget {
   const Grid6({
     required this.leftPanel,
@@ -119,11 +120,3 @@ class Grid6 extends StatelessWidget {
     );
   }
 }
-
-// class CardListTileText extends StatelessWidget {
-//   const CardListTileText(this.subtitle, this.title, {super.key});
-//   final String? subtitle; // or caption
-//   final String? title; // value
-//   @override
-//   Widget build(BuildContext context) => Card(child: ListTile(title: Text(title ?? ''), subtitle: Text(subtitle ?? '')));
-// }

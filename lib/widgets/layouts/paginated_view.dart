@@ -36,7 +36,7 @@ class _PaginatedViewState extends State<PaginatedView> with SingleTickerProvider
       children: <Widget>[
         Expanded(
           child: PageView(
-            scrollBehavior: MyCustomScrollBehavior(),
+            scrollBehavior: _DefaultScrollBehavior(),
             controller: _pageViewController,
             onPageChanged: _handlePageViewChanged,
             children: widget.children,
@@ -48,7 +48,7 @@ class _PaginatedViewState extends State<PaginatedView> with SingleTickerProvider
   }
 }
 
-class MyCustomScrollBehavior extends MaterialScrollBehavior {
+class _DefaultScrollBehavior extends MaterialScrollBehavior {
   // Override behavior methods and getters like dragDevices
   @override
   Set<PointerDeviceKind> get dragDevices => {PointerDeviceKind.touch, PointerDeviceKind.mouse};

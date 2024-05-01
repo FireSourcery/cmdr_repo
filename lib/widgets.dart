@@ -4,7 +4,7 @@ export 'widgets/drive_shift.dart';
 export 'widgets/flags_view.dart';
 export 'widgets/io_field.dart';
 export 'widgets/logo.dart';
-export 'widgets/menu_anchor_layout.dart';
+export 'widgets/layouts/menu_anchor_layout.dart';
 
 export 'widgets/time_chart/chart_controller.dart';
 export 'widgets/time_chart/chart_data.dart';
