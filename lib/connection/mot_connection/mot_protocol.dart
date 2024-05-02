@@ -44,13 +44,6 @@ class MotProtocolSocket extends ProtocolSocket {
     return stream.map((event) => (event.$1, (event.$2 == null) ? null : 0, event.$2 ?? const <int>[]));
   }
 
-  // Stream<(Iterable<int> segmentIds, int? respCode, List<int> values)> readVarsStreamDebug(VarReadRequestPayload ids) {
-  //   Stopwatch debugStopwatch = Stopwatch()..start();
-  //   final stream = periodicRequestSegmented(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids.slices(16), delay: const Duration(milliseconds: 5));
-  //   return stream.map((event) => (event.$1, 0, <int>[for (var i = 0; i < event.$1.length; i++) (sin(debugStopwatch.elapsedMilliseconds / 1000) * 32767).toInt()]));
-  //   //  (cos(debugStopwatch.elapsedMilliseconds / 1000) * 32767).toInt(),
-  // }
-
   Stream<(int? respCode, VarWriteResponsePayload)> writeVarsStream(VarWriteRequestPayload Function() idValuesGetter, {Duration delay = const Duration(milliseconds: 10)}) {
     assert(idValuesGetter().length <= 8);
     final stream = periodicUpdate(MotPacketPayloadId.MOT_PACKET_VAR_WRITE, idValuesGetter, delay: delay);
@@ -83,20 +76,28 @@ class MotProtocolSocket extends ProtocolSocket {
     if (sizeBytes != data.length) return -1;
 
     final initialResponse = await initDataModeWrite((address, sizeBytes, 0));
-    // if (initialResponse != 0) return initialResponse;
+    if (initialResponse != 0) return initialResponse;
 
-    for (final (index, entry) in data.slices(32).indexed) {
-      await writeDataModeData(Uint8List.fromList(entry));
+    // for (var index = 0; index < sizeBytes; index += 32) {
+    try {
+      for (final (index, entry) in data.slices(32).indexed) {
+        await writeDataModeData(Uint8List.fromList(entry));
 
-      // if (await recvSync() != MotPacketSyncId.MOT_PACKET_SYNC_ACK) return -1;
-      progressCallback?.call(index * 32 + data.length);
+        if (await recvSync() != MotPacketSyncId.MOT_PACKET_SYNC_ACK) return -1;
+
+        progressCallback?.call(index * 32 + data.length);
+      }
+    } finally {
+      print(sizeBytes);
     }
 
-    return recvResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_WRITE).whenComplete(() => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
+    return recvResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_WRITE)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
   }
 
   Future<int?> readDataMode(int address, int sizeBytes, Uint8List dataBuffer, [void Function(int bytesComplete)? progressCallback]) async {
     assert(dataBuffer.length >= sizeBytes);
+
+    protocol.mapRequestResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_DATA, this); // map additional id
 
     final initialResponse = await initDataModeRead((address, sizeBytes, 0));
     if (initialResponse != 0) return initialResponse;
@@ -106,11 +107,11 @@ class MotProtocolSocket extends ProtocolSocket {
       if (data == null) return null;
       dataBuffer.setRange(index, index + data.length, data);
 
-      if (await recvSync() != MotPacketSyncId.MOT_PACKET_SYNC_ACK) return -1;
+      await sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK);
       progressCallback?.call(index + data.length);
     }
 
-    return recvResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_READ).whenComplete(() => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
+    return recvResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_READ)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
   }
 }
 
@@ -126,3 +127,10 @@ enum MotProtocol_GenericStatus {
   MOT_STATUS_ERROR,
   // MOT_STATUS_RESERVED,
 }
+
+// Stream<(Iterable<int> segmentIds, int? respCode, List<int> values)> readVarsStreamDebug(VarReadRequestPayload ids) {
+//   Stopwatch debugStopwatch = Stopwatch()..start();
+//   final stream = periodicRequestSegmented(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids.slices(16), delay: const Duration(milliseconds: 5));
+//   return stream.map((event) => (event.$1, 0, <int>[for (var i = 0; i < event.$1.length; i++) (sin(debugStopwatch.elapsedMilliseconds / 1000) * 32767).toInt()]));
+//   //  (cos(debugStopwatch.elapsedMilliseconds / 1000) * 32767).toInt(),
+// }

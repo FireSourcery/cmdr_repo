@@ -37,7 +37,6 @@ class Protocol {
     return packetStream!.listen(
       (packet) {
         final socket = respSocketMap[headerParser.validPacketId]; // ?? (throw const ProtocolException('no matching socket'));
-
         socket?.add(packet); // passes a pointer to a complete response packet to the mapped socket
       },
       onError: onError,
@@ -47,6 +46,7 @@ class Protocol {
   // alternatively build header, length must be set prior
   Future<void> trySend(Packet packet) async {
     try {
+      print("TX ${packet.bytes.take(4)} ${packet.bytes.skip(4).take(4)} ${packet.bytes.skip(8)}");
       return await link.send(packet.bytes);
     } on TimeoutException {
       print("Link Timeout");
@@ -164,8 +164,12 @@ class ProtocolSocket implements Sink<Packet> {
           protocol.mapRequestResponse(requestId, this);
           if (syncOptions.recvSync) protocol.mapSync(this);
           final dynamic requestMeta = await sendRequest(requestId, requestArgs);
-          if (syncOptions.recvSync) if (await recvSync() != headerHandler.ack) return null;
+
+          if (syncOptions.recvSync) {
+            if (await recvSync() != headerHandler.ack) return null; //handle nack?
+          }
           final R? response = await recvResponse(requestId, requestMeta: requestMeta);
+
           if (syncOptions.sendSync) await sendSync(headerHandler.ack);
           return response;
           // final requestStatus = packetBufferOut.buildRequestPayload(requestId, requestArgs);
@@ -245,9 +249,6 @@ class ProtocolSocket implements Sink<Packet> {
     final dynamic requestMeta = packetBufferOut.buildRequestPayload<T, R>(packetId, requestArgs);
     packetBufferOut.buildPayloadHeader(packetId);
 
-    print("Socket [${hashCode}] TX ${packetBufferOut.bytes.take(4)} ${packetBufferOut.bytes.skip(4).take(4)} ${packetBufferOut.bytes.skip(8)}");
-    // print("Socket [${socket.hashCode}] TX ${socket.packetBufferOut.headerOrNull} ${socket.packetBufferOut.payload}");
-
     timer.reset();
     timer.start();
     await protocol.trySend(packetBufferOut);
@@ -320,10 +321,12 @@ class ProtocolSocket implements Sink<Packet> {
   void add(Packet event) {
     timer.stop();
     packetBufferIn.copyBytes(event.bytes); // sets buffer in length, exceeding length max handled by PacketReceiver
-    print("Socket [${this.hashCode}] RX ${this.packetBufferIn.bytes.take(4)} ${this.packetBufferIn.bytes.skip(4).take(4)} ${this.packetBufferIn.bytes.skip(8)}");
-    // print("Socket [${socket.hashCode}] RX ${socket?.packetBufferIn.headerOrNull} ${socket?.packetBufferIn.payload} Time: ${socket?.timer.elapsedMilliseconds}");
-    print("Socket [${this.hashCode}] Time: ${this.timer.elapsedMilliseconds}");
-    _recved.complete();
+
+    print("Socket [${hashCode}] RX ${packetBufferIn.bytes.take(4)} ${packetBufferIn.bytes.skip(4).take(4)} ${packetBufferIn.bytes.skip(8)}");
+    print("Socket [${hashCode}] Time: ${timer.elapsedMilliseconds}");
+
+    // socket table does not unmap. might recieve packets following completion
+    if (!_recved.isCompleted) _recved.complete();
   }
 
   @override
