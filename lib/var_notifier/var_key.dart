@@ -1,44 +1,29 @@
 // import 'package:intl/intl.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
- 
 
 // typedef GenericFunction<R> = R Function<G>([dynamic context]);
 
-// @immutable
-// abstract class VarKey {
-//   @override
-//   String toString() => 'MotVarKey: $label $asDataId';
+@immutable
+abstract class VarKey extends ValueKey<int> {
+  const VarKey(super.value);
 
-//   int get asDataId;
-//   int get value;
-//   NumberFormat get numberFormat;
-//   Units get units;
+  // NumberFormat get numberFormat;
+  // Units get units;
 
-//   // R callTyped<R>(GenericFunction fn) {
-//   //   // if (isHostNameOverride) return fn<MotVarHostName>();
-//   //   // return switch (tag.format) {
-//   //   //   NumberFormat.enum16 => fn<MotVarValueName>(),
-//   //   //   NumberFormat.flags16 => fn<MotVarValueFlags>(),
-//   //   //   _ => tag.format.callTyped<R>(fn), // pass format type parameter
-//   //   // };
-//   // }
+  // R callTyped<R>(GenericFunction fn) {
+  //   // if (isHostNameOverride) return fn<MotVarHostName>();
+  //   // return switch (tag.format) {
+  //   //   NumberFormat.enum16 => fn<MotVarValueName>(),
+  //   //   NumberFormat.flags16 => fn<MotVarValueFlags>(),
+  //   //   _ => tag.format.callTyped<R>(fn), // pass format type parameter
+  //   // };
+  // }
 
-//   // MotVar allocateTypedVar( ) {
-//   //    callTyped<MotVar>(MotVar.new);
-//   // }
-//
-
-//
-//   @override
-//   bool operator ==(covariant VarKey other) {
-//     if (identical(this, other)) return true;
-//     return other.value == value;
-//   }
-
-//   @override
-//   int get hashCode => value.hashCode;
-// }
+  // MotVar allocateTypedVar( ) {
+  //    callTyped<MotVar>(MotVar.new);
+  // }
+}
 
 // extension MotVarKeys on Iterable<MotVarKey> {
 //   Iterable<MotVarTag> get tags => map((e) => e.tag);
