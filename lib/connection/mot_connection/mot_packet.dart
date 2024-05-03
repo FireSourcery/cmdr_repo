@@ -136,7 +136,7 @@ enum MotPacketPayloadId<T, R> implements PacketTypeId<T, R>, MotPacketId {
   int get asInt => intId;
 
   @override
-  final MotPacketPayloadId? responseId;
+  final MotPacketPayloadId? responseId; // change to list? or use seperate id type for mutiple
   @override
   final PayloadHandlerConstructor<T>? requestPayload;
   @override
