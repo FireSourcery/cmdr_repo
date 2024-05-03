@@ -60,11 +60,12 @@ class MenuSource<T> {
   MenuSource._instance(MenuSource<T> menuSource) : menuItems = menuSource.menuItems;
 
   MenuSource.fill(List<MenuSourceItem> this.menuItems);
-  MenuSource.itemBuilder({required Iterable<T> itemKeys, required Widget Function(T) itemBuilder})
+  MenuSource.itemBuilder({required Iterable<T> itemKeys, required Widget Function(T) itemBuilder, ValueSetter<T>? onPressed})
       : menuItems = [
           for (final key in itemKeys)
             MenuSourceItem<T>(
               itemKey: key,
+              onPressed: onPressed,
               menuItemButton: MenuItemButton(child: itemBuilder(key)),
             ),
         ];
@@ -73,13 +74,16 @@ class MenuSource<T> {
 
   MenuSourceInstance<T> instance() => MenuSourceInstance(this);
 
+  static List<MenuSourceItem> itemsFrom<T>({required Iterable<T> itemKeys, required Widget Function(T) itemBuilder, ValueSetter<T>? onPressed}) {
+    return [
+      for (final key in itemKeys)
+        MenuSourceItem<T>(
+          itemKey: key,
+          menuItemButton: MenuItemButton(child: itemBuilder(key)),
+        ),
+    ];
+  }
   // MenuSource.from(List<MenuItemButton> menuItems) : menuItems = [for (final item in menuItems) MenuSourceItem<T>(itemKey: item.represents, menuItemButton: item)];
-  // static List<Widget> buildMenuItems<T>({required Iterable<T> itemKeys, required Widget Function(T) itemBuilder}) {
-  //   // return List.generate(itemKeys.length, (index) {
-  //   //   void onPressed() => onPressedAbsolute(itemKeys.elementAt(index));
-  //   //   return MenuItemButton(onPressed: onPressed, child: itemBuilder(itemKeys.elementAt(index)));
-  //   // });
-  // }
 }
 
 // alternatively shallow copy
