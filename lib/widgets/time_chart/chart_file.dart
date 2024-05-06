@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../file_storage/csv_file_storage.dart';
 import '../../file_storage/file_storage_view.dart';
-import '../../file_storage/file_storage_controller.dart';
+import '../../file_storage/file_storage_notifier.dart';
 import 'chart_controller.dart';
 import 'chart_data.dart';
 

@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 
-import 'file_storage_controller.dart';
+import 'file_storage_notifier.dart';
 import 'file_storage.dart';
 
 class OpenFileButton extends FileLoadButton {

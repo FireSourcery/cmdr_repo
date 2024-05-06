@@ -16,6 +16,11 @@ class MotProtocolSocket extends ProtocolSocket {
     return (await recvSync())?.asInt;
   }
 
+  Future<int?> pingBoot() async {
+    sendSync(MotPacketSyncId.MOT_PACKET_ENTER_BOOT);
+    return (await recvSync())?.asInt;
+  }
+
   Future<int?> stopMotors() async => requestResponse(MotPacketPayloadId.MOT_PACKET_STOP_ALL, null);
 
   Future<int?> call((int id, int? arg) idArg, [Duration? timeout]) async => requestResponse(MotPacketPayloadId.MOT_PACKET_CALL, idArg, timeout: timeout);

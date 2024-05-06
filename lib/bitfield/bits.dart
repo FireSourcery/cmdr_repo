@@ -7,7 +7,7 @@ const int _allOnes = kMaxUnsignedSMI;
 /// BitsBaseInterface
 ////////////////////////////////////////////////////////////////////////////////
 /// V is bool for Flags, int for Field
-abstract interface class GenericBitField<T extends Enum, V> {
+abstract interface class GenericBitField<T, V> {
   const GenericBitField();
 
   int get width;
@@ -27,10 +27,10 @@ abstract interface class GenericBitField<T extends Enum, V> {
   Iterable<(T, V)> get entries;
 }
 
-abstract class GenericBitFieldBase<T extends Enum, V> = GenericBitField<T, V> with BitsBaseMixin<T, V>, BitsNamesMixin<T, V>;
-abstract class UnmodifiableGenericBitFieldBase<T extends Enum, V> = GenericBitField<T, V> with BitsBaseMixin<T, V>, BitsNamesMixin<T, V>, UnmodifiableBitsMixin<T, V>;
+abstract class GenericBitFieldBase<T, V> = GenericBitField<T, V> with BitsBaseMixin<T, V>, BitsNamesMixin<T, V>;
+abstract class UnmodifiableGenericBitFieldBase<T, V> = GenericBitFieldBase<T, V> with UnmodifiableBitsMixin<T, V>;
 
-abstract mixin class BitsBaseMixin<T extends Enum, V> implements GenericBitField<T, V> {
+abstract mixin class BitsBaseMixin<T, V> implements GenericBitField<T, V> {
   const BitsBaseMixin();
 
   @override
@@ -50,7 +50,7 @@ abstract mixin class BitsBaseMixin<T extends Enum, V> implements GenericBitField
   int get hashCode => bits.hashCode;
 }
 
-mixin BitsNamesMixin<T extends Enum, V> implements GenericBitField<T, V> {
+mixin BitsNamesMixin<T, V> implements GenericBitField<T, V> {
   // @override
   // List<T> get memberKeys; // using Enum.values
   @override
@@ -61,7 +61,7 @@ mixin BitsNamesMixin<T extends Enum, V> implements GenericBitField<T, V> {
   Iterable<(T, V)> get entries => memberKeys.map((e) => entry(e));
 }
 
-mixin UnmodifiableBitsMixin<T extends Enum, V> implements GenericBitField<T, V> {
+mixin UnmodifiableBitsMixin<T, V> implements GenericBitField<T, V> {
   @override
   set bits(int value) => throw UnsupportedError("Cannot modify unmodifiable");
   @override
@@ -73,8 +73,7 @@ mixin UnmodifiableBitsMixin<T extends Enum, V> implements GenericBitField<T, V> 
   // List<V Function(T)> get getters;
 }
 
-
-// extension type ConstBitField<T extends Enum> ( Map<T, V> constValues) implements GenericBitField<T, V> {
+// extension type ConstBitField<T, V>(Map<T, V> constValues) implements GenericBitField<T, V> {
 //   int get width;
 
 //   int get bits;
@@ -93,7 +92,7 @@ mixin UnmodifiableBitsMixin<T extends Enum, V> implements GenericBitField<T, V> 
 // }
 
 // const via map
-// abstract class ConstBitsBaseOnMap<T extends Enum, V> extends BitsBaseMixin<T, V> with BitsNamesMixin<T, V>, UnmodifiableBitsMixin<T, V> implements GenericBitField<T, V> {
+// abstract class ConstBitsBaseOnMap<T, V> extends BitsBaseMixin<T, V> with BitsNamesMixin<T, V>, UnmodifiableBitsMixin<T, V> implements GenericBitField<T, V> {
 //   const ConstBitsBaseOnMap(this.constValues);
 
 //   final Map<T, V> constValues;

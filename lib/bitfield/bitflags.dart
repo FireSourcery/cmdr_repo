@@ -1,16 +1,16 @@
 // ignore_for_file: annotate_overrides
 
 import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart' as foundation show BitField; 
+import 'package:flutter/foundation.dart' as foundation show BitField;
 
 import 'bits.dart';
 import 'bitmask.dart';
 
 export 'bitmask.dart';
 
-
 ////////////////////////////////////////////////////////////////////////////////
 /// operations on singular flag bits, using Enum Id
+/// or BoolField
 ////////////////////////////////////////////////////////////////////////////////
 abstract interface class BitFlags<T extends Enum> implements GenericBitField<T, bool>, foundation.BitField<T> {
   factory BitFlags.from(int width, [int bits = 0, bool mutable = true]) {

@@ -17,6 +17,7 @@ class MotConnection {
   static final MotProtocolSocket stop = MotProtocolSocket(protocol);
   static final MotProtocolSocket varRead = MotProtocolSocket(protocol);
   static final MotProtocolSocket varWrite = MotProtocolSocket(protocol);
+  // static final MotProtocolSocket events = MotProtocolSocket(protocol);
 
   static bool get isConnected => protocol.link.isConnected;
 

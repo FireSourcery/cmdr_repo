@@ -17,7 +17,7 @@ typedef PacketConstructor<P extends Packet> = P Function();
 // abstract class Packet extends ByteStruct {
 abstract class Packet {
   Packet();
-  Packet._buffer(int length) : _packet = Uint8List(length);
+  // Packet._buffer(int length) : _packet = Uint8List(length);
   // factory Packet.castWith(PacketConstructor typedPacket, Uint8List bytes) => typedPacket().cast(bytes); // this way only constructor invokes child constructor
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -77,6 +77,10 @@ abstract class Packet {
   ////////////////////////////////////////////////////////////////////////////////
   ///
   ////////////////////////////////////////////////////////////////////////////////
+
+  /// Packet presents a view as defined by child class.
+  /// keeping this value mutable allows for use of the same class type for multiple length
+  /// alternatively calling creates new view instances to mutate length
   @protected
   late Uint8List _packet; // pointer to a buffer // view is mutable, byteBuffer is fixed
   ByteData get byteData => ByteData.sublistView(_packet);

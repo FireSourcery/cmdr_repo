@@ -2,46 +2,65 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-class Version {
-  const Version(this.value);
-  const Version.chars(int optional, int major, int minor, int fix) : value = optional << 24 | major << 16 | minor << 8 | fix;
-  // const Version.from(int? value) : value = value ?? 0;
-  factory Version.list(List<int> chars, [Endian endian = Endian.little]) {
-    return switch (endian) {
-      Endian.big => Version.chars(chars[3], chars[2], chars[1], chars[0]),
-      Endian.little => Version.chars(chars[0], chars[1], chars[2], chars[3]),
-      _ => throw UnsupportedError('$endian'),
-    };
+import '../byte_struct/word.dart';
+
+class Version extends Word {
+  const Version(super.value, [this.name]);
+  // const Version.littleEndian(super.value, [this.name]);
+  const Version.chars(super.optional, super.major, super.minor, super.fix, [this.name]) : super.value32();
+  const Version.fromNullable(int? value, [this.name]) : super(value ?? 0);
+  Version.cast(Word word, [this.name]) : super(word.value);
+
+  Version.string(super.string, [this.name]) : super.string();
+
+  final String? name;
+  // final bool isExtended = false;
+
+  bool get isZero => (value == 0);
+  int get length => (size > 4) ? 8 : 4;
+
+  // @override
+
+  String toStringAsVersion([String left = '', String right = '', String separator = '.']) {
+    return (StringBuffer(left)
+          ..writeAll(bytesBE.take(length), separator)
+          ..write(right))
+        .toString();
   }
 
-  factory Version.string(String string) => Version.list(string.runes.toList(), Endian.big);
-
-  final int value;
-  // final String? label;
-
-  static List<int> charViewOf(int rawValue, [Endian endian = Endian.little]) => Uint8List(4)..buffer.asByteData().setUint32(0, rawValue, endian);
-  // final int size;
-  // static List<int> charViewOf(int rawValue, [Endian endian = Endian.little]) => Uint8List(size)..buffer.asByteData().setUint32(0, rawValue, endian);
-
-  List<int> get charsMsb => charViewOf(value, Endian.big);
-  List<int> get charsLsb => charViewOf(value, Endian.little);
-
-  @override
-  String toString([Endian endian = Endian.big]) => charViewOf(value, endian).toString();
-
+  /// Json
   factory Version.fromJson(Map<String, dynamic> json) {
-    return Version(
-      json['value'] as int,
-    );
-    // return Version(jsonDecode(json['value'] as String) as int);
+    throw UnimplementedError();
+    // return Version(
+    //   jsonDecode(json['value'] as String) as List,
+    //   json['name'] != null ? json['name'] as String : null,
+    //   // json['value'] as int,
+    // );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'value': value,
-      'description': toString(),
+      'name': name,
+      'value': jsonEncode(bytesBE),
+      // 'value': value,
+      // 'description': super.toString(),
     };
-    // return <String, dynamic>{'value': charViewOf(value).toString()};
+  }
+
+  factory Version.fromMapEntry(MapEntry<dynamic, dynamic> entry) {
+    if (entry case MapEntry<String, int>()) {
+      return Version.ofMapEntry(entry);
+    } else {
+      throw UnsupportedError('Unsupported type');
+    }
+  }
+
+  factory Version.ofMapEntry(MapEntry<String, int> entry) {
+    return Version(entry.value, entry.key);
+  }
+
+  MapEntry<String, int> toMapEntry() {
+    return MapEntry<String, int>(name ?? '', value);
   }
 
   @override
@@ -49,4 +68,13 @@ class Version {
 
   @override
   int get hashCode => value.hashCode;
+
+  Version copyWith({
+    // String? name,
+    int? value,
+  }) {
+    return Version(
+      value ?? this.value,
+    );
+  }
 }

@@ -73,6 +73,7 @@ enum MotPacketSyncId implements PacketSyncId, MotPacketId {
   MOT_PACKET_SYNC_NACK(0xA3),
   MOT_PACKET_SYNC_ABORT(0xA4),
   // MOT_PACKET_FEED_WATCHDOG(0xA6),
+  MOT_PACKET_ENTER_BOOT(0xBB),
   MOT_PACKET_ID_RESERVED_255(0xFF),
   ;
 

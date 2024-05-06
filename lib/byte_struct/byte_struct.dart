@@ -8,23 +8,13 @@ export 'dart:typed_data';
 ///
 ////////////////////////////////////////////////////////////////////////////////
 /// a struct memeber
+/// configuration for get TypedData segment from
 class TypedOffset<T extends NativeType> {
   const TypedOffset(this.offset);
   final int offset;
 
-  int get size {
-    return switch (T) {
-      const (Int8) => 1,
-      const (Int16) => 2,
-      const (Int32) => 4,
-      const (Uint8) => 1,
-      const (Uint16) => 2,
-      const (Uint32) => 4,
-      _ => throw UnimplementedError(),
-    };
-  }
-
-  int get end => offset + size; // 1 + index of last byte
+  int get size => sizeOf<T>();
+  int get end => offset + size; // index of last byte + 1
 
   // call with offset with T
   int fieldValue(ByteData byteData) => byteData.wordAt<T>(offset);
@@ -32,22 +22,25 @@ class TypedOffset<T extends NativeType> {
   void setFieldValue(ByteData byteData, int value) => byteData.setWordAt<T>(offset, value);
 }
 
-// typedef ByteStructConstructor<T extends ByteStruct> = T Function();
+/// ByteStruct
+/// Effectively TypedData as abstract class with user defined fields.
+abstract mixin class ByteStruct<T extends ByteStruct<dynamic>> {
+  // TypedData.new
+  T buffer(int length) => (this..reference = Uint8List(length)) as T;
 
-// ByteStruct
-mixin class ByteStruct {
-  // factory ByteStruct.castWith(ByteStructConstructor child, TypedData data) => child().cast(data);
+  // TypedData.view
+  // Analogous to ByteData.sublistView but without configurable offset, as it is always inherited from the reference.
+  T cast(TypedData data) => (this..reference = data) as T;
 
-  ByteStruct cast(TypedData data) => (this..reference = data);
+  // static Uint8List nullPtr = Uint8List.fromList(const []);
+  static TypedData nullPtr = throw UnsupportedError('nullPtr');
 
-  TypedData reference = Uint8List(0);
-  // TypedData get reference;
-  // set reference(TypedData pointer);
-  int get viewSize => reference.lengthInBytes;
-  // int get size;
+  TypedData reference = nullPtr; // alternatively use late
+
+  int get size => reference.lengthInBytes; // view size, virtual size, independent of underlying buffer and offset
   ByteData get asByteData => reference.asByteData;
 
-  final TypedOffset<Uint8> start = const TypedOffset<Uint8>(0);
+  static const TypedOffset<Uint8> start = TypedOffset<Uint8>(0);
   // List<TypedOffset> get members;
 }
 
@@ -56,31 +49,48 @@ abstract class ByteStructFactory {
   ByteStruct create();
 }
 
+/// ByteBuffer conversion function, but on view segment accounting for offset
 extension GenericSublistView on TypedData {
   ByteData get asByteData => ByteData.sublistView(this);
+  List<int> asTypedList<R extends TypedData>() => sublistView<R>();
+
   // throws range error
   // offset uses "this" instance type, not R type
-  List<int> sublistView<R extends TypedData>([int offset = 0]) {
+  List<int> _sublistView<R extends TypedData>([int typedOffset = 0]) {
     return switch (R) {
-      const (Uint8List) => Uint8List.sublistView(this, offset),
-      const (Uint16List) => Uint16List.sublistView(this, offset),
-      const (Uint32List) => Uint32List.sublistView(this, offset),
-      const (Int8List) => Int8List.sublistView(this, offset),
-      const (Int16List) => Int16List.sublistView(this, offset),
-      const (Int32List) => Int32List.sublistView(this, offset),
-      const (ByteData) => Uint8List.sublistView(this, offset),
+      const (Uint8List) => Uint8List.sublistView(this, typedOffset),
+      const (Uint16List) => Uint16List.sublistView(this, typedOffset),
+      const (Uint32List) => Uint32List.sublistView(this, typedOffset),
+      const (Int8List) => Int8List.sublistView(this, typedOffset),
+      const (Int16List) => Int16List.sublistView(this, typedOffset),
+      const (Int32List) => Int32List.sublistView(this, typedOffset),
+      const (ByteData) => throw UnsupportedError('ByteData.sublistView'),
       _ => throw UnimplementedError(),
     };
   }
 
+  List<int> _sublistViewConvertEndian<R extends TypedData>(Endian endian, [int typedOffset = 0]) {
+    final byteData = ByteData.sublistView(this, typedOffset);
+    //  final length = sublistView.lengthInBytes / sizeOf<R>();
+    return switch (R) {
+      const (Uint16List) => List<int>.generate(byteData.lengthInBytes ~/ 2, (i) => byteData.getUint16(i * 2, endian)),
+      const (Uint32List) => List<int>.generate(byteData.lengthInBytes ~/ 4, (i) => byteData.getUint32(i * 4, endian)),
+      const (Int16List) => List<int>.generate(byteData.lengthInBytes ~/ 2, (i) => byteData.getInt16(i * 2, endian)),
+      const (Int32List) => List<int>.generate(byteData.lengthInBytes ~/ 4, (i) => byteData.getInt32(i * 4, endian)),
+      _ => throw UnimplementedError(),
+    };
+  }
+
+  List<int> sublistView<R extends TypedData>([int typedOffset = 0, Endian endian = Endian.little]) {
+    return ((Endian.host != endian) && (R != Uint8List) && (R != Int8List)) ? _sublistViewConvertEndian<R>(endian, typedOffset) : _sublistView<R>(typedOffset);
+  }
+
   List<int> sublistViewOrEmpty<R extends TypedData>([int byteOffset = 0]) => (byteOffset < lengthInBytes) ? sublistView<R>(byteOffset) : const <int>[];
+
+  int get end => offsetInBytes + lengthInBytes; //  index of last byte + 1
 }
 
-extension TypedDataViews on TypedData {
-  int get end => offsetInBytes + lengthInBytes; // 1 + index of last byte
-}
-
-extension GenericGetWord on ByteData {
+extension GenericWord on ByteData {
   // throws range error
   int wordAt<R extends NativeType>(int byteOffset, [Endian endian = Endian.little]) {
     return switch (R) {
@@ -95,16 +105,7 @@ extension GenericGetWord on ByteData {
   }
 
   int? wordAtOrNull<R extends NativeType>(int byteOffset, [Endian endian = Endian.little]) {
-    final wordLength = switch (R) {
-      const (Int8) => 1,
-      const (Int16) => 2,
-      const (Int32) => 4,
-      const (Uint8) => 1,
-      const (Uint16) => 2,
-      const (Uint32) => 4,
-      _ => throw UnimplementedError(),
-    };
-    return (byteOffset + wordLength <= lengthInBytes) ? wordAt<R>(byteOffset, endian) : null;
+    return (byteOffset + sizeOf<R>() <= lengthInBytes) ? wordAt<R>(byteOffset, endian) : null;
   }
 
   void setWordAt<R extends NativeType>(int byteOffset, int value, [Endian endian = Endian.little]) {
@@ -123,14 +124,14 @@ extension GenericGetWord on ByteData {
   // }
 }
 
-// static int sizeOf<T extends NativeType>() {
-//   return switch (T) {
-//     const (Int8) => 1,
-//     const (Int16) => 2,
-//     const (Int32) => 4,
-//     const (Uint8) => 1,
-//     const (Uint16) => 2,
-//     const (Uint32) => 4,
-//     _ => throw UnimplementedError(),
-//   };
-// }
+int sizeOf<T extends NativeType>() {
+  return switch (T) {
+    const (Int8) => 1,
+    const (Int16) => 2,
+    const (Int32) => 4,
+    const (Uint8) => 1,
+    const (Uint16) => 2,
+    const (Uint32) => 4,
+    _ => throw UnimplementedError(),
+  };
+}

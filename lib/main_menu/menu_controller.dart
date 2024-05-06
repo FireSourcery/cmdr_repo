@@ -72,10 +72,3 @@ class MenuEntry {
   final String? route;
   final Widget? widget;
 }
-
-// class MenuSource {
-//   const MenuSource(this.toggleExpanded, this.collapsedButton, this.expandedButton);
-//   final void Function()? toggleExpanded;
-//   final Widget? collapsedButton;
-//   final Widget? expandedButton;
-// }
