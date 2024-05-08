@@ -59,7 +59,7 @@ class MenuSource<T> {
   MenuSource._({required this.menuItems});
   MenuSource._instance(MenuSource<T> menuSource) : menuItems = menuSource.menuItems;
 
-  const MenuSource.fill(List<MenuSourceItem> this.menuItems);
+  const MenuSource.items(List<MenuSourceItem> this.menuItems);
 
   // this can be made const if use chang menuItemButton to model
   MenuSource.itemBuilder({

@@ -7,17 +7,17 @@ import 'package:flutter/foundation.dart';
 enum NumberFormat<T extends NativeType, S> {
   /// Q fraction types, view = rawValue * unitsRef/FormatRef
   frac16<Int16, double>(reference: 32767), // Q1.15
-  ufrac16<Uint16, double>(reference: 32767), // frac16 abs with 2x over-saturation
+  ufrac16<Uint16, double>(reference: 32768), // frac16 abs with 2x over-saturation
   fixed16<Int16, double>(reference: 256), // 256 since base exceeds 8-bits
   scalar16<Uint16, double>(reference: 65535), // Q0.16
   // fixed32(reference: 32768, baseType: Int32 ),
   // int32(reference: Int32, baseType: Int32 ),
 
   ///
-  invScalar10<Uint16, int>(reference: 1 / 10), // view = motValue*10
-  scalar10<Uint16, int>(reference: 10), // view = motValue/10
-  // scalar100(reference: 100), // view = motValue/10
-  // scalar1000(reference: 1000), // view = motValue/10
+  invScalar10<Uint16, int>(reference: 1 / 10), // view = bytesValue*10
+  scalar10<Uint16, double>(reference: 10), // view = bytesValue/10
+  // scalar100(reference: 100),
+  // scalar1000(reference: 1000),
 
   /// integer types, transmitted as int or truncated value
   int16<Int16, int>(reference: 1),
@@ -78,5 +78,3 @@ enum NumberFormat<T extends NativeType, S> {
   // int signed(int raw16) => (isSigned) ? _signExtension16(raw16) : raw16;
   // double decimal(int bytes) => signed(bytes) / reference;
 }
-
-// typedef GenericFunction<R, A> = R Function<G>(A args);

@@ -17,8 +17,6 @@ typedef PacketConstructor<P extends Packet> = P Function();
 // abstract class Packet extends ByteStruct {
 abstract class Packet {
   Packet();
-  // Packet._buffer(int length) : _packet = Uint8List(length);
-  // factory Packet.castWith(PacketConstructor typedPacket, Uint8List bytes) => typedPacket().cast(bytes); // this way only constructor invokes child constructor
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Specs
@@ -336,23 +334,6 @@ abstract class PacketInterface {
 //   //   bytes = dataIn;
 //   // }
 
-//   @override
-//   int get configLengthMax => throw UnimplementedError();
-//   @override
-//   Endian get configEndian => throw UnimplementedError();
-//   @override
-//   int get configHeaderLength => throw UnimplementedError();
-//   @override
-//   int get configStartField => throw UnimplementedError();
-
-//   @override
-//   TypedOffset<NativeType> get checksumField => throw UnimplementedError();
-//   @override
-//   TypedOffset<NativeType> get idField => throw UnimplementedError();
-//   @override
-//   TypedOffset<NativeType> get lengthField => throw UnimplementedError();
-//   @override
-//   TypedOffset<NativeType> get startField => throw UnimplementedError();
 // }
 
 // Id either hold packet handler function - requires passing packet

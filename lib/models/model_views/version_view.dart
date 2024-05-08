@@ -1,8 +1,12 @@
+import 'package:cmdr/byte_struct.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
+import '../../byte_struct/word.dart';
 import '../version.dart';
 
+/// Read Only views
 class VersionTile extends StatelessWidget {
   const VersionTile({required this.version, this.label, super.key});
   final Version version;
@@ -21,8 +25,8 @@ class VersionTile extends StatelessWidget {
   }
 }
 
-class VersionTiles extends StatelessWidget {
-  const VersionTiles({required this.versions, this.label = 'Version', super.key});
+class VersionRowTiles extends StatelessWidget {
+  const VersionRowTiles({required this.versions, this.label = 'Version', super.key});
   final List<Version> versions;
   final String? label;
 
@@ -34,122 +38,112 @@ class VersionTiles extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          VerticalDivider(),
-          for (final version in versions) Expanded(child: VersionTile(version: version)),
+          Spacer(),
+          for (final version in versions) Expanded(flex: 8, child: VersionTile(version: version)),
+          Spacer(),
         ],
       ),
     );
   }
 }
 
-// input as string literal
-class VersionFormFieldString extends StatelessWidget {
-  const VersionFormFieldString({required this.version, this.label, super.key, this.isReadOnly = false, this.onSaved});
-  final Version version;
+class VersionListView extends StatelessWidget {
+  const VersionListView({required this.versions, this.label = 'Version', super.key});
+  final List<Version> versions;
   final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    return InputDecorator(
+      decoration: InputDecoration(labelText: label),
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [for (final version in versions) VersionTile(version: version)],
+      ),
+    );
+  }
+}
+
+/// Editable views
+class VersionFormFieldChars extends StatelessWidget {
+  const VersionFormFieldChars({required this.version, this.label, super.key, this.isReadOnly = false, this.onSaved, this.isCharCode = false});
+  final Version version;
   final bool isReadOnly;
+  final String? label;
+  final bool isCharCode;
   final ValueSetter<Version>? onSaved;
 
+  // todo alternate schemes
+  String labelAt(int index) => switch (index) { 0 => 'Opt', 1 => 'Major', 2 => 'Minor', 3 => 'Fix', _ => 'Unknown' };
+
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      decoration: InputDecoration(labelText: label),
-      initialValue: version.asString,
-      readOnly: false,
-      onSaved: (String? newValue) => onSaved?.call(Version.string(newValue!)), // validator will reject null
-      maxLengthEnforcement: MaxLengthEnforcement.enforced,
-      maxLength: version.length,
-      validator: (String? value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter some text';
-        }
+    return FormField<Uint8List>(
+      initialValue: version.version, // new editable buffer
+      onSaved: (Uint8List? newValue) => onSaved?.call(version.updateVersion(newValue!)),
+      validator: (Uint8List? value) {
+        if (value == null || value.isEmpty) return 'Empty value';
+        if (value.any((element) => element > 255)) return 'Max 255 allowed';
         return null;
       },
+
+      builder: (FormFieldState<Uint8List> field) {
+        return Row(
+          children: [
+            for (final (index, byte) in field.value!.indexed) ...[
+              Expanded(
+                child: TextField(
+                  decoration: InputDecoration(labelText: label ?? labelAt(index), isDense: true, counterText: '' /* , errorText: field.errorText */),
+                  controller: TextEditingController(text: byte.toString()),
+                  // onSubmitted: (String value) => field.value?[index] = int.parse(value),
+                  onChanged: (String value) {
+                    if (value.isNotEmpty) {
+                      final intValue = int.parse(value);
+                      field.value?[index] = intValue.clamp(0, 255);
+                      if (intValue > 255) field.validate();
+                    } else {
+                      // field.value?[index] = 0;
+                    }
+                  },
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  readOnly: isReadOnly,
+                  maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                  maxLength: 3,
+
+                  // onEditingComplete: () => print('onEditingComplete'),
+                  // textInputAction: TextInputAction.next,
+                  // onTapOutside: (event) => field.didChange(field.value),
+                ),
+              ),
+              if (index != field.value!.length - 1) const VerticalDivider(),
+            ],
+          ],
+        );
+      },
     );
+    // return Row(
+    //   children: [
+    //     for (var count = 0; count < version.length; count++) ...[
+    //       Expanded(
+    //         child: TextFormField(
+    //           decoration: InputDecoration(labelText: label ?? version.name, isDense: true, counterText: ''),
+    //           initialValue: isCharCode ? version.charAsCode(3 - count) : version.charAsValue(3 - count), // view as big endian order
+    //           readOnly: isReadOnly,
+    //           maxLengthEnforcement: MaxLengthEnforcement.enforced,
+    //           maxLength: 3,
+    //           buildCounter: null,
+    //           // onSaved: (String? newValue) => onSaved?.call(isCharCode ? Word.fieldAsCode(count, newValue!) : Word.fieldAsValue(count, newValue!)),
+    //           validator: (String? value) {
+    //             if (value == null || value.isEmpty) {
+    //               return 'Please enter some text';
+    //             }
+    //             return null;
+    //           },
+    //         ),
+    //       ),
+    //       if (count != version.length - 1) const VerticalDivider()
+    //     ],
+    //   ],
+    // );
   }
 }
-
-// class VersionFormFieldString extends StatelessWidget {}
-
-class VersionFormFieldChars extends StatelessWidget {
-  const VersionFormFieldChars({required this.version, this.label, super.key, this.isReadOnly = false, this.onSaved, this.asString = false, this.isLong = false});
-  final Version version;
-  final bool isReadOnly;
-  final String? label;
-  final bool asString;
-  final bool isLong;
-
-  final void Function(int charCode, int index)? onSaved;
-
-  String getAsInt(int index) => version.bytes[index].toString(); // 1 => '1'
-  String getAsCode(int index) => String.fromCharCode(version.bytes[index]); // 0x31 => '1'
-
-  void setAsInt(String value, int index) => onSaved?.call(int.parse(value), index); // '1' => 1
-  void setAsCode(String value, int index) => onSaved?.call(value.runes.single, index); // '1' => 0x31
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (var count = 0; count < 4; count++)
-          Expanded(
-            child: TextFormField(
-              decoration: InputDecoration(labelText: label, isDense: true),
-              initialValue: asString ? getAsCode(count) : getAsInt(count),
-              readOnly: isReadOnly,
-              onSaved: (String? newValue) => asString ? setAsCode(newValue!, count) : setAsInt(newValue!, count),
-              maxLengthEnforcement: MaxLengthEnforcement.enforced,
-              maxLength: 3,
-              buildCounter: null,
-              validator: (String? value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter some text';
-                }
-                return null;
-              },
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-// edit as separate fields
-// readOnly as single field
-
-// class VersionAdaptive extends StatelessWidget {
-//   const VersionAdaptive({required this.version, this.name, super.key});
-//   final Version version;
-//   final String? name;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return (MediaQuery.of(context).size.width < 600) ? VersionTile(version: version, label: name) : VersionFormField(version: version, name: name);
-//   }
-// }
-
-// class VersionsListView extends StatelessWidget {
-//   const VersionsListView({super.key}); 
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return InputDecorator(
-//       decoration: const InputDecoration(),
-//       child: Column(
-//         children: [
-//           ListTile(contentPadding: EdgeInsets.zero, dense: null, subtitle: Text('Model'), title: Text(Reference().motManufacturer.motNameId)),
-//           ListTile(contentPadding: EdgeInsets.zero, dense: null, subtitle: Text('Protocol'), title: versionProtocolText()),
-//           // ListTile(contentPadding: EdgeInsets.zero, dense: null, subtitle: Text('Library'), title: versionLibraryText()),
-//           ListTile(contentPadding: EdgeInsets.zero, dense: null, subtitle: Text('Firmware'), title: versionFirmwareText()),
-//           ListTile(contentPadding: EdgeInsets.zero, dense: null, subtitle: Text('Board'), title: versionBoardText()),
-//           ListTile(contentPadding: EdgeInsets.zero, subtitle: Text('Serial Number'), title: Text(Reference().motManufacturer.serialNumber.charsMsb.toString())),
-//           ListTile(contentPadding: EdgeInsets.zero, subtitle: Text('Manufacture Number'), title: Text(Reference().motManufacturer.manufactureNumber.charsMsb.toString())),
-//           // Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: []),
-//           // Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: []),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
-

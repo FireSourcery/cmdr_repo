@@ -5,15 +5,16 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class DialogButton<T> extends StatelessWidget {
-  const DialogButton({super.key, required this.dialogBuilder, this.useRootNavigator = true, this.child, this.themeStyle, this.onPop});
+  const DialogButton({super.key, required this.dialogBuilder, this.useRootNavigator = true, this.child, this.themeStyle, this.onPop, this.onPressed});
   // use the warning theme
-  const DialogButton.warning({super.key, required this.dialogBuilder, this.useRootNavigator = true, this.child, this.onPop}) : themeStyle = DialogButtonStyle.warning;
+  const DialogButton.warning({super.key, required this.dialogBuilder, this.useRootNavigator = true, this.child, this.onPop, this.onPressed}) : themeStyle = DialogButtonStyle.warning;
 
   final WidgetBuilder dialogBuilder; // must build new for async
   final Widget? child;
-  final DialogButtonStyle? themeStyle;
   final ValueSetter<T>? onPop;
+  final VoidCallback? onPressed;
   final bool useRootNavigator;
+  final DialogButtonStyle? themeStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +25,7 @@ class DialogButton<T> extends StatelessWidget {
 
     return ElevatedButton(
       onPressed: () async {
+        onPressed?.call();
         final result = await showDialog<T>(
           context: context,
           barrierDismissible: false,

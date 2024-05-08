@@ -130,6 +130,8 @@ class DetachedThermistor {
   final int rSeries;
   final int? rParallel;
 
+  Thermistor buildThermistor(int b, int r0, double t0) => Thermistor(b: b, r0: r0, t0: t0, rSeries: rSeries, rParallel: rParallel);
+
   DetachedThermistor copyWith({
     int? rSeries,
     int? rParallel,

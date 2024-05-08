@@ -7,13 +7,13 @@ class MotPacket extends Packet {
   MotPacket();
 
   @override
-  final int configStartField = 0xA5;
+  int get configStartField => 0xA5;
   @override
-  final int configLengthMax = 40;
+  int get configLengthMax => 40;
   @override
-  final int configHeaderLength = 8;
+  int get configHeaderLength => 8;
   @override
-  final Endian configEndian = Endian.little;
+  Endian get configEndian => Endian.little;
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Header
@@ -21,18 +21,18 @@ class MotPacket extends Packet {
   ///  [PayLoad][32]
   ////////////////////////////////////////////////////////////////////////////////
   @override
-  final TypedOffset<Uint8> startField = const TypedOffset<Uint8>(0);
+  TypedOffset<Uint8> get startField => const TypedOffset<Uint8>(0);
   @override
-  final TypedOffset<Uint8> idField = const TypedOffset<Uint8>(1);
+  TypedOffset<Uint8> get idField => const TypedOffset<Uint8>(1);
   @override
-  final TypedOffset<Uint16> checksumField = const TypedOffset<Uint16>(2);
+  TypedOffset<Uint16> get checksumField => const TypedOffset<Uint16>(2);
   @override
-  final TypedOffset<Uint8> lengthField = const TypedOffset<Uint8>(4);
+  TypedOffset<Uint8> get lengthField => const TypedOffset<Uint8>(4);
 
   @override
   MotPacketId? idOf(int intId) => MotPacketId.of(intId);
-  // Uint8List get flexField => Uint8List.view(packet, 4, 4);
 
+  // Uint8List get flexField => Uint8List.view(packet, 4, 4);
   int get flex0FieldValue => bytes[5];
   int get flex1FieldValue => bytes[6];
   int get flex2FieldValue => bytes[7];
