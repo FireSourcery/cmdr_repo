@@ -39,9 +39,9 @@ class Word {
   // Uint8List get bytes => toBytes(Endian.little);
   Uint8List get bytesLE => toBytes(Endian.little).trim(byteLength, Endian.little);
   Uint8List get bytesBE => toBytes(Endian.big).trim(byteLength, Endian.big);
-  Uint8List get _bytesString => toBytes(_stringEndian);
 
   // asString, as encoded, a copy is made but immutable
+  Uint8List get _bytesString => toBytes(_stringEndian);
   String get asString => _bytesString.toStringAsEncoded(0, byteLength);
 
   // toString as description
@@ -52,7 +52,7 @@ class Word {
   int modifyByte(int index, int value, [Endian endian = Endian.little]) => toBytes(endian).modify(index, value).toInt(endian);
 
   // String inputs as literal of binary value
-  String charAsValue(int index) => _bytesString.charAsValue(index); // 1 => '1'
+  String charAsValue(int index, [bool isSigned = false]) => _bytesString.charAsValue(index); // 1 => '1'
   int modifyAsValue(int index, String value) => modifyByte(index, int.parse(value)); // '1' => 1
 
   String charAsCode(int index) => _bytesString.charAsCode(index); // 0x31 => '1'
@@ -79,9 +79,10 @@ extension BytesOfInt on int {
   // returns as 8 bytes
   ByteData toByteData([Endian endian = Endian.big]) => byteDataOf(this, endian);
   Uint8List toBytes([Endian endian = Endian.big]) => byteDataOf(this, endian).buffer.asUint8List();
-  Word toWord() => Word(this);
 
   int get byteLength => (bitLength / 8).ceil();
+
+  Word toWord() => Word(this);
 }
 
 extension IntOfByteBuffer on ByteBuffer {

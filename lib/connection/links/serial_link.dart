@@ -34,9 +34,12 @@ class SerialLink implements Link {
 
   /// returns true on success, last exception still buffered
   bool connect({String? name, int? baudRate, SerialPortConfig? config}) {
-    if (name != null) portConfigName = name;
-    if (config != null) portConfig = config;
-    if (baudRate != null) portConfig.baudRate = baudRate;
+    // if (name != null) portConfigName = name;
+    // if (config != null) portConfig = config;
+    // if (baudRate != null) portConfig.baudRate = baudRate;
+    portConfigName = name ?? portConfigName;
+    portConfig = config ?? portConfig;
+    portConfig.baudRate = baudRate ?? portConfig.baudRate;
 
     if (isConnected) {
       lastException = LinkException.connect('Already Connected $portActiveName', SerialLink);

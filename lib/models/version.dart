@@ -20,12 +20,13 @@ class Version extends Word {
   int get major => bytesLE[2];
   int get optional => bytesLE[3];
 
-  // [0,0,0,0][optional, major, minor, fix]
+  // new buffer
+  // [optional, major, minor, fix][0,0,0,0]
   // Version.numbers(Uint8List value, [this.name]) : super.byteBuffer(value.buffer, 0, Endian.big);
   Uint8List get version => toBytesAs(Endian.big); // trimmed view on new buffer big endian 8 bytes
   Version updateVersion(Uint8List bytes) => Version.value(bytes.buffer.toInt(0, Endian.big), name);
 
-  // List<int> get numbers => toBytesAs(Endian.big).sublist(0);
+  // List<int> get numbers => toBytesAs(Endian.big);
   // Version updateNumbers(List<int> numbers) => Version.value(numbers.toBytes().toInt(Endian.big), name);
 
   // msb first with dot separator

@@ -1,5 +1,8 @@
+import 'dart:collection';
 import 'dart:ffi';
 import 'dart:typed_data';
+
+import 'package:cmdr/byte_struct.dart';
 
 export 'dart:ffi';
 export 'dart:typed_data';
@@ -73,22 +76,14 @@ extension GenericSublistView on TypedData {
   }
 
   // todo as cast list
-  List<int> _sublistViewConvertEndian<R extends TypedData>(Endian endian, [int typedOffset = 0]) {
-    final byteData = ByteData.sublistView(this, typedOffset);
-    //  final length = sublistView.lengthInBytes / sizeOf<R>();
-    return switch (R) {
-      const (Uint16List) => List<int>.generate(byteData.lengthInBytes ~/ 2, (i) => byteData.getUint16(i * 2, endian)),
-      const (Uint32List) => List<int>.generate(byteData.lengthInBytes ~/ 4, (i) => byteData.getUint32(i * 4, endian)),
-      const (Int16List) => List<int>.generate(byteData.lengthInBytes ~/ 2, (i) => byteData.getInt16(i * 2, endian)),
-      const (Int32List) => List<int>.generate(byteData.lengthInBytes ~/ 4, (i) => byteData.getInt32(i * 4, endian)),
-      _ => throw UnimplementedError(),
-    };
+  List<int> _castList<R extends TypedData>(Endian endian, [int typedOffset = 0]) {
+    return EndianCastList<R>(this, endian);
   }
 
   static Endian hostEndian = Endian.host; // resolve once storing results
 
   List<int> sublistView<R extends TypedData>([int typedOffset = 0, Endian endian = Endian.little]) {
-    return ((hostEndian != endian) && (R != Uint8List) && (R != Int8List)) ? _sublistViewConvertEndian<R>(endian, typedOffset) : _sublistView<R>(typedOffset);
+    return ((hostEndian != endian) && (R != Uint8List) && (R != Int8List)) ? _castList<R>(endian, typedOffset) : _sublistView<R>(typedOffset);
   }
 
   List<int> sublistViewOrEmpty<R extends TypedData>([int byteOffset = 0]) => (byteOffset < lengthInBytes) ? sublistView<R>(byteOffset) : const <int>[];
@@ -152,4 +147,40 @@ int sizeOf<T extends NativeType>() {
     const (Uint32) => 4,
     _ => throw UnimplementedError(),
   };
+}
+
+class EndianCastList<R extends TypedData> extends ListBase<int> {
+  EndianCastList(this._source, this._endian);
+
+  TypedData _source;
+  Endian _endian;
+
+  @override
+  int get length => _source.lengthInBytes ~/ _source.elementSizeInBytes;
+  // int get length => (_source as List<int>).length;
+
+  @override
+  int operator [](int index) {
+    final byteData = ByteData.sublistView(_source);
+    return switch (R) {
+      const (Uint16List) => byteData.getUint16(index * _source.elementSizeInBytes, _endian),
+      // const (Uint16List) => Uint16List.sublistView(this, typedOffset),
+      // const (Uint32List) => Uint32List.sublistView(this, typedOffset),
+      // const (Int8List) => Int8List.sublistView(this, typedOffset),
+      // const (Int16List) => Int16List.sublistView(this, typedOffset),
+      // const (Int32List) => Int32List.sublistView(this, typedOffset),
+      // const (ByteData) => throw UnsupportedError('ByteData is not a typed list'),
+      _ => throw UnimplementedError(),
+    };
+  }
+
+  @override
+  void operator []=(int index, int value) {
+    // TODO: implement []=
+  }
+
+  @override
+  set length(int newLength) {
+    // TODO: implement length
+  }
 }
