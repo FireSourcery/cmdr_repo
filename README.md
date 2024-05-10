@@ -14,8 +14,14 @@ and the Flutter guide for
 Commander/Host side utilities for interfacing with embedded devices + other general utilities.
 
 ## Features
+Byte manipulation utilities:
+    bitfield
+    byte_struct
 
-TODO: List what your package cdartan do. Maybe include images, gifs, or videos.
+A serial protocol with:
+    connection
+
+Handling particular types of files
 
 ## Getting started
 

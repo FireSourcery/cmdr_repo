@@ -20,13 +20,13 @@ class ChartFileStorage extends CsvFileStorage with FileStorageNotifier<Map<Strin
 
 /// View
 // load and parse
-class OpenChartFileButton extends OpenFileButton {
-  const OpenChartFileButton({required ChartFileStorage super.fileNotifier, super.title, super.iconData, super.key});
+// class OpenChartFileButton extends OpenFileButton {
+//   const OpenChartFileButton({required ChartFileStorage super.fileNotifier, super.title, super.iconData, super.key});
 
-  // final ChartFileStorage csvFile;
-  // @override
-  // Future<void> beginAsync() async => csvFile.openParseNotify();
-}
+//   // final ChartFileStorage csvFile;
+//   // @override
+//   // Future<void> beginAsync() async => csvFile.openParseNotify();
+// }
 
 // class SaveChartFileButton extends SaveFileButton {
 //   const SaveChartFileButton({required ChartFileStorage super., super.title = 'Save File', super.iconData = Icons.file_copy, super.key});

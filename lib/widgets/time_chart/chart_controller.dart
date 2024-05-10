@@ -34,23 +34,22 @@ class ChartController with TimerNotifier, ChangeNotifier {
 
   Duration updateInterval;
 
-  // alternatively make final chart data use copyFrom
   ChartData _chartData; // line data models, derive from entry, file storage
   ChartData get chartData => _chartData;
   set chartData(ChartData value) {
     stop();
-    //todo match chartentries
     _chartData = value;
+    // match chart entries, values getters disabled
+    updateEntries(_chartData.lineEntries.map((e) => ChartEntry(name: e.name, valueGetter: () => 0)));
     notifyListeners();
   }
 
-  int get chartDataLength => chartData.lines.length;
+  int get chartDataLength => chartData.lineEntries.length;
 
   double? _yMin;
   double? get yMin => _yMin;
   set yMin(double? value) {
     _yMin = value;
-    // if (isStopped)
     notifyListeners();
   }
 
@@ -58,7 +57,6 @@ class ChartController with TimerNotifier, ChangeNotifier {
   double? get yMax => _yMax;
   set yMax(double? value) {
     _yMax = value;
-    // if (isStopped)
     notifyListeners();
   }
 
@@ -100,17 +98,18 @@ class ChartController with TimerNotifier, ChangeNotifier {
     // start();
   }
 
+  void replaceEntryAt(int index, ChartEntry entry) {
+    stop();
+    chartEntries[index] = entry;
+    chartData.lineEntries[index] = LineData(entry.name);
+    notifyListeners();
+    // start();
+  }
+
   // void removeEntry(ChartEntry entry) {
   //   final index = chartEntries.indexOf(entry);
   //   if (index != -1) removeEntryAt(index);
   // }
-
-  void replaceEntryAt(int index, ChartEntry entry) {
-    stop();
-    chartEntries[index] = entry;
-    chartData.lines[index] = LineData(entry.name);
-    // start();
-  }
 
   // void removeEntryAt(int index) {
   //   stop();
@@ -119,7 +118,7 @@ class ChartController with TimerNotifier, ChangeNotifier {
   //   // start();
   // }
 
-  List<FlSpot> flSpotsViewOf(int index) => List.unmodifiable(chartData.dataAt(index).map((e) => FlSpot(e.x, e.y)));
+  List<FlSpot> flSpotsViewOf(int index) => UnmodifiableListView(chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y)));
 
   /// todo visual options with notify
   FlDotData configDotData = const FlDotData(show: true);

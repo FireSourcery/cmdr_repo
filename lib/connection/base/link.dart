@@ -15,8 +15,8 @@ abstract interface class Link {
 }
 
 class LinkException implements Exception {
-  const LinkException([this.message = "", this.linkType = Link, this.subset = '', this.driverException]);
-  const LinkException.connect([this.message = "", this.linkType = Link, this.driverException]) : subset = "Connect";
+  const LinkException(this.message, [this.linkType = Link, this.subset = '', this.driverException]);
+  const LinkException.connect(this.message, [this.linkType = Link, this.driverException]) : subset = "Connect";
   final String message;
   final String subset;
   final Type linkType;

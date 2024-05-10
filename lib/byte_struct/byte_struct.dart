@@ -75,7 +75,6 @@ extension GenericSublistView on TypedData {
     };
   }
 
-  // todo as cast list
   List<int> _castList<R extends TypedData>(Endian endian, [int typedOffset = 0]) {
     return EndianCastList<R>(this, endian);
   }

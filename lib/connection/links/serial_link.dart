@@ -19,7 +19,9 @@ class SerialLink implements Link {
 
   SerialPort? _serialPort; // alternatively allocating a SerialPort with '' name is effectively port with internal nullptr
   SerialPortReader? _serialPortReader;
+  String? get portActiveName => _serialPort?.name;
 
+  // alternatively move to SerialPortConfigViewController
   SerialPortConfig portConfig = SerialPortConfig()
     ..baudRate = 19200
     ..parity = 0
@@ -28,15 +30,10 @@ class SerialLink implements Link {
     ..setFlowControl(SerialPortFlowControl.none);
 
   /// view hovered selection name, SerialPort(portName) changes active pointer
-  String? portConfigName = SerialPort.availablePorts.firstOrNull;
-
-  String? get portActiveName => _serialPort?.name;
+  String? portConfigName;
 
   /// returns true on success, last exception still buffered
   bool connect({String? name, int? baudRate, SerialPortConfig? config}) {
-    // if (name != null) portConfigName = name;
-    // if (config != null) portConfig = config;
-    // if (baudRate != null) portConfig.baudRate = baudRate;
     portConfigName = name ?? portConfigName;
     portConfig = config ?? portConfig;
     portConfig.baudRate = baudRate ?? portConfig.baudRate;
@@ -63,7 +60,7 @@ class SerialLink implements Link {
         return false;
       }
     } on SerialPortError catch (e) {
-      lastException = LinkException.connect('Driver', SerialLink, e);
+      lastException = LinkException.connect('Driver $e', SerialLink, e);
       return false;
     }
   }
@@ -74,7 +71,7 @@ class SerialLink implements Link {
         _serialPort!.close();
         _serialPort!.dispose();
       } on SerialPortError catch (e) {
-        lastException = LinkException.connect('Driver', SerialLink, e);
+        lastException = LinkException.connect('Driver $e', SerialLink, e);
         print(e);
       }
     }
@@ -82,7 +79,7 @@ class SerialLink implements Link {
 
   @protected
   void onStreamError(Object object, StackTrace stackTrace) {
-    lastException = const LinkException('Link Rx Stream Error', SerialLink);
+    lastException = LinkException('Link Rx Stream Error: $object', SerialLink);
     flushInput();
   }
 
@@ -94,7 +91,6 @@ class SerialLink implements Link {
   // this way only connect() creates a new stream
   @override
   Stream<Uint8List> streamIn = const Stream.empty();
-  // Stream<Uint8List> get streamIn => _readerStream ?? const Stream.empty();
 
   @override
   LinkException? lastException;
@@ -103,7 +99,7 @@ class SerialLink implements Link {
   bool get isConnected => (_serialPort?.isOpen ?? false); // ensures null values are initialized
 
   @override
-  Future<Uint8List?> recv([int? byteCount]) async {
+  Future<Uint8List> recv([int? byteCount]) async {
     try {
       return await streamIn.first.timeout(const Duration(milliseconds: 1000));
     } on TimeoutException {
@@ -112,26 +108,26 @@ class SerialLink implements Link {
       rethrow;
     } catch (e) {
       flushInput();
-      // print('Link Rx Unnamed Exception');
+      lastException = LinkException('Link Rx: $e', SerialLink);
       rethrow;
     } finally {}
   }
 
-  // catch only effective if called with await
+  /// Caller check [isConnected]
   @override
   Future<void> send(Uint8List bytes) async {
     try {
-      // if (!isConnected) return;
-      //implicit await blocking, todo as write, await full buffer transmit?
-      if (_serialPort!.write(bytes, timeout: 1000) < bytes.length) throw TimeoutException('Serial Write Timeout');
-      // if (await Future(() => serialPort!.write(bytes, timeout: 0)).timeout(const Duration(milliseconds: 1000)) < bytes.length) throw TimeoutException('SerialPort Tx Timeout');
+      // implicit await blocking, allow driver to initiate timeout, block reentrant, or ignore reentrant call. ensure blocking calls do not stack
+      if (_serialPort!.write(bytes, timeout: 1000) < bytes.length) throw TimeoutException('Serial Write Incomplete');
+      // reentrant async calls handled in the same order they arrive?
+      // if (await Future(() => serialPort!.write(bytes, timeout: 500)).timeout(const Duration(milliseconds: 1000)) < bytes.length) throw TimeoutException('SerialPort Tx Timeout');
     } on TimeoutException {
       flushOutput();
       lastException = const LinkException('Link Tx Timeout', SerialLink);
       rethrow;
     } catch (e) {
+      lastException = LinkException('Link Tx: $e', SerialLink);
       flushOutput();
-      // print('Link Tx Unnamed Exception');
       rethrow;
     } finally {}
   }

@@ -128,3 +128,13 @@ extension StringOfBytes on Uint8List {
   String charAsCode(int index) => String.fromCharCode(this[index]); // 0x31 => '1'
   Uint8List modifyAsCode(int index, String value) => this..[index] = value.runes.single; // '1' => 0x31
 }
+
+// extension StringOfByteData on ByteData {
+//   // Chars use array index
+//   // from User I/O as int literal
+//   String charAsValue(int index) => getUint8(index).toString(); // 1 => '1'
+//   void setCharAsValue(int index, String value) => setUint8(index, int.parse(value)); // '1' => 1
+
+//   String charAsCode(int index) => String.fromCharCode(getUint8(index)); // 0x31 => '1'
+//   void setCharAsCode(int index, String value) => setUint8(index, value.runes.single); // '1' => 0x31
+// }

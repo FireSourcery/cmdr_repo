@@ -279,7 +279,12 @@ class VersionRequest extends MotPacket implements PayloadHandler<void> {
 
 class VersionResponse extends MotPacket implements PayloadHandler<VersionResponsePayload> {
   @override
-  VersionResponsePayload parsePayload([void status]) => (board: payloadWordAt<Uint32>(0), firmware: payloadWordAt<Uint32>(4), library: payloadWordAt<Uint32>(8), protocol: payloadWordAt<Uint32>(12));
+  VersionResponsePayload parsePayload([void status]) => (
+        board: payloadWordAt<Uint32>(0),
+        firmware: payloadWordAt<Uint32>(4),
+        library: payloadWordAt<Uint32>(8),
+        protocol: payloadWordAt<Uint32>(12),
+      );
 
   @override
   void buildPayload(args) => throw UnimplementedError();
