@@ -3,6 +3,8 @@ const int _smiBits = 62;
 const int _allZeros = 0;
 const int _allOnes = kMaxUnsignedSMI;
 
+typedef RecordEntry<K, V> = ({K key, V value});
+
 ////////////////////////////////////////////////////////////////////////////////
 /// BitsBaseInterface
 ////////////////////////////////////////////////////////////////////////////////
@@ -15,14 +17,14 @@ abstract interface class GenericBitField<T, V> {
   int get bits;
   set bits(int value);
 
-  int get value;
-
   V operator [](T indexed);
   void operator []=(T indexed, V value);
   void reset([bool value = false]);
 
   Iterable<T> get memberKeys; // using Enum.values
   Iterable<V> get memberValues;
+  // RecordEntry<T,V> entry(T indexed);
+  // Iterable<RecordEntry<T,V>> get entries;
   (T, V) entry(T indexed);
   Iterable<(T, V)> get entries;
 }
@@ -56,7 +58,7 @@ mixin BitsNamesMixin<T, V> implements GenericBitField<T, V> {
   @override
   Iterable<V> get memberValues => memberKeys.map((e) => this[e]);
   @override
-  (T, V) entry(T indexed) => (indexed, this[indexed]);
+  (T, V) entry(T member) => (member, this[member]);
   @override
   Iterable<(T, V)> get entries => memberKeys.map((e) => entry(e));
 }

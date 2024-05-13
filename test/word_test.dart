@@ -16,6 +16,6 @@ void main() {
     print(Word.string(string).asString);
     print(Word.bytes(list));
     print(Word.bytes(string.runes));
-    print(Word.value32(68, 67, 66, 65));
+    print(Word.msb32(68, 67, 66, 65));
   });
 }

@@ -7,62 +7,36 @@ import '../../byte_struct/word.dart';
 import '../version.dart';
 
 /// Read Only views
-class VersionTile extends StatelessWidget {
-  const VersionTile({required this.version, this.label, super.key});
-  final Version version;
-  final String? label;
+// class VersionTile extends StatelessWidget {
+//   const VersionTile({required this.version, this.label, super.key});
+//   final Version version;
+//   final String? label;
 
-  @override
-  Widget build(BuildContext context) {
-    final name = label ?? version.name;
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      dense: null,
-      titleAlignment: ListTileTitleAlignment.bottom,
-      title: Text(version.toStringAsVersion()),
-      subtitle: ((name != null) ? Text(name) : null),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     final name = label ?? version.name;
+//     return ListTile(
+//       contentPadding: EdgeInsets.zero,
+//       dense: null,
+//       titleAlignment: ListTileTitleAlignment.bottom,
+//       title: Text(version.toStringAsVersion()),
+//       subtitle: ((name != null) ? Text(name) : null),
+//     );
+//   }
+// }
 
-class VersionRowTiles extends StatelessWidget {
-  const VersionRowTiles({required this.versions, this.label = 'Version', super.key});
-  final List<Version> versions;
-  final String? label;
+// class VersionRowTiles extends StatelessWidget {
+//   const VersionRowTiles({required this.versions, this.label = 'Version', super.key});
+//   final List<Version> versions;
+//   final String? label;
 
-  @override
-  Widget build(BuildContext context) {
-    return InputDecorator(
-      decoration: InputDecoration(labelText: label),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          Spacer(),
-          for (final version in versions) Expanded(flex: 8, child: VersionTile(version: version)),
-          Spacer(),
-        ],
-      ),
-    );
-  }
-}
-
-class VersionListView extends StatelessWidget {
-  const VersionListView({required this.versions, this.label = 'Version', super.key});
-  final List<Version> versions;
-  final String? label;
-
-  @override
-  Widget build(BuildContext context) {
-    return InputDecorator(
-      decoration: InputDecoration(labelText: label),
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [for (final version in versions) VersionTile(version: version)],
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return MapListView(
+//       map: {for (final version in versions) version: (version: version, label: label)},
+//     );
+//   }
+// }
 
 /// Editable views
 class VersionFormFieldChars extends StatelessWidget {
@@ -121,29 +95,5 @@ class VersionFormFieldChars extends StatelessWidget {
         );
       },
     );
-    // return Row(
-    //   children: [
-    //     for (var count = 0; count < version.length; count++) ...[
-    //       Expanded(
-    //         child: TextFormField(
-    //           decoration: InputDecoration(labelText: label ?? version.name, isDense: true, counterText: ''),
-    //           initialValue: isCharCode ? version.charAsCode(3 - count) : version.charAsValue(3 - count), // view as big endian order
-    //           readOnly: isReadOnly,
-    //           maxLengthEnforcement: MaxLengthEnforcement.enforced,
-    //           maxLength: 3,
-    //           buildCounter: null,
-    //           // onSaved: (String? newValue) => onSaved?.call(isCharCode ? Word.fieldAsCode(count, newValue!) : Word.fieldAsValue(count, newValue!)),
-    //           validator: (String? value) {
-    //             if (value == null || value.isEmpty) {
-    //               return 'Please enter some text';
-    //             }
-    //             return null;
-    //           },
-    //         ),
-    //       ),
-    //       if (count != version.length - 1) const VerticalDivider()
-    //     ],
-    //   ],
-    // );
   }
 }

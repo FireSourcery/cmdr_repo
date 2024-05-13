@@ -10,6 +10,7 @@ export 'dart:typed_data';
 ////////////////////////////////////////////////////////////////////////////////
 ///
 ////////////////////////////////////////////////////////////////////////////////
+
 /// a struct memeber
 /// configuration for get TypedData segment from
 class TypedOffset<T extends NativeType> {
@@ -36,7 +37,6 @@ mixin class ByteStruct<T extends ByteStruct<dynamic>> {
   T cast(TypedData data) => (this..reference = data) as T;
 
   static Uint8List nullPtr = Uint8List(0);
-  // static TypedData nullPtr = throw UnsupportedError('nullPtr');
 
   TypedData reference = nullPtr; // alternatively use late
 
@@ -90,10 +90,6 @@ extension GenericSublistView on TypedData {
   int get end => offsetInBytes + lengthInBytes; // index of last byte + 1
 }
 
-// byteBuffer implements ByteData or
-// ByteData implements ByteBuffer
-// combine offset access
-// using typedData leaves room for 2 offsets
 extension ByteBufferData on ByteBuffer {
   int wordAt<R extends NativeType>(int byteOffset, [Endian endian = Endian.little]) => asByteData().wordAt<R>(byteOffset, endian);
   int? wordAtOrNull<R extends NativeType>(int byteOffset, [Endian endian = Endian.little]) => asByteData().wordAtOrNull<R>(byteOffset, endian);

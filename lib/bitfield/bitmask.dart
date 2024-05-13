@@ -20,12 +20,11 @@ class Bitmask {
   int read(int source) => (source & _bitmask) >> offset; // get as shifted back
   int modify(int source, int value) => (source & ~_bitmask) | apply(value); // ready for write back
 
-  int operator |(int value) => (value | _bitmask);
-  int operator &(int value) => (value & _bitmask);
-  int operator ~() => (~_bitmask);
+  // int operator |(int value) => (value | _bitmask);
+  // int operator &(int value) => (value & _bitmask);
+  // int operator ~() => (~_bitmask);
   int operator *(int value) => ((value << offset) & _bitmask); // apply as compile time const??
-  // int operator () => _bitmask;
-  int call() => _bitmask;
+  int call(int value) => ((value << offset) & _bitmask);
 
   // implemented using Enum
   static int maskOf(int offset, int width) => ((1 << width) - 1) << offset;
@@ -50,10 +49,15 @@ class Bitmask {
   int get hashCode => _bitmask.hashCode ^ offset.hashCode ^ width.hashCode;
 }
 
+const Bitmask kBitmask0 = Bitmask(0, 1);
+
 // Compile time const of codec
 // extend BitmasksBase for const
 abstract class Bitmasks<T extends Enum> {
   const Bitmasks();
+  // const Bitmasks.test() : a = kBitmask0 * 1;
+  // final int a;
+
   const factory Bitmasks.fromMap(Map<T, Bitmask> masks) = _BitmasksMap;
   factory Bitmasks.fromWidth(Map<T, int> widthMap) = _BitmasksMap.fromWidths;
   // factory Bitmasks.fromMembers(List<BitFieldMember> bitFieldMembers) => _BitmasksOnMembers<BitFieldMember>(bitFieldMembers) as Bitmasks<T>;

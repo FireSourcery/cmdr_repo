@@ -33,19 +33,18 @@ class NameIdFormField extends StatelessWidget {
 }
 
 class NameIdTile extends StatelessWidget {
-  const NameIdTile({required this.nameId, this.label, super.key});
+  const NameIdTile({required this.nameId, this.label = "Name Id", super.key});
   final Word nameId;
   final String? label;
 
   @override
   Widget build(BuildContext context) {
-    final label_ = label ?? "Name Id";
     return ListTile(
       contentPadding: EdgeInsets.zero,
       dense: null,
       titleAlignment: ListTileTitleAlignment.bottom,
       title: Text(nameId.asString),
-      subtitle: ((label_ != null) ? Text(label_) : null),
+      subtitle: ((label != null) ? Text(label!) : null),
     );
   }
 }

@@ -41,7 +41,7 @@ abstract mixin class SettingBase<T> implements Setting<T> {
     };
   }
 
-  // not needed if all settings are loaded at once in the case of sharedPreferences, may use interface for network settings
+  // not needed if all settings are loaded at once in the case of sharedPreferences, may keep interface for network settings
   // T? load() {
   //   return switch (T) {
   //     const (bool) || const (int) || const (double) || const (String) || const (List<String>) => SettingsService.main.load<T>(key),

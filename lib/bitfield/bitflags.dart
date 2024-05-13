@@ -29,7 +29,7 @@ abstract interface class BitFlags<T extends Enum> implements GenericBitField<T, 
 
   factory BitFlags.fromFlags(Iterable<bool> flags, [bool mutable = true]) => BitFlags.from(flags.length, bitsOfIterable(flags), mutable);
   factory BitFlags.fromMap(Map<T, bool> map, [bool mutable = true]) => BitFlags.from(map.length, bitsOfMap(map), mutable);
-  factory BitFlags.cast(BitFlags bitFlags, [bool mutable = true]) => BitFlags.from(bitFlags.width, bitFlags.value, mutable);
+  factory BitFlags.cast(BitFlags bitFlags, [bool mutable = true]) => BitFlags.from(bitFlags.width, bitFlags.bits, mutable);
 
   // factory BitFlags.filled(int width, [bool? value]) => _MutableBitFlagsFromLength<T>(0, width);
   // const factory BitFlags.unmodifiable(int bits, int length) = _UnmodifiableBitFlagsFromLength;
@@ -37,7 +37,6 @@ abstract interface class BitFlags<T extends Enum> implements GenericBitField<T, 
   int get width;
   int get bits;
   set bits(int value);
-  int get value;
   bool operator [](T indexed);
   void operator []=(T indexed, bool value);
   void reset([bool value = false]);

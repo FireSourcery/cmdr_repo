@@ -1,19 +1,33 @@
 import 'dart:typed_data';
 
 import 'package:cmdr/byte_struct.dart';
+import 'package:cmdr/byte_struct/byte_struct.dart';
+import 'package:recase/recase.dart';
 
+import '../byte_struct/named_fields.dart';
+import '../byte_struct/typed_field.dart';
 import '../byte_struct/word.dart';
+import '../common/enum_struct.dart';
 
-class Version extends Word {
-  const Version(super.optional, super.major, super.minor, super.fix, [this.name]) : super.value32();
+/// standard [optional, major, minor, fix] version
+class Version extends Word with NamedFields<VersionFieldStandard>, EnumStruct<VersionFieldStandard, int> {
+  const Version(super.optional, super.major, super.minor, super.fix, [this.name]) : super.msb32();
   const Version.value(super.value, [this.name]) : super(); // e.g. a stored value
-  const Version.from(int? value, [this.name]) : super(value ?? 0); // e.g. a network value
+  const Version.from(int? value, [Endian endian = Endian.little, this.name]) : super(value ?? 0); // e.g. a network value
   // Version.cast(super.word, [this.name]) : super.cast();
+  Version updateFrom(int? value, [Endian endian = Endian.little]) => Version.from(value, endian, name);
 
   final String? name;
 
   @override
   int get byteLength => (super.byteLength > 4) ? 8 : 4;
+
+  @override
+  String? get varLabel => name;
+  @override
+  List<VersionFieldStandard<NativeType>> get fields => VersionFieldStandard.values;
+
+  (String, String) get asLabeledPair => (name ?? '', toStringAsVersion());
 
   int get fix => bytesLE[0];
   int get minor => bytesLE[1];
@@ -22,12 +36,11 @@ class Version extends Word {
 
   // new buffer
   // [optional, major, minor, fix][0,0,0,0]
-  // Version.numbers(Uint8List value, [this.name]) : super.byteBuffer(value.buffer, 0, Endian.big);
   Uint8List get version => toBytesAs(Endian.big); // trimmed view on new buffer big endian 8 bytes
   Version updateVersion(Uint8List bytes) => Version.value(bytes.buffer.toInt(0, Endian.big), name);
 
-  // List<int> get numbers => toBytesAs(Endian.big);
-  // Version updateNumbers(List<int> numbers) => Version.value(numbers.toBytes().toInt(Endian.big), name);
+  List<int> get numbers => toBytesAs(Endian.big);
+  Version updateNumbers(List<int> numbers) => (numbers is Uint8List) ? updateVersion(version) : Version.value(numbers.toBytes().toInt(Endian.big), name);
 
   // msb first with dot separator
   String toStringAsVersion([String left = '', String right = '', String separator = '.']) {
@@ -66,10 +79,14 @@ class Version extends Word {
   MapEntry<String, int> toMapEntry() => MapEntry<String, int>(name ?? '', value);
 
   @override
-  bool operator ==(covariant Version other) => other.value == value;
+  bool operator ==(covariant Version other) {
+    if (identical(this, other)) return true;
+
+    return other.name == name && other.value == value;
+  }
 
   @override
-  int get hashCode => value.hashCode;
+  int get hashCode => name.hashCode ^ value.hashCode;
 
   // Version copyWith({
   //   // int? optional,
@@ -84,7 +101,31 @@ class Version extends Word {
   // }
 }
 
-class NameId extends Word {
-  NameId(super.string) : super.string();
-  // Word.chars(Iterable<int> bytes, [Endian endian = Endian.little])
+// /// configurable Version
+// abstract mixin class VersionFields implements Word {
+//   const VersionFields();
+
+//   List<VersionField<NativeType>> get fields;
+
+//   Iterable<int> get numbers => fields.map((e) => e.valueOfInt(value));
+//   Iterable<String> get labels => fields.map((e) => e.label);
+
+//   String toStringAsVersion([String left = '', String right = '', String separator = '.']) {
+//     return (StringBuffer(left)
+//           ..writeAll(numbers, separator)
+//           ..write(right))
+//         .toString();
+//   }
+// }
+
+enum VersionFieldStandard<T extends NativeType> with TypedField<T>, NamedField<T> {
+  fix<Uint8>(0),
+  minor<Uint8>(1),
+  major<Uint8>(2),
+  optional<Uint8>(3),
+  ;
+
+  const VersionFieldStandard(this.offset);
+  @override
+  final int offset;
 }

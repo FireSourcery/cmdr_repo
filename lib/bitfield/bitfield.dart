@@ -43,7 +43,6 @@ abstract interface class BitField<T extends Enum> implements GenericBitField<T, 
   int get width;
   int get bits;
   set bits(int value);
-  int get value;
   int operator [](T indexed);
   void operator []=(T indexed, int value);
   void reset([bool value = false]);
