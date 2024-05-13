@@ -131,8 +131,8 @@ extension IntOfBytes on TypedData {
 }
 
 extension BytesOfIterable on Iterable<int> {
-  static Uint8List bytesOf(Iterable<int> bytes) => Uint8List(8)..setAll(0, bytes.take(8));
-  Uint8List toBytes() => bytesOf(this);
+  static Uint8List bytesOf(Iterable<int> bytes, [int? count]) => Uint8List(8)..setAll(0, bytes.take(8));
+  Uint8List toBytes([int? length]) => bytesOf(this);
 }
 
 extension StringOfBytes on Uint8List {

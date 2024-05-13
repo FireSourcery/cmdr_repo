@@ -1,6 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:recase/recase.dart';
 
+typedef PairEntry<K, V> = (K key, V value);
+
+typedef Stringifier<T> = String Function(T input);
+
+/// PropertyFilter
 typedef WhereTest<T> = bool Function(T input);
 
 // filter with a name

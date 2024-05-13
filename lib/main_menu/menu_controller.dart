@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+// todo refactor LinkedMenuController
 class DoubleMenuController {
   DoubleMenuController(List<MenuEntry> menuListMain, List<MenuEntry> menuListAux)
       : mainMenu = SingleMenuController(menuListMain, createNavigatorKey: true),

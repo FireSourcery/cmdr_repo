@@ -21,7 +21,7 @@ abstract mixin class EnumStruct<T extends EnumField<V>, V> {
   Iterable<String> get labels => fields.map((e) => e.label);
 
   V operator [](T field);
-  // void operator []=(T field, V value);
+  void operator []=(T field, V value);
 
   // StructEntry<T, V> structEntry(T field) => (this[field] != null) ? (field: field, value: this[field]!) : null;
   StructEntry<T, V> structEntry(T field) => (field: field, value: this[field]);
@@ -40,7 +40,10 @@ abstract mixin class EnumStruct<T extends EnumField<V>, V> {
 /// interface for including [Enum]
 abstract mixin class EnumField<V> implements Enum {
   String get label => name.pascalCase;
-  V call(dynamic value);
+  // V call(covariant EnumStruct<dynamic, V> host);
+  // V get(covariant EnumStruct<dynamic, V> host);
+  // void set(covariant EnumStruct<dynamic, V> host, V value);
+  // dynamic get interface;
 }
 
 // class StructMap<T extends EnumField<V>, V> with MapBase<T, V> {

@@ -4,13 +4,13 @@ import 'package:cmdr/byte_struct.dart';
 import 'package:cmdr/byte_struct/byte_struct.dart';
 import 'package:recase/recase.dart';
 
-import '../byte_struct/named_fields.dart';
+import '../byte_struct/word_fields.dart';
 import '../byte_struct/typed_field.dart';
 import '../byte_struct/word.dart';
 import '../common/enum_struct.dart';
 
 /// standard [optional, major, minor, fix] version
-class Version extends Word with NamedFields<VersionFieldStandard>, EnumStruct<VersionFieldStandard, int> {
+class Version extends Word with WordFields<VersionFieldStandard>, EnumStruct<VersionFieldStandard, int> {
   const Version(super.optional, super.major, super.minor, super.fix, [this.name]) : super.msb32();
   const Version.value(super.value, [this.name]) : super(); // e.g. a stored value
   const Version.from(int? value, [Endian endian = Endian.little, this.name]) : super(value ?? 0); // e.g. a network value
@@ -118,7 +118,7 @@ class Version extends Word with NamedFields<VersionFieldStandard>, EnumStruct<Ve
 //   }
 // }
 
-enum VersionFieldStandard<T extends NativeType> with TypedField<T>, NamedField<T> {
+enum VersionFieldStandard<T extends NativeType> with TypedField<T>, WordField<T> {
   fix<Uint8>(0),
   minor<Uint8>(1),
   major<Uint8>(2),

@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:meta/meta.dart';
 
-import '../byte_struct/named_fields.dart';
+import '../byte_struct/word_fields.dart';
 import '../byte_struct/word.dart';
 
 /// Read Only views
@@ -61,8 +61,13 @@ class MapRowTiles<K, V> extends StatelessWidget {
 /// Editable views
 class MapFormFields<K, V> extends StatelessWidget {
   const MapFormFields({super.key, required this.fields, this.isReadOnly = false, this.onSaved, required this.valueParser, this.inputFormatters, this.keyStringifier});
-  MapFormFields.digits({super.key, required this.fields, this.isReadOnly = false, this.onSaved, this.keyStringifier})
-      : valueParser = switch (V) { const (int) => int.tryParse, const (double) => double.tryParse, const (num) => num.tryParse, Type() => throw StateError('') } as V? Function(String),
+  MapFormFields.digits({super.key, required this.fields, this.isReadOnly = false, this.onSaved, this.keyStringifier}) //todo at min max
+      : valueParser = switch (V) {
+          const (int) => int.tryParse,
+          const (double) => double.tryParse,
+          const (num) => num.tryParse,
+          _ => throw UnsupportedError('$V must be num type'),
+        } as V? Function(String),
         inputFormatters = [FilteringTextInputFormatter.digitsOnly];
 
   final Iterable<(K key, V value)> fields;
@@ -98,7 +103,7 @@ class MapFormFields<K, V> extends StatelessWidget {
                       if (valueParser(value) case V value) field.value?[key] = value;
                     }
                   },
-                  onEditingComplete: () => field.didChange(field.value),
+                  // onEditingComplete: () => field.didChange(field.value),
                   // onSubmitted: (String value) => field.value?[index] = int.parse(value),
 
                   //  (String value) {

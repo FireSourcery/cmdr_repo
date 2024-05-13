@@ -4,6 +4,8 @@ import 'dart:typed_data';
 
 import 'package:cmdr/byte_struct.dart';
 
+import 'typed_field.dart';
+
 export 'dart:ffi';
 export 'dart:typed_data';
 
@@ -13,22 +15,28 @@ export 'dart:typed_data';
 
 /// a struct memeber
 /// configuration for get TypedData segment from
-class TypedOffset<T extends NativeType> {
+class TypedOffset<T extends NativeType> extends TypedField<T> {
   const TypedOffset(this.offset);
 
+  @override
   final int offset;
-  int get size => sizeOf<T>();
-  int get end => offset + size; // index of last byte + 1
+  // int get size => sizeOf<T>();
+  // int get end => offset + size; // index of last byte + 1
 
-  // call with offset with T
-  int fieldValue(ByteData byteData) => byteData.wordAt<T>(offset);
-  int? fieldValueOrNull(ByteData byteData) => byteData.wordAtOrNull<T>(offset);
-  void setFieldValue(ByteData byteData, int value) => byteData.setWordAt<T>(offset, value);
+  // // call with offset with T
+  // int fieldValue(ByteData byteData) => byteData.wordAt<T>(offset);
+  // int? fieldValueOrNull(ByteData byteData) => byteData.wordAtOrNull<T>(offset);
+  // void setFieldValue(ByteData byteData, int value) => byteData.setWordAt<T>(offset, value);
 }
 
 /// ByteStruct
 /// Effectively TypedData as an abstract class with user defined fields.
-mixin class ByteStruct<T extends ByteStruct<dynamic>> {
+///  implemented as wrapper since TypedData is final
+///
+abstract mixin class ByteStruct<T extends ByteStruct<dynamic>> {
+  static const TypedOffset<Uint8> start = TypedOffset<Uint8>(0);
+  // List<TypedOffset> get members;
+
   // TypedData.new
   T buffer(int length) => (this..reference = Uint8List(length)) as T;
 
@@ -38,13 +46,13 @@ mixin class ByteStruct<T extends ByteStruct<dynamic>> {
 
   static Uint8List nullPtr = Uint8List(0);
 
+  // alternatively this model holder size and offset with pointer to ByteBuffer
   TypedData reference = nullPtr; // alternatively use late
 
   int get size => reference.lengthInBytes; // view size, virtual size, independent of underlying buffer and offset
-  ByteData asByteData() => reference.asByteData();
 
-  static const TypedOffset<Uint8> start = TypedOffset<Uint8>(0);
-  // List<TypedOffset> get members;
+  // extended to hold Typed conversion functions
+  ByteData asByteData() => reference.asByteData();
 }
 
 // ByteStructFactory
@@ -57,12 +65,14 @@ abstract class ByteStructFactory {
 ////////////////////////////////////////////////////////////////////////////////
 /// Effectively ByteBuffer conversion function, but on view segment accounting for offset
 extension GenericSublistView on TypedData {
+  int get end => offsetInBytes + lengthInBytes; // index of last byte + 1
+
   ByteData asByteData() => ByteData.sublistView(this);
-  List<int> asTypedList<R extends TypedData>() => sublistView<R>();
+  List<int> asTypedList<R extends TypedData>() => sublistViewHost<R>();
 
   // throws range error
   // offset uses "this" instance type, not R type
-  List<int> _sublistView<R extends TypedData>([int typedOffset = 0]) {
+  List<int> sublistView<R extends TypedData>([int typedOffset = 0]) {
     return switch (R) {
       const (Uint8List) => Uint8List.sublistView(this, typedOffset),
       const (Uint16List) => Uint16List.sublistView(this, typedOffset),
@@ -75,19 +85,13 @@ extension GenericSublistView on TypedData {
     };
   }
 
-  List<int> _castList<R extends TypedData>(Endian endian, [int typedOffset = 0]) {
-    return EndianCastList<R>(this, endian);
-  }
+  List<int> sublistViewOrEmpty<R extends TypedData>([int byteOffset = 0]) => (byteOffset < lengthInBytes) ? sublistView<R>(byteOffset) : const <int>[];
 
   static Endian hostEndian = Endian.host; // resolve once storing results
 
-  List<int> sublistView<R extends TypedData>([int typedOffset = 0, Endian endian = Endian.little]) {
-    return ((hostEndian != endian) && (R != Uint8List) && (R != Int8List)) ? _castList<R>(endian, typedOffset) : _sublistView<R>(typedOffset);
+  List<int> sublistViewHost<R extends TypedData>([int typedOffset = 0, Endian endian = Endian.little]) {
+    return ((hostEndian != endian) && (R != Uint8List) && (R != Int8List)) ? EndianCastList<R>(this, endian) : sublistView<R>(typedOffset);
   }
-
-  List<int> sublistViewOrEmpty<R extends TypedData>([int byteOffset = 0]) => (byteOffset < lengthInBytes) ? sublistView<R>(byteOffset) : const <int>[];
-
-  int get end => offsetInBytes + lengthInBytes; // index of last byte + 1
 }
 
 extension ByteBufferData on ByteBuffer {
