@@ -87,7 +87,9 @@ abstract class ConstBitFieldBase<T extends BitFieldMember> extends BitFieldBase<
 }
 
 /// user implement field keys with bitmask parameters
+/// alternatively BitField implements Bitmask bitmaskOf(T key)
 /// alternatively Enum specify only width, derive offset from order
+///
 abstract mixin class BitFieldMember implements Enum, Bitmask {
   Bitmask get bitmask;
   @override

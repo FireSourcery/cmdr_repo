@@ -22,7 +22,7 @@ abstract mixin class TypedField<T extends NativeType> {
   void setFieldValue(ByteData byteData, int value) => byteData.setWordAt<T>(offset, value);
 
   // necessary to keep Word compile time const
-  int valueOfInt(int intData) => intData.valueTypedAt<T>(offset);
+  int valueOfInt(int intData) => intData.wordAt<T>(offset);
 }
 
 /// interface for including [TypedField<T>], [Enum]
