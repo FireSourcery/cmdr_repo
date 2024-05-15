@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:recase/recase.dart';
 
 import 'defined_types.dart';
 
@@ -15,7 +16,7 @@ class PropertyChoiceChips extends StatelessWidget {
       children: [
         for (final category in categories)
           ChoiceChip(
-            label: Text(category.label),
+            label: Text(category.name.pascalCase),
             selected: selectedCategory() == category,
             onSelected: (bool value) => onSelected(value ? category : null),
           ),
@@ -37,7 +38,7 @@ class PropertyFilterChips extends StatelessWidget {
       children: [
         for (final property in properties)
           FilterChip(
-            label: Text(property.label),
+            label: Text(property.name.pascalCase),
             selected: selectedProperties().contains(property),
             onSelected: (bool value) => onSelected(value ? property : null),
           ),

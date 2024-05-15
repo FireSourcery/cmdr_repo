@@ -66,14 +66,12 @@ class MenuSource<T> {
     required Iterable<T> itemKeys,
     required Widget Function(T) itemBuilder,
     ValueSetter<T>? onPressed,
-    // ValueSetter<(T, T)>? onPressedWithCurrent,
-    void Function(BuildContext context, T newValue, T oldValue)? onPressedExt,
+    void Function(BuildContext context, T newValue, T? oldValue)? onPressedExt,
   }) : menuItems = [
           for (final key in itemKeys)
             MenuSourceItem<T>(
               itemKey: key,
               onPressed: onPressed,
-              // onPressedWithCurrent: onPressedWithCurrent,
               onPressedExt: onPressedExt,
               menuItemButton: MenuItemButton(child: itemBuilder(key)),
             ),
@@ -108,7 +106,7 @@ class MenuSourceInstance<T> extends MenuSource<T> {
 // use the same data as MenuItemButton, replacing onPressed with a callback to the notifier
 // build time copy allows menuItemButton to be shared, alternatively use copyWith to create a shallow copy per instance
 class MenuSourceItem<T> extends StatelessWidget {
-  const MenuSourceItem({super.key, required this.menuItemButton, required this.itemKey, this.onPressed, /* this.onPressedWithCurrent, */ this.onPressedExt});
+  const MenuSourceItem({super.key, required this.menuItemButton, required this.itemKey, this.onPressed, this.onPressedExt});
 
   // static List<MenuSourceItem> listFrom<T>({required Iterable<T> itemKeys, required Widget Function(T) itemBuilder, ValueSetter<T>? onPressed});
 
@@ -131,8 +129,7 @@ class MenuSourceItem<T> extends StatelessWidget {
 
   final MenuItemButton menuItemButton;
   final ValueSetter<T>? onPressed;
-  // final ValueSetter<(T newValue, T oldValue)>? onPressedWithCurrent;
-  final void Function(BuildContext context, T newValue, T oldValue)? onPressedExt;
+  final void Function(BuildContext context, T newValue, T? oldValue)? onPressedExt;
   final T itemKey;
 
   @override
@@ -141,7 +138,7 @@ class MenuSourceItem<T> extends StatelessWidget {
     return MenuItemButton(
       onPressed: () {
         onPressed?.call(itemKey);
-        // onPressedWithCurrent?.call((itemKey, notifier.value!));
+        onPressedExt?.call(context, itemKey, notifier.value);
         notifier.value = itemKey;
       },
       child: menuItemButton.child,
@@ -151,7 +148,6 @@ class MenuSourceItem<T> extends StatelessWidget {
 
 // Although MenuSource generally controls only 1 MenuListenableWidget, maps 1:1, InheritedNotifier simplifies implementation.
 class MenuSourceContext<T> extends InheritedNotifier<ValueNotifier<T?>> {
-  // MenuSourceNotifier({super.key, ValueNotifier<T?>? notifier, required super.child}) : super(notifier: notifier ?? ValueNotifier(null));
   const MenuSourceContext._({super.key, required ValueNotifier<T?> super.notifier, required super.child});
   MenuSourceContext({super.key, required MenuSourceInstance<T?> source, required super.child}) : super(notifier: source.notifier);
 

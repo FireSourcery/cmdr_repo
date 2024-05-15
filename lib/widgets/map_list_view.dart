@@ -9,9 +9,9 @@ import '../byte_struct/word.dart';
 
 /// Read Only views
 class MapRowTiles<K, V> extends StatelessWidget {
-  const MapRowTiles({required this.fields, this.label, super.key});
+  const MapRowTiles({required this.fields, this.title, super.key});
   final Iterable<(K key, V value)> fields;
-  final String? label;
+  final String? title;
   // Widget Function(K)? keyBuilder;
   // Widget Function(V)? valueBuilder;
 
@@ -22,7 +22,7 @@ class MapRowTiles<K, V> extends StatelessWidget {
       // title: (label != null) ? Text(label!) : null,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (label != null) Text(label!, style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.left),
+        if (title != null) Text(title!, style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.left),
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -70,7 +70,7 @@ class MapFormFields<K, V> extends StatelessWidget {
         } as V? Function(String),
         inputFormatters = [FilteringTextInputFormatter.digitsOnly];
 
-  final Iterable<(K key, V value)> fields;
+  final Iterable<(K key, V value)> fields; // todo as EnumMap
   final bool isReadOnly;
   final ValueSetter<Map<K, V>>? onSaved;
 

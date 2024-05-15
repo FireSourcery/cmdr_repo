@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:recase/recase.dart';
 
-typedef PairEntry<K, V> = (K key, V value);
+typedef KeyValuePair<K, V> = (K key, V value);
+typedef KeyValueEntry<K, V> = ({K key, V value});
 
 typedef Stringifier<T> = String Function(T input);
 
@@ -16,6 +17,6 @@ abstract mixin class PropertyFilter<T> implements Enum {
 
   Iterable<T> call(Iterable<T> input) => input.where(test);
 
-  String get label => name.pascalCase;
   IterableFilter<T> get asIterableFilter => call;
+  // String get label => name.pascalCase;
 }

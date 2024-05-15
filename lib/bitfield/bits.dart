@@ -1,3 +1,9 @@
+import 'dart:collection';
+
+import 'package:cmdr/common/enum_map.dart';
+
+import 'bitmask.dart';
+
 const int kMaxUnsignedSMI = 0x3FFFFFFFFFFFFFFF;
 const int _smiBits = 62;
 const int _allZeros = 0;
@@ -8,106 +14,142 @@ typedef RecordEntry<K, V> = ({K key, V value});
 ////////////////////////////////////////////////////////////////////////////////
 /// BitsBaseInterface
 ////////////////////////////////////////////////////////////////////////////////
+
 /// V is bool for Flags, int for Field
-abstract interface class GenericBitField<T, V> {
+abstract interface class GenericBitField<T, V> implements MapBase<T, V> {
   const GenericBitField();
 
   int get width;
 
-  int get bits;
-  set bits(int value);
+  int get value;
+  set value(int newValue);
 
-  V operator [](T indexed);
-  void operator []=(T indexed, V value);
+  int bitsAt(int index, int width);
+  int setBitsAt(int index, int width, int value);
   void reset([bool value = false]);
 
-  Iterable<T> get memberKeys; // using Enum.values
-  Iterable<V> get memberValues;
-  // RecordEntry<T,V> entry(T indexed);
-  // Iterable<RecordEntry<T,V>> get entries;
-  (T, V) entry(T indexed);
-  Iterable<(T, V)> get entries;
+  List<T> get keys; // using Enum.values
+  V operator [](covariant T key);
+  void operator []=(T key, V value);
+  V? remove(covariant T key);
+  void clear();
+
+  Iterable<(T, V)> get pairs;
+  // Iterable<(String, V)> get namedValues;
 }
 
-abstract class GenericBitFieldBase<T, V> = GenericBitField<T, V> with BitsBaseMixin<T, V>, BitsNamesMixin<T, V>;
-abstract class UnmodifiableGenericBitFieldBase<T, V> = GenericBitFieldBase<T, V> with UnmodifiableBitsMixin<T, V>;
+////////////////////////////////////////////////////////////////////////////////
+/// Component Mixins
+////////////////////////////////////////////////////////////////////////////////
+// typedef BitsMap<T extends Enum, V> = EnumMap<T, V>;
+
+abstract mixin class BitsMap<T, V> implements MapBase<T, V>, GenericBitField<T, V> {
+  const BitsMap();
+
+  @override
+  List<T> get keys;
+  @override
+  V operator [](covariant T key);
+  @override
+  void operator []=(T key, V value);
+
+  @override
+  void clear() => value = 0;
+  @override
+  V? remove(covariant T key) => throw UnsupportedError('EnumMap does not support remove operation');
+  // @override
+  // Iterable<(String, V)> get namedValues => keys.map((e) => (e.name, this[e]));
+  @override
+  Iterable<(T, V)> get pairs => keys.map((e) => (e, this[e]));
+}
 
 abstract mixin class BitsBaseMixin<T, V> implements GenericBitField<T, V> {
   const BitsBaseMixin();
 
+  int get value;
   @override
-  set bits(int value) => bits = value;
+  set value(int newValue) => value = newValue;
   @override
-  void reset([bool value = false]) => bits = value ? _allOnes : _allZeros;
+  int bitsAt(int index, int width) => Bitmask(index, width).read(value);
   @override
-  int get value => bits;
+  int setBitsAt(int index, int width, int newValue) => Bitmask(index, width).modify(value, newValue);
+  @override
+  void reset([bool fill = false]) => value = fill ? _allOnes : _allZeros;
+
+  @override
+  String toString() => '$runtimeType: $values';
 
   @override
   bool operator ==(covariant GenericBitField<T, V> other) {
     if (identical(this, other)) return true;
-    return other.bits == bits;
+    return other.value == value;
   }
 
   @override
-  int get hashCode => bits.hashCode;
-}
-
-mixin BitsNamesMixin<T, V> implements GenericBitField<T, V> {
-  // @override
-  // List<T> get memberKeys; // using Enum.values
-  @override
-  Iterable<V> get memberValues => memberKeys.map((e) => this[e]);
-  @override
-  (T, V) entry(T member) => (member, this[member]);
-  @override
-  Iterable<(T, V)> get entries => memberKeys.map((e) => entry(e));
+  int get hashCode => value.hashCode;
 }
 
 mixin UnmodifiableBitsMixin<T, V> implements GenericBitField<T, V> {
   @override
-  set bits(int value) => throw UnsupportedError("Cannot modify unmodifiable");
+  set value(int value) => throw UnsupportedError("Cannot modify unmodifiable");
   @override
   void operator []=(T indexed, V value) => throw UnsupportedError("Cannot modify unmodifiable");
   @override
   void reset([bool value = false]) => throw UnsupportedError("Cannot modify unmodifiable");
-
-  //for const, use code gen
-  // List<V Function(T)> get getters;
 }
 
-// extension type ConstBitField<T, V>(Map<T, V> constValues) implements GenericBitField<T, V> {
-//   int get width;
-
-//   int get bits;
-//   set bits(int value) => BitFlags.bitsOfMap(constValues);
-
-//   int get value;
-
-//   V operator [](T indexed) => constValues[indexed]!;
-//   void operator []=(T indexed, V value);
-//   void reset([bool value = false]);
-
-//   List<T> get memberKeys => constValues.keys.toList();
-//   Iterable<V> get memberValues => constValues.values;
-//   (T, V) entry(T indexed);
-//   Iterable<(T, V)> get entries;
+//replace with map
+// mixin BitsNamesMixin<T, V> implements GenericBitField<T, V> {
+//   // @override
+//   // List<T> get memberKeys; // using Enum.values
+//   @override
+//   Iterable<V> get values => keys.map((e) => this[e]);
+//   @override
+//   (T, V) entry(T member) => (member, this[member]);
+//   @override
+//   Iterable<(T, V)> get pairs => keys.map((e) => entry(e));
 // }
 
-// const via map
-// abstract class ConstBitsBaseOnMap<T, V> extends BitsBaseMixin<T, V> with BitsNamesMixin<T, V>, UnmodifiableBitsMixin<T, V> implements GenericBitField<T, V> {
-//   const ConstBitsBaseOnMap(this.constValues);
+  
 
-//   final Map<T, V> constValues;
+// class _ConstBitFieldFromMap<T , V> with BitFieldMixin<T>, BitsBaseMixin<T, V> implements GenericBitField<T, V> {
+//   const _ConstBitFieldFromMap(this.map);
 
-//   @override
-//   List<T> get memberKeys;
+//   final Map<T, V> map;
 
 //   @override
-//   int get bits;
+//   V? operator [](T indexed) => map[indexed];
 
 //   @override
-//   int get width;
+//   void operator []=(T indexed, V value) => throw UnsupportedError("Cannot modify unmodifiable");
 
 //   @override
-//   V operator [](T indexed) => constValues[indexed]!;
+//   Iterable<T> get memberKeys => throw UnimplementedError();
+
+//   @override
+//   int get width => throw UnimplementedError();
+
+//   @override
+//   int get bits => throw UnimplementedError();
+// }
+
+
+// abstract class ConstBitField<T, V> with BitsBaseMixin<T, V>, BitsBaseMixin<T, V>, BitsNamesMixin<T, V> implements GenericBitField<T, V> {
+//   const ConstBitField(this.bits);
+//   // const ConstBitField.fromMasks(masks);
+//   // const ConstBitField.fromMap(map);
+//   @override
+//   final int bits;
+
+//   @override
+//   V operator [](T indexed);
+
+//   @override
+//   void operator []=(T indexed, V value);
+
+//   @override 
+//   Iterable<T> get memberKeys => throw UnimplementedError();
+
+//   @override 
+//   int get width => throw UnimplementedError();
 // }

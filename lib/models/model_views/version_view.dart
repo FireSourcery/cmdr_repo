@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../byte_struct/word.dart';
+import '../../widgets/map_list_view.dart';
 import '../version.dart';
 
 /// Read Only views
@@ -25,19 +26,18 @@ import '../version.dart';
 //   }
 // }
 
-// class VersionRowTiles extends StatelessWidget {
-//   const VersionRowTiles({required this.versions, this.label = 'Version', super.key});
-//   final List<Version> versions;
-//   final String? label;
+class VersionRowTiles extends StatelessWidget {
+  const VersionRowTiles({required this.versions, this.title = 'Version', super.key});
+  final List<Version> versions;
+  final String? title;
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return MapListView(
-//       map: {for (final version in versions) version: (version: version, label: label)},
-//     );
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    return MapRowTiles(fields: [for (final version in versions) version.asLabelPair]);
+  }
+}
 
+/// todo as Map
 /// Editable views
 class VersionFormFieldChars extends StatelessWidget {
   const VersionFormFieldChars({required this.version, this.label, super.key, this.isReadOnly = false, this.onSaved, this.isCharCode = false});

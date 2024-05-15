@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:typed_data';
 
 import 'package:cmdr/byte_struct.dart';
@@ -7,27 +8,27 @@ import 'package:recase/recase.dart';
 import '../byte_struct/word_fields.dart';
 import '../byte_struct/typed_field.dart';
 import '../byte_struct/word.dart';
-import '../common/enum_struct.dart';
+import '../common/enum_map.dart';
 
 /// standard [optional, major, minor, fix] version
-class Version extends Word with WordFields<VersionFieldStandard>, EnumStruct<VersionFieldStandard, int> {
+// class Version<T extends VersionField> extends WordFields<VersionField> {
+class Version extends WordFields<VersionFieldStandard> {
   const Version(super.optional, super.major, super.minor, super.fix, [this.name]) : super.msb32();
   const Version.value(super.value, [this.name]) : super(); // e.g. a stored value
   const Version.from(int? value, [Endian endian = Endian.little, this.name]) : super(value ?? 0); // e.g. a network value
   // Version.cast(super.word, [this.name]) : super.cast();
   Version updateFrom(int? value, [Endian endian = Endian.little]) => Version.from(value, endian, name);
 
+  @override
   final String? name;
 
   @override
   int get byteLength => (super.byteLength > 4) ? 8 : 4;
 
   @override
-  String? get varLabel => name;
-  @override
-  List<VersionFieldStandard<NativeType>> get fields => VersionFieldStandard.values;
+  List<VersionFieldStandard<NativeType>> get keys => VersionFieldStandard.values;
 
-  (String, String) get asLabeledPair => (name ?? '', toStringAsVersion());
+  (String, String) get asLabelPair => (name ?? '', toStringAsVersion());
 
   int get fix => bytesLE[0];
   int get minor => bytesLE[1];
@@ -101,24 +102,7 @@ class Version extends Word with WordFields<VersionFieldStandard>, EnumStruct<Ver
   // }
 }
 
-// /// configurable Version
-// abstract mixin class VersionFields implements Word {
-//   const VersionFields();
-
-//   List<VersionField<NativeType>> get fields;
-
-//   Iterable<int> get numbers => fields.map((e) => e.valueOfInt(value));
-//   Iterable<String> get labels => fields.map((e) => e.label);
-
-//   String toStringAsVersion([String left = '', String right = '', String separator = '.']) {
-//     return (StringBuffer(left)
-//           ..writeAll(numbers, separator)
-//           ..write(right))
-//         .toString();
-//   }
-// }
-
-enum VersionFieldStandard<T extends NativeType> with TypedField<T>, WordField<T> {
+enum VersionFieldStandard<T extends NativeType> with TypedField<T> implements WordField<T> {
   fix<Uint8>(0),
   minor<Uint8>(1),
   major<Uint8>(2),

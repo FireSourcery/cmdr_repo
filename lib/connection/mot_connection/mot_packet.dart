@@ -3,6 +3,23 @@
 import '../base/packet.dart';
 import '../base/packet_handlers.dart';
 
+// base mixin PacketTest on Struct {
+//   int get startField;
+// }
+
+// base class MotPacketTest extends Struct with PacketTest {
+//   @Uint8()
+//   external int x;
+
+//   int get startField => 0;
+
+//   factory MotPacketTest.fromTypedData(TypedData typedData) {
+//     return Struct.create<MotPacketTest>(typedData);
+//   }
+// }
+
+// MotPacketTest a = MotPacketTest.fromTypedData(Uint8List(16));
+
 class MotPacket extends Packet {
   MotPacket();
 
@@ -14,6 +31,20 @@ class MotPacket extends Packet {
   int get configHeaderLength => 8;
   @override
   Endian get configEndian => Endian.little;
+
+  // @Uint8()
+  // external int _startField;
+  // @Uint8()
+  // external int _idField;
+  // @Uint16()
+  // external int _checksumField;
+  // @Uint8()
+  // external int _lengthField;
+
+  // int get startField => _startField;
+  // int get idField => _idField;
+  // int get checksumField => _checksumField;
+  // int get lengthField => _lengthField;
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Header

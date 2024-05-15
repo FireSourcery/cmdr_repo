@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:recase/recase.dart';
 
-import '../common/enum_struct.dart';
+import '../common/enum_map.dart';
 import 'byte_struct.dart';
 import 'word.dart';
 
@@ -17,19 +17,15 @@ abstract mixin class TypedField<T extends NativeType> {
   int get size => sizeOf<T>();
   int get end => offset + size; // index of last byte + 1
 
-  // int call(ByteData byteData) => byteData.wordAt<T>(offset);
-  // int? callOrNull(ByteData byteData) => byteData.wordAtOrNull<T>(offset);
-
   // call with offset with T
+  // replace with struct
   int fieldValue(ByteData byteData) => byteData.wordAt<T>(offset);
   int? fieldValueOrNull(ByteData byteData) => byteData.wordAtOrNull<T>(offset);
   void setFieldValue(ByteData byteData, int value) => byteData.setWordAt<T>(offset, value);
 
+  // necessary to keep Word compile time const
   int valueOfInt(int intData) => intData.valueTypedAt<T>(offset);
 }
 
 /// interface for including [TypedField<T>], [Enum]
-abstract mixin class NamedField<T extends NativeType> implements TypedField<T>, EnumField<int> {
-  @override
-  String get label => name.pascalCase;
-}
+abstract interface class NamedField<T extends NativeType> implements TypedField<T>, Enum {}

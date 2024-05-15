@@ -18,13 +18,13 @@ class FlagIcons<T extends Enum> {
   // String nameOf(T key) => textMap?[key] ?? key.name;
 
   Iterable<Widget> toTiles() {
-    return bitFlags.entries.map<Widget>((e) {
+    return bitFlags.pairs.map<Widget>((e) {
       return ListTile(leading: iconOf(e), title: textOf(e), dense: true);
     });
   }
 
   Iterable<Widget> toIconButtons() {
-    return bitFlags.entries.map<Widget>((e) {
+    return bitFlags.pairs.map<Widget>((e) {
       return Tooltip(message: nameOf(e), child: IconButton(icon: iconOf(e), onPressed: null));
     });
   }

@@ -14,8 +14,8 @@ void main() {
     print(string.codeUnits);
     print(string.runes);
     print(Word.string(string).asString);
-    print(Word.bytes(list));
-    print(Word.bytes(string.runes));
+    // print(Word.bytes(list));
+    // print(Word.bytes(string.runes));
     print(Word.msb32(68, 67, 66, 65));
   });
 }

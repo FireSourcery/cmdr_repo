@@ -9,13 +9,10 @@ import 'packet_handlers.dart';
 
 export '../../byte_struct/byte_struct.dart';
 
-typedef PacketConstructor<P extends Packet> = P Function();
-
 /// collective def of Packet format specs
-/// Builder Base and prototype, fields view over bytes list
 /// use abstract class over on generic, there should not be indefinite number of types
-// abstract class Packet extends ByteStruct {
-abstract class Packet {
+/// replace with extend struct once get typedData ref is available
+abstract mixin class Packet {
   Packet();
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -33,7 +30,7 @@ abstract class Packet {
   @protected
   Endian get configEndian;
 
-  //config get ack nack abort
+  // config get ack nack abort
 
   /// defined position, relative to `packet`.
   /// header fields for buildHeader/parseHeader
@@ -280,6 +277,7 @@ abstract class Packet {
     final M reqMeta = handler.castPayload<T>(this).buildPayload(args);
     length = handler.length; // length stored in cast packet
     return reqMeta;
+    // Struct.create<T>(this._packet).buildPayload(args);
   }
 
   R parsePayloadAs<R, M>(PayloadHandler<R> handler, [M? reqMeta]) {
@@ -299,6 +297,8 @@ abstract class Packet {
 // T? parseRequestPayload(Packet packet) => requestPayload?.call().castPayload(packet).parsePayload();
 // dynamic buildResponsePayload(Packet packet, R args) => responsePayload?.call().castPayload(packet).buildPayload(args);
 }
+
+typedef PacketConstructor<P extends Packet> = P Function();
 
 // Abstract factory pattern
 // hold static constructors
@@ -371,6 +371,7 @@ enum PacketSyncIdInternal implements PacketSyncId {
 /// T as requestPayload
 /// R as responsePayload
 /// 1 or both if id shared by request and response
+// abstract interface class PacketTypeId<T extends Struct, R extends Struct> implements PacketId {
 abstract interface class PacketTypeId<T, R> implements PacketId {
   const PacketTypeId();
 
