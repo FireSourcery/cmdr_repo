@@ -1,5 +1,4 @@
 // ignore_for_file: annotate_overrides
-
 import 'dart:collection';
 
 import 'package:collection/collection.dart';
@@ -14,15 +13,23 @@ export 'bitmask.dart';
 /// operations on singular flag bits, using Enum Id
 /// or BoolField
 ////////////////////////////////////////////////////////////////////////////////
-abstract interface class BitFlags<T extends Enum> implements GenericBitField<T, bool>, foundation.BitField<T> {
-  factory BitFlags.from(int width, [int bits = 0, bool mutable = true]) {
+abstract interface class BitFlags<T extends Enum> implements GenericBitField<T, bool>, foundation.BitField<T>, Map<T, bool> {
+  factory BitFlags([int bits = 0, bool mutable = true]) {
     return switch (mutable) {
-      true => _MutableBitFlagsFromWidth<T>(width, bits),
-      false => _UnmodifiableBitFlagsFromWidth<T>(width, bits),
+      true => _MutableBitFlagsFromValues<T>(32, bits),
+      false => _ConstBitFlagsFromValues<T>(32, bits),
     };
   }
 
-  const factory BitFlags.constant(int width, int bits) = _UnmodifiableBitFlagsFromWidth;
+  factory BitFlags.from(int width, [int bits = 0, bool mutable = true]) {
+    return switch (mutable) {
+      true => _MutableBitFlagsFromValues<T>(width, bits),
+      false => _ConstBitFlagsFromValues<T>(width, bits),
+    };
+  }
+
+  const factory BitFlags.constant(int width, int bits) = _ConstBitFlagsFromValues;
+  const factory BitFlags.constantMap(Map<T, bool> values) = ConstBitFlagsMap;
 
   factory BitFlags.fromFlags(Iterable<bool> flags, [bool mutable = true]) => BitFlags.from(flags.length, bitsOfIterable(flags), mutable);
   factory BitFlags.fromMap(Map<T, bool> map, [bool mutable = true]) => BitFlags.from(map.length, bitsOfMap(map), mutable);
@@ -31,8 +38,8 @@ abstract interface class BitFlags<T extends Enum> implements GenericBitField<T, 
   int get width;
   int get value;
   set value(int value);
-  bool flagAt(int index);
-  void setFlagAt(int index, bool value);
+  bool bitAt(int index);
+  void setBitAt(int index, bool value);
 
   List<T> get keys;
   bool operator [](T key);
@@ -58,30 +65,42 @@ abstract interface class BitFlags<T extends Enum> implements GenericBitField<T, 
 ////////////////////////////////////////////////////////////////////////////////
 /// extendable with context of Enum.values base
 ////////////////////////////////////////////////////////////////////////////////
-abstract class BitFlagsBase<T extends Enum> extends _BitFlagsBase<T> implements BitFlags<T> {
-  BitFlagsBase(this.value);
-  int value;
-  List<T> get keys;
-}
-
-abstract class ConstBitFlagsBase<T extends Enum> extends _BitFlagsBase<T> with UnmodifiableBitsMixin<T, bool> implements BitFlags<T> {
-  const ConstBitFlagsBase(this.value);
-  final int value;
-  List<T> get keys;
-}
-
-abstract class _BitFlagsBase<T extends Enum> with MapBase<T, bool>, BitFlagsMixin<T>, BitsBaseMixin<T, bool>, BitsMap<T, bool> implements BitFlags<T> {
-  const _BitFlagsBase();
-  @override
+abstract class BitFlagsBase<T extends Enum> extends GenericBitFieldBase<T, bool> with BitFlagsMixin<T> implements BitFlags<T> {
+  const BitFlagsBase();
   List<T> get keys;
   @override
   int get width => keys.length;
+}
+
+abstract class MutableBitFlagsBase<T extends Enum> extends BitFlagsBase<T> implements BitFlags<T> {
+  MutableBitFlagsBase(this.value);
+  int value;
+
+  List<T> get keys;
+}
+
+abstract class ConstBitFlagsBase<T extends Enum> extends BitFlagsBase<T> with UnmodifiableBitsMixin<T, bool> implements BitFlags<T> {
+  const ConstBitFlagsBase(this.value);
+  final int value;
+
+  List<T> get keys;
+}
+
+class ConstBitFlagsMap<T extends Enum> extends GenericBitFieldMapBase<T, bool> with BitFlagsMixin<T> implements BitFlags<T> {
+  const ConstBitFlagsMap(super.valueMap);
+  @override
+  int get width => valueMap.length;
+  @override
+  int get value => BitFlags.bitsOfIterable(valueMap.values); // todo as ext
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// BitFlags Implementation
 ////////////////////////////////////////////////////////////////////////////////
 abstract mixin class BitFlagsMixin<T extends Enum> implements BitFlags<T> {
+  // @override
+  // int get width => keys.length; // override in from values case
+
   @override
   bool operator [](T key) {
     assert(key.index < width);
@@ -95,19 +114,14 @@ abstract mixin class BitFlagsMixin<T extends Enum> implements BitFlags<T> {
   }
 
   @override
-  bool flagAt(int index) => Bitmask.flagOf(value, index);
-  @override
-  void setFlagAt(int index, bool newValue) => Bitmask.modifyBit(value, index, newValue);
-
-  @override
   Iterable<int> get valuesAsBits => values.map((e) => e ? 1 : 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Interface constructors implementation
 ////////////////////////////////////////////////////////////////////////////////
-abstract class _BitFlagFromWidth<T extends Enum> with MapBase<T, bool>, BitsMap<T, bool>, BitsBaseMixin<T, bool>, BitFlagsMixin<T> implements BitFlags<T> {
-  const _BitFlagFromWidth(this.width);
+abstract class _BitFlagFromValues<T extends Enum> extends BitFlagsBase<T> implements BitFlags<T> {
+  const _BitFlagFromValues(this.width);
   @override
   final int width;
 
@@ -115,35 +129,14 @@ abstract class _BitFlagFromWidth<T extends Enum> with MapBase<T, bool>, BitsMap<
   List<T> get keys => throw UnsupportedError("Extend BitFlagsBase");
 }
 
-class _MutableBitFlagsFromWidth<T extends Enum> extends _BitFlagFromWidth<T> implements BitFlags<T> {
-  _MutableBitFlagsFromWidth(super.width, [this.value = 0]);
+class _MutableBitFlagsFromValues<T extends Enum> extends _BitFlagFromValues<T> implements BitFlags<T> {
+  _MutableBitFlagsFromValues(super.width, [this.value = 0]);
   @override
   int value;
 }
 
-class _UnmodifiableBitFlagsFromWidth<T extends Enum> extends _BitFlagFromWidth<T> with UnmodifiableBitsMixin<T, bool> implements BitFlags<T> {
-  const _UnmodifiableBitFlagsFromWidth(super.width, this.value);
+class _ConstBitFlagsFromValues<T extends Enum> extends _BitFlagFromValues<T> with UnmodifiableBitsMixin<T, bool> implements BitFlags<T> {
+  const _ConstBitFlagsFromValues(super.width, this.value);
   @override
   final int value;
 }
-
-// ////////////////////////////////////////////////////////////////////////////////
-// /// passing enum list
-// ////////////////////////////////////////////////////////////////////////////////
-// abstract class _BitFlagsWithEnums<T extends Enum> extends _BitFlagsBase<T> implements BitFlags<T> {
-//   const _BitFlagsWithEnums(this.keys);
-//   @override
-//   final List<T> keys;
-// }
-
-// class _MutableBitFlagsWithEnums<T extends Enum> extends _BitFlagsWithEnums<T> implements BitFlags<T> {
-//   _MutableBitFlagsWithEnums(super.keys, this.value);
-//   @override
-//   int value;
-// }
-
-// class _UnmodifiableBitFlagsWithEnums<T extends Enum> extends _BitFlagsWithEnums<T> with UnmodifiableBitsMixin<T, bool> implements BitFlags<T> {
-//   const _UnmodifiableBitFlagsWithEnums(super.keys, this.value);
-//   @override
-//   final int value;
-// }

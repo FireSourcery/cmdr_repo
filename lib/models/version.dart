@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:cmdr/byte_struct.dart';
 import 'package:cmdr/byte_struct/byte_struct.dart';
+import 'package:cmdr/byte_struct/typed_data_ext.dart';
 import 'package:recase/recase.dart';
 
 import '../byte_struct/word_fields.dart';
@@ -38,7 +39,7 @@ class Version extends WordFields<VersionFieldStandard> {
   // new buffer
   // [optional, major, minor, fix][0,0,0,0]
   Uint8List get version => toBytesAs(Endian.big); // trimmed view on new buffer big endian 8 bytes
-  Version updateVersion(Uint8List bytes) => Version.value(bytes.buffer.toInt(0, Endian.big), name);
+  Version updateVersion(Uint8List bytes) => Version.value(bytes.toInt(Endian.big), name);
 
   List<int> get numbers => toBytesAs(Endian.big);
   Version updateNumbers(List<int> numbers) => (numbers is Uint8List) ? updateVersion(version) : Version.value(numbers.toBytes().toInt(Endian.big), name);

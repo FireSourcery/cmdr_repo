@@ -5,6 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 import '../../byte_struct/byte_struct.dart';
+import '../../byte_struct/typed_data_ext.dart';
 import 'packet_handlers.dart';
 
 export '../../byte_struct/byte_struct.dart';

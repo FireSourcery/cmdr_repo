@@ -18,5 +18,4 @@ abstract mixin class PropertyFilter<T> implements Enum {
   Iterable<T> call(Iterable<T> input) => input.where(test);
 
   IterableFilter<T> get asIterableFilter => call;
-  // String get label => name.pascalCase;
 }

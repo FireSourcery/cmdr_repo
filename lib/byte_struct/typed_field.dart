@@ -1,10 +1,8 @@
 import 'dart:ffi';
 import 'dart:typed_data';
 
-import 'package:recase/recase.dart';
-
-import '../common/enum_map.dart';
 import 'byte_struct.dart';
+import 'typed_data_ext.dart';
 import 'word.dart';
 
 export 'dart:ffi';

@@ -8,20 +8,25 @@ import 'bitmask.dart';
 export 'bitmask.dart';
 
 /// operations on a range of bits
-abstract interface class BitField<T extends Bitmask> implements GenericBitField<T, int>, MapBase<T, int> {
-  const BitField();
-
-  factory BitField.from(int width, [int bits = 0, bool mutable = true]) {
+abstract interface class BitField<T extends Bitmask> implements GenericBitField<T, int>, Map<T, int> {
+  factory BitField([int bits = 0, bool mutable = true]) {
     return switch (mutable) {
-      true => _MutableBitFieldFromWidth(width, bits),
-      false => _UnmodifiableBitFieldFromWidth(width, bits),
+      true => _MutableBitFieldFromValues(32, bits),
+      false => _ConstBitFieldFromValues(32, bits),
     };
   }
 
-  const factory BitField.constant(int width, int bits) = _UnmodifiableBitFieldFromWidth;
-  // const factory BitField.constantFromMap(int width, int bits) = _UnmodifiableBitFieldFromWidth;
+  factory BitField.from(int width, [int bits = 0, bool mutable = true]) {
+    return switch (mutable) {
+      true => _MutableBitFieldFromValues(width, bits),
+      false => _ConstBitFieldFromValues(width, bits),
+    };
+  }
 
-  /// BitField example = BitField({
+  const factory BitField.constant(int width, int bits) = _ConstBitFieldFromValues;
+  const factory BitField.constantMap(Map<T, int> values) = ConstBitFieldMap;
+
+  /// BitField example = BitField.ofMap({
   ///   EnumType.name1: 2,
   ///   EnumType.name2: 3,
   /// });
@@ -33,20 +38,19 @@ abstract interface class BitField<T extends Bitmask> implements GenericBitField<
     return BitField.from(widthOf(values), valueOf(values), mutable);
   }
 
-  factory BitField.fromIterables(Iterable<int> width, Iterable<int> values, [bool mutable = true]) {
-    return BitField.from(width.sum, valueOfIterables(width, values), mutable);
+  factory BitField.fromIterables(Iterable<int> widths, Iterable<int> values, [bool mutable = true]) {
+    return BitField.from(widths.sum, Bitmasks.fromWidths(widths).apply(values), mutable);
   }
 
-  static int widthOf(Map<Bitmask, int> valueMap) => valueMap.keys.map((e) => e.width).sum;
-  static int valueOf(Map<Bitmask, int> valueMap) => valueMap.keys.fold<int>(0, (previous, mask) => mask.modify(previous, valueMap[mask]!));
-  static int valueOfIterables(Iterable<int> widths, Iterable<int> values) => Bitmasks.fromWidths(widths).valueOfIterable(values);
+  static int widthOf(Map<Bitmask, int> valueMap) => valueMap.keys.totalWidth;
+  static int valueOf(Map<Bitmask, int> valueMap) => valueMap.keys.apply(valueMap.values);
 
   int get width;
   int get value;
   set value(int value);
 
   int bitsAt(int index, int width);
-  int setBitsAt(int index, int width, int value);
+  void setBitsAt(int index, int width, int value);
   void reset([bool value = false]);
 
   List<T> get keys; // using Enum.values
@@ -62,50 +66,54 @@ abstract interface class BitField<T extends Bitmask> implements GenericBitField<
 /// extendable, with Enum.values
 ///  imposes an additional constraint on the type parameter
 ////////////////////////////////////////////////////////////////////////////////
-//   int get value;
-//   set value(int value);
-//   List<T> get keys; // using Enum.values
-//   int get width;
-abstract class BitFieldBase<T extends BitFieldMember> = Object with MapBase<T, int>, BitFieldMixin<T>, BitsBaseMixin<T, int>, BitsMap<T, int> implements BitField<T>;
-abstract class ConstBitFieldBase<T extends BitFieldMember> = BitFieldBase<T> with UnmodifiableBitsMixin<T, int> implements BitField<T>;
+abstract class BitFieldBase<T extends BitFieldMember> = GenericBitFieldBase<T, int> with BitFieldMixin<T> implements BitField<T>;
 
-// abstract class ConstBitFieldBase<T extends BitFieldMember> extends BitFieldBase<T> with UnmodifiableBitsMixin<T, int> implements BitField<T> {
-//   const ConstBitFieldBase(this.bits);
-//   @override
-//   final int bits;
+abstract class MutableBitFieldBase<T extends BitFieldMember> extends BitFieldBase<T> implements BitField<T> {
+  MutableBitFieldBase(this.value);
+  @override
+  int value;
 
-//   List<T> get memberKeys; // using Enum.values
-//   int get width;
-// }
+  List<T> get keys; // using Enum.values
+  int get width;
+}
 
-// abstract class BitFieldBase<T extends BitFieldMember> with MapBase<T, int>, BitFieldMixin<T>, BitsBaseMixin<T, int>, BitsMap<T, int> implements BitField<T> {
-//   const BitFieldBase();
+abstract class ConstBitFieldBase<T extends BitFieldMember> extends BitFieldBase<T> with UnmodifiableBitsMixin<T, int> implements BitField<T> {
+  const ConstBitFieldBase(this.value);
+  @override
+  final int value;
 
-//   int get value;
-//   set value(int value);
-//   List<T> get keys; // using Enum.values
-//   int get width;
-// }
+  List<T> get keys; // using Enum.values
+  int get width;
+}
 
-///
+/// user implement field keys with bitmask parameters
+/// alternatively Enum specify only width, derive offset from order
 abstract mixin class BitFieldMember implements Enum, Bitmask {
   Bitmask get bitmask;
-  @override
-  int operator *(int value) => bitmask(value);
-  @override
-  int get bits => bitmask.bits;
-  @override
-  int call(int value) => bitmask(value);
   @override
   int get offset => bitmask.offset;
   @override
   int get width => bitmask.width;
+  @override
+  int operator *(int value) => bitmask * value;
   @override
   int apply(int value) => bitmask.apply(value);
   @override
   int read(int source) => bitmask.read(source);
   @override
   int modify(int source, int value) => bitmask.modify(source, value);
+  // @override
+  // int get width;
+  // Bitmask get bitmask => Bitmask(index + fold(), width);
+}
+
+class ConstBitFieldMap<T extends Bitmask> extends GenericBitFieldMapBase<T, int> with BitFieldMixin<T> implements BitField<T> {
+  const ConstBitFieldMap(super.valueMap);
+
+  @override
+  int get width => valueMap.keys.totalWidth;
+  @override
+  int get value => valueMap.keys.apply(values);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -116,7 +124,6 @@ abstract mixin class BitFieldMixin<T extends Bitmask> implements BitField<T> {
 
   @override
   int operator [](T key) => key.read(value);
-
   @override
   void operator []=(T key, int newValue) => value = key.modify(value, newValue);
 }
@@ -124,46 +131,24 @@ abstract mixin class BitFieldMixin<T extends Bitmask> implements BitField<T> {
 ////////////////////////////////////////////////////////////////////////////////
 ///
 ////////////////////////////////////////////////////////////////////////////////
-/// only (index, width) based access
-abstract class _BitFieldFromWidth<T extends Bitmask> with MapBase<T, int>, BitFieldMixin<T>, BitsBaseMixin<T, int>, BitsMap<T, int> implements BitField<T> {
-  const _BitFieldFromWidth(this.width);
+abstract class _BitFieldFromValues<T extends Bitmask> extends GenericBitFieldBase<T, int> with BitFieldMixin<T> implements BitField<T> {
+  const _BitFieldFromValues(this.width);
   @override
   final int width;
 
   @override
-  List<T> get keys => throw UnsupportedError("Use extend BitFieldBase");
+  List<T> get keys => throw UnsupportedError("Extend BitFieldBase");
 }
 
 // potentially use value.bitLength over passing width
-class _MutableBitFieldFromWidth<T extends Bitmask> extends _BitFieldFromWidth<T> implements BitField<T> {
-  _MutableBitFieldFromWidth(super.width, this.value);
+class _MutableBitFieldFromValues<T extends Bitmask> extends _BitFieldFromValues<T> implements BitField<T> {
+  _MutableBitFieldFromValues(super.width, this.value);
   @override
   int value;
 }
 
-class _UnmodifiableBitFieldFromWidth<T extends Bitmask> extends _BitFieldFromWidth<T> implements BitField<T> {
-  const _UnmodifiableBitFieldFromWidth(super.width, this.value);
+class _ConstBitFieldFromValues<T extends Bitmask> extends _BitFieldFromValues<T> implements BitField<T> {
+  const _ConstBitFieldFromValues(super.width, this.value);
   @override
   final int value;
 }
-
-// class _ConstBitFieldFromMap<T extends Bitmasks, V> with BitFieldMixin<T>, BitsBaseMixin<T, V> implements GenericBitField<T, V> {
-//   const _ConstBitFieldFromMap(this.map);
-
-//   final Map<T, V> map;
-
-//   @override
-//   V? operator [](T key) => map[key];
-
-//   @override
-//   void operator []=(T key, V value) => throw UnsupportedError("Cannot modify unmodifiable");
-
-//   @override
-//   Iterable<T> get memberKeys => throw UnimplementedError();
-
-//   @override
-//   int get width => throw UnimplementedError();
-
-//   @override
-//   int get bits => throw UnimplementedError();
-// }

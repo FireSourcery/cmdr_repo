@@ -2,6 +2,7 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'byte_struct.dart';
+import 'typed_data_ext.dart';
 
 /// Effectively ByteData with a length of 8 bytes.
 /// can be compile time constant
@@ -88,64 +89,64 @@ class Word {
 }
 
 extension BytesOfInt on int {
-  // fixed size buffer then wrap view with length likely better performance than iterative build with flex size BytesBuilder
-  static ByteData byteDataOf(int value, [Endian endian = Endian.big]) => ByteData(8)..setInt64(0, value, endian);
-  // static Uint8List bytesOf(int value, [Endian endian = Endian.big]) => byteDataOf(value, endian).buffer.asUint8List();
+  // // fixed size buffer then wrap view with length likely better performance than iterative build with flex size BytesBuilder
+  // static ByteData byteDataOf(int value, [Endian endian = Endian.big]) => ByteData(8)..setInt64(0, value, endian);
+  // // static Uint8List bytesOf(int value, [Endian endian = Endian.big]) => byteDataOf(value, endian).buffer.asUint8List();
 
-  // returns as 8 bytes
-  ByteData toByteData([Endian endian = Endian.big]) => byteDataOf(this, endian);
-  Uint8List toBytes([Endian endian = Endian.big]) => byteDataOf(this, endian).buffer.asUint8List();
+  // // returns as 8 bytes
+  // ByteData toByteData([Endian endian = Endian.big]) => byteDataOf(this, endian);
+  // Uint8List toBytes([Endian endian = Endian.big]) => byteDataOf(this, endian).buffer.asUint8List();
 
-  /// skip ByteData buffer for a known segment
-  int valueSizedAt(int offset, int size) => (this >> (offset * 8)) & ((1 << (size * 8)) - 1);
-  int valueTypedAt<T extends NativeType>(int offset) => valueSizedAt(offset, sizeOf<T>());
-  // Uint8List modify(int index, int value) => Uint8List.sublistView(this)..[index] = value;
+  // /// skip ByteData buffer for a known segment
+  // int valueSizedAt(int offset, int size) => (this >> (offset * 8)) & ((1 << (size * 8)) - 1);
+  // int valueTypedAt<T extends NativeType>(int offset) => valueSizedAt(offset, sizeOf<T>());
+  // // Uint8List modify(int index, int value) => Uint8List.sublistView(this)..[index] = value;
 
-  int get byteLength => (bitLength / 8).ceil();
+  // int get byteLength => (bitLength / 8).ceil();
 
   Word toWord() => Word(this);
 }
 
-extension IntOfByteBuffer on ByteBuffer {
-  int toInt([int byteOffset = 0, Endian endian = Endian.little]) => asByteData().getInt64(byteOffset, endian);
-}
+// extension IntOfByteBuffer on ByteBuffer {
+//   int toInt([int byteOffset = 0, Endian endian = Endian.little]) => asByteData().getInt64(byteOffset, endian);
+// }
 
-extension IntOfBytes on TypedData {
-  // defaults to little endian for an arbitrary list of bytes, assume external
-  // big endian will set first item as msb of 64-bits, fill missing bytes with 0
-  //   e.g. for a value of 1, big endian, user must input <int>[0, 0, 0, 0, 0, 0, 0, 1], <int>[1] would be treated as 0x0100'0000'0000'0000
-  // static int valueOf(TypedData bytes, [Endian endian = Endian.little]) => bytes.buffer.asByteData().getInt64(bytes.offsetInBytes, endian);
-  // equivalent to ByteData.sublistView(this).getInt64(0, endian)
-  int toInt([Endian endian = Endian.little]) => buffer.asByteData().getInt64(offsetInBytes, endian);
+// extension IntOfBytes on TypedData {
+//   // defaults to little endian for an arbitrary list of bytes, assume external
+//   // big endian will set first item as msb of 64-bits, fill missing bytes with 0
+//   //   e.g. for a value of 1, big endian, user must input <int>[0, 0, 0, 0, 0, 0, 0, 1], <int>[1] would be treated as 0x0100'0000'0000'0000
+//   // static int valueOf(TypedData bytes, [Endian endian = Endian.little]) => bytes.buffer.asByteData().getInt64(bytes.offsetInBytes, endian);
+//   // equivalent to ByteData.sublistView(this).getInt64(0, endian)
+//   int toInt([Endian endian = Endian.little]) => buffer.asByteData().getInt64(offsetInBytes, endian);
 
-  // following bytesOfInt
-  // trimmed view sublist for copy
-  // big endian trim leading. little endian trim trailing
-  Uint8List trim(int wordLength, Endian endian) => switch (endian) { Endian.big => trimAsBE(wordLength), Endian.little => trimAsLE(wordLength), Endian() => throw UnsupportedError('Endian') };
-  // constructing trimAsBE back to Word will change value, as offset has change, alternatively parameterize with size/type
-  Uint8List trimAsBE(int wordLength) => Uint8List.sublistView(this, lengthInBytes - wordLength);
-  // constructing trimAsLE back to Word preserves value
-  Uint8List trimAsLE(int wordLength) => Uint8List.sublistView(this, 0, wordLength);
+//   // following bytesOfInt
+//   // trimmed view sublist for copy
+//   // big endian trim leading. little endian trim trailing
+//   Uint8List trim(int wordLength, Endian endian) => switch (endian) { Endian.big => trimAsBE(wordLength), Endian.little => trimAsLE(wordLength), Endian() => throw UnsupportedError('Endian') };
+//   // constructing trimAsBE back to Word will change value, as offset has change, alternatively parameterize with size/type
+//   Uint8List trimAsBE(int wordLength) => Uint8List.sublistView(this, lengthInBytes - wordLength);
+//   // constructing trimAsLE back to Word preserves value
+//   Uint8List trimAsLE(int wordLength) => Uint8List.sublistView(this, 0, wordLength);
 
-  Uint8List modify(int index, int value) => Uint8List.sublistView(this)..[index] = value;
-}
+//   Uint8List modify(int index, int value) => Uint8List.sublistView(this)..[index] = value;
+// }
 
-extension BytesOfIterable on Iterable<int> {
-  static Uint8List bytesOf(Iterable<int> bytes, [int? count]) => Uint8List(8)..setAll(0, bytes.take(8));
-  Uint8List toBytes([int? length]) => bytesOf(this);
-}
+// extension BytesOfIterable on Iterable<int> {
+//   static Uint8List bytesOf(Iterable<int> bytes, [int? count]) => Uint8List(8)..setAll(0, bytes.take(8));
+//   Uint8List toBytes([int? length]) => bytesOf(this);
+// }
 
-extension StringOfBytes on Uint8List {
-  String toStringAsEncoded([int start = 0, int? end]) => String.fromCharCodes(this, start, end);
-  // String toStringAsEncodedTrimNulls([int start = 0, int? end]) => toStringAsEncoded(start, end).replaceAll(RegExp(r'^\u0000+|\u0000+$'), '');
-  // String toStringAsEncodedNonNulls([int start = 0, int? end]) => toStringAsEncoded(start, end).replaceAll(String.fromCharCode(0), '');
-  // String toStringAsEncodedAlphaNumeric([int start = 0, int? end]) => toStringAsEncoded(start, end).replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
+// extension StringOfBytes on Uint8List {
+//   String toStringAsEncoded([int start = 0, int? end]) => String.fromCharCodes(this, start, end);
+//   // String toStringAsEncodedTrimNulls([int start = 0, int? end]) => toStringAsEncoded(start, end).replaceAll(RegExp(r'^\u0000+|\u0000+$'), '');
+//   // String toStringAsEncodedNonNulls([int start = 0, int? end]) => toStringAsEncoded(start, end).replaceAll(String.fromCharCode(0), '');
+//   // String toStringAsEncodedAlphaNumeric([int start = 0, int? end]) => toStringAsEncoded(start, end).replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
 
-  // Chars use array index
-  // from User I/O as int literal
-  String charAsValue(int index) => this[index].toString(); // 1 => '1'
-  Uint8List modifyAsValue(int index, String value) => this..[index] = int.parse(value); // '1' => 1
+//   // Chars use array index
+//   // from User I/O as int literal
+//   String charAsValue(int index) => this[index].toString(); // 1 => '1'
+//   Uint8List modifyAsValue(int index, String value) => this..[index] = int.parse(value); // '1' => 1
 
-  String charAsCode(int index) => String.fromCharCode(this[index]); // 0x31 => '1'
-  Uint8List modifyAsCode(int index, String value) => this..[index] = value.runes.single; // '1' => 0x31
-}
+//   String charAsCode(int index) => String.fromCharCode(this[index]); // 0x31 => '1'
+//   Uint8List modifyAsCode(int index, String value) => this..[index] = value.runes.single; // '1' => 0x31
+// }

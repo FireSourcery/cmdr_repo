@@ -10,7 +10,7 @@ import 'dart:io';
 abstract class FileStorage<T> {
   const FileStorage(this.fileCodec, {this.extensions, this.defaultName});
 
-  final FileCodec<T, dynamic> fileCodec;
+  final FileCodec<T, dynamic> fileCodec; //possible make this a getter instead
   final List<String>? extensions;
   final String? defaultName;
 
