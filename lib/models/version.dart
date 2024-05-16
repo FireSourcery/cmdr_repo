@@ -39,7 +39,8 @@ class Version extends WordFields<VersionFieldStandard> {
   // new buffer
   // [optional, major, minor, fix][0,0,0,0]
   Uint8List get version => toBytesAs(Endian.big); // trimmed view on new buffer big endian 8 bytes
-  Version updateVersion(Uint8List bytes) => Version.value(bytes.toInt(Endian.big), name);
+  // use for passing the same buffer
+  Version updateVersion(Uint8List bytes) => Version.value(bytes.buffer.toInt(0, Endian.big), name);
 
   List<int> get numbers => toBytesAs(Endian.big);
   Version updateNumbers(List<int> numbers) => (numbers is Uint8List) ? updateVersion(version) : Version.value(numbers.toBytes().toInt(Endian.big), name);

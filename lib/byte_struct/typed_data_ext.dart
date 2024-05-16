@@ -60,10 +60,20 @@ extension BytesOfInt on int {
   // int modifyByte(int index, int value) => (this & ~ _bitmask) | (value << index) ;
 }
 
+extension ByteBufferData on ByteBuffer {
+  int toInt([int byteOffset = 0, Endian endian = Endian.little]) => asByteData().getInt64(byteOffset, endian);
+}
+
 extension IntOfBytes on TypedData {
   // equivalent to ByteData.sublistView(this).getInt64(0, endian)
   // caller assert(lengthInBytes > 8)
-  int toInt([Endian endian = Endian.little]) => buffer.asByteData().getInt64(offsetInBytes, endian);
+  int toInt([Endian endian = Endian.little]) {
+    if (lengthInBytes >= 8) {
+      return buffer.asByteData().getInt64(offsetInBytes, endian);
+    } else {
+      return TypedDataCtors.fromBytes(Uint8List.sublistView(this), 8).toInt(endian);
+    }
+  }
 
   // following bytesOfInt
   // trimmed view sublist for copy
@@ -173,7 +183,8 @@ extension GenericWord on ByteData {
 //   void setWordAt<R extends NativeType>(int byteOffset, int value, [Endian endian = Endian.little]) => asByteData().setWordAt<R>(byteOffset, value, endian);
 
 //   int toInt([int byteOffset = 0, Endian endian = Endian.little]) => asByteData().getInt64(byteOffset, endian);
-//   // List<int> cast<R extends TypedData>(int byteOffset, [Endian endian = Endian.little])
+
+//   // List<int> castList<R extends TypedData>(int byteOffset, [Endian endian = Endian.little])
 // }
 
 int sizeOf<T extends NativeType>() {

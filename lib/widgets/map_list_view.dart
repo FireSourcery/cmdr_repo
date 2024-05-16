@@ -29,7 +29,8 @@ class MapRowTiles<K, V> extends StatelessWidget {
             for (final (key, value) in fields)
               IntrinsicWidth(
                 child: ListTile(
-                  titleAlignment: ListTileTitleAlignment.bottom,
+                  key: UniqueKey(), //
+                  // titleAlignment: ListTileTitleAlignment.bottom,
                   subtitle: Text(key.toString()),
                   title: Text(value.toString()),
                 ),

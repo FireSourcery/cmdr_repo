@@ -2,6 +2,7 @@
 
 import 'dart:math';
 
+import 'package:cmdr/byte_struct/typed_data_ext.dart';
 import 'package:collection/collection.dart';
 
 import '../base/packet.dart';
@@ -59,7 +60,12 @@ class MotProtocolSocket extends ProtocolSocket {
   /// Once
   ////////////////////////////////////////////////////////////////////////////////
   Future<(int? respCode, Uint8List data)> onceRead((int address, int size) req) async => await requestResponse(MotPacketPayloadId.MOT_PACKET_READ_ONCE, req) ?? (null, Uint8List(0));
-  Future<int?> onceWrite((int address, int size, Uint8List data) req) async => await requestResponse(MotPacketPayloadId.MOT_PACKET_WRITE_ONCE, req);
+  Future<int?> onceWrite((int address, int size, Uint8List data) req) async {
+    assert(req.$2 == req.$3.lengthInBytes);
+    assert(req.$2 <= 16);
+    assert(req.$3.lengthInBytes <= 16);
+    return await requestResponse(MotPacketPayloadId.MOT_PACKET_WRITE_ONCE, req);
+  }
 
   ////////////////////////////////////////////////////////////////////////////////
   /// DataMode
