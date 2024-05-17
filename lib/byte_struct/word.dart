@@ -88,24 +88,24 @@ class Word {
   // int get hashCode => value.hashCode;
 }
 
-extension BytesOfInt on int {
-  // // fixed size buffer then wrap view with length likely better performance than iterative build with flex size BytesBuilder
-  // static ByteData byteDataOf(int value, [Endian endian = Endian.big]) => ByteData(8)..setInt64(0, value, endian);
-  // // static Uint8List bytesOf(int value, [Endian endian = Endian.big]) => byteDataOf(value, endian).buffer.asUint8List();
+// extension BytesOfInt on int {
+//   // // fixed size buffer then wrap view with length likely better performance than iterative build with flex size BytesBuilder
+//   // static ByteData byteDataOf(int value, [Endian endian = Endian.big]) => ByteData(8)..setInt64(0, value, endian);
+//   // // static Uint8List bytesOf(int value, [Endian endian = Endian.big]) => byteDataOf(value, endian).buffer.asUint8List();
 
-  // // returns as 8 bytes
-  // ByteData toByteData([Endian endian = Endian.big]) => byteDataOf(this, endian);
-  // Uint8List toBytes([Endian endian = Endian.big]) => byteDataOf(this, endian).buffer.asUint8List();
+//   // // returns as 8 bytes
+//   // ByteData toByteData([Endian endian = Endian.big]) => byteDataOf(this, endian);
+//   // Uint8List toBytes([Endian endian = Endian.big]) => byteDataOf(this, endian).buffer.asUint8List();
 
-  // /// skip ByteData buffer for a known segment
-  // int valueSizedAt(int offset, int size) => (this >> (offset * 8)) & ((1 << (size * 8)) - 1);
-  // int valueTypedAt<T extends NativeType>(int offset) => valueSizedAt(offset, sizeOf<T>());
-  // // Uint8List modify(int index, int value) => Uint8List.sublistView(this)..[index] = value;
+//   // /// skip ByteData buffer for a known segment
+//   // int valueSizedAt(int offset, int size) => (this >> (offset * 8)) & ((1 << (size * 8)) - 1);
+//   // int valueTypedAt<T extends NativeType>(int offset) => valueSizedAt(offset, sizeOf<T>());
+//   // // Uint8List modify(int index, int value) => Uint8List.sublistView(this)..[index] = value;
 
-  // int get byteLength => (bitLength / 8).ceil();
+//   // int get byteLength => (bitLength / 8).ceil();
 
-  Word toWord() => Word(this);
-}
+//   // Word toWord() => Word(this);
+// }
 
 // extension IntOfByteBuffer on ByteBuffer {
 //   int toInt([int byteOffset = 0, Endian endian = Endian.little]) => asByteData().getInt64(byteOffset, endian);

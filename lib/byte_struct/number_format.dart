@@ -29,6 +29,7 @@ enum NumberFormat<T extends NativeType, S> {
   enum16<Uint16, Enum>(reference: null),
   boolean<Bool, bool>(reference: null),
 
+  /// todo remove
   /// not a number format but a value relative to the client platform,
   /// special conversion via function or mapped value
   adcu<Uint16, double>(reference: null), // may be adcu literal or case for special conversion

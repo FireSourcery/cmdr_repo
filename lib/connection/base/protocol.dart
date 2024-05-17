@@ -12,7 +12,7 @@ class Protocol {
   Protocol(this.link, this.headerParser);
 
   final Link link;
-  final HeaderHandler headerParser;
+  final HeaderParser headerParser;
   // final HeaderHandler packetInterface;
 
   final Map<PacketId, ProtocolSocket> respSocketMap = {}; // map response id to socket
@@ -130,7 +130,7 @@ class ProtocolSocket implements Sink<Packet> {
   final Lock _lock = Lock();
   Completer<void> _recved = Completer();
 
-  HeaderHandler get headerHandler => protocol.headerParser; // can parser header update in between id read?
+  HeaderParser get headerHandler => protocol.headerParser; // can parser header update in between id read?
 
   int waitingOnLockCount = 0;
 
@@ -166,16 +166,12 @@ class ProtocolSocket implements Sink<Packet> {
           final dynamic requestMeta = await sendRequest(requestId, requestArgs);
 
           if (syncOptions.recvSync) {
-            if (await recvSync() != headerHandler.ack) return null; //handle nack?
+            if (await recvSync() != headerHandler.ack) return null; // handle nack?
           }
           final R? response = await recvResponse(requestId, requestMeta: requestMeta);
 
           if (syncOptions.sendSync) await sendSync(headerHandler.ack);
           return response;
-          // final requestStatus = packetBufferOut.buildRequestPayload(requestId, requestArgs);
-          // await protocol.requestResponse(requestId, this);
-          // await stream.first.timeout(timeout);
-          // return packetBufferIn.parseResponsePayload(requestId, requestStatus);
         },
         timeout: timeout,
       );
@@ -229,6 +225,7 @@ class ProtocolSocket implements Sink<Packet> {
     }
   }
 
+  /// periodic Response/Write
   Stream<R?> periodicUpdate<T, R>(PacketTypeId<T, R> requestId, T Function() requestArgsGetter, {Duration delay = const Duration(milliseconds: 1)}) async* {
     while (true) {
       yield await requestResponse<T, R>(requestId, requestArgsGetter());
@@ -246,6 +243,7 @@ class ProtocolSocket implements Sink<Packet> {
   @protected
   Future<dynamic> sendRequest<T, R>(PacketTypeId<T, R> packetId, T requestArgs, {Duration timeout = timeoutDefault}) async {
     // protocol.mapRequestResponse(packetId, this);
+    // final dynamic requestMeta = packetBufferOut.buildPayloadAsRequest<TP, TV, dynamic>(packetId as PacketIdRequestResponse, requestArgs);
     final dynamic requestMeta = packetBufferOut.buildRequestPayload<T, R>(packetId, requestArgs);
     packetBufferOut.buildPayloadHeader(packetId);
 
@@ -255,7 +253,7 @@ class ProtocolSocket implements Sink<Packet> {
     return requestMeta;
   }
 
-  // todo   reponse code as meta
+  // todo reponse code as meta
   Future<(M, R?)?> recvResponseWithMeta<T, R, M>(PacketTypeId<T, R> packetId, {dynamic requestMeta, Duration timeout = timeoutDefault}) async {
     return await tryRecv<(M, R?)>(() {
       final R? payload = packetBufferIn.parseResponsePayload(packetId, requestMeta);

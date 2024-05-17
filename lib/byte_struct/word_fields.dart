@@ -9,13 +9,18 @@ import 'word.dart';
 export 'typed_field.dart';
 
 /// [Word] with named fields
-abstract mixin class _WordFieldsMixin<T extends WordField> implements Word, EnumMap<T, int> {
-  const _WordFieldsMixin();
+abstract class WordFields<T extends WordField> = Word with MapBase<T, int>, EnumMap<T, int>, WordFieldsMixin<T>;
+
+/// interface for including [TypedField<T>], [Enum]
+typedef WordField<T extends NativeType> = NamedField<T>;
+
+abstract mixin class WordFieldsMixin<T extends WordField> implements Word, EnumMap<T, int> {
+  const WordFieldsMixin();
 
   String? get name;
   // List<T> get fields; // with Enum.values
 
-  (String, String) get asLabelPair => (name ?? '', bytesBE.toString());
+  (String, String) get asLabelPair => (name ?? '', toString());
 
   @override
   int operator [](T field) => field.valueOfInt(value);
@@ -24,15 +29,7 @@ abstract mixin class _WordFieldsMixin<T extends WordField> implements Word, Enum
   @override
   void clear() => throw UnsupportedError('WordFields does not support clear');
 }
-
-abstract class WordFields<T extends WordField> = Word with MapBase<T, int>, EnumMap<T, int>, _WordFieldsMixin<T>;
-
-/// interface for including [TypedField<T>], [Enum]
-typedef WordField<T extends NativeType> = NamedField<T>;
-// abstract mixin class WordField<T extends NativeType> implements TypedField<T>, Enum {
-//   // String get label => name.pascalCase;
-// }
-
+ 
 /// e.g
 // enum VersionFieldStandard<T extends NativeType> with TypedField<T> implements WordField<T> {
 //   fix<Uint8>(0),

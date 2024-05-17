@@ -164,7 +164,7 @@ mixin TimerNotifier implements ChangeNotifier {
   }
 }
 
-//todo state
+// todo state
 sealed class ChartMode {
   double? get yMin;
   double? get yMax;

@@ -25,31 +25,31 @@ class MotProtocolSocket extends ProtocolSocket {
 
   Future<int?> call((int id, int? arg) idArg, [Duration? timeout]) async => requestResponse(MotPacketPayloadId.MOT_PACKET_CALL, idArg, timeout: timeout);
 
-  Future<VersionResponsePayload> version() async => await requestResponse(MotPacketPayloadId.MOT_PACKET_VERSION, null) ?? (board: 0, firmware: 0, library: 0, protocol: 0);
+  Future<VersionResponseValues> version() async => await requestResponse(MotPacketPayloadId.MOT_PACKET_VERSION, null) ?? (board: 0, firmware: 0, library: 0, protocol: 0);
 
-  Future<(int? respCode, VarReadResponsePayload)> readVars(VarReadRequestPayload ids) async {
+  Future<(int? respCode, VarReadResponseValues)> readVars(VarReadRequestValues ids) async {
     return requestResponse(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids).then((value) => ((value == null) ? null : 0, value ?? const <int>[]));
   }
 
-  Future<(int? respCode, VarWriteResponsePayload)> writeVars(VarWriteRequestPayload pairs) async {
+  Future<(int? respCode, VarWriteResponseValues)> writeVars(VarWriteRequestValues pairs) async {
     return requestResponse(MotPacketPayloadId.MOT_PACKET_VAR_WRITE, pairs).then((value) => ((value == null) ? null : 0, value ?? const <int>[]));
   }
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Stream
   ////////////////////////////////////////////////////////////////////////////////
-  Stream<(int? respCode, VarReadResponsePayload)> readVarsStream(VarReadRequestPayload ids, {Duration delay = const Duration(milliseconds: 50)}) {
+  Stream<(int? respCode, VarReadResponseValues)> readVarsStream(VarReadRequestValues ids, {Duration delay = const Duration(milliseconds: 50)}) {
     assert(ids.length <= 16);
     final stream = periodicRequest(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids, delay: delay);
     return stream.map((event) => ((event == null) ? null : 0 /* event.meta todo */, event ?? const <int>[]));
   }
 
-  Stream<(Iterable<int> segmentIds, int? respCode, VarReadResponsePayload)> readVarsStreamSegmented(VarReadRequestPayload ids, {Duration delay = const Duration(milliseconds: 50)}) {
+  Stream<(Iterable<int> segmentIds, int? respCode, VarReadResponseValues)> readVarsStreamSegmented(VarReadRequestValues ids, {Duration delay = const Duration(milliseconds: 50)}) {
     final stream = periodicRequestSegmented(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids.slices(16), delay: delay);
     return stream.map((event) => (event.$1, (event.$2 == null) ? null : 0, event.$2 ?? const <int>[]));
   }
 
-  Stream<(int? respCode, VarWriteResponsePayload)> writeVarsStream(VarWriteRequestPayload Function() idValuesGetter, {Duration delay = const Duration(milliseconds: 10)}) {
+  Stream<(int? respCode, VarWriteResponseValues)> writeVarsStream(VarWriteRequestValues Function() idValuesGetter, {Duration delay = const Duration(milliseconds: 10)}) {
     assert(idValuesGetter().length <= 8);
     final stream = periodicUpdate(MotPacketPayloadId.MOT_PACKET_VAR_WRITE, idValuesGetter, delay: delay);
     return stream.map((event) => ((event == null) ? null : 0, event ?? const <int>[]));
@@ -58,8 +58,13 @@ class MotProtocolSocket extends ProtocolSocket {
   ////////////////////////////////////////////////////////////////////////////////
   /// Once
   ////////////////////////////////////////////////////////////////////////////////
-  Future<(int? respCode, Uint8List data)> onceRead((int address, int size) req) async => await requestResponse(MotPacketPayloadId.MOT_PACKET_READ_ONCE, req) ?? (null, Uint8List(0));
-  Future<int?> onceWrite((int address, int size, Uint8List data) req) async => await requestResponse(MotPacketPayloadId.MOT_PACKET_WRITE_ONCE, req);
+  Future<(int? respCode, Uint8List data)> readMem(int address, int size, int config) async {
+    return await requestResponse(MotPacketPayloadId.MOT_PACKET_MEM_READ, (address, size, config)) ?? (null, Uint8List(0));
+  }
+
+  Future<int?> writeMem(int address, int size, int config, Uint8List data) async {
+    return await requestResponse(MotPacketPayloadId.MOT_PACKET_MEM_WRITE, (address, size, config, data));
+  }
 
   ////////////////////////////////////////////////////////////////////////////////
   /// DataMode
@@ -131,6 +136,14 @@ enum MotProtocol_GenericStatus {
   MOT_STATUS_OK,
   MOT_STATUS_ERROR,
   // MOT_STATUS_RESERVED,
+}
+
+enum MotProtocol_MemConfig {
+  MOT_MEM_CONFIG_RAM,
+  MOT_MEM_CONFIG_FLASH,
+  MOT_MEM_CONFIG_EEPROM,
+  MOT_MEM_CONFIG_ONCE,
+  MOT_MEM_CONFIG_RESERVED,
 }
 
 // Stream<(Iterable<int> segmentIds, int? respCode, List<int> values)> readVarsStreamDebug(VarReadRequestPayload ids) {

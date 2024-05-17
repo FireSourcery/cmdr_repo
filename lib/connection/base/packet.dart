@@ -39,6 +39,10 @@ abstract mixin class Packet {
   TypedOffset get idField;
   TypedOffset get lengthField;
   TypedOffset get checksumField;
+  // int get startField;
+  // int get idField;
+  // int get lengthField;
+  // int get checksumField;
 
   PacketId? idOf(int intId);
 
@@ -260,9 +264,6 @@ abstract mixin class Packet {
     payloadLength = length;
     return true;
   }
-  // packet handler override
-  // M? buildPayload<T, M>(T? args);
-  // R? parsePayload<R, M>([M? status]);
 
   // cast as PayloadHandler
   @protected
@@ -270,9 +271,6 @@ abstract mixin class Packet {
     assert(this is PayloadHandler<T>);
     return (this.._packet = source.bytes) as PayloadHandler<T>;
   }
-
-  // M? buildPayloadAs<T, M>(PacketTypeId packetId, T? args);
-  // R? parsePayloadAs<R, M>(PacketTypeId packetId, [M? status]);
 
   M buildPayloadAs<T, M>(PayloadHandler<T> handler, T args) {
     final M reqMeta = handler.castPayload<T>(this).buildPayload(args);
@@ -295,8 +293,39 @@ abstract mixin class Packet {
     return parsePayloadAs<R, dynamic>(id.responsePayload!(), requestStatus);
   }
 
-// T? parseRequestPayload(Packet packet) => requestPayload?.call().castPayload(packet).parsePayload();
-// dynamic buildResponsePayload(Packet packet, R args) => responsePayload?.call().castPayload(packet).buildPayload(args);
+  /// move to buffer?
+
+  // buffer build parse
+  // M? buildPayload<T, M>(T? args)
+  // R? parsePayload<R, M>([M? status]);
+
+  M buildPayloadAsValues<T extends Payload<V>, V, M>(PayloadCaster<T> caster, V requestValues) => caster(payload).build(requestValues);
+
+  M? buildPayloadAsStruct<T extends Payload, M>(T requestStruct) {
+    // payload.setAll(0, requestStruct.asTypedData());
+    return requestStruct.meta;
+  }
+
+  M? buildPayloadAsRequest<T extends Payload, TV, M>(PacketIdRequestResponse<T, dynamic> packetId, TV requestArgs) {
+    if (T == TV) {
+      assert(requestArgs is Payload);
+      // //set length
+      // payload.setRange(0, requestArgs.asTypedData());
+      return (requestArgs as Payload).meta;
+    } else {
+      //set length
+      return packetId.requestCaster(payload).build(requestArgs);
+    }
+  }
+
+  RV? parsePayloadAsResponse<R extends Payload, RV, M>(PacketIdRequestResponse<dynamic, R> packetId, [M? reqMeta]) {
+    final R response = packetId.responseCaster(payload);
+    if (R == RV) {
+      return response as RV;
+    } else {
+      return response.parse(reqMeta);
+    }
+  }
 }
 
 typedef PacketConstructor<P extends Packet> = P Function();
@@ -335,10 +364,10 @@ abstract class PacketInterface {
 //   //   bytes = dataIn;
 //   // }
 
+/// get bytes, limit view length
 // }
 
-// Id either hold packet handler function - requires passing packet
-// or hold a constructor to create a handler instance to process as packet
+// Id  hold a constructor to create a handler instance to process as packet
 abstract interface class PacketId implements Enum {
   const PacketId();
   int get asInt; // asIdField
@@ -363,30 +392,88 @@ enum PacketSyncIdInternal implements PacketSyncId {
   int get asInt => throw UnsupportedError('');
 }
 
-// abstract interface class PacketTypeId<T> implements PacketId { }
 // abstract interface class ProtocolRequestResponseId<T, R> {
 
 /// Id holds generic type parameters
-/// paired id, can under define responseId for 1-way
-/// enhanced enum
+/// paired request response id for simplicity in case of shared id by request and response
+///   under define responseId for 1-way e.g <T, void>
 /// T as requestPayload
 /// R as responsePayload
-/// 1 or both if id shared by request and response
-// abstract interface class PacketTypeId<T extends Struct, R extends Struct> implements PacketId {
 abstract interface class PacketTypeId<T, R> implements PacketId {
   const PacketTypeId();
 
   PacketTypeId? get responseId; // null for 1-way or matching response, override for non matching
 
-  // payload handlers per id, handle as packet
-  // Packet Id must be const,
+  // Payload handlers per id
   //  store a constructor which create a mappable pointer
   //  alternatively a const instance with pre allocated buffer
   PayloadHandlerConstructor<T>? get requestPayload;
   PayloadHandlerConstructor<R>? get responsePayload;
+}
+
+/// this way id can be const, build and parse can be root methods.
+/// alternatively id hold build/parse function with packet passed as parameter
+typedef PayloadHandlerConstructor<P> = PayloadHandler<P> Function();
+
+/// payload handler per id
+/// handle 'as' packet, alteratively pass packet/id as parameter
+/// convert in place, on allocated buffer
+/// this way all functions are associate as root methods to their respective objects
+// extend packet - builder pattern, id contains cast functions
+// packet converter/builder
+// abstract interface class PayloadHandlerWithMeta<P, M> implements Packet
+/// from user args P to packet structure
+abstract interface class PayloadHandler<P> implements Packet {
+  // returns intermediary status
+  dynamic buildPayload(P args);
+  P parsePayload([dynamic status]);
+
+  // alternatively pass call build with type
+  //M? buildMeta(P input)
+  //M? buildHeaderExtension(P input)
+}
+
+////////////////////////////////////////////////////////////////////////////
+///
+////////////////////////////////////////////////////////////////////////////
+// abstract interface class PacketTypeId<T> implements PacketId {
+//    PayloadCaster<T> get caster;
+// }
+
+// todo payload handles as payload only, return meta for header, allows increased type inference
+/// payload handler per id
+/// handle payload as struct, without having to pass packet as parameter
+typedef PayloadCaster<T extends Payload> = T Function(TypedData typedData);
+
+/// T extends Struct and Payload
+/// Payload need to contain a static cast function
+abstract interface class Payload<V> {
+  const Payload();
+  // factory Payload.cast(TypedData typedData);
+
+  dynamic get meta;
+  // from record support previous implementation
+  dynamic build(V args);
+  V parse([dynamic meta]);
+
+  // T cast(TypedData target);
+  // T castPacket(Packet packet) => cast(packet.payload);
+  // void copyTo(Packet packet) =>  packet.payload.setAll(0, this.asTypedData());
+
+  // cant resolve function for enum
+  // static PayloadCaster<T> casterOf<T extends Struct>() => Struct.create<T>;
+}
+
+abstract interface class PacketIdRequestResponse<T extends Payload, R extends Payload> implements PacketId {
+  const PacketIdRequestResponse();
+
+  PacketId? get responseId; // null for 1-way or matching response, override for non matching
+  PayloadCaster<T> get requestCaster;
+  PayloadCaster<R> get responseCaster;
+
+  // T castRequest(TypedData typedData) => requestCaster(typedData);
 
   // Codec functions require double buffering, since header and payload is a contiguous list.
-  // unless handling of payload can be done without reference to header
   // Uint8List encodePayload(T input);
   // T decodePayload(Uint8List input);
 }

@@ -1,15 +1,121 @@
 import 'dart:async';
 
+import 'package:meta/meta.dart';
+
 import 'packet.dart';
 import 'packet_handlers.dart';
 import 'protocol.dart';
+
+/// PacketRxHeaderParser
+/// Header as Packet Control Block
+/// Packet Meta Parser
+/// handled by base module. different format use new class
+/// implemented with shared Sync Header by default
+///
+abstract mixin class HeaderParser implements Packet {
+  // PacketId? idOf(int intId); // factory constructor of enum id, returns
+  PacketSyncId get nack;
+  PacketSyncId get abort;
+  PacketSyncId get ack;
+  // final Set<PacketId> syncIds = {ack, nack, abort };
+  // PacketId? get packetId => (idFieldOrNull != null) ? idOf(idFieldOrNull!) : null;
+
+  // todo note buffer may be larger than configMax
+  HeaderParser castBuffer(Uint8List bytes) => (castBytes(bytes) as HeaderParser);
+
+  HeaderStatus parseHeader() {
+    return switch (packetIdOrNull) {
+      null => HeaderStatus(this),
+      PacketSyncId() => SyncHeaderStatus(this),
+      PacketTypeId() => PayloadHeaderStatus(this),
+      PacketId() => HeaderStatus(this),
+    };
+  }
+
+  // trim leading
+  void seekValidStart() {
+    final offset = bytes.indexWhere((element) => element == configStartField);
+    castBytes(Uint8List.sublistView(bytes, (offset == -1) ? bytes.length : offset));
+  }
+
+  // trim trailing
+  // call only after packet is complete to truncate view
+  // (HeaderHandler packet, Uint8List trailing) effectively returns pointers to (packetStart, packetEnd/trailingStart, trailingEnd)
+  void completePacket() {
+    assert(parseHeader().isCompletePacket ?? false);
+    length = switch (packetId) {
+      PacketSyncId() => idField.end,
+      PacketTypeId() => lengthFieldValue,
+      PacketId() => lengthFieldValue,
+    };
+  }
+
+  // after complete has been called
+  PacketId get validPacketId {
+    assert(parseHeader().isCompletePacket ?? false);
+    return idOf(idFieldValue)!;
+  }
+}
+
+/// determine complete, error, or wait
+// ParseLength
+// ParseId
+// ParseChecksum
+interface class HeaderStatus {
+  HeaderStatus(this.view);
+  HeaderStatus.of(this.view);
+  @protected
+  final HeaderParser view;
+
+  // PacketId? get packetId => (view.idFieldOrNull != null) ? view.idOf(view.idFieldOrNull!) : null;
+  @mustBeOverridden
+  bool? get isCompletePacket => null;
+  // bool? get isPacketComplete => (view.lengthFieldOrNull != null) ? (view.length >= view.lengthFieldOrNull!) : null;
+  // @override
+  // bool? get isHeaderComplete => null;
+
+  int? get packetLength => (isCompletePacket != null) ? (view.lengthFieldOrNull!) : null;
+  int? get excessLength => (packetLength != null) ? (view.length - packetLength!) : null; // view remainder
+
+  bool get isStartValid => (view.startFieldOrNull! == view.configStartField);
+  bool? get isIdValid => (view.idFieldOrNull != null) ? (view.idOf(view.idFieldOrNull!) != null) : null;
+
+  // check field value, todo include length as well?
+  bool? get isLengthValid => (view.lengthFieldOrNull != null) ? (view.lengthFieldOrNull! <= view.configLengthMax && view.lengthFieldOrNull! >= view.configHeaderLength) : null;
+  // length must be set first
+  bool? get isChecksumValid => (view.length == view.lengthFieldOrNull) ? (view.checksumFieldOrNull! == view.checksum()) : null;
+}
+
+class PayloadHeaderStatus extends HeaderStatus {
+  PayloadHeaderStatus(super.view);
+
+  // @override
+  // bool? get isHeaderComplete => (view.length >= view.configHeaderLength);
+  @override
+  bool get isCompletePacket => (view.lengthFieldOrNull != null) ? (view.length >= view.lengthFieldOrNull!) : false;
+}
+
+class SyncHeaderStatus extends HeaderStatus {
+  SyncHeaderStatus(super.view);
+
+  // @override
+  // bool get isHeaderComplete => view.idFieldOrNull != null;
+  @override
+  bool get isCompletePacket => view.idFieldOrNull != null; // view.length > idField.end
+  @override
+  int? get packetLength => (isCompletePacket) ? (view.idField.end) : null;
+  @override
+  bool? get isLengthValid => null;
+  // @override
+  // bool? get isChecksumValid => null;
+}
 
 /// combine partial packets
 class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> implements EventSink<Uint8List> {
   PacketTransformer({required this.headerHandler}) : remainder = Uint8List(headerHandler.configLengthMax * 4); // may exceed 1 full length packet
 
   late final EventSink<Packet> _outputSink;
-  final HeaderHandler headerHandler;
+  final HeaderParser headerHandler;
   final Uint8List remainder; // remainder buffer, beginning of next incomplete packet
   int remainderIndex = 0; //previous remainder length
 
@@ -95,7 +201,7 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
           headerHandler.clear(); // ensure remainder buffer is cleared this way
         case ProtocolException.checksum:
       }
-      print('Packet transformer: ' + e.message);
+      // print('Packet transformer: ' + e.message);
       rethrow;
     } catch (e) {
       headerHandler.clear();

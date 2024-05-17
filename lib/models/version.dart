@@ -18,6 +18,7 @@ class Version extends WordFields<VersionFieldStandard> {
   const Version.value(super.value, [this.name]) : super(); // e.g. a stored value
   const Version.from(int? value, [Endian endian = Endian.little, this.name]) : super(value ?? 0); // e.g. a network value
   // Version.cast(super.word, [this.name]) : super.cast();
+  const Version.name(this.name) : super(0); // init for updateFrom
   Version updateFrom(int? value, [Endian endian = Endian.little]) => Version.from(value, endian, name);
 
   @override
@@ -29,6 +30,7 @@ class Version extends WordFields<VersionFieldStandard> {
   @override
   List<VersionFieldStandard<NativeType>> get keys => VersionFieldStandard.values;
 
+  @override
   (String, String) get asLabelPair => (name ?? '', toStringAsVersion());
 
   int get fix => bytesLE[0];
@@ -39,7 +41,7 @@ class Version extends WordFields<VersionFieldStandard> {
   // new buffer
   // [optional, major, minor, fix][0,0,0,0]
   Uint8List get version => toBytesAs(Endian.big); // trimmed view on new buffer big endian 8 bytes
-  Version updateVersion(Uint8List bytes) => Version.value(bytes.toInt(Endian.big), name);
+  Version updateVersion(Uint8List bytes) => Version.value(bytes.toInt(Endian.big), name); // assuming same buffer as get version
 
   List<int> get numbers => toBytesAs(Endian.big);
   Version updateNumbers(List<int> numbers) => (numbers is Uint8List) ? updateVersion(version) : Version.value(numbers.toBytes().toInt(Endian.big), name);

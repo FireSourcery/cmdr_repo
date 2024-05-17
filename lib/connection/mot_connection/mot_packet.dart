@@ -2,23 +2,7 @@
 
 import '../base/packet.dart';
 import '../base/packet_handlers.dart';
-
-// base mixin PacketTest on Struct {
-//   int get startField;
-// }
-
-// base class MotPacketTest extends Struct with PacketTest {
-//   @Uint8()
-//   external int x;
-
-//   int get startField => 0;
-
-//   factory MotPacketTest.fromTypedData(TypedData typedData) {
-//     return Struct.create<MotPacketTest>(typedData);
-//   }
-// }
-
-// MotPacketTest a = MotPacketTest.fromTypedData(Uint8List(16));
+import '../base/packet_transformer.dart';
 
 class MotPacket extends Packet {
   MotPacket();
@@ -77,7 +61,7 @@ class MotPacket extends Packet {
 }
 
 //implements HeaderHandler
-class MotPacketHeaderHandler extends MotPacket with HeaderHandler {
+class MotPacketHeaderHandler extends MotPacket with HeaderParser {
   // @override
   // PacketId? idOf(int intId) => MotPacketId.of(intId);
   @override
@@ -115,22 +99,25 @@ enum MotPacketSyncId implements PacketSyncId, MotPacketId {
   int get asInt => intId;
 }
 
-typedef VersionResponsePayload = ({int protocol, int library, int firmware, int board});
-typedef VarReadRequestPayload = Iterable<int>;
-typedef VarReadResponsePayload = List<int>; // values
-typedef VarWriteRequestPayload = Iterable<(int id, int value)>;
-typedef VarWriteResponsePayload = List<int>; // statuses
+typedef VersionResponseValues = ({int protocol, int library, int firmware, int board});
 
-typedef DataModeRequestPayload = (int address, int size, int flags);
-typedef ReadOnceRequestPayload = (int address, int size);
-typedef ReadOnceResponsePayload = (int, Uint8List);
-typedef WriteOnceRequestPayload = (int address, int size, Uint8List data);
-typedef WriteOnceResponsePayload = int;
+typedef VarReadRequestValues = Iterable<int>;
+typedef VarReadResponseValues = List<int>; // values
+
+typedef VarWriteRequestValues = Iterable<(int id, int value)>;
+typedef VarWriteResponseValues = List<int>; // statuses
+
+typedef DataModeRequestValues = (int address, int size, int flags);
+
+typedef MemReadRequestValues = (int address, int size, int config);
+typedef MemReadResponseValues = (int, Uint8List data);
+typedef MemWriteRequestValues = (int address, int size, int config, Uint8List data);
+typedef MemWriteResponseValues = int;
 
 enum MotPacketPayloadId<T, R> implements PacketTypeId<T, R>, MotPacketId {
   /* Fixed Length */
   MOT_PACKET_STOP_ALL<void, int>(0x00, requestPayload: StopRequest.new, responsePayload: StopResponse.new),
-  MOT_PACKET_VERSION<void, VersionResponsePayload>(0x01, requestPayload: VersionRequest.new, responsePayload: VersionResponse.new),
+  MOT_PACKET_VERSION<void, VersionResponseValues>(0x01, requestPayload: VersionRequest.new, responsePayload: VersionResponse.new),
   // MOT_PACKET_REBOOT<void, int>(
   //   0xC0,
   //   requestPayload: VarReadRequest.new,
@@ -140,19 +127,21 @@ enum MotPacketPayloadId<T, R> implements PacketTypeId<T, R>, MotPacketId {
   // MOT_PACKET_CALL_ADDRESS(0xCA),
   // MOT_PACKET_FIXED_VAR_READ(0xB1),
   // MOT_PACKET_FIXED_VAR_WRITE(0xB2),
+
   /* Configurable Length */
-  MOT_PACKET_VAR_READ<VarReadRequestPayload, VarReadResponsePayload>(0xB3, requestPayload: VarReadRequest.new, responsePayload: VarReadResponse.new),
-  MOT_PACKET_VAR_WRITE<VarWriteRequestPayload, VarWriteResponsePayload>(0xB4, requestPayload: VarWriteRequest.new, responsePayload: VarWriteResponse.new),
+  MOT_PACKET_VAR_READ<VarReadRequestValues, VarReadResponseValues>(0xB3, requestPayload: VarReadRequest.new, responsePayload: VarReadResponse.new),
+  MOT_PACKET_VAR_WRITE<VarWriteRequestValues, VarWriteResponseValues>(0xB4, requestPayload: VarWriteRequest.new, responsePayload: VarWriteResponse.new),
+
   /* Read/Write by Address */
-  // MOT_PACKET_MEM_READ(0xD1),
-  // MOT_PACKET_MEM_WRITE(0xD2),
+  MOT_PACKET_MEM_READ<MemReadRequestValues, MemReadResponseValues>(0xD1, requestPayload: MemReadRequest.new, responsePayload: MemReadResponse.new),
+  MOT_PACKET_MEM_WRITE<MemWriteRequestValues, MemWriteResponseValues>(0xD2, requestPayload: MemWriteRequest.new, responsePayload: MemWriteResponse.new),
+
   /* Stateful Read/Write */
-  MOT_PACKET_DATA_MODE_READ<DataModeRequestPayload, int>(0xDA, requestPayload: DataModeInitRequest.new, responsePayload: DataModeInitResponse.new),
-  MOT_PACKET_DATA_MODE_WRITE<DataModeRequestPayload, int>(0xDB, requestPayload: DataModeInitRequest.new, responsePayload: DataModeInitResponse.new),
+  MOT_PACKET_DATA_MODE_READ<DataModeRequestValues, int>(0xDA, requestPayload: DataModeInitRequest.new, responsePayload: DataModeInitResponse.new),
+  MOT_PACKET_DATA_MODE_WRITE<DataModeRequestValues, int>(0xDB, requestPayload: DataModeInitRequest.new, responsePayload: DataModeInitResponse.new),
   MOT_PACKET_DATA_MODE_DATA<Uint8List, Uint8List>(0xDD, requestPayload: DataModeData.new, responsePayload: DataModeData.new),
   // MOT_PACKET_DATA_MODE_ABORT = MOT_PACKET_SYNC_ABORT,
-  MOT_PACKET_READ_ONCE<ReadOnceRequestPayload, ReadOnceResponsePayload>(0xF1, requestPayload: OnceReadRequest.new, responsePayload: OnceReadResponse.new),
-  MOT_PACKET_WRITE_ONCE<WriteOnceRequestPayload, int>(0xF2, requestPayload: OnceWriteRequest.new, responsePayload: OnceWriteResponse.new),
+
   /* Extended Id Modes */
   // MOT_PACKET_EXT_CMD (0xE1),             /* ExtId Batch - Predefined Sequences */
   MOT_PACKET_ID_RESERVED_255(0xFF),
@@ -183,11 +172,11 @@ enum MotPacketPayloadId<T, R> implements PacketTypeId<T, R>, MotPacketId {
 /// Req     [Length, Resv, IdSum] /  [MotVarIds][16]
 /// Resp    [Length, Resv, IdSum] /  [Value16][16]
 ////////////////////////////////////////////////////////////////////////////////
-class VarReadRequest extends MotPacket implements PayloadHandler<VarReadRequestPayload> {
+class VarReadRequest extends MotPacket implements PayloadHandler<VarReadRequestValues> {
   VarReadRequest();
 
   @override
-  (int idChecksum, int flags) buildPayload(VarReadRequestPayload ids) {
+  (int idChecksum, int flags) buildPayload(VarReadRequestValues ids) {
     if (!buildPayloadLength(ids.length * 2)) return (0, 0);
 
     const offset = 0;
@@ -201,14 +190,14 @@ class VarReadRequest extends MotPacket implements PayloadHandler<VarReadRequestP
   }
 
   @override
-  VarReadRequestPayload parsePayload([status]) => throw UnimplementedError();
+  VarReadRequestValues parsePayload([status]) => throw UnimplementedError();
 }
 
-class VarReadResponse extends MotPacket implements PayloadHandler<VarReadResponsePayload> {
+class VarReadResponse extends MotPacket implements PayloadHandler<VarReadResponseValues> {
   VarReadResponse();
 
   @override
-  VarReadResponsePayload parsePayload([dynamic requestStatus]) {
+  VarReadResponseValues parsePayload([dynamic requestStatus]) {
     // final (int idChecksum, int flags)   = requestStatus;
     // final (idChecksum, respCode) = parseVarReadMeta();
     // return ((requestStatus == null) || (requestStatus.$1 == flexUpper16Field)) ? (0, parseVarReadValues()) : (null, null);
@@ -218,7 +207,7 @@ class VarReadResponse extends MotPacket implements PayloadHandler<VarReadRespons
   // (int? idChecksum, int? respCode) parseVarReadMeta() => (flexUpper16Field,  );
 
   @override
-  dynamic buildPayload(VarReadResponsePayload args) => throw UnimplementedError();
+  dynamic buildPayload(VarReadResponseValues args) => throw UnimplementedError();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -226,11 +215,11 @@ class VarReadResponse extends MotPacket implements PayloadHandler<VarReadRespons
 /// Req     [IdChecksum, Flags16]   [MotVarIds, Value16][8]
 /// Resp    [IdChecksum, Status16]  [VarStatus8][8]
 ////////////////////////////////////////////////////////////////////////////////
-class VarWriteRequest extends MotPacket implements PayloadHandler<VarWriteRequestPayload> {
+class VarWriteRequest extends MotPacket implements PayloadHandler<VarWriteRequestValues> {
   VarWriteRequest();
 
   @override
-  (int idChecksum, int flags) buildPayload(VarWriteRequestPayload idValues) {
+  (int idChecksum, int flags) buildPayload(VarWriteRequestValues idValues) {
     if (!buildPayloadLength(idValues.length * (2 + 2))) return (0, 0);
 
     const offset = 0;
@@ -257,14 +246,14 @@ class VarWriteRequest extends MotPacket implements PayloadHandler<VarWriteReques
   // }
 
   @override
-  VarWriteRequestPayload parsePayload([dynamic status]) => throw UnimplementedError();
+  VarWriteRequestValues parsePayload([dynamic status]) => throw UnimplementedError();
 }
 
-class VarWriteResponse extends MotPacket implements PayloadHandler<VarWriteResponsePayload> {
+class VarWriteResponse extends MotPacket implements PayloadHandler<VarWriteResponseValues> {
   VarWriteResponse();
 
   @override
-  VarWriteResponsePayload parsePayload([dynamic requestStatus]) {
+  VarWriteResponseValues parsePayload([dynamic requestStatus]) {
     // final (idChecksum, respCode) = parseVarWriteMeta();
     // return ((requestStatus == null) || (requestStatus.$1 == idChecksum)) ? (0, parseVarWriteStatuses()) : (null, null);
     return (payloadAt<Uint8List>(0));
@@ -273,7 +262,7 @@ class VarWriteResponse extends MotPacket implements PayloadHandler<VarWriteRespo
   // (int? idChecksum, int? respCode) parseMeta() => (payloadWordAt<Uint16>(0), payloadWordAt<Uint16>(2));
 
   @override
-  dynamic buildPayload(VarWriteResponsePayload args) => throw UnimplementedError();
+  dynamic buildPayload(VarWriteResponseValues args) => throw UnimplementedError();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -308,13 +297,13 @@ class VersionRequest extends MotPacket implements PayloadHandler<void> {
   void parsePayload([void status]) => throw UnimplementedError();
 }
 
-class VersionResponse extends MotPacket implements PayloadHandler<VersionResponsePayload> {
+class VersionResponse extends MotPacket implements PayloadHandler<VersionResponseValues> {
   @override
-  VersionResponsePayload parsePayload([void status]) => (
-        board: payloadWordAt<Uint32>(0),
-        firmware: payloadWordAt<Uint32>(4),
-        library: payloadWordAt<Uint32>(8),
-        protocol: payloadWordAt<Uint32>(12),
+  VersionResponseValues parsePayload([void status]) => (
+        protocol: payloadWordAt<Uint32>(0),
+        library: payloadWordAt<Uint32>(4),
+        firmware: payloadWordAt<Uint32>(8),
+        board: payloadWordAt<Uint32>(12),
       );
 
   @override
@@ -353,7 +342,7 @@ class CallResponse extends MotPacket implements PayloadHandler<int> {
 /// MOT_PACKET_DATA_MODE_WRITE
 /// MOT_PACKET_DATA_MODE_READ
 ////////////////////////////////////////////////////////////////////////////////
-class DataModeInitRequest extends MotPacket implements PayloadHandler<DataModeRequestPayload> {
+class DataModeInitRequest extends MotPacket implements PayloadHandler<DataModeRequestValues> {
   @override
   void buildPayload(args) {
     payloadLength = 12;
@@ -379,7 +368,7 @@ class DataModeInitResponse extends MotPacket implements PayloadHandler<int> {
 class DataModeData extends MotPacket implements PayloadHandler<Uint8List> {
   @override
   void buildPayload(args) {
-    if (!buildPayloadLength(args.length)) return; //return status
+    if (!buildPayloadLength(args.length)) return; // return status
     payload.setAll(0, args);
   }
 
@@ -388,21 +377,23 @@ class DataModeData extends MotPacket implements PayloadHandler<Uint8List> {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/// Once Read
+/// Mem Read
 ////////////////////////////////////////////////////////////////////////////////
-class OnceReadRequest extends MotPacket implements PayloadHandler<(int address, int size)> {
+class MemReadRequest extends MotPacket implements PayloadHandler<MemReadRequestValues> {
   @override
-  void buildPayload(args) {
-    payloadLength = 8;
-    payloadAsList32[0] = args.$1;
-    payloadAsList32[1] = args.$2;
+  void buildPayload(MemReadRequestValues args) {
+    final (address, size, config) = args;
+    payloadLength = 12;
+    payloadAsList32[0] = address;
+    payloadAsList32[1] = size;
+    payloadAsList32[2] = config;
   }
 
   @override
   parsePayload([void status]) => throw UnimplementedError();
 }
 
-class OnceReadResponse extends MotPacket implements PayloadHandler<(int, Uint8List)> {
+class MemReadResponse extends MotPacket implements PayloadHandler<MemReadResponseValues> {
   @override
   parsePayload([void status]) {
     //check length
@@ -414,22 +405,24 @@ class OnceReadResponse extends MotPacket implements PayloadHandler<(int, Uint8Li
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/// Once Write
+/// Mem Write
 ////////////////////////////////////////////////////////////////////////////////
-class OnceWriteRequest extends MotPacket implements PayloadHandler<(int address, int size, Uint8List data)> {
+class MemWriteRequest extends MotPacket implements PayloadHandler<MemWriteRequestValues> {
   @override
-  void buildPayload(args) {
-    if (!buildPayloadLength(args.$3.length + 8)) return;
-    payloadAsList32[0] = args.$1;
-    payloadAsList32[1] = args.$2;
-    payloadAt<Uint8List>(8).setAll(0, args.$3);
+  void buildPayload(MemWriteRequestValues args) {
+    final (address, size, config, data) = args;
+    if (!buildPayloadLength(data.length + 12)) return;
+    payloadAsList32[0] = address;
+    payloadAsList32[1] = size;
+    payloadAsList32[2] = config;
+    payloadAt<Uint8List>(12).setAll(0, data);
   }
 
   @override
   parsePayload([void status]) => throw UnimplementedError();
 }
 
-class OnceWriteResponse extends MotPacket implements PayloadHandler<int> {
+class MemWriteResponse extends MotPacket implements PayloadHandler<MemWriteResponseValues> {
   @override
   parsePayload([void status]) {
     return payloadWordAt<Uint16>(0);
@@ -438,3 +431,41 @@ class OnceWriteResponse extends MotPacket implements PayloadHandler<int> {
   @override
   void buildPayload(args) => throw UnimplementedError();
 }
+
+// final class VersionResponse1 extends Struct with Payload<VersionResponse1, VersionResponseValues> {
+//   factory VersionResponse1({int board = 0, int firmware = 0, int library = 0, int protocol = 0}) {
+//     return Struct.create<VersionResponse1>()
+//       ..protocol = protocol
+//       ..firmware = firmware
+//       ..library = library;
+//   }
+
+//   @Uint32()
+//   external int protocol;
+//   @Uint32()
+//   external int library;
+//   @Uint32()
+//   external int firmware;
+
+//   // @Array(4)
+//   // external Array<Uint32> versions;
+
+//   // @override
+//   // VersionResponse1 cast(TypedData target) => Struct.create<VersionResponse1>(target);
+
+//   @override
+//   dynamic build(VersionResponseValues args) {
+//     protocol = args.protocol;
+//     firmware = args.firmware;
+//     library = args.library;
+//   }
+
+//   @override
+//   VersionResponseValues parse([meta]) {
+//     return (board: 0, firmware: 0, library: 0, protocol: 0);
+//   }
+
+//   // @override
+//   // int get length => sizeOf<VersionResponse1>();
+//   //
+// }
