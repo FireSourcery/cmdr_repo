@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 /// Data/number format
 /// ffi marker constrains type, only use as marker
 enum NumberFormat<T extends NativeType, S> {
+  /// Fixed-point number formats
   /// Q fraction types, view = rawValue * unitsRef/FormatRef
   frac16<Int16, double>(reference: 32767), // Q1.15
   ufrac16<Uint16, double>(reference: 32768), // frac16 abs with 2x over-saturation
@@ -23,7 +24,8 @@ enum NumberFormat<T extends NativeType, S> {
   int16<Int16, int>(reference: 1),
   uint16<Uint16, int>(reference: 1),
 
-  /// non standard/const formats
+  /// Type formats
+  /// non cont references
   /// 0 or null, no conversion
   flags16<Uint16, BitField>(reference: null),
   enum16<Uint16, Enum>(reference: null),

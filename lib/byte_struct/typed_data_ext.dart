@@ -2,6 +2,9 @@ import 'dart:collection';
 import 'dart:ffi';
 import 'dart:typed_data';
 
+//  static int valueOf(TypedData bytes, [Endian endian = Endian.little]) => bytes.buffer.asByteData().getInt64(bytes.offsetInBytes, endian);
+// static Uint8List bytesOf(Iterable<int> bytes, [int? count]) => Uint8List(8)..setAll(0, bytes.take(8));
+
 // implementations grouped by new buffer
 //   toTypedData method call
 extension TypedDataCtors on TypedData {
@@ -10,7 +13,7 @@ extension TypedDataCtors on TypedData {
 
   static Uint8List fromString(String string) => fromBytes(string.runes);
 
-  static Uint8List fromBytes(Iterable<int> bytes) => (Uint8List(bytes.length)..setRange(0, bytes.length, bytes));
+  static Uint8List fromBytes(Iterable<int> bytes, [int? length]) => (Uint8List(length ?? bytes.length)..setAll(0, bytes.take(length ?? bytes.length)));
 
   static List<int> _fromLength<R extends TypedData>(int length) {
     return switch (R) {
@@ -52,18 +55,25 @@ extension BytesOfInt on int {
   Uint8List toBytes([Endian endian = Endian.big]) => TypedDataCtors.fromInt(this, endian).buffer.asUint8List();
 
   /// skip ByteData buffer for a direct segment
-  int valueSizedAt(int offset, int size) => (this >> (offset * 8)) & ((1 << (size * 8)) - 1);
-  int valueTypedAt<T extends NativeType>(int offset) => valueSizedAt(offset, sizeOf<T>());
+  int valueAt(int offset, int size) => (this >> (offset * 8)) & ((1 << (size * 8)) - 1);
+  int wordAt<T extends NativeType>(int offset) => valueAt(offset, sizeOf<T>());
   // int modifyByte(int index, int value) => (this & ~ _bitmask) | (value << index) ;
 }
 
+extension ByteBufferData on ByteBuffer {
+  int toInt([int byteOffset = 0, Endian endian = Endian.little]) => asByteData().getInt64(byteOffset, endian);
+}
+
 extension IntOfBytes on TypedData {
-  // defaults to little endian for an arbitrary list of bytes, assume external
-  // big endian will set first item as msb of 64-bits, fill missing bytes with 0
-  //   e.g. for a value of 1, big endian, user must input <int>[0, 0, 0, 0, 0, 0, 0, 1], <int>[1] would be treated as 0x0100'0000'0000'0000
-  // static int valueOf(TypedData bytes, [Endian endian = Endian.little]) => bytes.buffer.asByteData().getInt64(bytes.offsetInBytes, endian);
   // equivalent to ByteData.sublistView(this).getInt64(0, endian)
-  int toInt([Endian endian = Endian.little]) => buffer.asByteData().getInt64(offsetInBytes, endian);
+  // caller assert(lengthInBytes > 8)
+  int toInt([Endian endian = Endian.little]) {
+    if (lengthInBytes >= 8) {
+      return buffer.asByteData().getInt64(offsetInBytes, endian);
+    } else {
+      return TypedDataCtors.fromBytes(Uint8List.sublistView(this), 8).toInt(endian);
+    }
+  }
 
   // following bytesOfInt
   // trimmed view sublist for copy
@@ -78,8 +88,8 @@ extension IntOfBytes on TypedData {
 }
 
 extension BytesOfIterable on Iterable<int> {
-  // static Uint8List bytesOf(Iterable<int> bytes, [int? count]) => Uint8List(8)..setAll(0, bytes.take(8));
-  Uint8List toBytes([int? length]) => TypedDataCtors.fromBytes(this);
+  Uint8List toBytes([int? length]) => TypedDataCtors.fromBytes(this, length);
+  R toTypedData<R extends TypedData>([int? length]) => TypedDataCtors.fromIterable<R>(this, length);
 
   String toStringAsEncoded([int start = 0, int? end]) => String.fromCharCodes(this, start, end);
   // String toStringAsEncodedTrimNulls([int start = 0, int? end]) => toStringAsEncoded(start, end).replaceAll(RegExp(r'^\u0000+|\u0000+$'), '');
@@ -133,6 +143,10 @@ extension GenericSublistView on TypedData {
 }
 
 extension GenericWord on ByteData {
+  // int valueAt(int byteOffset, int size, [Endian endian = Endian.little]) {
+  //     // (this >> (byteOffset * 8)) & ((1 << (size * 8)) - 1);
+  // }
+
   // throws range error
   int wordAt<R extends NativeType>(int byteOffset, [Endian endian = Endian.little]) {
     return switch (R) {
@@ -169,7 +183,8 @@ extension GenericWord on ByteData {
 //   void setWordAt<R extends NativeType>(int byteOffset, int value, [Endian endian = Endian.little]) => asByteData().setWordAt<R>(byteOffset, value, endian);
 
 //   int toInt([int byteOffset = 0, Endian endian = Endian.little]) => asByteData().getInt64(byteOffset, endian);
-//   // List<int> cast<R extends TypedData>(int byteOffset, [Endian endian = Endian.little])
+
+//   // List<int> castList<R extends TypedData>(int byteOffset, [Endian endian = Endian.little])
 // }
 
 int sizeOf<T extends NativeType>() {

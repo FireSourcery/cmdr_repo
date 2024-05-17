@@ -2,6 +2,7 @@
 
 import 'dart:math';
 
+import 'package:cmdr/byte_struct/typed_data_ext.dart';
 import 'package:collection/collection.dart';
 
 import '../base/packet.dart';
@@ -63,6 +64,9 @@ class MotProtocolSocket extends ProtocolSocket {
   }
 
   Future<int?> writeMem(int address, int size, int config, Uint8List data) async {
+    assert(size == data.lengthInBytes);
+    assert(size <= 16);
+    assert(data.lengthInBytes <= 16);
     return await requestResponse(MotPacketPayloadId.MOT_PACKET_MEM_WRITE, (address, size, config, data));
   }
 
