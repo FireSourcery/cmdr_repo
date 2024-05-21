@@ -3,20 +3,19 @@ import 'dart:typed_data';
 import 'package:cmdr/connection/base/packet.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:cmdr/connection/base/packet_handlers.dart';
+typedef PayloadCaster<T extends Payload> = T Function([TypedData typedData]);
 
-// class VersionResponse extends MotPacket implements PayloadHandler<(int, int, int, int)> {
-//   @override
-//   VersionResponseValues parsePayload([void status]) => (
-//         protocol: payloadWordAt<Uint32>(0),
-//         library: payloadWordAt<Uint32>(4),
-//         firmware: payloadWordAt<Uint32>(8),
-//         board: payloadWordAt<Uint32>(12),
-//       );
+/// Id as payload factory
+/// paired request response id for simplicity in case of shared id by request and response
+/// under define responseId for 1-way e.g <T, void>
+///   handlers must be constructors, mutable objects cannot be const for enum
+abstract interface class PacketIdRequestResponse<T extends Payload, R extends Payload> implements PacketId {
+  const PacketIdRequestResponse();
 
-//   @override
-//   void buildPayload(args) => throw UnimplementedError();
-// }
+  PacketId? get responseId; // null for 1-way or matching response, override for non matching
+  PayloadCaster<T>? get requestCaster;
+  PayloadCaster<R>? get responseCaster;
+}
 
 @Packed(1)
 final class TestPayload extends Struct implements Payload<(int, int)> {
@@ -32,30 +31,28 @@ final class TestPayload extends Struct implements Payload<(int, int)> {
   }
 
   factory TestPayload.cast(TypedData typedData) => Struct.create<TestPayload>(typedData);
-  // static PayloadCaster<TestPayload> get caster => Struct.create<TestPayload>;
 
   @override
-  void build((int, int) args) {
+  PayloadMeta build((int, int) args, [Packet? a]) {
     value0 = args.$1;
     value1 = args.$2;
+    return PayloadMeta(0);
   }
 
   @override
-  (int, int) parse([void meta]) {
+  (int, int) parse(Packet a, [PayloadMeta? v]) {
     return (value0, value1);
   }
-
-  @override
-  void get meta {}
 }
 
 enum TestPacketPayloadId<T extends Payload, R extends Payload> implements PacketIdRequestResponse<T, R> {
-  testPacketId1(0x1, requestCaster: TestPayload.cast, responseCaster: TestPayload.cast);
+  // testPacketId1(0x1, requestCaster: TestPayload.cast, responseCaster: TestPayload.cast),
+  testPacketId2(0x2, requestCaster: Struct.create<TestPayload>, responseCaster: Struct.create<TestPayload>);
 
-  const TestPacketPayloadId(this.asInt, {required this.requestCaster, required this.responseCaster, this.responseId});
+  const TestPacketPayloadId(this.intId, {required this.requestCaster, required this.responseCaster, this.responseId});
 
   @override
-  final int asInt;
+  final int intId;
   @override
   final PacketId? responseId;
   @override
@@ -68,8 +65,8 @@ void main() {
   test('test', () {
     Uint32List list = Uint32List.fromList([0, 0]);
 
-    PacketIdRequestResponse<TestPayload, TestPayload> id = TestPacketPayloadId.testPacketId1;
-    TestPayload payload1 = id.requestCaster(list)..build((12345678, 87654321));
+    PacketIdRequestResponse<TestPayload, TestPayload> id = TestPacketPayloadId.testPacketId2;
+    // TestPayload payload1 = id.requestCaster(list)..build((12345678, 87654321));
 
     print(list[0]);
     print(list[1]);

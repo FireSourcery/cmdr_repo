@@ -11,7 +11,7 @@ class MotConnection {
   static final SerialLink serialLink = SerialLink();
   // final BluetoothLink bluetoothLink = BluetoothLink();
 
-  static final Protocol protocol = Protocol(serialLink, MotPacketHeaderHandler());
+  static final Protocol protocol = Protocol(serialLink, const MotPacketInterface());
 
   static final MotProtocolSocket general = MotProtocolSocket(protocol);
   static final MotProtocolSocket stop = MotProtocolSocket(protocol);

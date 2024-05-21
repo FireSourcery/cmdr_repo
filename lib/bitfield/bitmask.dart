@@ -3,19 +3,18 @@ import 'package:collection/collection.dart';
 import 'bits.dart';
 
 class Bitmask {
-  const Bitmask(this.offset, this.width)
-      : assert(offset + width < kMaxUnsignedSMI),
-        _mask = ((1 << width) - 1) << offset;
+  const Bitmask(this.offset, this.width) : _mask = ((1 << width) - 1) << offset;
+  // assert(offset + width < kMaxUnsignedSMI)
 
-  const Bitmask.flag(this.offset)
-      : width = 1,
-        _mask = 1 << offset;
+  const Bitmask.flag(int offset) : this(offset, 1);
+  const Bitmask.byte(int index) : this(index * 8, 8);
+  const Bitmask.bytes(int index, int size) : this(index * 8, size * 8);
 
   final int _mask;
   final int offset;
   final int width; // (_bitmask >> offset).bitLength;
 
-  static int of(int offset, int width) => ((1 << width) - 1) << offset;
+  static int asIntOf(int offset, int width) => ((1 << width) - 1) << offset;
 
   int apply(int value) => (value << offset) & _mask; // get as masked
   int read(int source) => (source & _mask) >> offset; // get as shifted back

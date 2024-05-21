@@ -10,30 +10,34 @@ import '../base/protocol.dart';
 import 'mot_packet.dart';
 
 class MotProtocolSocket extends ProtocolSocket {
-  MotProtocolSocket(Protocol protocol) : super.generate(protocol, MotPacket.new);
+  MotProtocolSocket(super.protocol);
 
   Future<int?> ping() async {
     sendSync(MotPacketSyncId.MOT_PACKET_PING);
-    return (await recvSync())?.asInt;
+    return (await recvSync())?.intId;
   }
 
   Future<int?> pingBoot() async {
     sendSync(MotPacketSyncId.MOT_PACKET_ENTER_BOOT);
-    return (await recvSync())?.asInt;
+    return (await recvSync())?.intId;
   }
 
   Future<int?> stopMotors() async => requestResponse(MotPacketPayloadId.MOT_PACKET_STOP_ALL, null);
 
-  Future<int?> call((int id, int? arg) idArg, [Duration? timeout]) async => requestResponse(MotPacketPayloadId.MOT_PACKET_CALL, idArg, timeout: timeout);
+  Future<CallResponseValues> call(int id, int? arg, [Duration? timeout]) async {
+    return requestResponse(MotPacketPayloadId.MOT_PACKET_CALL, (id, arg), timeout: timeout).then((value) => value ?? (null, null));
+  }
 
-  Future<VersionResponseValues> version() async => await requestResponse(MotPacketPayloadId.MOT_PACKET_VERSION, null) ?? (board: 0, firmware: 0, library: 0, protocol: 0);
+  Future<VersionResponseValues> version() async {
+    return await requestResponse(MotPacketPayloadId.MOT_PACKET_VERSION, null) ?? (board: 0, firmware: 0, library: 0, protocol: 0);
+  }
 
   Future<(int? respCode, VarReadResponseValues)> readVars(VarReadRequestValues ids) async {
-    return requestResponse(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids).then((value) => ((value == null) ? null : 0, value ?? const <int>[]));
+    return requestResponse(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids).then((value) => ((value == null ? null : 0), (value ?? const <int>[])));
   }
 
   Future<(int? respCode, VarWriteResponseValues)> writeVars(VarWriteRequestValues pairs) async {
-    return requestResponse(MotPacketPayloadId.MOT_PACKET_VAR_WRITE, pairs).then((value) => ((value == null) ? null : 0, value ?? const <int>[]));
+    return requestResponse(MotPacketPayloadId.MOT_PACKET_VAR_WRITE, pairs).then((value) => ((value == null ? null : 0), (value ?? const <int>[])));
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -73,23 +77,23 @@ class MotProtocolSocket extends ProtocolSocket {
   ////////////////////////////////////////////////////////////////////////////////
   /// DataMode
   ////////////////////////////////////////////////////////////////////////////////
-  Future<int?> initDataModeWrite((int address, int sizeBytes, int flags) req) async {
-    return requestResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_WRITE, req, syncOptions: ProtocolSyncOptions.sendAndRecv);
+  Future<int?> initDataModeWrite(int address, int sizeBytes, int flags) async {
+    return requestResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_WRITE, (address, sizeBytes, flags), syncOptions: ProtocolSyncOptions.sendAndRecv);
   }
 
-  Future<int?> initDataModeRead((int address, int sizeBytes, int flags) req) async {
-    return requestResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_READ, req, syncOptions: ProtocolSyncOptions.sendAndRecv);
+  Future<int?> initDataModeRead(int address, int sizeBytes, int flags) async {
+    return requestResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_READ, (address, sizeBytes, flags), syncOptions: ProtocolSyncOptions.sendAndRecv);
   }
 
   Future<void> writeDataModeData(Uint8List data) async => sendRequest(MotPacketPayloadId.MOT_PACKET_DATA_MODE_DATA, data);
   Future<Uint8List?> readDataModeData() async => recvResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_DATA);
 
-  //returns  status char
+  //returns status char
   Future<int?> writeDataMode(int address, int sizeBytes, Uint8List data, [void Function(int bytesComplete)? progressCallback]) async {
     assert(sizeBytes == data.length);
     if (sizeBytes != data.length) return -1;
 
-    final initialResponse = await initDataModeWrite((address, sizeBytes, 0));
+    final initialResponse = await initDataModeWrite(address, sizeBytes, 0);
     if (initialResponse != 0) return initialResponse;
 
     // for (var index = 0; index < sizeBytes; index += 32) {
@@ -113,7 +117,7 @@ class MotProtocolSocket extends ProtocolSocket {
 
     protocol.mapRequestResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_DATA, this); // map additional id
 
-    final initialResponse = await initDataModeRead((address, sizeBytes, 0));
+    final initialResponse = await initDataModeRead(address, sizeBytes, 0);
     if (initialResponse != 0) return initialResponse;
 
     for (var index = 0; index < sizeBytes; index += 32) {

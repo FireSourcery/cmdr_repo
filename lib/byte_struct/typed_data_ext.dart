@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'dart:ffi';
+import 'dart:math';
 import 'dart:typed_data';
 
 //  static int valueOf(TypedData bytes, [Endian endian = Endian.little]) => bytes.buffer.asByteData().getInt64(bytes.offsetInBytes, endian);
@@ -38,9 +39,6 @@ extension TypedDataCtors on TypedData {
     //   _ => throw UnimplementedError(),
     // } as TypedData;
   }
-
-  // int toInt([Endian endian = Endian.little]) => buffer.asByteData().getInt64(offsetInBytes, endian);
-  // String toStringAsEncoded([int start = 0, int? end]) => String.fromCharCodes(Uint8List.sublistView(this), start, end);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,10 +52,16 @@ extension BytesOfInt on int {
   ByteData toByteData([Endian endian = Endian.big]) => TypedDataCtors.fromInt(this, endian);
   Uint8List toBytes([Endian endian = Endian.big]) => TypedDataCtors.fromInt(this, endian).buffer.asUint8List();
 
+  static int _bitmaskOf(int offset, int width) => ((1 << width) - 1) << (offset);
+  static int _byteMaskOf(int index, int size) => _bitmaskOf(index * 8, size * 8);
+
   /// skip ByteData buffer for a direct segment
-  int valueAt(int offset, int size) => (this >> (offset * 8)) & ((1 << (size * 8)) - 1);
+  // int valueAt(int offset, int size) => (this >> (offset * 8)) & ((1 << (size * 8)) - 1);
+  int valueAt(int index, int size) => _byteMaskOf(index, size) & (this >> (index * 8));
   int wordAt<T extends NativeType>(int offset) => valueAt(offset, sizeOf<T>());
-  // int modifyByte(int index, int value) => (this & ~ _bitmask) | (value << index) ;
+
+  // likely more optimal then toBytes
+  int modifyByte(int index, int value) => (this & ~_byteMaskOf(index, 1)) | (value << (index * 8));
 }
 
 extension ByteBufferData on ByteBuffer {
@@ -65,15 +69,9 @@ extension ByteBufferData on ByteBuffer {
 }
 
 extension IntOfBytes on TypedData {
-  // equivalent to ByteData.sublistView(this).getInt64(0, endian)
   // caller assert(lengthInBytes > 8)
-  int toInt([Endian endian = Endian.little]) {
-    if (lengthInBytes >= 8) {
-      return buffer.asByteData().getInt64(offsetInBytes, endian);
-    } else {
-      return TypedDataCtors.fromBytes(Uint8List.sublistView(this), 8).toInt(endian);
-    }
-  }
+  int toInt64([Endian endian = Endian.little]) => buffer.asByteData().getInt64(offsetInBytes, endian); // equivalent to ByteData.sublistView(this).getInt64(0, endian)
+  int toInt([Endian endian = Endian.little]) => (lengthInBytes >= 8) ? toInt64(endian) : TypedDataCtors.fromBytes(Uint8List.sublistView(this), 8).toInt64(endian);
 
   // following bytesOfInt
   // trimmed view sublist for copy
@@ -116,30 +114,45 @@ extension GenericSublistView on TypedData {
   int get end => offsetInBytes + lengthInBytes; // index of last byte + 1
 
   ByteData asByteData() => ByteData.sublistView(this);
-  List<int> asTypedList<R extends TypedData>() => sublistViewHost<R>();
+  R asTypedList<R extends TypedData>() => sublistView<R>();
 
   // throws range error
   // offset uses "this" instance type, not R type
-  List<int> sublistView<R extends TypedData>([int typedOffset = 0]) {
+  // todo change to R
+  R sublistView<R extends TypedData>([int typedOffset = 0, int? end]) {
     return switch (R) {
-      const (Uint8List) => Uint8List.sublistView(this, typedOffset),
-      const (Uint16List) => Uint16List.sublistView(this, typedOffset),
-      const (Uint32List) => Uint32List.sublistView(this, typedOffset),
-      const (Int8List) => Int8List.sublistView(this, typedOffset),
-      const (Int16List) => Int16List.sublistView(this, typedOffset),
-      const (Int32List) => Int32List.sublistView(this, typedOffset),
-      const (ByteData) => throw UnsupportedError('ByteData is not a typed list'),
+      const (Uint8List) => Uint8List.sublistView(this, typedOffset, end),
+      const (Uint16List) => Uint16List.sublistView(this, typedOffset, end),
+      const (Uint32List) => Uint32List.sublistView(this, typedOffset, end),
+      const (Int8List) => Int8List.sublistView(this, typedOffset, end),
+      const (Int16List) => Int16List.sublistView(this, typedOffset, end),
+      const (Int32List) => Int32List.sublistView(this, typedOffset, end),
+      const (ByteData) => ByteData.sublistView(this, typedOffset, end),
       _ => throw UnimplementedError(),
+    } as R;
+  }
+
+  R? sublistViewOrNull<R extends TypedData>([int byteOffset = 0, int? end]) => (byteOffset < lengthInBytes) ? sublistView<R>(byteOffset, end) : null;
+
+  List<int> intListView<R extends TypedData>([int typedOffset = 0, int? end]) {
+    return switch (R) {
+      const (Uint8List) => Uint8List.sublistView(this, typedOffset, end),
+      const (Uint16List) => Uint16List.sublistView(this, typedOffset, end),
+      const (Uint32List) => Uint32List.sublistView(this, typedOffset, end),
+      const (Int8List) => Int8List.sublistView(this, typedOffset, end),
+      const (Int16List) => Int16List.sublistView(this, typedOffset, end),
+      const (Int32List) => Int32List.sublistView(this, typedOffset, end),
+      _ => throw UnsupportedError('$R is not an int list'),
     };
   }
 
-  List<int> sublistViewOrEmpty<R extends TypedData>([int byteOffset = 0]) => (byteOffset < lengthInBytes) ? sublistView<R>(byteOffset) : const <int>[];
+  List<int> intListViewOrEmpty<R extends TypedData>([int byteOffset = 0, int? end]) => (byteOffset < lengthInBytes) ? intListView<R>(byteOffset, end) : const <int>[];
 
   static Endian hostEndian = Endian.host; // resolve once storing results
 
-  List<int> sublistViewHost<R extends TypedData>([int typedOffset = 0, Endian endian = Endian.little]) {
-    return ((hostEndian != endian) && (R != Uint8List) && (R != Int8List)) ? EndianCastList<R>(this, endian) : sublistView<R>(typedOffset);
-  }
+  // List<num> numListViewHost<R extends TypedData>([int typedOffset = 0, Endian endian = Endian.little]) {
+  //   return (hostEndian != endian) ? EndianCastList<R>(this, endian) : sublistView<R>(typedOffset) as R;
+  // }
 }
 
 extension GenericWord on ByteData {
@@ -175,6 +188,15 @@ extension GenericWord on ByteData {
       _ => throw UnimplementedError(),
     };
   }
+
+  int uintAt(int byteOffset, int size, [Endian endian = Endian.little]) {
+    return switch (size) {
+      const (1) => getUint8(byteOffset),
+      const (2) => getUint16(byteOffset, endian),
+      const (4) => getUint32(byteOffset, endian),
+      _ => throw UnimplementedError(),
+    };
+  }
 }
 
 // extension ByteBufferData on ByteBuffer {
@@ -199,7 +221,7 @@ int sizeOf<T extends NativeType>() {
   };
 }
 
-class EndianCastList<R extends TypedData> extends ListBase<int> {
+class EndianCastList<R extends TypedData> extends ListBase<num> {
   EndianCastList(this._source, this._endian);
 
   TypedData _source;
@@ -210,7 +232,7 @@ class EndianCastList<R extends TypedData> extends ListBase<int> {
   // int get length => (_source as List<int>).length;
 
   @override
-  int operator [](int index) {
+  num operator [](int index) {
     final byteData = ByteData.sublistView(_source);
     return switch (R) {
       const (Uint16List) => byteData.getUint16(index * _source.elementSizeInBytes, _endian),
@@ -225,7 +247,7 @@ class EndianCastList<R extends TypedData> extends ListBase<int> {
   }
 
   @override
-  void operator []=(int index, int value) {
+  void operator []=(int index, num value) {
     // TODO: implement []=
   }
 

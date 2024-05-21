@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:recase/recase.dart';
 
 typedef KeyValuePair<K, V> = (K key, V value);
 typedef KeyValueEntry<K, V> = ({K key, V value});
@@ -18,4 +17,12 @@ abstract mixin class PropertyFilter<T> implements Enum {
   Iterable<T> call(Iterable<T> input) => input.where(test);
 
   IterableFilter<T> get asIterableFilter => call;
+}
+
+extension CallOnNullAsNull on Function {
+  R? calln<T, R>(T? arg) => switch (arg) { T value => this(value), null => null };
+}
+
+extension IsNotNullThen on Object? {
+  R? isThen<T, R>(R Function(T value) fn) => switch (this as T?) { T value => fn(value), null => null };
 }

@@ -70,6 +70,7 @@ class Word {
 
   /// copyWithChar
   int modifyByte(int index, int value, [Endian endian = Endian.little]) => toBytes(endian).modify(index, value).toInt(endian);
+  Word updateByte(int index, int value, [Endian endian = Endian.little]) => Word(modifyByte(index, value, endian));
 
   // String inputs as literal of binary value
   String charAsValue(int index, [bool isSigned = false]) => _bytesString.charAsValue(index); // 1 => '1'
@@ -90,3 +91,11 @@ class Word {
   // @override
   // int get hashCode => value.hashCode;
 }
+
+// class MutableWord extends Word {
+//   MutableWord(super.value);
+
+//   // @override
+//   // int value;
+//   set value(int newValue) => value = newValue;
+// }
