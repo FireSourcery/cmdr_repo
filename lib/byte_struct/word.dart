@@ -79,9 +79,6 @@ class Word {
   String charAsCode(int index) => _bytesString.charAsCode(index); // 0x31 => '1'
   int modifyAsCode(int index, String value) => modifyByte(index, value.runes.single); // '1' => 0x31
 
-  // static (int index, int byteValue) fieldAsValue(int index, String value) => (index, int.parse(value));
-  // static (int index, int byteValue) fieldAsCode(int index, String value) => (index, value.runes.single);
-
   // @override
   // bool operator ==(covariant Word other) {
   //   if (identical(this, other)) return true;

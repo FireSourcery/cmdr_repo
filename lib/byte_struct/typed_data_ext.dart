@@ -56,7 +56,6 @@ extension BytesOfInt on int {
   static int _byteMaskOf(int index, int size) => _bitmaskOf(index * 8, size * 8);
 
   /// skip ByteData buffer for a direct segment
-  // int valueAt(int offset, int size) => (this >> (offset * 8)) & ((1 << (size * 8)) - 1);
   int valueAt(int index, int size) => _byteMaskOf(index, size) & (this >> (index * 8));
   int wordAt<T extends NativeType>(int offset) => valueAt(offset, sizeOf<T>());
 

@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-
-/// 
+///
 abstract interface class VarView<V> implements ValueNotifier<V> {
   int get id;
   String get name;
@@ -19,8 +18,11 @@ abstract interface class VarView<V> implements ValueNotifier<V> {
   V get value;
   set value(V value);
 
+  // // for ValueGetter tare off
+  // V getValue() => value;
+
   /// view determines type after accounting fo varId.valueType
-  // R valueAs<R>(); 
+  // R valueAs<R>();
   void updateValueChange(V typedValue);
   void updateValueSubmit(V typedValue);
 
@@ -28,10 +30,9 @@ abstract interface class VarView<V> implements ValueNotifier<V> {
   // String valueStringAs<T>();
 
   int get statusCode;
-  bool get statusIsError; 
+  bool get statusIsError;
   String get statusString;
 }
-
 
 // typedef ViewOfData = num Function(int data);
 // typedef DataOfView = int Function(num view);

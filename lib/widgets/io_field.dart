@@ -61,6 +61,22 @@ class IOFieldConfig<T> {
     this.valueStringGetter,
   }); //assert(!((T == num || T == int || T == double) && (config.valueMin == null || config.valueMax == null)));
 
+  // IOFieldConfig.fromInterface(VarViewInterface<T> interface)
+  //     : this(
+  //         valueGetter: interface.getValue,
+  //         valueListenable: interface.valueListenable,
+  //         valueErrorGetter: interface.valueErrorGetter,
+  //         isReadOnly: interface.isReadOnly,
+  //         stringMap: interface.stringMap,
+  //         valueSetter: interface.valueSetter,
+  //         sliderChanged: interface.sliderChanged,
+  //         valueMin: interface.valueMin,
+  //         valueMax: interface.valueMax,
+  //         inputDecoration: interface.inputDecoration,
+  //         tip: interface.tip,
+  //         valueStringGetter: interface.valueStringGetter,
+  //       );
+
   final InputDecoration inputDecoration;
   final bool isReadOnly;
   final String tip;

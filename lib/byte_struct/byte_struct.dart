@@ -34,7 +34,7 @@ class ByteStructBase {
   final Uint8List bytes;
 
   Uint8List range(int offset, [int? length]) => Uint8List.sublistView(bytes, offset, length);
-  // Uint8List range(int offset, [int? length]) => bytes.sublistView(offset, length);
+  // TypedData rangeAs<T extends TypedData>(int offset, [int? length]) => bytes.sublistView<T>(offset, length);
 
   // field names need code gen
   ByteData get _byteData => ByteData.sublistView(bytes);
@@ -42,8 +42,8 @@ class ByteStructBase {
   void setFieldValue<V extends NativeType>(int offset, int value) => _byteData.setWordAt<V>(offset, value);
   int? fieldValueOrNull<V extends NativeType>(int offset) => _byteData.wordAtOrNull<V>(offset);
 
-  // dynamic buildAs<T extends ByteStructBase, V>(ByteStructCaster<T> caster, V values) => caster(bytes).build(values, this);
-  // V parseAs<R extends ByteStructBase, V>(ByteStructCaster<R> caster, [dynamic  stateMeta]) => caster(bytes).parse(this, stateMeta);
+  // dynamic setAs<T extends ByteStructBase, V>(ByteStructCaster<T> caster, V values) => caster(bytes).build(values, this);
+  // V getAs<R extends ByteStructBase, V>(ByteStructCaster<R> caster, [dynamic  stateMeta]) => caster(bytes).parse(this, stateMeta);
 }
 
 // Abstract Factory
@@ -109,32 +109,4 @@ abstract interface class ByteStructInterface {
 //   }
 // }
 
-//ffi struct wrappers
-// class StructBuffer<T extends Struct> extends ByteStructBuffer<T> {
-//   Uint8List _bytes; // holds truncated view, mutable length
-//   final T _struct; // holds full view, max length buffer, with named fields
-//   int? fieldValueOrNull<V extends NativeType>(int offset) => bytes.buffer.asByteData().wordAtOrNull<V>(offset);
-// }
-
-// // copy to known buffer when struct exceeds view target
-// class StructCaster<T> extends ByteStruct<T> {
-//   // ByteStructCaster._(this._struct) : bytes = _struct.asTypedList;
-//   ByteStructCaster._(this._buffer, this.structConstructor, this.structView) : super._(structView, _buffer);
-//   factory ByteStructCaster(StructConstructor<T> structConstructor, int size) {
-//     final buffer = Uint8List(size);
-//     return ByteStructCaster<T>._(buffer, structConstructor, structConstructor(buffer));
-//   }
-
-//   final Uint8List _buffer; // internal buffer of known struct size
-//   final StructConstructor<T> structConstructor; // hold for cast
-//   // Uint8List bytes;
-//   @override
-//   T structView; // mutable view to avoid double buffering
-
-//   void cast(TypedData data) {
-//     // directly cast input if it is larger then the struct size
-//     final backing = (data.lengthInBytes < _buffer.lengthInBytes) ? (_buffer..setAll(0, data.buffer.asUint8List())) : data;
-//     _bytes = Uint8List.sublistView(backing);
-//     structView = structConstructor(backing);
-//   }
-// }
+ 

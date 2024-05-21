@@ -33,18 +33,6 @@ abstract class FileStorage<T> {
   Future<File?> save(File? file, T contents) async => (file != null) ? writeContents(file, contents) : null;
   Future<File?> saveAsync(Future<File?> file, T contents) async => file.then((value) => save(value, contents));
   Future<File?> saveBuildAsync(Future<File?> file) async => saveAsync(file, toContents());
-
-  // FileStorage<T> copyWith({
-  //   FileCodec<T, dynamic>? fileCodec,
-  //   List<String>? extensions,
-  //   String? defaultName,
-  // }) {
-  //   return FileStorage<T>(
-  //     fileCodec ?? this.fileCodec,
-  //     extensions ?? this.extensions,
-  //     defaultName ?? this.defaultName,
-  //   );
-  // }
 }
 
 // skip Converter encoder/decoder of Codec class for simplicity

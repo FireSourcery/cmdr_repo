@@ -18,15 +18,13 @@ export '../../byte_struct/byte_struct.dart';
 // effectively the child packet type encapsulated, child class 'static' methods
 abstract interface class PacketInterface {
   // const for each packet instance
-  // length in bytes
   // can implement in PacketId for per packet behavior
   int get startId; // alternatively Uint8List
-  int get lengthMax;
+  int get lengthMax; // length in bytes
   int get idHeaderLength; // defined as length only as they start at offset 0
   int get payloadHeaderLength;
   Endian get endian;
   PacketId? idOf(int intId);
-  // alternatively move cast functions to id
   PacketHeader headerOf(TypedData typedData);
   PacketHeaderSync syncHeaderOf(TypedData typedData);
 
@@ -54,19 +52,13 @@ abstract interface class PacketInterface {
 /// as oppose to extending struct directly,
 /// Components extend Struct to convince of defining sized. `PacketCaster` retain mutable length
 ///
-/// ffi.Struct current does not allow length < full struct length
+/// ffi.Struct current does not allow length < full struct length, or mixin
 abstract mixin class Packet implements PacketInterface {
   const Packet();
   // factory Packet.view(PacketCaster packetCaster, Packet packet, int offset, [int? length]) => packetCaster(packet.range(offset, length));
 
   // alternatively
   // PacketInterface get packetInterface;
-
-  // per instance
-  // pointer to a buffer, immutable.
-  // mutable view use PacketBuffer
-  // Holds offset, not directly retain ByteBuffer, to allow packets parts to be defined relatively
-  Uint8List get bytes;
 
   /// derive from either header or packetInterface
   int get payloadIndex => payloadHeaderLength;
@@ -77,8 +69,14 @@ abstract mixin class Packet implements PacketInterface {
   ////////////////////////////////////////////////////////////////////////////////
   ///
   ////////////////////////////////////////////////////////////////////////////////
+  // per instance
+  // pointer to a buffer, immutable.
+  // mutable view use PacketBuffer
+  // Holds offset, not directly retain ByteBuffer, to allow packets parts to be defined relatively
+  Uint8List get bytes;
+
   /// immutable, of varying length, by default
-  /// mutable with mixin
+  /// mutable with mixin, or PacketBuffer
   /// immutable, always lengthMax, in case of mixin on struct
   int get length => bytes.lengthInBytes;
   int get payloadLength => length - payloadIndex;
@@ -122,7 +120,7 @@ abstract mixin class Packet implements PacketInterface {
   int? payloadWordAtOrNull<R extends NativeType>(int byteOffset) => payloadWords.wordAtOrNull<R>(byteOffset, endian);
 
   ////////////////////////////////////////////////////////////////////////////////
-  /// Checksum
+  /// [Checksum]
   ////////////////////////////////////////////////////////////////////////////////
   static int crc16(Uint8List u8list) {
     var crc = 0;
@@ -334,7 +332,6 @@ typedef PayloadCaster<T extends Payload> = T Function(TypedData typedData);
 //   T allocate();
 // }
 
-/// `Payload<V, M>`
 /// extends Struct and Payload
 /// Payload need to contain a static cast function
 /// factory Child.cast(TypedData target);
@@ -504,8 +501,8 @@ final class EchoPayload extends Struct implements Payload<(int, int)> {
   external int value1;
 
   factory EchoPayload({int value1 = 0, int value0 = 0}) => Struct.create<EchoPayload>()..build((value1, value0));
-  // ensures Struct.create<EchoPayload> is compiled at compile time
-  factory EchoPayload.cast(TypedData typedData) => Struct.create<EchoPayload>(typedData);
+
+  factory EchoPayload.cast(TypedData typedData) => Struct.create<EchoPayload>(typedData); // ensures Struct.create<EchoPayload> is compiled at compile time
 
   @override
   PayloadMeta build((int, int) args, [Packet? header]) {

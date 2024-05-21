@@ -14,9 +14,7 @@ extension on Uint8List {
   Uint8List? seekView(Uint8List match) => seekViewOfIndex(indexOfBytes(match));
 }
 
-/// PacketRxHeaderParser
 /// Packet Rx Meta Parser
-/// implemented with shared Sync Header by default
 class HeaderParser extends PacketBuffer {
   HeaderParser(super.packetCaster, super.size) : super.size();
   HeaderParser.interface(super.packetInterface, super.size) : super();

@@ -15,6 +15,7 @@ class MotProtocolSocket extends ProtocolSocket {
   Future<int?> ping() async {
     sendSync(MotPacketSyncId.MOT_PACKET_PING);
     return (await recvSync())?.intId;
+    // return (await recvSync()) as MotPacketSyncId;
   }
 
   Future<int?> pingBoot() async {
@@ -93,16 +94,15 @@ class MotProtocolSocket extends ProtocolSocket {
     assert(sizeBytes == data.length);
     if (sizeBytes != data.length) return -1;
 
-    final initialResponse = await initDataModeWrite(address, sizeBytes, 0);
-    if (initialResponse != 0) return initialResponse;
+    if (await initDataModeWrite(address, sizeBytes, 0) case int response when response != 0) return response;
+    // final initialResponse = await initDataModeWrite(address, sizeBytes, 0);
+    // if (initialResponse != 0) return initialResponse;
 
-    // for (var index = 0; index < sizeBytes; index += 32) {
     try {
-      for (final (index, entry) in data.slices(32).indexed) {
-        await writeDataModeData(Uint8List.fromList(entry));
+      for (var index = 0; index < sizeBytes; index += 32) {
+        await writeDataModeData(Uint8List.sublistView(data, index, min(32, sizeBytes - index)));
 
         if (await recvSync() != MotPacketSyncId.MOT_PACKET_SYNC_ACK) return -1;
-
         progressCallback?.call(index * 32 + data.length);
       }
     } finally {
@@ -117,8 +117,9 @@ class MotProtocolSocket extends ProtocolSocket {
 
     protocol.mapRequestResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_DATA, this); // map additional id
 
-    final initialResponse = await initDataModeRead(address, sizeBytes, 0);
-    if (initialResponse != 0) return initialResponse;
+    if (await initDataModeRead(address, sizeBytes, 0) case int response when response != 0) return response;
+    // final initialResponse = await initDataModeRead(address, sizeBytes, 0);
+    // if (initialResponse != 0) return initialResponse;
 
     for (var index = 0; index < sizeBytes; index += 32) {
       var data = await readDataModeData();

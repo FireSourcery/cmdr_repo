@@ -4,6 +4,47 @@ import 'package:ffi/ffi.dart';
 import '../../byte_struct/typed_field.dart';
 import '../base/packet.dart';
 
+mixin class MotPacketInterface implements PacketInterface {
+  const MotPacketInterface();
+
+  @override
+  int get lengthMax => 40;
+  @override
+  int get idHeaderLength => 2;
+  @override
+  int get payloadHeaderLength => 8;
+  @override
+  int get startId => 0xA5;
+  @override
+  Endian get endian => Endian.little;
+  @override
+  MotPacketId? idOf(int intId) => MotPacketId.of(intId);
+  @override
+  // MotPacketHeader castHeader(TypedData typedData) => MotPacketHeader.cast(typedData);
+  MotPacketHeader headerOf(TypedData typedData) => MotPacketHeader.cast(typedData);
+  @override
+  MotPacketHeaderSync syncHeaderOf(TypedData typedData) => MotPacketHeaderSync.cast(typedData);
+
+  @override
+  TypedOffset<Uint8> get startFieldPart => const TypedOffset<Uint8>(0);
+  @override
+  TypedOffset<Uint8> get idFieldPart => const TypedOffset<Uint8>(1);
+  @override
+  TypedOffset<Uint16> get checksumFieldPart => const TypedOffset<Uint16>(2);
+  @override
+  TypedOffset<Uint8> get lengthFieldPart => const TypedOffset<Uint8>(4);
+
+  @override
+  PacketIdSync get ack => MotPacketSyncId.MOT_PACKET_SYNC_ACK;
+  @override
+  PacketIdSync get nack => MotPacketSyncId.MOT_PACKET_SYNC_NACK;
+  @override
+  PacketIdSync get abort => MotPacketSyncId.MOT_PACKET_SYNC_ABORT;
+
+  @override
+  MotPacket cast(TypedData typedData) => MotPacket.cast(typedData);
+}
+
 class MotPacket extends PacketBase with MotPacketInterface {
   MotPacket.cast(super.bytes);
   // @override
@@ -59,9 +100,6 @@ base class MotPacketHeader extends Struct implements PacketHeader {
   set flex1FieldValue(int value) => flex1Field = value;
   set flex2FieldValue(int value) => flex2Field = value;
 
-  // int get flexUpper16FieldValue => headerWords.getUint16(6, configEndian);
-  // set flexUpper16FieldValue(int value) => headerWords.setUint16(6, value, configEndian);
-
   int get flexUpper16FieldValue => (flex2FieldValue << 8) | flex1FieldValue;
   set flexUpper16FieldValue(int value) => this
     ..flex2FieldValue = (value >> 8)
@@ -92,46 +130,6 @@ base class MotPacketHeaderSync extends Struct implements PacketHeaderSync {
   set startFieldValue(int value) => startField = value;
   @override
   set idFieldValue(int value) => idField = value;
-}
-
-mixin class MotPacketInterface implements PacketInterface {
-  const MotPacketInterface();
-  @override
-  int get lengthMax => 40;
-  @override
-  int get idHeaderLength => 2;
-  @override
-  int get payloadHeaderLength => 8;
-  @override
-  int get startId => 0xA5;
-  @override
-  Endian get endian => Endian.little;
-  @override
-  MotPacketId? idOf(int intId) => MotPacketId.of(intId);
-  @override
-  // MotPacketHeader castHeader(TypedData typedData) => MotPacketHeader.cast(typedData);
-  MotPacketHeader headerOf(TypedData typedData) => MotPacketHeader.cast(typedData);
-  @override
-  MotPacketHeaderSync syncHeaderOf(TypedData typedData) => MotPacketHeaderSync.cast(typedData);
-
-  @override
-  TypedOffset<Uint8> get startFieldPart => const TypedOffset<Uint8>(0);
-  @override
-  TypedOffset<Uint8> get idFieldPart => const TypedOffset<Uint8>(1);
-  @override
-  TypedOffset<Uint16> get checksumFieldPart => const TypedOffset<Uint16>(2);
-  @override
-  TypedOffset<Uint8> get lengthFieldPart => const TypedOffset<Uint8>(4);
-
-  @override
-  PacketIdSync get ack => MotPacketSyncId.MOT_PACKET_SYNC_ACK;
-  @override
-  PacketIdSync get nack => MotPacketSyncId.MOT_PACKET_SYNC_NACK;
-  @override
-  PacketIdSync get abort => MotPacketSyncId.MOT_PACKET_SYNC_ABORT;
-
-  @override
-  MotPacket cast(TypedData typedData) => MotPacket.cast(typedData);
 }
 
 sealed class MotPacketId implements PacketId {
@@ -248,9 +246,9 @@ final class VarReadResponse extends Struct implements Payload<VarReadResponseVal
 
   @override
   VarReadResponseValues parse(MotPacket header, PayloadMeta? stateMeta) {
-    //   // final (int idChecksum, int flags)   = requestStatus;
-    //   // final (idChecksum, respCode) = parseVarReadMeta();
-    //   // return ((requestStatus == null) || (requestStatus.$1 == flexUpper16Field)) ? (0, parseVarReadValues()) : (null, null);
+    // final (int idChecksum, int flags)   = requestStatus;
+    // final (idChecksum, respCode) = parseVarReadMeta();
+    // return ((requestStatus == null) || (requestStatus.$1 == flexUpper16Field)) ? (0, parseVarReadValues()) : (null, null);
     return header.payloadAt<Uint16List>(0);
   }
 
@@ -413,8 +411,9 @@ base class CallRequest extends Struct implements Payload<CallRequestValues> {
 
   @override
   PayloadMeta build(CallRequestValues args, [MotPacket? header]) {
-    id = args.$1;
-    arg = args.$2 ?? 0;
+    final (id, arg) = args;
+    this.id = id;
+    this.arg = arg ?? 0;
     return const PayloadMeta(8);
   }
 
@@ -561,9 +560,10 @@ base class DataModeInitRequest extends Struct implements Payload<DataModeRequest
 
   @override
   PayloadMeta build(DataModeRequestValues args, [MotPacket? header]) {
-    address = args.$1;
-    size = args.$2;
-    configFlags = args.$3;
+    final (address, size, configFlags) = args;
+    this.address = address;
+    this.size = size;
+    this.configFlags = configFlags;
     return const PayloadMeta(12);
   }
 

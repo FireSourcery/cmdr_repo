@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:recase/recase.dart';
 
-import 'defined_types.dart';
+import '../common/defined_types.dart';
 
 class PropertyChoiceChips extends StatelessWidget {
   const PropertyChoiceChips({super.key, required this.categories, required this.onSelected, required this.selectedCategory});
