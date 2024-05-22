@@ -31,7 +31,7 @@ abstract interface class PacketInterface {
   /// defined position, relative to `packet`.
   /// header fields for buildHeader/parseHeader
   /// required for HeaderParser.
-  /// can be derived from header Struct until get offset is available
+  /// can be derived from header Struct when get offset is available
   TypedOffset get startFieldPart;
   TypedOffset get idFieldPart;
   TypedOffset get lengthFieldPart;
@@ -143,14 +143,20 @@ abstract mixin class Packet implements PacketInterface {
 
   int Function(Uint8List data) get checksumAlgorithm => sum;
 
-  // all bytes excluding checksumField
-  int checksum() {
-    assert(length == headerAsPayloadType.lengthFieldValue);
+  // static int sum(int previousValue, int element) => previousValue + element;
+  // int Function(int previousValue, int element) get checksumAlgorithm => sum;
+
+  /// all bytes excluding checksumField
+  /// using length contained in [bytes] view, or length param length
+  int checksum([int? payloadLength]) {
+    assert((() => (payloadLength == null) ? length == headerAsPayloadType.lengthFieldValue : true).call());
+    final checksumMask = ((1 << (checksumSize * 8)) - 1);
     final checksumEnd = checksumIndex + checksumSize;
-    final checksumMask = ((1 << checksumSize * 8) - 1);
+    final afterChecksumSize = (payloadHeaderLength - checksumEnd) + (payloadLength ?? this.payloadLength);
+
     var checkSum = 0;
     checkSum += checksumAlgorithm(Uint8List.sublistView(bytes, 0, checksumIndex));
-    checkSum += checksumAlgorithm(Uint8List.sublistView(bytes, checksumEnd)); // use bytes.length or lengthField?
+    checkSum += checksumAlgorithm(Uint8List.sublistView(bytes, checksumEnd, afterChecksumSize));
     return checkSum & checksumMask;
   }
 
@@ -183,7 +189,7 @@ abstract mixin class Packet implements PacketInterface {
     fillStartField();
     headerAsPayloadType.idFieldValue = requestId.intId;
     headerAsPayloadType.lengthFieldValue = payloadLength + payloadHeaderLength;
-    headerAsPayloadType.checksumFieldValue = checksum();
+    headerAsPayloadType.checksumFieldValue = checksum(payloadLength);
   }
 
   void buildHeader(PacketId packetId, int payloadLength) {
@@ -248,7 +254,7 @@ abstract mixin class Packet implements PacketInterface {
   PayloadMeta buildRequest<T extends Payload, TV>(PacketIdRequestResponse<T, dynamic> packetId, TV requestArgs) {
     PayloadMeta meta = buildPayloadAs(packetId.requestCaster!, requestArgs);
     if (meta.length > payloadLengthMax) return const PayloadMeta(0);
-    buildHeaderAsPayload(packetId, meta.length);
+    buildHeaderAsPayload(packetId, meta.length); // uncontrained view on build, or implement in buffer after set length
     return meta;
   }
 
@@ -269,6 +275,7 @@ abstract class PacketBase extends ByteStructBase with Packet {
 }
 
 // abstract mixin class PacketCreator {
+//   int get lengthMax; // length in bytes
 //   Packet cast(TypedData typedData);
 //   Packet alloc() => cast(Uint8List(lengthMax));
 //   Packet create([Uint8List? typedData, int offset = 0, int? length]) => cast(Uint8List.sublistView((typedData ?? Uint8List(lengthMax)), offset, length));
@@ -326,7 +333,9 @@ abstract interface class PacketHeaderSync {
 
 /// [Payload] Constructor - handler per id
 /// Struct.create<T>
-typedef PayloadCaster<T extends Payload> = T Function(TypedData typedData);
+// typedef PayloadCaster<T extends Payload> = T Function(TypedData typedData);
+typedef PayloadCaster<P extends Payload<V>, V> = P Function(TypedData typedData);
+// typedef PayloadCasterByValue<V> = Payload<V> Function(TypedData typedData);
 // abstract interface class PayloadFactory<T extends Payload> {
 //   T call(TypedData typedData);
 //   T allocate();
@@ -347,8 +356,9 @@ typedef PayloadCaster<T extends Payload> = T Function(TypedData typedData);
 /// payload class without direct context of header allows stronger encapsulation
 /// if Payload is a struct, then it does not have to declare filler header fields
 abstract interface class Payload<V> {
+  // V get values;
   PayloadMeta build(V args, [covariant Packet? header]);
-  V parse(covariant Packet header, covariant PayloadMeta? stateMeta);
+  V parse([covariant Packet header, covariant PayloadMeta? stateMeta]);
 }
 
 // length state maintained by caller, cannot be included as struct field
@@ -378,7 +388,7 @@ class PacketBuffer {
   PacketBuffer(PacketInterface packetInterface, [int? size]) : this.buffer(packetInterface.cast, Uint8List(size ?? packetInterface.lengthMax));
 
   final ByteBuffer _byteBuffer; // PacketBuffer can directly retain byteBuffer, its own buffer starts at offset 0, methods are provided as relative via Packet,
-  final Packet _packetBuffer; // holds full view, max length buffer, with named fields, for build functions
+  final Packet _packetBuffer; // holds full view, max length buffer, with named fields. build functions uncontrained, then sets length
 
   Uint8List _bytesView; // holds truncated view, mutable length.
   Packet _packetView; // final if casting is not implemented, or packet extends struct
@@ -482,12 +492,15 @@ abstract interface class PacketIdSync implements PacketId {
 /// paired request response id for simplicity in case of shared id by request and response
 /// under define responseId for 1-way e.g <T, void>
 ///   handlers must be constructors, mutable objects cannot be const for enum
-abstract interface class PacketIdRequestResponse<T extends Payload, R extends Payload> implements PacketId {
+// abstract interface class PacketIdRequestResponse<T extends Payload, R extends Payload> implements PacketId {
+abstract interface class PacketIdRequestResponse<T, R> implements PacketId {
   const PacketIdRequestResponse();
 
   PacketId? get responseId; // null for 1-way or matching response, override for non matching
-  PayloadCaster<T>? get requestCaster;
-  PayloadCaster<R>? get responseCaster;
+  // PayloadCaster<T, dynamic>? get requestCaster;
+  // PayloadCaster<R, dynamic>? get responseCaster;
+  PayloadCaster<Payload<T>, T>? get requestCaster;
+  PayloadCaster<Payload<R>, R>? get responseCaster;
 }
 
 ////////////////////////////////////////////////////////////////////////////

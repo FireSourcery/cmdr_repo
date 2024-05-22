@@ -29,6 +29,10 @@ class MotProtocolSocket extends ProtocolSocket {
     return requestResponse(MotPacketPayloadId.MOT_PACKET_CALL, (id, arg), timeout: timeout).then((value) => value ?? (null, null));
   }
 
+  // Future<CallResponseValues?> call1(int id, int? arg, [Duration? timeout]) async {
+  //   return requestResponse(MotPacketPayloadId.MOT_PACKET_CALL, (id, arg), timeout: timeout);
+  // }
+
   Future<VersionResponseValues> version() async {
     return await requestResponse(MotPacketPayloadId.MOT_PACKET_VERSION, null) ?? (board: 0, firmware: 0, library: 0, protocol: 0);
   }

@@ -22,13 +22,13 @@ abstract class FileStorage<T> {
   Future<T> readContents(File file) async => fileCodec.read(file);
   Future<File> writeContents(File file, T contents) async => fileCodec.write(file, contents);
 
-  Object? fromNullableContents(T? contents) => (contents != null) ? fromContents(contents) : null;
+  Object? _fromNullableContents(T? contents) => (contents != null) ? fromContents(contents) : null;
 
   // full sequence for future builder
   // returns null for no file selected
   Future<T?> open(File? file) async => (file != null) ? readContents(file) : null;
   Future<T?> openAsync(Future<File?> file) async => file.then(open);
-  Future<Object?> openParseAsync(Future<File?> file) async => openAsync(file).then(fromNullableContents);
+  Future<Object?> openParseAsync(Future<File?> file) async => openAsync(file).then(_fromNullableContents);
 
   Future<File?> save(File? file, T contents) async => (file != null) ? writeContents(file, contents) : null;
   Future<File?> saveAsync(Future<File?> file, T contents) async => file.then((value) => save(value, contents));

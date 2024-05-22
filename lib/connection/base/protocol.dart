@@ -151,7 +151,7 @@ class ProtocolSocket implements Sink<Packet> {
   /// R - Response Payload Values
   /// T - Request Payload Values
   Future<R?> requestResponse<T, R>(
-    PacketIdRequestResponse<Payload<T>, Payload<R>> requestId,
+    PacketIdRequestResponse<T, R> requestId,
     T requestArgs, {
     Duration? timeout = reqRespTimeoutDefault,
     ProtocolSyncOptions syncOptions = ProtocolSyncOptions.none,
@@ -212,15 +212,14 @@ class ProtocolSocket implements Sink<Packet> {
   //   return null;
   // }
 
-  Stream<R?> periodicRequest<T, R>(PacketIdRequestResponse<Payload<T>, Payload<R>> requestId, T requestArgs, {Duration delay = datagramDelay}) async* {
+  Stream<R?> periodicRequest<T, R>(PacketIdRequestResponse<T, R> requestId, T requestArgs, {Duration delay = datagramDelay}) async* {
     while (true) {
       yield await requestResponse<T, R>(requestId, requestArgs);
       await Future.delayed(delay); //todo as byte time
     }
   }
 
-  Stream<(T segmentArgs, R? segmentResponse)> periodicRequestSegmented<T, R>(PacketIdRequestResponse<Payload<T>, Payload<R>> requestId, Iterable<T> requestArgs,
-      {Duration delay = datagramDelay}) async* {
+  Stream<(T segmentArgs, R? segmentResponse)> periodicRequestSegmented<T, R>(PacketIdRequestResponse<T, R> requestId, Iterable<T> requestArgs, {Duration delay = datagramDelay}) async* {
     while (true) {
       for (final segmentArgs in requestArgs) {
         yield (segmentArgs, await requestResponse<T, R>(requestId, segmentArgs));
@@ -230,7 +229,7 @@ class ProtocolSocket implements Sink<Packet> {
   }
 
   /// periodic Response/Write
-  Stream<R?> periodicUpdate<T, R>(PacketIdRequestResponse<Payload<T>, Payload<R>> requestId, T Function() requestArgsGetter, {Duration delay = datagramDelay}) async* {
+  Stream<R?> periodicUpdate<T, R>(PacketIdRequestResponse<T, R> requestId, T Function() requestArgsGetter, {Duration delay = datagramDelay}) async* {
     while (true) {
       yield await requestResponse<T, R>(requestId, requestArgsGetter());
       await Future.delayed(delay); // todo as byte time

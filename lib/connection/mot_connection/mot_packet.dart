@@ -158,7 +158,7 @@ enum MotPacketSyncId implements PacketIdSync, MotPacketId {
   final int intId;
 }
 
-enum MotPacketPayloadId<T extends Payload, R extends Payload> implements PacketIdRequestResponse<T, R>, MotPacketId {
+enum MotPacketPayloadId<T, R> implements PacketIdRequestResponse<T, R>, MotPacketId {
   /* Fixed Length */
   MOT_PACKET_STOP_ALL(0x00, requestCaster: StopRequest.cast, responseCaster: StopResponse.cast),
   MOT_PACKET_VERSION(0x01, requestCaster: VersionRequest.cast, responseCaster: VersionResponse.cast),
@@ -192,9 +192,9 @@ enum MotPacketPayloadId<T extends Payload, R extends Payload> implements PacketI
   @override
   final MotPacketPayloadId? responseId;
   @override
-  final PayloadCaster<T>? requestCaster;
+  final PayloadCaster<Payload<T>, T>? requestCaster;
   @override
-  final PayloadCaster<R>? responseCaster;
+  final PayloadCaster<Payload<R>, R>? responseCaster;
 
   @override
   String toString() => name;
