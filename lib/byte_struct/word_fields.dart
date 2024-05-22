@@ -1,12 +1,11 @@
 import 'dart:collection';
+import 'dart:ffi';
 
 import 'package:recase/recase.dart';
 
 import '../common/enum_map.dart';
 import 'typed_field.dart';
 import 'word.dart';
-
-export 'typed_field.dart';
 
 /// [Word] with named fields
 abstract class WordFields<T extends WordField> = Word with MapBase<T, int>, EnumMap<T, int>, WordFieldsMixin<T>;

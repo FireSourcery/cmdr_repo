@@ -19,7 +19,7 @@ abstract interface class Setting<T> {
 
 // SettingBase using SharedPreferences
 // can be inherited by enums
-abstract mixin class SettingBase<T> implements Setting<T> {
+abstract mixin class SharedPrefSetting<T> implements Setting<T> {
   String get key;
   List<T>? get enumValues; // Enum or options set
   ({num min, num max})? get numLimits;

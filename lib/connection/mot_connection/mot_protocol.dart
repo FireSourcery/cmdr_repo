@@ -1,17 +1,20 @@
 // ignore_for_file: constant_identifier_names, camel_case_types
 
 import 'dart:math';
+import 'dart:typed_data';
 
-import 'package:cmdr/byte_struct/typed_data_ext.dart';
+import 'package:cmdr/common/defined_types.dart';
 import 'package:collection/collection.dart';
 
-import '../base/packet.dart';
 import '../base/protocol.dart';
 import 'mot_packet.dart';
 
 class MotProtocolSocket extends ProtocolSocket {
   MotProtocolSocket(super.protocol);
 
+  ////////////////////////////////////////////////////////////////////////////////
+  /// Base wrappers
+  ////////////////////////////////////////////////////////////////////////////////
   Future<int?> ping() async {
     sendSync(MotPacketSyncId.MOT_PACKET_PING);
     return (await recvSync())?.intId;
@@ -24,59 +27,65 @@ class MotProtocolSocket extends ProtocolSocket {
   }
 
   Future<int?> stopMotors() async => requestResponse(MotPacketPayloadId.MOT_PACKET_STOP_ALL, null);
+  Future<VersionResponseValues?> version() async => await requestResponse(MotPacketPayloadId.MOT_PACKET_VERSION, null);
 
-  Future<CallResponseValues> call(int id, int? arg, [Duration? timeout]) async {
-    return requestResponse(MotPacketPayloadId.MOT_PACKET_CALL, (id, arg), timeout: timeout).then((value) => value ?? (null, null));
-  }
+  Future<CallResponseValues?> call(int id, int? arg, [Duration? timeout]) async => requestResponse(MotPacketPayloadId.MOT_PACKET_CALL, (id, arg), timeout: timeout);
 
-  // Future<CallResponseValues?> call1(int id, int? arg, [Duration? timeout]) async {
-  //   return requestResponse(MotPacketPayloadId.MOT_PACKET_CALL, (id, arg), timeout: timeout);
-  // }
+  Future<VarReadResponseValues?> readVars(VarReadRequestValues ids) async => requestResponse(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids);
+  Future<VarWriteResponseValues?> writeVars(VarWriteRequestValues pairs) async => requestResponse(MotPacketPayloadId.MOT_PACKET_VAR_WRITE, pairs);
 
-  Future<VersionResponseValues> version() async {
-    return await requestResponse(MotPacketPayloadId.MOT_PACKET_VERSION, null) ?? (board: 0, firmware: 0, library: 0, protocol: 0);
-  }
-
-  Future<(int? respCode, VarReadResponseValues)> readVars(VarReadRequestValues ids) async {
-    return requestResponse(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids).then((value) => ((value == null ? null : 0), (value ?? const <int>[])));
-  }
-
-  Future<(int? respCode, VarWriteResponseValues)> writeVars(VarWriteRequestValues pairs) async {
-    return requestResponse(MotPacketPayloadId.MOT_PACKET_VAR_WRITE, pairs).then((value) => ((value == null ? null : 0), (value ?? const <int>[])));
-  }
+  ////////////////////////////////////////////////////////////////////////////////
+  /// Slices
+  ////////////////////////////////////////////////////////////////////////////////
+  /// same input signature
+  Stream<(VarReadRequestValues segmentIds, VarReadResponseValues?)> readVarsSlices(Iterable<int> ids) => iterativeRequest(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids.slices(16));
+  Stream<(VarWriteRequestValues segmentPairs, VarWriteResponseValues?)> writeVarsSlices(Iterable<(int id, int value)> ids) => iterativeRequest(MotPacketPayloadId.MOT_PACKET_VAR_WRITE, ids.slices(8));
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Stream
   ////////////////////////////////////////////////////////////////////////////////
-  Stream<(int? respCode, VarReadResponseValues)> readVarsStream(VarReadRequestValues ids, {Duration delay = const Duration(milliseconds: 50)}) {
+  Stream<VarReadResponseValues?> readVarsStream(VarReadRequestValues ids, {Duration delay = const Duration(milliseconds: 50)}) {
     assert(ids.length <= 16);
-    final stream = periodicRequest(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids, delay: delay);
-    return stream.map((event) => ((event == null) ? null : 0 /* event.meta todo */, event ?? const <int>[]));
+    return periodicRequest(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids, delay: delay);
   }
 
-  Stream<(Iterable<int> segmentIds, int? respCode, VarReadResponseValues)> readVarsStreamSegmented(VarReadRequestValues ids, {Duration delay = const Duration(milliseconds: 50)}) {
-    final stream = periodicRequestSegmented(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids.slices(16), delay: delay);
-    return stream.map((event) => (event.$1, (event.$2 == null) ? null : 0, event.$2 ?? const <int>[]));
+  Stream<(VarReadRequestValues segmentIds, VarReadResponseValues?)> readVarsSlicesStream(Iterable<int> ids, {Duration delay = const Duration(milliseconds: 50)}) {
+    return periodicIterativeRequest(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids.slices(16), delay: delay);
   }
 
-  Stream<(int? respCode, VarWriteResponseValues)> writeVarsStream(VarWriteRequestValues Function() idValuesGetter, {Duration delay = const Duration(milliseconds: 10)}) {
+  Stream<VarWriteResponseValues?> writeVarsStream(VarWriteRequestValues Function() idValuesGetter, {Duration delay = const Duration(milliseconds: 10)}) {
     assert(idValuesGetter().length <= 8);
-    final stream = periodicUpdate(MotPacketPayloadId.MOT_PACKET_VAR_WRITE, idValuesGetter, delay: delay);
-    return stream.map((event) => ((event == null) ? null : 0, event ?? const <int>[]));
+    return periodicUpdate(MotPacketPayloadId.MOT_PACKET_VAR_WRITE, idValuesGetter, delay: delay);
   }
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Once
   ////////////////////////////////////////////////////////////////////////////////
-  Future<(int? respCode, Uint8List data)> readMem(int address, int size, int config) async {
-    return await requestResponse(MotPacketPayloadId.MOT_PACKET_MEM_READ, (address, size, config)) ?? (null, Uint8List(0));
+  Future<MemReadResponseValues?> readMem(int address, int size, int config) async {
+    assert(size <= 32);
+    return await requestResponse(MotPacketPayloadId.MOT_PACKET_MEM_READ, (address, size, config));
   }
 
-  Future<int?> writeMem(int address, int size, int config, Uint8List data) async {
+  Future<MemWriteResponseValues?> writeMem(int address, int size, int config, Uint8List data) async {
     assert(size == data.lengthInBytes);
     assert(size <= 16);
     assert(data.lengthInBytes <= 16);
     return await requestResponse(MotPacketPayloadId.MOT_PACKET_MEM_WRITE, (address, size, config, data));
+  }
+
+  Future<MemReadResponseValues?> readMemSlices(int address, int size, int config) async {}
+
+  Future<MemWriteResponseValues?> writeMemSlices(int address, int size, int config, Uint8List data, [int successCode = 0]) async {
+    if (await writeMem(address, 16, config, data) case int statusCode when statusCode != successCode) return statusCode;
+
+    // recursive
+    final nextAddress = address + 16;
+    final nextSize = size - 16;
+    final nextData = Uint8List.sublistView(data, min(16, data.lengthInBytes));
+    if (nextData.isNotEmpty) return await writeMemSlices(nextAddress, nextSize, config, nextData, successCode);
+
+    return 0;
+    // return iterativeRequest(MotPacketPayloadId.MOT_PACKET_MEM_WRITE, args);
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -93,18 +102,19 @@ class MotProtocolSocket extends ProtocolSocket {
   Future<void> writeDataModeData(Uint8List data) async => sendRequest(MotPacketPayloadId.MOT_PACKET_DATA_MODE_DATA, data);
   Future<Uint8List?> readDataModeData() async => recvResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_DATA);
 
+  ////////////////////////////////////////////////////////////////////////////////
+  /// DataMode Proc Async function maintains state
+  ////////////////////////////////////////////////////////////////////////////////
   //returns status char
   Future<int?> writeDataMode(int address, int sizeBytes, Uint8List data, [void Function(int bytesComplete)? progressCallback]) async {
     assert(sizeBytes == data.length);
-    if (sizeBytes != data.length) return -1;
+    if (sizeBytes != data.length) return -1; // alternatively remove
 
-    if (await initDataModeWrite(address, sizeBytes, 0) case int response when response != 0) return response;
-    // final initialResponse = await initDataModeWrite(address, sizeBytes, 0);
-    // if (initialResponse != 0) return initialResponse;
+    if (await initDataModeWrite(address, sizeBytes, 0) case int? response when response != 0) return response;
 
     try {
       for (var index = 0; index < sizeBytes; index += 32) {
-        await writeDataModeData(Uint8List.sublistView(data, index, min(32, sizeBytes - index)));
+        await writeDataModeData(Uint8List.sublistView(data, index, min(32, sizeBytes - index))); // todo host side handle align?
 
         if (await recvSync() != MotPacketSyncId.MOT_PACKET_SYNC_ACK) return -1;
         progressCallback?.call(index * 32 + data.length);
@@ -113,6 +123,7 @@ class MotProtocolSocket extends ProtocolSocket {
       print(sizeBytes);
     }
 
+    // MOT_PACKET_DATA_MODE_WRITE should still be mapped
     return recvResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_WRITE)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
   }
 
@@ -121,22 +132,54 @@ class MotProtocolSocket extends ProtocolSocket {
 
     protocol.mapRequestResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_DATA, this); // map additional id
 
-    if (await initDataModeRead(address, sizeBytes, 0) case int response when response != 0) return response;
-    // final initialResponse = await initDataModeRead(address, sizeBytes, 0);
-    // if (initialResponse != 0) return initialResponse;
+    if (await initDataModeRead(address, sizeBytes, 0) case int? response when response != 0) return response;
 
     for (var index = 0; index < sizeBytes; index += 32) {
-      var data = await readDataModeData();
-      if (data == null) return null;
-      dataBuffer.setRange(index, index + data.length, data);
-
-      await sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK);
-      progressCallback?.call(index + data.length);
+      if (await readDataModeData() case Uint8List data) {
+        dataBuffer.setRange(index, index + data.length, data);
+        await sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK);
+        progressCallback?.call(index + data.length);
+      } else {
+        return -1;
+      }
     }
 
     return recvResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_READ)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
   }
+
+  List<R> callStatusType<R extends Enum>() {
+    return switch (R) {
+      const (MotProtocol_GenericStatus) => MotProtocol_GenericStatus.values,
+      const (NvMemory_Status) => NvMemory_Status.values,
+      Type() => throw UnsupportedError('MotStatus.values: $R'),
+    } as List<R>;
+  }
+
+  Future<R?> callTyped<R extends Enum>(MotProtocol_CallId id, [Enum? arg, Duration? timeout]) async {
+    return call(id.index, arg?.index, timeout).then((value) => callStatusType<R>().elementAtOrNull.calln(value?.$2));
+  }
 }
+
+enum NvMemory_Status {
+  NV_MEMORY_STATUS_SUCCESS,
+  NV_MEMORY_STATUS_PROCESSING,
+
+  NV_MEMORY_STATUS_ERROR_BUSY,
+  NV_MEMORY_STATUS_ERROR_CMD,
+  NV_MEMORY_STATUS_ERROR_PROTECTION,
+
+  NV_MEMORY_STATUS_ERROR_BOUNDARY,
+  NV_MEMORY_STATUS_ERROR_ALIGNMENT,
+  NV_MEMORY_STATUS_ERROR_BUFFER,
+  NV_MEMORY_STATUS_ERROR_INVALID_OP,
+
+  NV_MEMORY_STATUS_ERROR_VERIFY,
+  NV_MEMORY_STATUS_ERROR_CHECKSUM,
+  NV_MEMORY_STATUS_ERROR_NOT_IMPLEMENTED,
+  NV_MEMORY_STATUS_ERROR_OTHER,
+}
+
+// todo handle wrapping types?
 
 // Future<int> requestReadVar(int id) => procRequestResponse(MotPacketPayloadId.MOT_PACKET_READ_VAR);
 // Future<int> requestWriteVar(int id, int value) => procRequestResponse(MotPacketPayloadId.MOT_PACKET_WRITE_VAR, {id: value});

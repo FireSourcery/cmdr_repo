@@ -16,7 +16,7 @@ export '../../byte_struct/byte_struct.dart';
 // Abstract factory pattern
 // for values available without a Packet instance, over prototype object
 // effectively the child packet type encapsulated, child class 'static' methods
-abstract interface class PacketInterface {
+abstract mixin class PacketInterface {
   // const for each packet instance
   // can implement in PacketId for per packet behavior
   int get startId; // alternatively Uint8List
@@ -44,8 +44,7 @@ abstract interface class PacketInterface {
   Packet cast(TypedData typedData);
 
   // pass to build idOf internally
-  // List<PacketId> get values;
-  // List<PacketIdSync> get values;
+  // PacketIdCaster get idCaster;
 }
 
 /// Packet as interface for mutable view length.
@@ -84,20 +83,16 @@ abstract mixin class Packet implements PacketInterface {
   ////////////////////////////////////////////////////////////////////////////////
   /// Header/Payload Pointers using defined boundaries
   ////////////////////////////////////////////////////////////////////////////////
-  @protected
   Uint8List get idHeader => Uint8List.sublistView(bytes, 0, idHeaderLength);
-  @protected
   Uint8List get header => Uint8List.sublistView(bytes, 0, payloadHeaderLength);
   Uint8List get payload => Uint8List.sublistView(bytes, payloadIndex);
 
+  @visibleForTesting
+  Uint8List get headerAvailable => Uint8List.sublistView(bytes, 0, payloadHeaderLength.clamp(0, length));
   ////////////////////////////////////////////////////////////////////////////////
   ///
   ////////////////////////////////////////////////////////////////////////////////
-  @protected
   ByteData get headerWords => ByteData.sublistView(header, 0, idHeaderLength);
-
-  @visibleForTesting
-  Uint8List get headerAvailable => Uint8List.sublistView(bytes, 0, payloadHeaderLength.clamp(0, length));
 
   /// for building/parsing payload 'as' packet,
   /// not needed when payload is a struct with named fields,
@@ -171,12 +166,10 @@ abstract mixin class Packet implements PacketInterface {
   ////////////////////////////////////////////////////////////////////////////////
   // header must be complete
   // can resolve as field in class if compiler does not optimize
-  @protected
   PacketHeader get headerAsPayloadType => headerOf(bytes);
-  @protected
   PacketHeaderSync get headerAsSyncType => syncHeaderOf(bytes);
 
-  void buildHeaderAs<P extends PacketHeader>(HeaderCaster<P> caster, PacketId packetId) => caster(header).build(packetId, this);
+  void buildHeaderAs(PacketHeaderCaster caster, PacketId packetId) => caster(header).build(packetId, this);
 
   void fillStartField() => headerAsSyncType.startFieldValue = startId;
 
@@ -195,7 +188,7 @@ abstract mixin class Packet implements PacketInterface {
   void buildHeader(PacketId packetId, int payloadLength) {
     return switch (packetId) {
       PacketIdSync() => buildHeaderAsSync(packetId),
-      PacketIdRequestResponse() => buildHeaderAsPayload(packetId, payloadLength),
+      PacketIdRequest() => buildHeaderAsPayload(packetId, payloadLength),
       PacketId() => throw UnimplementedError(),
     };
   }
@@ -247,19 +240,19 @@ abstract mixin class Packet implements PacketInterface {
   /// build with Id, pass Header reference
   /// typed with user input values, directly accepting struct would miss deriving meta
   ////////////////////////////////////////////////////////////////////////////////
-  PayloadMeta buildPayloadAs<T extends Payload, V>(PayloadCaster<T> caster, V values) => caster(payload).build(values, this);
+  PayloadMeta buildPayloadAs<V>(PayloadCaster<V> caster, V values) => caster(payload).build(values, this);
 
-  V parsePayloadAs<R extends Payload, V>(PayloadCaster<R> caster, [PayloadMeta? stateMeta]) => caster(payload).parse(this, stateMeta);
+  V parsePayloadAs<V>(PayloadCaster<V> caster, [PayloadMeta? stateMeta]) => caster(payload).parse(this, stateMeta);
 
-  PayloadMeta buildRequest<T extends Payload, TV>(PacketIdRequestResponse<T, dynamic> packetId, TV requestArgs) {
+  PayloadMeta buildRequest<V>(PacketIdRequest<V, dynamic> packetId, V requestArgs) {
     PayloadMeta meta = buildPayloadAs(packetId.requestCaster!, requestArgs);
     if (meta.length > payloadLengthMax) return const PayloadMeta(0);
-    buildHeaderAsPayload(packetId, meta.length); // uncontrained view on build, or implement in buffer after set length
+    buildHeaderAsPayload(packetId, meta.length); // unconstrained view on build, or implement in buffer after set length
     return meta;
   }
 
   // as response passes stateMeta
-  RV? parseResponse<R extends Payload, RV>(PacketIdRequestResponse<dynamic, R> packetId, PayloadMeta? reqStateMeta) {
+  V parseResponse<V>(PacketIdRequest<dynamic, V> packetId, [PayloadMeta? reqStateMeta]) {
     return parsePayloadAs(packetId.responseCaster!, reqStateMeta);
   }
 }
@@ -285,9 +278,10 @@ abstract class PacketBase extends ByteStructBase with Packet {
 ////////////////////////////////////////////////////////////////////////////////
 /// Struct Components Header/Payload
 ////////////////////////////////////////////////////////////////////////////////
-
 /// [Header] Constructor
-typedef HeaderCaster<P extends PacketHeader> = P Function(TypedData typedData);
+// typedef PacketHeaderCaster<P extends PacketHeader> = P Function(TypedData typedData);
+typedef PacketHeaderCaster = PacketHeader Function(TypedData typedData);
+// typedef PacketHeaderSyncCaster = PacketHeaderSync Function(TypedData typedData);
 
 /// effectively the Packet control block
 /// a basic opinionated implementation, union with sync header
@@ -296,7 +290,7 @@ typedef HeaderCaster<P extends PacketHeader> = P Function(TypedData typedData);
 abstract interface class PacketHeader {
   /// each field can be upto 8 bytes
   /// override in struct should optimize, over get via TypedOffset
-  int get startFieldValue;
+  int get startFieldValue; // > 1 byte user handle using Word module
   int get idFieldValue;
   int get lengthFieldValue;
   int get checksumFieldValue;
@@ -320,6 +314,7 @@ abstract interface class PacketHeader {
   void build(PacketId packetId, Packet? packet); // can be overridden for additional types
 }
 
+/// Minimal header
 abstract interface class PacketHeaderSync {
   int get startFieldValue;
   int get idFieldValue;
@@ -333,9 +328,8 @@ abstract interface class PacketHeaderSync {
 
 /// [Payload] Constructor - handler per id
 /// Struct.create<T>
-// typedef PayloadCaster<T extends Payload> = T Function(TypedData typedData);
-typedef PayloadCaster<P extends Payload<V>, V> = P Function(TypedData typedData);
-// typedef PayloadCasterByValue<V> = Payload<V> Function(TypedData typedData);
+typedef PayloadCaster<V> = Payload<V> Function(TypedData typedData);
+typedef PayloadSubTypeCaster<P extends Payload<V>, V> = P Function(TypedData typedData);
 // abstract interface class PayloadFactory<T extends Payload> {
 //   T call(TypedData typedData);
 //   T allocate();
@@ -356,9 +350,13 @@ typedef PayloadCaster<P extends Payload<V>, V> = P Function(TypedData typedData)
 /// payload class without direct context of header allows stronger encapsulation
 /// if Payload is a struct, then it does not have to declare filler header fields
 abstract interface class Payload<V> {
-  // V get values;
-  PayloadMeta build(V args, [covariant Packet? header]);
-  V parse([covariant Packet header, covariant PayloadMeta? stateMeta]);
+  PayloadMeta build(V values, covariant Packet header);
+  V parse(covariant Packet header, covariant PayloadMeta? stateMeta);
+}
+
+abstract interface class PayloadFixed<V> {
+  V get values;
+  set values(V values);
 }
 
 // length state maintained by caller, cannot be included as struct field
@@ -373,7 +371,7 @@ class PayloadMeta {
 ////////////////////////////////////////////////////////////////////////////
 /// Packet with `mutable length` , copyBytes, + casters
 ///
-/// pass PacketCaster<P>, this way user does not have to extend PacketBuffer with child type methods
+/// pass [PacketCaster] or [PacketInterface], this way user does not have to extend PacketBuffer with child type methods
 /// alternatively implements Packet require proxy or user create separate class mixin ChildType
 /// ideally this could implement packet and uin8list
 class PacketBuffer {
@@ -430,7 +428,7 @@ class PacketBuffer {
   // set payloadLength(int value) => (length = packet.payloadHeaderLength + value);
 
   /// build functions mutate length
-  PayloadMeta buildRequest<T extends Payload, TV>(PacketIdRequestResponse<T, dynamic> packetId, TV requestArgs) {
+  PayloadMeta buildRequest<V>(PacketIdRequest<V, dynamic> packetId, V requestArgs) {
     PayloadMeta meta = _packetBuffer.buildRequest(packetId, requestArgs);
     length = packet.payloadHeaderLength + meta.length; // payloadLength = meta.length;
     return meta;
@@ -442,7 +440,7 @@ class PacketBuffer {
   }
 
   /// parse functions redirect, socket call packet directly
-  RV? parseResponse<R extends Payload, RV>(PacketIdRequestResponse<dynamic, R> packetId, [PayloadMeta? reqStateMeta]) {
+  V parseResponse<V>(PacketIdRequest<dynamic, V> packetId, [PayloadMeta? reqStateMeta]) {
     return packet.parseResponse(packetId, reqStateMeta);
   }
 
@@ -454,58 +452,58 @@ class PacketBuffer {
 ////////////////////////////////////////////////////////////////////////////
 /// build idOf from lists internally
 class PacketIdCaster {
-  PacketIdCaster(this.syncIds, this.payloadIds)
+  PacketIdCaster({required Iterable<List<PacketId>> idLists, required List<PacketIdSync> syncIds})
       : _lookUpMap = Map<int, PacketId>.unmodifiable({
-          for (final id in syncIds) id.intId: id,
-          for (final id in payloadIds) id.intId: id,
+          for (final idList in idLists)
+            for (final id in idList) id.intId: id,
         });
 
-  final List<PacketIdSync> syncIds;
-  final List<PacketIdRequestResponse> payloadIds;
   final Map<int, PacketId> _lookUpMap;
+
+  // final List<PacketIdSync> syncIds = [];
+  // PacketIdSync get ack;
+  // PacketIdSync get nack;
+  // PacketIdSync get abort;
 
   PacketId? call(int intId) => _lookUpMap[intId];
 }
 
 abstract interface class PacketId implements Enum {
-  const PacketId();
   int get intId;
-}
-
-enum PacketIdInternal implements PacketId {
-  undefined;
-
-  int get intId => throw UnsupportedError('');
 }
 
 // separate type label allow pattern matching
 abstract interface class PacketIdSync implements PacketId {
-  const PacketIdSync();
+  //  int get intId;
+  // PacketIdSyncInteranl get asInternal;
 }
 
 // Id hold a constructor to create a handler instance to process as packet
 // abstract interface class PacketIdPayload<T extends Payload> implements PacketId {
 //   T call(TypedData typedData);
+//   PayloadCaster<T> get caster;
 // }
 
 /// Id as payload factory
+/// A `Request` matched with a `Response`
 /// paired request response id for simplicity in case of shared id by request and response
-/// under define responseId for 1-way e.g <T, void>
-///   handlers must be constructors, mutable objects cannot be const for enum
-// abstract interface class PacketIdRequestResponse<T extends Payload, R extends Payload> implements PacketId {
-abstract interface class PacketIdRequestResponse<T, R> implements PacketId {
-  const PacketIdRequestResponse();
-
+/// under define responseId for 1-way
+/// handlers as constructors, const for enum
+abstract interface class PacketIdRequest<T, R> implements PacketId {
   PacketId? get responseId; // null for 1-way or matching response, override for non matching
-  // PayloadCaster<T, dynamic>? get requestCaster;
-  // PayloadCaster<R, dynamic>? get responseCaster;
-  PayloadCaster<Payload<T>, T>? get requestCaster;
-  PayloadCaster<Payload<R>, R>? get responseCaster;
+  PayloadCaster<T>? get requestCaster;
+  PayloadCaster<R>? get responseCaster;
 }
 
 ////////////////////////////////////////////////////////////////////////////
 ///
 ////////////////////////////////////////////////////////////////////////////
+// enum PacketIdInternal implements PacketId {
+//   undefined;
+
+//   int get intId => throw UnsupportedError('');
+// }
+
 @Packed(1)
 final class EchoPayload extends Struct implements Payload<(int, int)> {
   @Uint32()
@@ -526,12 +524,12 @@ final class EchoPayload extends Struct implements Payload<(int, int)> {
   }
 
   @override
-  (int, int) parse(Packet? header, void stateMeta) {
+  (int, int) parse([Packet? header, void stateMeta]) {
     return (value0, value1);
   }
 }
 
-enum PacketIdRequestResponseInternal<T extends Payload, R extends Payload> implements PacketIdRequestResponse<T, R> {
+enum PacketIdRequestResponseInternal<T, R> implements PacketIdRequest<T, R> {
   echo(0xFF, requestCaster: EchoPayload.cast, responseCaster: EchoPayload.cast);
 
   const PacketIdRequestResponseInternal(this.intId, {required this.requestCaster, required this.responseCaster, this.responseId});
@@ -541,7 +539,7 @@ enum PacketIdRequestResponseInternal<T extends Payload, R extends Payload> imple
   @override
   final PacketId? responseId;
   @override
-  final PayloadCaster<T> requestCaster;
+  final PayloadCaster<T>? requestCaster;
   @override
-  final PayloadCaster<R> responseCaster;
+  final PayloadCaster<R>? responseCaster;
 }

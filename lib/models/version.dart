@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:cmdr/byte_struct.dart';

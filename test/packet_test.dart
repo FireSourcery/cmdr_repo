@@ -4,7 +4,7 @@ import 'package:cmdr/connection/base/packet.dart';
 import 'package:cmdr/connection/mot_connection/mot_packet.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-R? checkType<T, R>(PacketIdRequestResponse<Payload<T>, Payload<R>> requestId, T requestArgs) {
+R? checkType<T, R>(PacketIdRequest<Payload<T>, Payload<R>> requestId, T requestArgs) {
   Uint8List list = Uint8List(40);
   MotPacket packet = MotPacket.cast(list);
 
@@ -28,7 +28,7 @@ void main() {
   test('test', () {
     Uint8List list = Uint8List(40);
 
-    PacketIdRequestResponse id = MotPacketPayloadId.MOT_PACKET_MEM_WRITE;
+    PacketIdRequest id = MotPacketPayloadId.MOT_PACKET_MEM_WRITE;
     Payload payload = id.requestCaster!(list);
     // TestPayload payload1 = id.requestCaster!(list)..build((12345678, 87654321));
     final results = checkType(MotPacketPayloadId.MOT_PACKET_MEM_WRITE, (1, 2, 3, Uint8List.fromList([255, 255, 255])));

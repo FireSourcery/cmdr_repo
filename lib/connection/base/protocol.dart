@@ -56,11 +56,11 @@ class Protocol {
     } finally {}
   }
 
-  // maps response packet id to Socket
-  // Future<void> requestResponse(PacketIdRequestResponse requestId, ProtocolSocket socket) {
-  //   mapResponse(requestId.responseId ?? requestId, socket);
-  //   return trySend(socket);
-  // }
+  // couple map then send?
+  Future<void> requestResponse(PacketIdRequest requestId, ProtocolSocket socket) {
+    mapResponse(requestId.responseId ?? requestId, socket);
+    return trySend(socket.packetBufferOut.packet);
+  }
 
   void mapResponse(PacketId responseId, ProtocolSocket socket) {
     _lock.synchronized(() {
@@ -68,7 +68,7 @@ class Protocol {
     });
   }
 
-  void mapRequestResponse(PacketIdRequestResponse requestId, ProtocolSocket socket) {
+  void mapRequestResponse(PacketIdRequest requestId, ProtocolSocket socket) {
     mapResponse(requestId.responseId ?? requestId, socket);
   }
 
@@ -150,12 +150,7 @@ class ProtocolSocket implements Sink<Packet> {
   /// Arguments in values, or struct + meta
   /// R - Response Payload Values
   /// T - Request Payload Values
-  Future<R?> requestResponse<T, R>(
-    PacketIdRequestResponse<T, R> requestId,
-    T requestArgs, {
-    Duration? timeout = reqRespTimeoutDefault,
-    ProtocolSyncOptions syncOptions = ProtocolSyncOptions.none,
-  }) async {
+  Future<R?> requestResponse<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration? timeout = reqRespTimeoutDefault, ProtocolSyncOptions syncOptions = ProtocolSyncOptions.none}) async {
     waitingOnLockCount++;
     try {
       return await _lock.synchronized<R?>(
@@ -164,8 +159,8 @@ class ProtocolSocket implements Sink<Packet> {
           print('--- New Request');
           print('Socket [$hashCode] Request [$requestId] | waiting on lock [$waitingOnLockCount]');
           packetBufferIn.clear();
-          protocol.mapRequestResponse(requestId, this);
           if (syncOptions.recvSync) protocol.mapSync(this);
+          protocol.mapRequestResponse(requestId, this); //move to send request?
           final PayloadMeta requestMeta = await sendRequest(requestId, requestArgs);
 
           if (syncOptions.recvSync) {
@@ -212,24 +207,39 @@ class ProtocolSocket implements Sink<Packet> {
   //   return null;
   // }
 
-  Stream<R?> periodicRequest<T, R>(PacketIdRequestResponse<T, R> requestId, T requestArgs, {Duration delay = datagramDelay}) async* {
+  Stream<(T segmentArgs, R? segmentResponse)> iterativeRequest<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> requestArgs, {Duration delay = datagramDelay}) async* {
+    for (final segmentArgs in requestArgs) {
+      yield (segmentArgs, await requestResponse<T, R>(requestId, segmentArgs));
+      await Future.delayed(delay);
+    }
+  }
+
+  Stream<R?> periodicRequest<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration delay = datagramDelay}) async* {
     while (true) {
       yield await requestResponse<T, R>(requestId, requestArgs);
       await Future.delayed(delay); //todo as byte time
     }
   }
 
-  Stream<(T segmentArgs, R? segmentResponse)> periodicRequestSegmented<T, R>(PacketIdRequestResponse<T, R> requestId, Iterable<T> requestArgs, {Duration delay = datagramDelay}) async* {
+  // periodic iterativeRequest
+  Stream<(T segmentArgs, R? segmentResponse)> periodicIterativeRequest<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> requestArgs, {Duration delay = datagramDelay}) async* {
     while (true) {
       for (final segmentArgs in requestArgs) {
         yield (segmentArgs, await requestResponse<T, R>(requestId, segmentArgs));
-        await Future.delayed(delay); //todo as byte time
+        await Future.delayed(delay);
       }
     }
   }
 
+  // Stream<R?> iterativeUpdate<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> Function() requestArgsGetter, {Duration delay = datagramDelay}) async* {
+  //   for (final segmentArgs in requestArgsGetter()) {
+  //     yield await requestResponse<T, R>(requestId, segmentArgs);
+  //     await Future.delayed(delay);
+  //   }
+  // }
+
   /// periodic Response/Write
-  Stream<R?> periodicUpdate<T, R>(PacketIdRequestResponse<T, R> requestId, T Function() requestArgsGetter, {Duration delay = datagramDelay}) async* {
+  Stream<R?> periodicUpdate<T, R>(PacketIdRequest<T, R> requestId, T Function() requestArgsGetter, {Duration delay = datagramDelay}) async* {
     while (true) {
       yield await requestResponse<T, R>(requestId, requestArgsGetter());
       await Future.delayed(delay); // todo as byte time
@@ -243,35 +253,27 @@ class ProtocolSocket implements Sink<Packet> {
   // todo add lock on component functions?
   // buffers must lock, if sockets are shared, i.g not uniquely allocated per thread
   @protected
-  Future<PayloadMeta> sendRequest<V, PT extends Payload, PR extends Payload>(PacketIdRequestResponse<PT, PR> packetId, V requestArgs, {Duration timeout = timeoutDefault}) async {
-    // protocol.mapRequestResponse(packetId, this);
-    final PayloadMeta requestMeta = packetBufferOut.buildRequest<PT, V>(packetId, requestArgs);
+  Future<PayloadMeta> sendRequest<V>(PacketIdRequest<V, dynamic> packetId, V requestArgs, {Duration timeout = timeoutDefault}) async {
+    final PayloadMeta requestMeta = packetBufferOut.buildRequest<V>(packetId, requestArgs);
 
     timer.reset();
     timer.start();
+    // protocol.mapRequestResponse(packetId, this);
     await protocol.trySend(packetBufferOut.packet);
     return requestMeta;
   }
 
-  // get from buffer
-  // Future<PayloadMeta?> responseMeta(PacketIdRequestResponse packetId, {PayloadMeta? reqStateMeta, Duration timeout = timeoutDefault}) async {
-  //   packetBufferIn.parseResponseMeta<PR, V>(packetId, reqStateMeta);
-  // }
-
-  // todo response code as meta
-  // Future<(M, R?)?> recvResponseWithMeta<T, R, M>(PacketIdRequestResponse<T, R> packetId, {dynamic requestMeta, Duration timeout = timeoutDefault}) async {
-  //   return await tryRecv<(M, R?)>(() {
-  //     final R? payload = packetBufferIn.parseResponsePayload(packetId, requestMeta);
-  //     final M meta = packetBufferIn.parseResponseMeta(packetId, requestMeta);
-  //     return (meta, payload);
-  //   });
-  // }
-
   /// using response side
   @protected
-  Future<V?> recvResponse<V, PT extends Payload, PR extends Payload>(PacketIdRequestResponse<PT, PR> packetId, {PayloadMeta? reqStateMeta, Duration timeout = timeoutDefault}) async {
-    // protocol.mapResponse(packetId.responseId ?? packetId, this);
-    return await tryRecv<V>(() => packetBufferIn.parseResponse<PR, V>(packetId, reqStateMeta));
+  Future<V?> recvResponse<V>(PacketIdRequest<dynamic, V> packetId, {PayloadMeta? reqStateMeta, Duration timeout = timeoutDefault}) async {
+    return await tryRecv<V>(() => packetBufferIn.parseResponse<V>(packetId, reqStateMeta));
+  }
+
+  // host side initiated wait
+  @protected
+  Future<V?> expectResponse<V>(PacketIdRequest<dynamic, V> packetId, {PayloadMeta? reqStateMeta, Duration timeout = timeoutDefault}) async {
+    protocol.mapResponse(packetId.responseId ?? packetId, this);
+    return recvResponse<V>(packetId, reqStateMeta: reqStateMeta, timeout: timeoutDefault);
   }
 
   /// respondSync
@@ -332,21 +334,6 @@ class ProtocolSocket implements Sink<Packet> {
   void close() {
     print('Socket closed');
   }
-
-  // @override
-  // void addError(Object error, [StackTrace? stackTrace]) {
-  //   print(error);
-  // }
-
-  // Future<void> procDatagram(Enum requestId, {Packet? packetBufferOut, int? socketId, bool isSync = false}) async {}
-
-  // @protected
-  // // final StreamController<Packet> streamController = StreamController.broadcast();
-  // @protected
-  // // StreamSink<Packet> get sink => streamController.sink;
-  /// Rx Stream, event stream, protocol copies to packet out
-  // Stream<Packet> get stream => streamController.stream;
-  // bool get isClosed => streamController.isClosed;
 }
 
 enum ProtocolSyncOptions {
