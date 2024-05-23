@@ -13,13 +13,15 @@ class Word {
       : this.of16s((lsb1 << 8) | (lsb & _mask8), (lsb3 << 8) | (lsb2 & _mask8), (msb2 << 8) | (msb3 & _mask8), (msb << 8) | (msb1 & _mask8));
   const Word.of16s(int ls16, [int upperLs16 = 0, int lowerMs16 = 0, int ms16 = 0]) : this.of32s((upperLs16 << 16) | (ls16 & _mask16), (ms16 << 16) | (lowerMs16 & _mask16));
   const Word.of32s(int ls32, [int ms32 = 0]) : value = (ms32 << 32) | (ls32 & _mask32);
-  const Word.byteSwap(int value) : this.of8s(value >> 56, value >> 48, value >> 40, value >> 32, value >> 24, value >> 16, value >> 8, value);
+  // const Word.byteSwap(int value) : this.of8s(value >> 56, value >> 48, value >> 40, value >> 32, value >> 24, value >> 16, value >> 8, value);
+
+  const Word.msb(int msb, int msb1, int msb2, int msb3, int lsb3, int lsb2, int lsb1, int lsb) : this.of8s(lsb, lsb1, lsb2, lsb3, msb3, msb2, msb1, msb);
 
   const Word.msb32(int msb, int lmsb, int mlsb, int lsb)
       : assert(msb < 256 && lmsb < 256 && mlsb < 256 && lsb < 256),
         value = msb << 24 | lmsb << 16 | mlsb << 8 | lsb;
   // const Word.msb16(int msb,  int lsb)
-  // const Word.msb64(int msb,  int lsb)
+  // const Word.msb64(int msb,  int lsb32)
 
   // defaults to little endian for an arbitrary list of bytes, assume external
   // big endian will set first item as msb of 64-bits, fill missing bytes with 0

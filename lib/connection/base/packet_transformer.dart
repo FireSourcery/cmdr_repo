@@ -109,8 +109,8 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
 
           case HeaderStatus(isPacketComplete: true):
             parserBuffer.completePacket(); // set length for checksum operation
-            // print('parserBuffer completePacket() ${parserBuffer.bytes}');
-            // print('parserBuffer trailing ${parserBuffer.trailing}');
+            print('parserBuffer completePacket() ${parserBuffer.bytes}');
+            print('parserBuffer trailing ${parserBuffer.trailing}');
             assert(parserBuffer.packet.lengthFieldOrNull == parserBuffer.length);
             switch (parserBuffer.status.isChecksumValid) {
               case true || null: // null when no checksum implemented
@@ -143,6 +143,7 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
       parserBuffer.clear();
       // print(e);
     } finally {
+      //  parserBuffer.seekTrailing(); alternatively, always start with 0 trailing, and seek after packet complete
       // print('- finally');
       // print('parserBuffer bytes ${parserBuffer.bytes}');
     }

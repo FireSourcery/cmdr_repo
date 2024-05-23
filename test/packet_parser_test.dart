@@ -52,8 +52,8 @@ void main() {
     );
 
     print('begin');
-    // inputController.sink.add(packetIn0);
-    // inputController.sink.add(packetIn1);
+    inputController.sink.add(packetIn0);
+    inputController.sink.add(packetIn1);
     inputController.sink.add(packetInExcess);
     inputController.sink.add(packetInMerged);
     inputController.sink.add(packetInChecksum);

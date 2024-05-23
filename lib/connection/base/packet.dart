@@ -21,8 +21,8 @@ abstract mixin class PacketInterface {
   // can implement in PacketId for per packet behavior
   int get startId; // alternatively Uint8List
   int get lengthMax; // length in bytes
-  int get idHeaderLength; // defined as length only as they start at offset 0
-  int get payloadHeaderLength;
+  int get headerLength; // defined as length only as they start at offset 0
+  int get idHeaderLength; // minimal header
   Endian get endian;
   PacketId? idOf(int intId);
   PacketHeader headerOf(TypedData typedData);
@@ -60,7 +60,7 @@ abstract mixin class Packet implements PacketInterface {
   // PacketInterface get packetInterface;
 
   /// derive from either header or packetInterface
-  int get payloadIndex => payloadHeaderLength;
+  int get payloadIndex => headerLength;
   int get payloadLengthMax => lengthMax - payloadIndex;
   int get checksumIndex => checksumFieldPart.offset;
   int get checksumSize => checksumFieldPart.size;
@@ -84,11 +84,11 @@ abstract mixin class Packet implements PacketInterface {
   /// Header/Payload Pointers using defined boundaries
   ////////////////////////////////////////////////////////////////////////////////
   Uint8List get idHeader => Uint8List.sublistView(bytes, 0, idHeaderLength);
-  Uint8List get header => Uint8List.sublistView(bytes, 0, payloadHeaderLength);
+  Uint8List get header => Uint8List.sublistView(bytes, 0, headerLength);
   Uint8List get payload => Uint8List.sublistView(bytes, payloadIndex);
 
   @visibleForTesting
-  Uint8List get headerAvailable => Uint8List.sublistView(bytes, 0, payloadHeaderLength.clamp(0, length));
+  Uint8List get headerAvailable => Uint8List.sublistView(bytes, 0, headerLength.clamp(0, length));
   ////////////////////////////////////////////////////////////////////////////////
   ///
   ////////////////////////////////////////////////////////////////////////////////
@@ -143,15 +143,15 @@ abstract mixin class Packet implements PacketInterface {
 
   /// all bytes excluding checksumField
   /// using length contained in [bytes] view, or length param length
-  int checksum([int? payloadLength]) {
-    assert((() => (payloadLength == null) ? length == headerAsPayloadType.lengthFieldValue : true).call());
+  int checksum([int? length]) {
+    assert((() => (length == null) ? this.length == headerAsPayloadType.lengthFieldValue : true).call());
     final checksumMask = ((1 << (checksumSize * 8)) - 1);
     final checksumEnd = checksumIndex + checksumSize;
-    final afterChecksumSize = (payloadHeaderLength - checksumEnd) + (payloadLength ?? this.payloadLength);
+    // final afterChecksumSize = (headerLength - checksumEnd) + (payloadLength);
 
     var checkSum = 0;
     checkSum += checksumAlgorithm(Uint8List.sublistView(bytes, 0, checksumIndex));
-    checkSum += checksumAlgorithm(Uint8List.sublistView(bytes, checksumEnd, afterChecksumSize));
+    checkSum += checksumAlgorithm(Uint8List.sublistView(bytes, checksumEnd, length ?? this.length));
     return checkSum & checksumMask;
   }
 
@@ -181,8 +181,8 @@ abstract mixin class Packet implements PacketInterface {
   void buildHeaderAsPayload(PacketId requestId, int payloadLength) {
     fillStartField();
     headerAsPayloadType.idFieldValue = requestId.intId;
-    headerAsPayloadType.lengthFieldValue = payloadLength + payloadHeaderLength;
-    headerAsPayloadType.checksumFieldValue = checksum(payloadLength);
+    headerAsPayloadType.lengthFieldValue = payloadLength + headerLength;
+    headerAsPayloadType.checksumFieldValue = checksum(payloadLength + headerLength);
   }
 
   void buildHeader(PacketId packetId, int payloadLength) {
@@ -203,7 +203,7 @@ abstract mixin class Packet implements PacketInterface {
   /// for valueOrNull from header status
   bool isValidStart(int value) => (value == startId);
   bool isValidId(int value) => (idOf(value) != null);
-  bool isValidLength(int value) => (value == value.clamp(payloadHeaderLength, lengthMax));
+  bool isValidLength(int value) => (value == value.clamp(headerLength, lengthMax));
   bool isValidChecksum(int value) => (value == checksum());
 
   // bool get isStartValid => isValidStart(headerAsSyncType.startFieldValue);
@@ -246,7 +246,7 @@ abstract mixin class Packet implements PacketInterface {
 
   PayloadMeta buildRequest<V>(PacketIdRequest<V, dynamic> packetId, V requestArgs) {
     PayloadMeta meta = buildPayloadAs(packetId.requestCaster!, requestArgs);
-    if (meta.length > payloadLengthMax) return const PayloadMeta(0);
+    if (meta.length > payloadLengthMax) return const PayloadMeta(0); // should this be assert/error?
     buildHeaderAsPayload(packetId, meta.length); // unconstrained view on build, or implement in buffer after set length
     return meta;
   }
@@ -430,7 +430,7 @@ class PacketBuffer {
   /// build functions mutate length
   PayloadMeta buildRequest<V>(PacketIdRequest<V, dynamic> packetId, V requestArgs) {
     PayloadMeta meta = _packetBuffer.buildRequest(packetId, requestArgs);
-    length = packet.payloadHeaderLength + meta.length; // payloadLength = meta.length;
+    length = packet.headerLength + meta.length; // payloadLength = meta.length;
     return meta;
   }
 

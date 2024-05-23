@@ -35,10 +35,9 @@ class Protocol {
       (packet) {
         if (respSocketMap[packet.packetId] case ProtocolSocket socket) {
           socket.add(packet);
+        } else {
+          throw const ProtocolException('no matching socket');
         }
-        // else {
-        //   throw const ProtocolException('no matching socket');
-        // }
       },
       onError: onError,
     );

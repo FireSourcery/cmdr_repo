@@ -13,7 +13,7 @@ mixin class MotPacketInterface implements PacketInterface {
   @override
   int get idHeaderLength => 2;
   @override
-  int get payloadHeaderLength => 8;
+  int get headerLength => 8;
   @override
   int get startId => 0xA5;
   @override
