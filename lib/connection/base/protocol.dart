@@ -30,6 +30,7 @@ class Protocol {
 
     status = ProtocolException.ok;
 
+    // if sockets implements listen on the transformed stream, although the observer pattern is implemented, the check id routine must still run iteratively. but a map would not be necessary.
     return packetStream!.listen(
       (packet) {
         if (respSocketMap[packet.packetId] case ProtocolSocket socket) {
@@ -207,36 +208,28 @@ class ProtocolSocket implements Sink<Packet> {
   //   return null;
   // }
 
-  Stream<(T segmentArgs, R? segmentResponse)> iterativeRequest<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> requestArgs, {Duration delay = datagramDelay}) async* {
-    for (final segmentArgs in requestArgs) {
+  Stream<R?> periodicRequest<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration delay = datagramDelay}) async* {
+    while (true) {
+      yield await requestResponse<T, R>(requestId, requestArgs);
+      await Future.delayed(delay); // todo as byte time
+    }
+  }
+
+  Stream<(T segmentArgs, R? segmentResponse)> iterativeRequest<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> requestSlices, {Duration delay = datagramDelay}) async* {
+    for (final segmentArgs in requestSlices) {
       yield (segmentArgs, await requestResponse<T, R>(requestId, segmentArgs));
       await Future.delayed(delay);
     }
   }
 
-  Stream<R?> periodicRequest<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration delay = datagramDelay}) async* {
+  Stream<(T segmentArgs, R? segmentResponse)> periodicIterativeRequest<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> requestSlices, {Duration delay = datagramDelay}) async* {
     while (true) {
-      yield await requestResponse<T, R>(requestId, requestArgs);
-      await Future.delayed(delay); //todo as byte time
-    }
-  }
-
-  // periodic iterativeRequest
-  Stream<(T segmentArgs, R? segmentResponse)> periodicIterativeRequest<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> requestArgs, {Duration delay = datagramDelay}) async* {
-    while (true) {
-      for (final segmentArgs in requestArgs) {
+      for (final segmentArgs in requestSlices) {
         yield (segmentArgs, await requestResponse<T, R>(requestId, segmentArgs));
         await Future.delayed(delay);
       }
     }
   }
-
-  // Stream<R?> iterativeUpdate<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> Function() requestArgsGetter, {Duration delay = datagramDelay}) async* {
-  //   for (final segmentArgs in requestArgsGetter()) {
-  //     yield await requestResponse<T, R>(requestId, segmentArgs);
-  //     await Future.delayed(delay);
-  //   }
-  // }
 
   /// periodic Response/Write
   Stream<R?> periodicUpdate<T, R>(PacketIdRequest<T, R> requestId, T Function() requestArgsGetter, {Duration delay = datagramDelay}) async* {
@@ -245,6 +238,12 @@ class ProtocolSocket implements Sink<Packet> {
       await Future.delayed(delay); // todo as byte time
     }
   }
+  // Stream<R?> iterativeUpdate<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> Function() requestArgsGetter, {Duration delay = datagramDelay}) async* {
+  //   for (final segmentArgs in requestArgsGetter()) {
+  //     yield await requestResponse<T, R>(requestId, segmentArgs);
+  //     await Future.delayed(delay);
+  //   }
+  // }
 
   // Future<void> sendRaw(Uint8List bytes, {Duration timeout = timeoutDefault}) async {}
   // Uint8List recvRaw(int bytes, {int timeout = -1})
@@ -294,7 +293,7 @@ class ProtocolSocket implements Sink<Packet> {
   Future<R?> tryRecv<R>(R? Function() parse, [Duration timeout = timeoutDefault]) async {
     try {
       // await stream.first.timeout(timeout);
-      _recved = Completer.sync();
+      _recved = Completer.sync(); // using sync completer to execute parse immediately, although code it is not the final computation.
       return await _recved.future.timeout(timeout).then((_) => parse());
     } on TimeoutException {
       print("Socket Recv Response Timeout");
@@ -317,7 +316,7 @@ class ProtocolSocket implements Sink<Packet> {
     return null;
   }
 
-  // pass pointer, emphemeral
+  // pass Packet pointer, ephemeral
   @override
   void add(Packet event) {
     timer.stop();
@@ -326,13 +325,23 @@ class ProtocolSocket implements Sink<Packet> {
     print("Socket [${hashCode}] RX ${packetBufferIn.bytes.take(4)} ${packetBufferIn.bytes.skip(4).take(4)} ${packetBufferIn.bytes.skip(8)}");
     print("Socket [${hashCode}] Time: ${timer.elapsedMilliseconds}");
 
-    // socket table does not unmap. might recieve packets following completion
+    // socket table does not unmap. might receive packets following completion
     if (!_recved.isCompleted) _recved.complete();
   }
 
   @override
   void close() {
     print('Socket closed');
+  }
+}
+
+abstract mixin class PacketIdRequestCall<T, R> implements PacketIdRequest<T, R> {
+  ProtocolSocket get socket;
+
+  // Function get _call => socket.requestResponse;
+
+  Future<R?> call(T request, {Duration? timeout = ProtocolSocket.reqRespTimeoutDefault, ProtocolSyncOptions syncOptions = ProtocolSyncOptions.none}) async {
+    return await socket.requestResponse<T, R>(this, request);
   }
 }
 

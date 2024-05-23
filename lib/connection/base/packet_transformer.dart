@@ -25,6 +25,7 @@ class HeaderParser extends PacketBuffer {
 
   // cannot cast struct without full length
   // always copy, double buffers, but does not need to handle remainder
+  // sets view length to bound validity checks
   void recvBytes(Uint8List bytesIn) {
     if (length == 0) {
       if (bytesIn.seekViewOfChar(packet.startId) case Uint8List result) copyBytes(result);
@@ -63,10 +64,11 @@ class HeaderStatus {
     return buffer.packet.isPacketComplete;
   }
 
-  bool? get isStartValid => buffer.packet.isStartFieldValid;
+  bool? get isStartValid => buffer.packet.isStartFieldValid; // nullable when StartField is multiple bytes
   bool? get isIdValid => buffer.packet.isIdFieldValid;
   // non-sync only
   bool? get isLengthValid => buffer.packet.isLengthFieldValid;
+  // packet must be complete and length set
   bool? get isChecksumValid => buffer.packet.isChecksumFieldValid; // (isPacketComplete == true), buffer.length == buffer.lengthFieldOrNull
 }
 

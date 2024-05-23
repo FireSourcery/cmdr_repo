@@ -20,10 +20,11 @@ abstract mixin class PropertyFilter<T> implements Enum {
 }
 
 extension CallOnNullAsNull on Function {
+  // callIfNotNull
   R? calln<T, R>(T? arg) => switch (arg) { T value => this(value), null => null };
-  // R? callIfNotNull<T, R>(T? arg) => switch (arg) { T value => this(value), null => null };
 }
 
 extension IsNotNullThen on Object? {
   R? isThen<T, R>(R Function(T value) fn) => switch (this as T?) { T value => fn(value), null => null };
+  R? nullThen<R>(R Function() fn) => (this == null) ? fn() : null;
 }

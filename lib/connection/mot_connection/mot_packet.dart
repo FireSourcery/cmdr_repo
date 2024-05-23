@@ -138,7 +138,7 @@ sealed class MotPacketId implements PacketId {
 
   static final Map<int, MotPacketId> _lookUpMap = Map<int, MotPacketId>.unmodifiable({
     for (final id in MotPacketSyncId.values) id.intId: id,
-    for (final id in MotPacketPayloadId.values) id.intId: id,
+    for (final id in MotPacketRequestId.values) id.intId: id,
   });
 }
 
@@ -159,7 +159,7 @@ enum MotPacketSyncId implements PacketIdSync, MotPacketId {
   final int intId;
 }
 
-enum MotPacketPayloadId<T, R> implements PacketIdRequest<T, R>, MotPacketId {
+enum MotPacketRequestId<T, R> implements PacketIdRequest<T, R>, MotPacketId {
   /* Fixed Length */
   MOT_PACKET_STOP_ALL(0x00, requestCaster: StopRequest.cast, responseCaster: StopResponse.cast),
   MOT_PACKET_VERSION(0x01, requestCaster: VersionRequest.cast, responseCaster: VersionResponse.cast),
@@ -186,7 +186,7 @@ enum MotPacketPayloadId<T, R> implements PacketIdRequest<T, R>, MotPacketId {
   MOT_PACKET_ID_RESERVED_255(0xFF),
   ;
 
-  const MotPacketPayloadId(this.intId, {this.requestCaster, this.responseCaster, this.responseId});
+  const MotPacketRequestId(this.intId, {this.requestCaster, this.responseCaster, this.responseId});
 
   @override
   final int intId;
@@ -211,6 +211,7 @@ typedef VarReadResponseValues = (int respCode, List<int> values); // values
 
 @Packed(1)
 final class VarReadRequest extends Struct implements Payload<VarReadRequestValues> {
+  // Struct is useful for defining a region of memory, giving a name to each field.
   @Array(16)
   external Array<Uint16> ids;
 
@@ -231,9 +232,10 @@ final class VarReadRequest extends Struct implements Payload<VarReadRequestValue
     return PayloadMeta(args.length * 2, (idSum, 0));
   }
 
+  // Access may require a workaround, since the boundary must the the full extent.
   @override
   VarReadRequestValues parse(MotPacket header, void stateMeta) {
-    // return Iterable.generate(packet.length ~/ 2, (index) => ids[index]);
+    // return Iterable.generate(header.payloadLength ~/ 2, (index) => ids[index]);
     return header.payloadAt<Uint16List>(0);
   }
 }
@@ -441,7 +443,32 @@ base class CallResponse extends Struct implements Payload<CallResponseValues> {
 ////////////////////////////////////////////////////////////////////////////////
 /// Mem Read
 ////////////////////////////////////////////////////////////////////////////////
-typedef MemReadRequestValues = (int address, int size, int config);
+typedef MemReadRequestValues = (int address, int size, int config); // should probably user named parameters for extension
+
+extension MemReadRequestMethods on MemReadRequestValues {
+  // Iterable<MemReadRequestValues> _readMemSlices(int address, int size, int config) sync* {
+  //   // for (var i = 0; i < size; i += MemReadRequest.sizeMax) {
+  //   //   yield (address + i, min(MemReadRequest.sizeMax, size - i), config);
+  //   // }
+  //   // for (var offset = 0; offset < size; offset += MemReadRequest.sizeMax) {
+  //   //   yield (address + offset, (size - offset).clamp(0, MemReadRequest.sizeMax), config);
+  //   // }
+  // }
+  // Iterable<MemReadRequestValues> slices = Iterable.generate(
+  //   (size ~/ MemReadRequest.sizeMax) + 1,
+  //   (index) => (address + (index * MemReadRequest.sizeMax), min(MemReadRequest.sizeMax, size - (index * MemReadRequest.sizeMax)), config),
+  // );
+
+  // List should be relatively small, so a new list is likely more efficient than a generator
+  Iterable<MemReadRequestValues> get slices {
+    return [for (var offset = 0; offset < size; offset += MemReadRequest.sizeMax) (address + offset, (size - offset).clamp(0, MemReadRequest.sizeMax), config)];
+  }
+
+  int get address => $1;
+  int get size => $2;
+  int get config => $3;
+}
+
 typedef MemReadResponseValues = (int status, Uint8List data);
 
 @Packed(1)
@@ -454,6 +481,8 @@ base class MemReadRequest extends Struct implements Payload<MemReadRequestValues
   external int resv;
   @Uint16()
   external int config;
+
+  static int get sizeMax => 32;
 
   factory MemReadRequest.cast(TypedData target) => Struct.create<MemReadRequest>(target);
 
@@ -491,6 +520,26 @@ base class MemReadResponse extends Struct implements Payload<MemReadResponseValu
 /// Mem Write
 ////////////////////////////////////////////////////////////////////////////////
 typedef MemWriteRequestValues = (int address, int size, int config, Uint8List data); // change to List<int>?
+
+extension MemWriteRequestMethods on MemWriteRequestValues {
+  Iterable<MemWriteRequestValues> get slices {
+    return [
+      for (var offset = 0; offset < size; offset += MemWriteRequest.sizeMax)
+        (
+          address + offset,
+          (size - offset).clamp(0, MemWriteRequest.sizeMax),
+          config,
+          Uint8List.sublistView(data, offset, (size - offset).clamp(0, MemWriteRequest.sizeMax))
+        ) // not strictly necessary to clamp sublistView end, if write loops on size parameter
+    ];
+  }
+
+  int get address => $1;
+  int get size => $2;
+  int get config => $3;
+  Uint8List get data => $4;
+}
+
 typedef MemWriteResponseValues = int;
 
 @Packed(1)
@@ -508,17 +557,17 @@ base class MemWriteRequest extends Struct implements Payload<MemWriteRequestValu
 
   factory MemWriteRequest.cast(TypedData target) => Struct.create<MemWriteRequest>(target);
 
-  static get dataMax => 16;
+  static int get sizeMax => 16;
 
   @override
   PayloadMeta build(MemWriteRequestValues args, MotPacket header) {
     final (address, size, config, data) = args;
-    if (data.length > dataMax) throw ArgumentError('Max Length: ${data.length + 12}');
+    if (data.length > sizeMax) throw ArgumentError('Max Length: ${data.length + 12}');
     this.address = address;
     this.size = size;
     this.config = config;
     for (final (index, value) in data.indexed) {
-      this.data[index] = value;
+      this.data[index] = value; // change to loop on size parameter
     }
     return PayloadMeta(data.length + 12);
   }
@@ -591,13 +640,13 @@ base class DataModeData extends Struct implements Payload<Uint8List> {
   @Array(32)
   external Array<Uint8> data;
 
-  static get dataMax => 32;
+  static int get sizeMax => 32;
 
   factory DataModeData.cast(TypedData target) => Struct.create<DataModeData>(target);
 
   @override
   PayloadMeta build(Uint8List args, MotPacket header) {
-    if (args.length > dataMax) throw ArgumentError('Max Length: 32');
+    if (args.length > sizeMax) throw ArgumentError('Max Length: 32');
     for (final (index, value) in args.indexed) {
       data[index] = value;
     }

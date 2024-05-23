@@ -26,115 +26,124 @@ class MotProtocolSocket extends ProtocolSocket {
     return (await recvSync())?.intId;
   }
 
-  Future<int?> stopMotors() async => requestResponse(MotPacketPayloadId.MOT_PACKET_STOP_ALL, null);
-  Future<VersionResponseValues?> version() async => await requestResponse(MotPacketPayloadId.MOT_PACKET_VERSION, null);
+  Future<int?> stopMotors() async => requestResponse(MotPacketRequestId.MOT_PACKET_STOP_ALL, null);
+  Future<VersionResponseValues?> version() async => await requestResponse(MotPacketRequestId.MOT_PACKET_VERSION, null);
 
-  Future<CallResponseValues?> call(int id, int? arg, [Duration? timeout]) async => requestResponse(MotPacketPayloadId.MOT_PACKET_CALL, (id, arg), timeout: timeout);
+  Future<CallResponseValues?> call(int id, int? arg, [Duration? timeout]) async => requestResponse(MotPacketRequestId.MOT_PACKET_CALL, (id, arg), timeout: timeout);
 
-  Future<VarReadResponseValues?> readVars(VarReadRequestValues ids) async => requestResponse(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids);
-  Future<VarWriteResponseValues?> writeVars(VarWriteRequestValues pairs) async => requestResponse(MotPacketPayloadId.MOT_PACKET_VAR_WRITE, pairs);
+  Future<VarReadResponseValues?> readVars(VarReadRequestValues ids) async => requestResponse(MotPacketRequestId.MOT_PACKET_VAR_READ, ids);
+  Future<VarWriteResponseValues?> writeVars(VarWriteRequestValues pairs) async => requestResponse(MotPacketRequestId.MOT_PACKET_VAR_WRITE, pairs);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Slices
   ////////////////////////////////////////////////////////////////////////////////
-  /// same input signature
-  Stream<(VarReadRequestValues segmentIds, VarReadResponseValues?)> readVarsSlices(Iterable<int> ids) => iterativeRequest(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids.slices(16));
-  Stream<(VarWriteRequestValues segmentPairs, VarWriteResponseValues?)> writeVarsSlices(Iterable<(int id, int value)> ids) => iterativeRequest(MotPacketPayloadId.MOT_PACKET_VAR_WRITE, ids.slices(8));
+  /// same input signature, but is not the content sent to the packet
+  Stream<(VarReadRequestValues segmentIds, VarReadResponseValues?)> readVarsSlices(Iterable<int> ids) => iterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, ids.slices(16));
+  Stream<(VarWriteRequestValues segmentPairs, VarWriteResponseValues?)> writeVarsSlices(Iterable<(int id, int value)> ids) => iterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_WRITE, ids.slices(8));
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Stream
   ////////////////////////////////////////////////////////////////////////////////
   Stream<VarReadResponseValues?> readVarsStream(VarReadRequestValues ids, {Duration delay = const Duration(milliseconds: 50)}) {
-    assert(ids.length <= 16);
-    return periodicRequest(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids, delay: delay);
+    assert(ids.length <= VarReadRequest.idCountMax);
+    return periodicRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, ids, delay: delay);
   }
 
   Stream<(VarReadRequestValues segmentIds, VarReadResponseValues?)> readVarsSlicesStream(Iterable<int> ids, {Duration delay = const Duration(milliseconds: 50)}) {
-    return periodicIterativeRequest(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids.slices(16), delay: delay);
+    return periodicIterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, ids.slices(VarReadRequest.idCountMax), delay: delay);
   }
 
   Stream<VarWriteResponseValues?> writeVarsStream(VarWriteRequestValues Function() idValuesGetter, {Duration delay = const Duration(milliseconds: 10)}) {
-    assert(idValuesGetter().length <= 8);
-    return periodicUpdate(MotPacketPayloadId.MOT_PACKET_VAR_WRITE, idValuesGetter, delay: delay);
+    assert(idValuesGetter().length <= VarWriteRequest.pairCountMax);
+    return periodicUpdate(MotPacketRequestId.MOT_PACKET_VAR_WRITE, idValuesGetter, delay: delay);
   }
 
   ////////////////////////////////////////////////////////////////////////////////
-  /// Once
+  /// Mem
+  /// 8 bytes overhead on write, potentially 4 if moving size and config to header
   ////////////////////////////////////////////////////////////////////////////////
   Future<MemReadResponseValues?> readMem(int address, int size, int config) async {
-    assert(size <= 32);
-    return await requestResponse(MotPacketPayloadId.MOT_PACKET_MEM_READ, (address, size, config));
+    assert(size <= MemReadRequest.sizeMax);
+    return await requestResponse(MotPacketRequestId.MOT_PACKET_MEM_READ, (address, size, config));
   }
 
   Future<MemWriteResponseValues?> writeMem(int address, int size, int config, Uint8List data) async {
+    assert(size <= MemWriteRequest.sizeMax);
     assert(size == data.lengthInBytes);
-    assert(size <= 16);
-    assert(data.lengthInBytes <= 16);
-    return await requestResponse(MotPacketPayloadId.MOT_PACKET_MEM_WRITE, (address, size, config, data));
+    assert(data.lengthInBytes <= MemWriteRequest.sizeMax); //todo change to loop on size not data
+    return await requestResponse(MotPacketRequestId.MOT_PACKET_MEM_WRITE, (address, size, config, data));
   }
 
-  Future<MemReadResponseValues?> readMemSlices(int address, int size, int config) async {}
+  Stream<(MemReadRequestValues sliceArgs, MemReadResponseValues?)> readMemSlices(int address, int size, int config) {
+    return iterativeRequest(MotPacketRequestId.MOT_PACKET_MEM_READ, (address, size, config).slices);
+  }
 
-  Future<MemWriteResponseValues?> writeMemSlices(int address, int size, int config, Uint8List data, [int successCode = 0]) async {
-    if (await writeMem(address, 16, config, data) case int statusCode when statusCode != successCode) return statusCode;
+  Stream<(MemWriteRequestValues sliceArgs, MemWriteResponseValues?)> writeMemSlices(int address, int size, int config, Uint8List data) {
+    return iterativeRequest(MotPacketRequestId.MOT_PACKET_MEM_WRITE, (address, size, config, data).slices);
+  }
 
-    // recursive
-    final nextAddress = address + 16;
-    final nextSize = size - 16;
-    final nextData = Uint8List.sublistView(data, min(16, data.lengthInBytes));
-    if (nextData.isNotEmpty) return await writeMemSlices(nextAddress, nextSize, config, nextData, successCode);
+  Future<MemWriteResponseValues?> writeMemSlicesRecursive(int address, int size, int config, Uint8List data, [int successCode = 0]) async {
+    if (size < 0) return successCode;
+    final sliceSize = min(MemReadRequest.sizeMax, data.lengthInBytes);
+    if (await writeMem(address, sliceSize, config, data) case int statusCode when statusCode != successCode) return statusCode;
 
-    return 0;
-    // return iterativeRequest(MotPacketPayloadId.MOT_PACKET_MEM_WRITE, args);
+    final nextAddress = address + sliceSize;
+    final nextSize = size - sliceSize;
+    final nextData = Uint8List.sublistView(data, sliceSize);
+    return await writeMemSlicesRecursive(nextAddress, nextSize, config, nextData, successCode);
   }
 
   ////////////////////////////////////////////////////////////////////////////////
   /// DataMode
   ////////////////////////////////////////////////////////////////////////////////
   Future<int?> initDataModeWrite(int address, int sizeBytes, int flags) async {
-    return requestResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_WRITE, (address, sizeBytes, flags), syncOptions: ProtocolSyncOptions.sendAndRecv);
+    return requestResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE, (address, sizeBytes, flags), syncOptions: ProtocolSyncOptions.sendAndRecv);
   }
 
   Future<int?> initDataModeRead(int address, int sizeBytes, int flags) async {
-    return requestResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_READ, (address, sizeBytes, flags), syncOptions: ProtocolSyncOptions.sendAndRecv);
+    return requestResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_READ, (address, sizeBytes, flags), syncOptions: ProtocolSyncOptions.sendAndRecv);
   }
 
-  Future<void> writeDataModeData(Uint8List data) async => sendRequest(MotPacketPayloadId.MOT_PACKET_DATA_MODE_DATA, data);
-  Future<Uint8List?> readDataModeData() async => recvResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_DATA);
+  Future<void> writeDataModeData(Uint8List data) async => sendRequest(MotPacketRequestId.MOT_PACKET_DATA_MODE_DATA, data);
+  Future<Uint8List?> readDataModeData() async => recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_DATA);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// DataMode Proc Async function maintains state
+  /// write without overhead
   ////////////////////////////////////////////////////////////////////////////////
-  //returns status char
+  // returns status char
+  // add success code match
   Future<int?> writeDataMode(int address, int sizeBytes, Uint8List data, [void Function(int bytesComplete)? progressCallback]) async {
     assert(sizeBytes == data.length);
     if (sizeBytes != data.length) return -1; // alternatively remove
 
     if (await initDataModeWrite(address, sizeBytes, 0) case int? response when response != 0) return response;
 
+    // alternatively return a stream of statuses prompt for input
     try {
-      for (var index = 0; index < sizeBytes; index += 32) {
-        await writeDataModeData(Uint8List.sublistView(data, index, min(32, sizeBytes - index))); // todo host side handle align?
+      for (var index = 0; index < sizeBytes; index += DataModeData.sizeMax) {
+        await writeDataModeData(Uint8List.sublistView(data, index, min(DataModeData.sizeMax, sizeBytes - index))); // todo host side handle align?
 
         if (await recvSync() != MotPacketSyncId.MOT_PACKET_SYNC_ACK) return -1;
-        progressCallback?.call(index * 32 + data.length);
+        progressCallback?.call(index * DataModeData.sizeMax + data.length);
       }
     } finally {
       print(sizeBytes);
     }
 
     // MOT_PACKET_DATA_MODE_WRITE should still be mapped
-    return recvResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_WRITE)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
+    return recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
   }
 
   Future<int?> readDataMode(int address, int sizeBytes, Uint8List dataBuffer, [void Function(int bytesComplete)? progressCallback]) async {
     assert(dataBuffer.length >= sizeBytes);
 
-    protocol.mapRequestResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_DATA, this); // map additional id
+    protocol.mapRequestResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_DATA, this); // map additional id
 
     if (await initDataModeRead(address, sizeBytes, 0) case int? response when response != 0) return response;
 
-    for (var index = 0; index < sizeBytes; index += 32) {
+    // return a stream? from iteratively stream and yield
+    for (var index = 0; index < sizeBytes; index += DataModeData.sizeMax) {
       if (await readDataModeData() case Uint8List data) {
         dataBuffer.setRange(index, index + data.length, data);
         await sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK);
@@ -144,7 +153,7 @@ class MotProtocolSocket extends ProtocolSocket {
       }
     }
 
-    return recvResponse(MotPacketPayloadId.MOT_PACKET_DATA_MODE_READ)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
+    return recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_READ)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
   }
 
   List<R> callStatusType<R extends Enum>() {

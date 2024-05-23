@@ -104,6 +104,13 @@ extension StringOfBytes on List<int> {
   List<int> modifyAsCode(int index, String value) => this..[index] = value.runes.single; // '1' => 0x31
 }
 
+// extension StringOfBytes on Uint8List {
+//   int indexOfBytes(Uint8List match) => String.fromCharCodes(this).indexOf(String.fromCharCodes(match));
+//   Uint8List? seekViewOfIndex(int index) => (index > -1) ? Uint8List.sublistView(this, index) : null;
+//   Uint8List? seekViewOfChar(int match) => seekViewOfIndex(indexOf(match));
+//   Uint8List? seekView(Uint8List match) => seekViewOfIndex(indexOfBytes(match));
+// }
+
 ////////////////////////////////////////////////////////////////////////////////
 /// List values
 ///
@@ -117,7 +124,6 @@ extension GenericSublistView on TypedData {
 
   // throws range error
   // offset uses "this" instance type, not R type
-  // todo change to R
   R sublistView<R extends TypedData>([int typedOffset = 0, int? end]) {
     return switch (R) {
       const (Uint8List) => Uint8List.sublistView(this, typedOffset, end),
@@ -133,6 +139,8 @@ extension GenericSublistView on TypedData {
 
   R? sublistViewOrNull<R extends TypedData>([int byteOffset = 0, int? end]) => (byteOffset < lengthInBytes) ? sublistView<R>(byteOffset, end) : null;
 
+  // if sublistView composes of all types without overlap use sublistView => intListView
+  // otherwise intListView => sublistView super function anti pattern
   List<int> intListView<R extends TypedData>([int typedOffset = 0, int? end]) {
     return switch (R) {
       const (Uint8List) => Uint8List.sublistView(this, typedOffset, end),
@@ -152,6 +160,15 @@ extension GenericSublistView on TypedData {
   // List<num> numListViewHost<R extends TypedData>([int typedOffset = 0, Endian endian = Endian.little]) {
   //   return (hostEndian != endian) ? EndianCastList<R>(this, endian) : sublistView<R>(typedOffset) as R;
   // }
+}
+
+extension TypedListSlices on TypedData {
+  Iterable<T> slices<T extends TypedData>(int length) sync* {
+    if (length < 1) throw RangeError.range(length, 1, null, 'length');
+    for (var offset = 0; offset < lengthInBytes; offset += length) {
+      yield sublistView<T>(offset, min(offset + length, lengthInBytes));
+    }
+  }
 }
 
 extension GenericWord on ByteData {

@@ -28,10 +28,10 @@ void main() {
   test('test', () {
     Uint8List list = Uint8List(40);
 
-    PacketIdRequest id = MotPacketPayloadId.MOT_PACKET_MEM_WRITE;
+    PacketIdRequest id = MotPacketRequestId.MOT_PACKET_MEM_WRITE;
     Payload payload = id.requestCaster!(list);
     // TestPayload payload1 = id.requestCaster!(list)..build((12345678, 87654321));
-    final results = checkType(MotPacketPayloadId.MOT_PACKET_MEM_WRITE, (1, 2, 3, Uint8List.fromList([255, 255, 255])));
+    final results = checkType(MotPacketRequestId.MOT_PACKET_MEM_WRITE, (1, 2, 3, Uint8List.fromList([255, 255, 255])));
 
     print(list[0]);
     print(list[1]);

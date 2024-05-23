@@ -19,7 +19,7 @@ abstract mixin class FileStorageNotifier<T> implements FileStorage<T> {
   set status(String value) => statusNotifier.value = status;
 // // FileStorageStatus status = FileStorageStatus.ok;
 
-  // normalize progress to 0-1
+  // normalized progress to 0-1
   final ValueNotifier<double> progressNotifier = ValueNotifier(0);
   set progress(double value) => progressNotifier.value = value;
   double get progress => progressNotifier.value;
@@ -113,8 +113,4 @@ class FileStorageWithNotifier<T> extends FileStorage<T> with FileStorageNotifier
   Object? fromContents(T contents) => _fromContents?.call(contents);
   @override
   T toContents() => _toContents?.call() ?? (throw UnimplementedError());
-}
-
-extension FileStorageWithNotifierExtension on FileStorage {
-  FileStorageWithNotifier withNotifier() => FileStorageWithNotifier.on(this);
 }

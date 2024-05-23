@@ -394,7 +394,7 @@ class PacketBuffer {
   @protected
   final PacketCaster packetCaster; // inherited class may use for addition buffers
 
-  // resolve views on length update
+  // resolve views on length update. resolve views with length on get?
   // disallow changing pointers directly, caller use length
   int get length => _bytesView.length;
   set length(int value) {
@@ -451,6 +451,7 @@ class PacketBuffer {
 /// [PacketId] Types
 ////////////////////////////////////////////////////////////////////////////
 /// build idOf from lists internally
+/// PacketIdFactory
 class PacketIdCaster {
   PacketIdCaster({required Iterable<List<PacketId>> idLists, required List<PacketIdSync> syncIds})
       : _lookUpMap = Map<int, PacketId>.unmodifiable({
@@ -474,14 +475,21 @@ abstract interface class PacketId implements Enum {
 
 // separate type label allow pattern matching
 abstract interface class PacketIdSync implements PacketId {
-  //  int get intId;
+  // int get intId;
   // PacketIdSyncInteranl get asInternal;
 }
 
 // Id hold a constructor to create a handler instance to process as packet
-// abstract interface class PacketIdPayload<T extends Payload> implements PacketId {
-//   T call(TypedData typedData);
-//   PayloadCaster<T> get caster;
+abstract interface class PacketIdPayload<V> implements PacketId {
+  PayloadCaster<V> get caster;
+}
+
+// class PacketIdPayload<V> {
+//   const PacketIdPayload(this.intId, this.caster);
+//   @override
+//   final int intId;
+//   @override
+//   final PayloadCaster<V> caster;
 // }
 
 /// Id as payload factory
@@ -493,6 +501,8 @@ abstract interface class PacketIdRequest<T, R> implements PacketId {
   PacketId? get responseId; // null for 1-way or matching response, override for non matching
   PayloadCaster<T>? get requestCaster;
   PayloadCaster<R>? get responseCaster;
+  // PacketIdPayload<T>? get requestId;
+  // PacketIdPayload<R>? get responseId;
 }
 
 ////////////////////////////////////////////////////////////////////////////

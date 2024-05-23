@@ -44,9 +44,10 @@ abstract mixin class TypedField<T extends NativeType> {
   int get end => offset + size; // index of last byte + 1
 
   // call with offset with T
-  // replace with struct
+  // replaced by struct
   int fieldValue(ByteData byteData) => byteData.wordAt<T>(offset);
   void setFieldValue(ByteData byteData, int value) => byteData.setWordAt<T>(offset, value);
+  // not yet replaceable
   int? fieldValueOrNull(ByteData byteData) => byteData.wordAtOrNull<T>(offset);
 
   // necessary to keep Word compile time const
