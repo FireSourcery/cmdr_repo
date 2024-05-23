@@ -23,6 +23,8 @@ class HeaderParser extends PacketBuffer {
   Uint8List trailing = Uint8List(0);
   HeaderStatus get status => HeaderStatus(this);
 
+  /// todo track length before parsing: RangeError (typedData.lengthInBytes): The typed list is not large enough: Not greater than or equal to 8: 3
+
   // cannot cast struct without full length
   // always copy, double buffers, but does not need to handle remainder
   // sets view length to bound validity checks

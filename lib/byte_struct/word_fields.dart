@@ -19,7 +19,7 @@ abstract mixin class WordFieldsMixin<T extends WordField> implements Word, EnumM
   String? get name;
   // List<T> get fields; // with Enum.values
 
-  (String, String) get asLabelPair => (name ?? '', toString());
+  (String, String) get asLabelPair => (name ?? '', toString()); //split this
 
   @override
   int operator [](T field) => field.valueOfInt(value);

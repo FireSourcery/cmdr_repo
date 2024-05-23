@@ -36,6 +36,8 @@ Uint8List packetHedad1 = Uint8List.fromList([164, 180, 200, 2, /**/ 20, 0, 6, 0,
 Uint8List packetInRepeatStart = Uint8List.fromList([165, 165, 165]);
 Uint8List packetInRepeatStart2 = Uint8List.fromList([165, 165]);
 
+PacketBuffer motPacket = PacketBuffer.size(MotPacket.cast, 40);
+
 final StreamController<Uint8List> inputController = StreamController.broadcast();
 final Stream<Packet> packetStream =
     inputController.stream.transform(PacketTransformer(parserBuffer: headerHandler)).handleError(handleProtocolException, test: (error) => (error is ProtocolException));
@@ -52,6 +54,10 @@ void main() {
     );
 
     print('begin');
+    motPacket.buildRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, [0, 1, 2, 3]);
+    print(motPacket.packet.checksumTest);
+
+    inputController.sink.add(motPacket.bytes);
     inputController.sink.add(packetIn0);
     inputController.sink.add(packetIn1);
     inputController.sink.add(packetInExcess);

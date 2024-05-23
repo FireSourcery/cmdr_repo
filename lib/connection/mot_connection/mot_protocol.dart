@@ -69,8 +69,6 @@ class MotProtocolSocket extends ProtocolSocket {
 
   Future<MemWriteResponseValues?> writeMem(int address, int size, int config, Uint8List data) async {
     assert(size <= MemWriteRequest.sizeMax);
-    assert(size == data.lengthInBytes);
-    assert(data.lengthInBytes <= MemWriteRequest.sizeMax); //todo change to loop on size not data
     return await requestResponse(MotPacketRequestId.MOT_PACKET_MEM_WRITE, (address, size, config, data));
   }
 

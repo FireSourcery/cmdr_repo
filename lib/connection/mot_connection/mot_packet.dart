@@ -529,7 +529,7 @@ extension MemWriteRequestMethods on MemWriteRequestValues {
           address + offset,
           (size - offset).clamp(0, MemWriteRequest.sizeMax),
           config,
-          Uint8List.sublistView(data, offset, (size - offset).clamp(0, MemWriteRequest.sizeMax))
+          Uint8List.sublistView(data, offset)
         ) // not strictly necessary to clamp sublistView end, if write loops on size parameter
     ];
   }
@@ -562,14 +562,15 @@ base class MemWriteRequest extends Struct implements Payload<MemWriteRequestValu
   @override
   PayloadMeta build(MemWriteRequestValues args, MotPacket header) {
     final (address, size, config, data) = args;
-    if (data.length > sizeMax) throw ArgumentError('Max Length: ${data.length + 12}');
+    if (size > sizeMax) throw ArgumentError('Max Length $sizeMax: $size');
     this.address = address;
     this.size = size;
     this.config = config;
-    for (final (index, value) in data.indexed) {
-      this.data[index] = value; // change to loop on size parameter
+    // loops on size. data.length may be greater
+    for (var index = 0; index < size; index++) {
+      this.data[index] = data[index];
     }
-    return PayloadMeta(data.length + 12);
+    return PayloadMeta(size + 8);
   }
 
   @override
