@@ -20,6 +20,17 @@ class Version extends WordFields<VersionFieldStandard> {
   // Version.cast(super.word, [this.name]) : super.cast();
   const Version.name(this.name) : super(0); // init for updateFrom
 
+  Version.initWith(Map<VersionFieldStandard, int> newValue, [String? name])
+      : this(
+          newValue[VersionFieldStandard.optional]!,
+          newValue[VersionFieldStandard.major]!,
+          newValue[VersionFieldStandard.minor]!,
+          newValue[VersionFieldStandard.fix]!,
+          name,
+        );
+
+  Version updateWithMap(Map<VersionFieldStandard, int> newValue) => Version.initWith(newValue, name);
+
   @override
   final String? name;
 

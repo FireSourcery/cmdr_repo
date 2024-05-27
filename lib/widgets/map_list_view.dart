@@ -63,10 +63,10 @@ class MapRowTiles<K, V> extends StatelessWidget {
 /// Editable views
 /// Value should be String or num
 class MapFormFields<K, V> extends StatefulWidget {
-  const MapFormFields({super.key, required this.entries, this.isReadOnly = false, this.onSaved, required this.valueParser, this.inputFormatters, this.keyStringifier});
+  const MapFormFields({super.key, required this.entries, this.isReadOnly = false, this.onSaved, required this.valueParser, this.inputFormatters, this.keyStringifier, this.numLimits});
 
   // todo at min max
-  MapFormFields.digits({super.key, required this.entries, this.isReadOnly = false, this.onSaved, this.keyStringifier})
+  MapFormFields.digits({super.key, required this.entries, this.isReadOnly = false, this.onSaved, this.keyStringifier, this.numLimits})
       : valueParser = switch (V) {
           const (int) => int.tryParse,
           const (double) => double.tryParse,
@@ -83,7 +83,23 @@ class MapFormFields<K, V> extends StatefulWidget {
   final V? Function(String textValue) valueParser;
 
   final List<TextInputFormatter>? inputFormatters;
-  // final (num min, num max)? numLimits;
+  final (num min, num max)? numLimits;
+
+  int? get maxDigits => numLimits?.$2.toString().length;
+
+// maxLength: 3,
+// validator: (Uint8List? value) {
+//   if (value == null || value.isEmpty) return 'Empty value';
+//   if (value.any((element) => element > 255)) return 'Max 255 allowed';
+//   return null;
+// },
+//          if (value.isNotEmpty) {
+//                 final intValue = int.parse(value);
+//                 field.value?[index] = intValue.clamp(0, 255);
+//                 if (intValue > 255) field.validate();
+//               } else {
+//                 // field.value?[index] = 0;
+//               }
 
   @override
   State<MapFormFields<K, V>> createState() => _MapFormFieldsState<K, V>();
@@ -118,7 +134,6 @@ class _MapFormFieldsState<K, V> extends State<MapFormFields<K, V>> {
         key: FocusNode()
           ..addListener(() {
             if (!_focusNodes[key]!.hasFocus) {
-              print('TextField lost focus $key');
               updateValue(key, _textEditingControllers[key]!.text);
             }
           })
@@ -157,14 +172,8 @@ class _MapFormFieldsState<K, V> extends State<MapFormFields<K, V>> {
                   onEditingComplete: () => updateValue(key, _textEditingControllers[key]!.text),
                   focusNode: _focusNodes[key]!,
                   onSubmitted: (String value) => updateValue(key, value),
-                  // onChanged: (value) {
-                  //   if (value.isNotEmpty) {
-                  //     if (valueParser(value) case V value) field.value?[key] = value;
-                  //   }
-                  // },
                   // field.didChange(field.value), sets map object
                   // onTapOutside: (event) => print('onTapOutside'), //field.didChange(field.value),
-
                   inputFormatters: widget.inputFormatters,
                   readOnly: widget.isReadOnly,
                   maxLengthEnforcement: MaxLengthEnforcement.enforced,
