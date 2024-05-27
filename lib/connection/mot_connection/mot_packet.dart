@@ -2,7 +2,7 @@
 import 'dart:ffi';
 import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
-import '../../byte_struct/typed_field.dart';
+import '../../binary_data/typed_field.dart';
 import '../base/packet.dart';
 
 mixin class MotPacketInterface implements PacketInterface {

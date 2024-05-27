@@ -7,12 +7,13 @@ import 'bitmask.dart';
 
 export 'bitmask.dart';
 
+/// [Bits] + operators <Bitmask, int>
 /// operations on a range of bits
-abstract interface class BitField<T extends Bitmask> implements GenericBitField<T, int>, Map<T, int> {
+abstract interface class BitField<T extends Bitmask> implements Map<T, int> {
   factory BitField([int bits = 0, bool mutable = true]) {
     return switch (mutable) {
-      true => _MutableBitFieldFromValues(32, bits),
-      false => _ConstBitFieldFromValues(32, bits),
+      true => _MutableBitFieldFromValues(64, bits),
+      false => _ConstBitFieldFromValues(64, bits),
     };
   }
 
@@ -50,23 +51,26 @@ abstract interface class BitField<T extends Bitmask> implements GenericBitField<
   set value(int value);
 
   int bitsAt(int index, int width);
+  int modifyBits(int index, int width, int value);
   void setBitsAt(int index, int width, int value);
   void reset([bool value = false]);
 
   List<T> get keys; // using Enum.values
-  int operator [](T key);
-  void operator []=(T key, int value);
-  int? remove(covariant T key);
-  void clear();
+  int operator [](covariant T key);
+  void operator []=(covariant T key, int value);
 
+  void clear();
+  int? remove(covariant T key);
   Iterable<(T, int)> get pairs;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// extendable, with Enum.values
-///  imposes an additional constraint on the type parameter
+///  imposes an additional constraint on the type parameter, or require BitmaskOf
 ////////////////////////////////////////////////////////////////////////////////
 abstract class BitFieldBase<T extends BitFieldMember> = GenericBitFieldBase<T, int> with BitFieldMixin<T> implements BitField<T>;
+// abstract class MutableBitFieldBase<T extends BitFieldMember> = GenericMutableBitFieldBase<T, int> with BitFieldMixin<T> implements BitField<T>;
+// abstract class ConstBitFieldBase<T extends BitFieldMember> = GenericConstBitFieldBase<T, int> with UnmodifiableBitsMixin<T, int> implements BitField<T>;
 
 abstract class MutableBitFieldBase<T extends BitFieldMember> extends BitFieldBase<T> implements BitField<T> {
   MutableBitFieldBase(this.value);
@@ -87,9 +91,9 @@ abstract class ConstBitFieldBase<T extends BitFieldMember> extends BitFieldBase<
 }
 
 /// user implement field keys with bitmask parameters
-/// alternatively BitField implements Bitmask bitmaskOf(T key)
+/// alternatively BitField implements Bitmask bitmaskOf(T Enum key)
 /// alternatively Enum specify only width, derive offset from order
-///
+/// "BitFieldField"
 abstract mixin class BitFieldMember implements Enum, Bitmask {
   Bitmask get bitmask;
   @override
@@ -109,7 +113,7 @@ abstract mixin class BitFieldMember implements Enum, Bitmask {
   // Bitmask get bitmask => Bitmask(index + fold(), width);
 }
 
-class ConstBitFieldMap<T extends Bitmask> extends GenericBitFieldMapBase<T, int> with BitFieldMixin<T> implements BitField<T> {
+class ConstBitFieldMap<T extends Bitmask> extends ConstBitFieldOnMapBase<T, int> implements BitField<T> {
   const ConstBitFieldMap(super.valueMap);
 
   @override
@@ -121,11 +125,15 @@ class ConstBitFieldMap<T extends Bitmask> extends GenericBitFieldMapBase<T, int>
 ////////////////////////////////////////////////////////////////////////////////
 /// BitField Implementation
 ////////////////////////////////////////////////////////////////////////////////
+/// Map operators
 abstract mixin class BitFieldMixin<T extends Bitmask> implements BitField<T> {
   const BitFieldMixin();
 
+  /// alternatively if T is nto Bitmask
+  /// Bitmask bitmaskOf(T key);
+
   @override
-  int operator [](T key) => key.read(value);
+  int operator [](T key) => key.read(value); // bitsAt(key.offset, key.width);
   @override
   void operator []=(T key, int newValue) => value = key.modify(value, newValue);
 }

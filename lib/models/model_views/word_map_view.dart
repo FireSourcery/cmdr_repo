@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../byte_struct/word.dart';
+import '../../binary_data/word.dart';
 
 /// Editable views
 // input as string literal
-class NameIdFormField extends StatelessWidget {
-  const NameIdFormField({required this.nameId, this.label, super.key, this.isReadOnly = false, this.onSaved, this.maxLength = 8});
-  final Word nameId;
+class WordFormField extends StatelessWidget {
+  const WordFormField({required this.word, this.label, super.key, this.isReadOnly = false, this.onSaved, this.maxLength = 8});
+  final Word word;
   final String? label;
   final bool isReadOnly;
   final ValueSetter<Word>? onSaved;
@@ -17,7 +17,7 @@ class NameIdFormField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       decoration: InputDecoration(labelText: label),
-      initialValue: nameId.asString,
+      initialValue: word.asString,
       readOnly: false,
       maxLengthEnforcement: MaxLengthEnforcement.enforced,
       maxLength: maxLength.clamp(0, 8),
@@ -32,8 +32,8 @@ class NameIdFormField extends StatelessWidget {
   }
 }
 
-class NameIdTile extends StatelessWidget {
-  const NameIdTile({required this.nameId, this.label = "Name Id", super.key});
+class WordStringTile extends StatelessWidget {
+  const WordStringTile({required this.nameId, this.label = "Name Id", super.key});
   final Word nameId;
   final String? label;
 
@@ -48,3 +48,7 @@ class NameIdTile extends StatelessWidget {
     );
   }
 }
+
+
+// named enum maps
+// NamedFieldView

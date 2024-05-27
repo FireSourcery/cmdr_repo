@@ -22,6 +22,7 @@ class MotConnection {
   static bool get isConnected => protocol.link.isConnected;
 
   static bool begin() {
+    //todo connect and begin
     if (isConnected) protocol.begin();
     return isConnected;
   }

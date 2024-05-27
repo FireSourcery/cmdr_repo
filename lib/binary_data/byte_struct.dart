@@ -3,7 +3,7 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:cmdr/byte_struct.dart';
-import 'package:cmdr/byte_struct/typed_data_ext.dart';
+import 'package:cmdr/binary_data/typed_data_ext.dart';
 import 'package:ffi/ffi.dart';
 import 'package:meta/meta.dart';
 
@@ -22,6 +22,8 @@ typedef ByteStructCreator<T> = T Function([TypedData typedData]);
 //   TypedData get bytes;
 // }
 
+// effectively TypedData, with a constructor
+// cannot extended TypedData, need to add constructor to extension on TypedData
 // not a mixin to pass parent constructors, on non ffi.Struct type
 class ByteStructBase {
   const ByteStructBase._(this.bytes);
@@ -30,14 +32,20 @@ class ByteStructBase {
 
   final Uint8List bytes;
 
+  int get length => bytes.length;
+
+  // wrapping TypedData extensions... this class is still needed to enforce constructor type
+
   Uint8List range(int offset, [int? length]) => Uint8List.sublistView(bytes, offset, length);
-  // TypedData rangeAs<T extends TypedData>(int offset, [int? length]) => bytes.sublistView<T>(offset, length);
+  TypedData rangeAs<T extends TypedData>(int offset, [int? length]) => bytes.asTypedList<T>(offset, length);
+  List<int> rangeAsIntList<T extends TypedData>(int byteOffset) => bytes.asIntList<T>(byteOffset);
 
   // field names need code gen
-  ByteData get _byteData => ByteData.sublistView(bytes);
-  int? fieldValue<V extends NativeType>(int offset) => _byteData.wordAt<V>(offset);
-  void setFieldValue<V extends NativeType>(int offset, int value) => _byteData.setWordAt<V>(offset, value);
-  int? fieldValueOrNull<V extends NativeType>(int offset) => _byteData.wordAtOrNull<V>(offset);
+  ByteData get byteData => ByteData.sublistView(bytes);
+
+  int? fieldValue<V extends NativeType>(int offset) => byteData.wordAt<V>(offset);
+  void setFieldValue<V extends NativeType>(int offset, int value) => byteData.setWordAt<V>(offset, value);
+  int? fieldValueOrNull<V extends NativeType>(int offset) => byteData.wordOrNullAt<V>(offset);
 
   // dynamic setAs<T extends ByteStructBase, V>(ByteStructCaster<T> caster, V values) => caster(bytes).build(values, this);
   // V getAs<R extends ByteStructBase, V>(ByteStructCaster<R> caster, [dynamic  stateMeta]) => caster(bytes).parse(this, stateMeta);
@@ -105,5 +113,3 @@ abstract interface class ByteStructInterface {
 //     bytes.setAll(currentLength, dataIn);
 //   }
 // }
-
- 

@@ -153,61 +153,13 @@ class MotProtocolSocket extends ProtocolSocket {
 
     return recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_READ)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
   }
-
-  List<R> callStatusType<R extends Enum>() {
-    return switch (R) {
-      const (MotProtocol_GenericStatus) => MotProtocol_GenericStatus.values,
-      const (NvMemory_Status) => NvMemory_Status.values,
-      Type() => throw UnsupportedError('MotStatus.values: $R'),
-    } as List<R>;
-  }
-
-  Future<R?> callTyped<R extends Enum>(MotProtocol_CallId id, [Enum? arg, Duration? timeout]) async {
-    return call(id.index, arg?.index, timeout).then((value) => callStatusType<R>().elementAtOrNull.calln(value?.$2));
-  }
 }
 
-enum NvMemory_Status {
-  NV_MEMORY_STATUS_SUCCESS,
-  NV_MEMORY_STATUS_PROCESSING,
 
-  NV_MEMORY_STATUS_ERROR_BUSY,
-  NV_MEMORY_STATUS_ERROR_CMD,
-  NV_MEMORY_STATUS_ERROR_PROTECTION,
-
-  NV_MEMORY_STATUS_ERROR_BOUNDARY,
-  NV_MEMORY_STATUS_ERROR_ALIGNMENT,
-  NV_MEMORY_STATUS_ERROR_BUFFER,
-  NV_MEMORY_STATUS_ERROR_INVALID_OP,
-
-  NV_MEMORY_STATUS_ERROR_VERIFY,
-  NV_MEMORY_STATUS_ERROR_CHECKSUM,
-  NV_MEMORY_STATUS_ERROR_NOT_IMPLEMENTED,
-  NV_MEMORY_STATUS_ERROR_OTHER,
-}
-
-// todo handle wrapping types?
 
 // Future<int> requestReadVar(int id) => procRequestResponse(MotPacketPayloadId.MOT_PACKET_READ_VAR);
 // Future<int> requestWriteVar(int id, int value) => procRequestResponse(MotPacketPayloadId.MOT_PACKET_WRITE_VAR, {id: value});
 
-enum MotProtocol_CallId {
-  MOT_CALL_BLOCKING,
-}
-
-enum MotProtocol_GenericStatus {
-  MOT_STATUS_OK,
-  MOT_STATUS_ERROR,
-  // MOT_STATUS_RESERVED,
-}
-
-enum MotProtocol_MemConfig {
-  MOT_MEM_CONFIG_RAM,
-  MOT_MEM_CONFIG_FLASH,
-  MOT_MEM_CONFIG_EEPROM,
-  MOT_MEM_CONFIG_ONCE,
-  MOT_MEM_CONFIG_RESERVED,
-}
 
 // Stream<(Iterable<int> segmentIds, int? respCode, List<int> values)> readVarsStreamDebug(VarReadRequestPayload ids) {
 //   Stopwatch debugStopwatch = Stopwatch()..start();

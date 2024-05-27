@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 // import 'package:recase/recase.dart';
 
-import '../bitfield/bitflags.dart';
+import '../binary_data/bitflags.dart';
 
 class FlagIcons<T extends Enum> {
   const FlagIcons({required this.bitFlags, this.iconsMap, this.textMap, this.onColor = Colors.red, this.offColor = Colors.grey});

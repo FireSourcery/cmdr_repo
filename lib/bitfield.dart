@@ -1,4 +1,4 @@
-export 'bitfield/bitmask.dart';
-export 'bitfield/bits.dart';
-export 'bitfield/bitfield.dart';
-export 'bitfield/bitflags.dart';
+export 'binary_data/bitmask.dart';
+export 'binary_data/bits.dart';
+export 'binary_data/bitfield.dart';
+export 'binary_data/bitflags.dart';

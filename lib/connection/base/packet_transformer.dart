@@ -111,8 +111,8 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
 
           case HeaderStatus(isPacketComplete: true):
             parserBuffer.completePacket(); // set length for checksum operation
-            print('parserBuffer completePacket() ${parserBuffer.bytes}');
-            print('parserBuffer trailing ${parserBuffer.trailing}');
+            // print('parserBuffer completePacket() ${parserBuffer.bytes}');
+            // print('parserBuffer trailing ${parserBuffer.trailing}');
             assert(parserBuffer.packet.lengthFieldOrNull == parserBuffer.length);
             switch (parserBuffer.status.isChecksumValid) {
               case true || null: // null when no checksum implemented

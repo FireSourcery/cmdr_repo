@@ -5,7 +5,7 @@ import 'package:intel_hex/intel_hex.dart';
 
 import 'file_storage.dart';
 
-abstract class FirmwareFileStorage extends FileStorage<Map<int, Uint8List>> {
+class FirmwareFileStorage extends FileStorage<Map<int, Uint8List>> {
   FirmwareFileStorage(super.fileCodec, {super.defaultName, super.extensions = const ['hex']});
 
   @override

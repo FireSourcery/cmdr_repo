@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../byte_struct/word.dart';
+import '../../binary_data/word.dart';
 import '../../widgets/map_list_view.dart';
 import '../version.dart';
 
@@ -47,7 +47,7 @@ class VersionFormFieldChars extends StatelessWidget {
   final bool isCharCode;
   final ValueSetter<Version>? onSaved;
 
-  // todo alternate schemes
+  // todo alternate schemes, remove for enum
   String labelAt(int index) => switch (index) { 0 => 'Opt', 1 => 'Major', 2 => 'Minor', 3 => 'Fix', _ => 'Unknown' };
 
   @override

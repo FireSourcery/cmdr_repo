@@ -6,11 +6,11 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:cmdr/common/defined_types.dart';
 
-import '../../byte_struct/byte_struct.dart';
-import '../../byte_struct/typed_data_ext.dart';
-import '../../byte_struct/typed_field.dart';
+import '../../binary_data/byte_struct.dart';
+import '../../binary_data/typed_data_ext.dart';
+import '../../binary_data/typed_field.dart';
 
-export '../../byte_struct/byte_struct.dart';
+export '../../binary_data/byte_struct.dart';
 
 /// Collective def of Packet format specs
 // Abstract factory pattern
@@ -110,9 +110,9 @@ abstract mixin class Packet implements PacketInterface {
 
   /// using ffi NativeType for signature types only
   /// with range check
-  List<int> payloadAt<R extends TypedData>(int byteOffset) => payload.intListViewOrEmpty<R>(byteOffset);
+  List<int> payloadAt<R extends TypedData>(int byteOffset) => payload.asIntListOrEmpty<R>(byteOffset);
   int payloadWordAt<R extends NativeType>(int byteOffset) => payloadWords.wordAt<R>(byteOffset, endian); // throws if header parser fails, length reports lesser value, while checksum passes
-  int? payloadWordAtOrNull<R extends NativeType>(int byteOffset) => payloadWords.wordAtOrNull<R>(byteOffset, endian);
+  int? payloadWordAtOrNull<R extends NativeType>(int byteOffset) => payloadWords.wordOrNullAt<R>(byteOffset, endian);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// [Checksum]
@@ -218,10 +218,10 @@ abstract mixin class Packet implements PacketInterface {
   ByteData get _byteData => ByteData.sublistView(bytes);
 
   // header struct cannot cast less than full length
-  int? get startFieldOrNull => startFieldPart.fieldValueOrNull(_byteData);
-  int? get idFieldOrNull => idFieldPart.fieldValueOrNull(_byteData);
-  int? get lengthFieldOrNull => lengthFieldPart.fieldValueOrNull(_byteData);
-  int? get checksumFieldOrNull => checksumFieldPart.fieldValueOrNull(_byteData);
+  int? get startFieldOrNull => startFieldPart.valueOrNullOf(_byteData);
+  int? get idFieldOrNull => idFieldPart.valueOrNullOf(_byteData);
+  int? get lengthFieldOrNull => lengthFieldPart.valueOrNullOf(_byteData);
+  int? get checksumFieldOrNull => checksumFieldPart.valueOrNullOf(_byteData);
 
   // null if not yet received
   bool? get isStartFieldValid => startFieldOrNull.isThen(isValidStart);

@@ -1,11 +1,13 @@
+import 'dart:collection';
 import 'dart:ffi';
 import 'dart:typed_data';
 
+import 'package:ffi/ffi.dart';
+
+import '../common/enum_map.dart';
 import 'byte_struct.dart';
 import 'typed_data_ext.dart';
-import 'word.dart';
-
-import 'package:ffi/ffi.dart';
+import 'int_ext.dart';
 
 export 'dart:ffi';
 export 'dart:typed_data';
@@ -21,6 +23,7 @@ export 'dart:typed_data';
 //   int get end => offset + size;
 
 //   List<int> typedListOf<R extends TypedData>(TypedData typedList) => typedList.sublistViewOrEmpty<R>(offset, size);
+// List<int> typedListOf<R extends TypedData>(TypedData typedList) => typedList.sublistViewOrEmpty<R>(offset, size);
 
 //   int valueOfTypedData(ByteData byteData) => byteData.uintAt(offset, size);
 //   int valueOfInt(int intData) => intData.valueAt(offset, size);
@@ -34,6 +37,15 @@ export 'dart:typed_data';
 //   final int size;
 // }
 
+// abstract mixin class Field<V> implements Enum {
+//   const Field();
+//   Type get type => V;
+//   bool compareType(Object? object) => object is V;
+//   V get(EnumMap enumMap) => enumMap[this] as V;
+//   void set(EnumMap enumMap, V value) => enumMap[this] = value;
+//   EnumMap asModified(EnumMap enumMap, V value) => enumMap.copyWithEntry(this, value);
+// }
+
 /// TypedField, Typed 0-8 bytes
 abstract mixin class TypedField<T extends NativeType> {
   const TypedField._();
@@ -45,15 +57,13 @@ abstract mixin class TypedField<T extends NativeType> {
 
   // call with offset with T
   // replaced by struct
-  int fieldValue(ByteData byteData) => byteData.wordAt<T>(offset);
-  void setFieldValue(ByteData byteData, int value) => byteData.setWordAt<T>(offset, value);
+  int valueOf(ByteData byteData) => byteData.wordAt<T>(offset);
+  void setValueOf(ByteData byteData, int value) => byteData.setWordAt<T>(offset, value);
   // not yet replaceable
-  int? fieldValueOrNull(ByteData byteData) => byteData.wordAtOrNull<T>(offset);
+  int? valueOrNullOf(ByteData byteData) => byteData.wordOrNullAt<T>(offset);
 
   // necessary to keep Word compile time const
-  int valueOfInt(int intData) => intData.wordAt<T>(offset);
-
-  // List<int> typedListOf<R extends TypedData>(TypedData typedList) => typedList.sublistViewOrEmpty<R>(offset, size);
+  int valueOfInt(int intData) => intData.bytesAt(offset, sizeOf<T>());
 }
 
 // class _TypedField<T extends NativeType> extends TypedField<T> {
@@ -69,5 +79,18 @@ class TypedOffset<T extends NativeType> extends TypedField<T> {
   final int offset;
 }
 
-/// interface for including [TypedField<T>], [Enum]
-abstract interface class NamedField<T extends NativeType> implements TypedField<T>, Enum {}
+// /// interface for including [TypedField<T>], [Enum]
+// abstract interface class NamedField<T extends NativeType> implements TypedField<T>, Enum {}
+
+
+// // add operator [] to ByteStructBase
+// abstract class TypedFields<T extends NamedField> extends ByteStructBase with MapBase<T, int>, EnumMap<T, int> {
+//   TypedFields(super.bytes);
+
+//   // TypedFields._();
+//   // factory TypedFields(int value) = TypedFieldsValue<T>;
+
+//   int operator [](T field) => field.valueOf(byteData);
+//   void operator []=(T field, int? value);
+//   void clear();
+// }
