@@ -27,12 +27,12 @@ class Bitmask {
   // int call(int value) => ((value << shift) & bits);
 }
 
-extension type const BitmaskedValue._(int value) implements int {
-  BitmaskedValue(Bitmask bitmask, int input) : this._(bitmask.apply(input));
-  const BitmaskedValue.test(Bitmask bitmask, int input) : this._(bitmask * input);
-  const BitmaskedValue.of(int shift, int width, int input) : this._((input << shift) & (((1 << width) - 1) << shift));
-  const BitmaskedValue.read(int shift, int width, int source) : this._((source & (((1 << width) - 1) << shift)) >> shift);
-}
+// extension type const BitmaskedValue._(int value) implements int {
+//   BitmaskedValue(Bitmask bitmask, int input) : this._(bitmask.apply(input));
+//   const BitmaskedValue.test(Bitmask bitmask, int input) : this._(bitmask * input);
+//   const BitmaskedValue.of(int shift, int width, int input) : this._((input << shift) & (((1 << width) - 1) << shift));
+//   const BitmaskedValue.read(int shift, int width, int source) : this._((source & (((1 << width) - 1) << shift)) >> shift);
+// }
 
 extension type Bitmasks._(Iterable<Bitmask> bitmasks) implements Iterable<Bitmask> {
   Bitmasks.fromWidths(Iterable<int> widths) : bitmasks = Iterable.generate(widths.length, (index) => Bitmask(widths.take(index).sum, widths.elementAt(index)));

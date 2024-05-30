@@ -33,7 +33,7 @@ class Version extends WordFieldsBase<WordField<NativeType>> {
   @override
   final String? name;
   @override
-  (String, String) get asLabelPair => (name ?? '', toStringAsVersion());
+  (String, String) get labelPair => (name ?? '', toStringAsVersion());
   // @override
   // int get byteLength => (value.byteLength > 4) ? 8 : 4;
 
@@ -90,18 +90,6 @@ class Version extends WordFieldsBase<WordField<NativeType>> {
   int get hashCode => name.hashCode ^ bits.hashCode;
 }
 
-// enum VersionFieldStandard<T extends NativeType> with TypedField<T> implements WordField<T> {
-//   fix<Uint8>(0),
-//   minor<Uint8>(1),
-//   major<Uint8>(2),
-//   optional<Uint8>(3),
-//   ;
-
-//   const VersionFieldStandard(this.offset);
-//   @override
-//   final int offset;
-// }
-
 enum VersionFieldStandard with TypedField<Uint8> implements WordField<Uint8> {
   fix(0),
   minor(1),
@@ -125,6 +113,11 @@ class VersionStandard extends Version {
   int get major => this[VersionFieldStandard.major];
   int get optional => this[VersionFieldStandard.optional];
 
+  /// Json
+  // factory Version.fromJson(Map<String, dynamic> json) {
+  //   return fromJson(json);
+  // }
+
   Version copyWith({int? optional, int? major, int? minor, int? fix, String? name}) {
     return Version(optional ?? this.optional, major ?? this.major, minor ?? this.minor, fix ?? this.fix, name ?? this.name);
   }
@@ -135,4 +128,16 @@ class VersionStandard extends Version {
 
 //   @override
 //   final List<T> keys;
+// }
+
+// enum VersionFieldStandard<T extends NativeType> with TypedField<T> implements WordField<T> {
+//   fix<Uint8>(0),
+//   minor<Uint8>(1),
+//   major<Uint8>(2),
+//   optional<Uint8>(3),
+//   ;
+
+//   const VersionFieldStandard(this.offset);
+//   @override
+//   final int offset;
 // }

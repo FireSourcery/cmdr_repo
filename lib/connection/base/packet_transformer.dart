@@ -1,19 +1,13 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:cmdr/binary_data/typed_data_ext.dart';
 import 'package:cmdr/common/defined_types.dart';
 import 'package:flutter/material.dart';
 import 'package:meta/meta.dart';
 
 import 'packet.dart';
 import 'protocol.dart';
-
-extension on Uint8List {
-  int indexOfBytes(Uint8List match) => String.fromCharCodes(this).indexOf(String.fromCharCodes(match));
-  Uint8List? seekViewOfIndex(int index) => (index > -1) ? Uint8List.sublistView(this, index) : null;
-  Uint8List? seekViewOfChar(int match) => seekViewOfIndex(indexOf(match));
-  Uint8List? seekView(Uint8List match) => seekViewOfIndex(indexOfBytes(match));
-}
 
 /// Packet Rx Meta Parser
 class HeaderParser extends PacketBuffer {

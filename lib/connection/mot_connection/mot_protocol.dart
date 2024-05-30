@@ -38,8 +38,8 @@ class MotProtocolSocket extends ProtocolSocket {
   /// Slices
   ////////////////////////////////////////////////////////////////////////////////
   /// same input signature, but is not the content sent to the packet
-  Stream<(VarReadRequestValues segmentIds, VarReadResponseValues?)> readVarsSlices(Iterable<int> ids) => iterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, ids.slices(16));
-  Stream<(VarWriteRequestValues segmentPairs, VarWriteResponseValues?)> writeVarsSlices(Iterable<(int id, int value)> ids) => iterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_WRITE, ids.slices(8));
+  Stream<(VarReadRequestValues sliceIds, VarReadResponseValues?)> readVarsSlices(Iterable<int> ids) => iterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, ids.slices(16));
+  Stream<(VarWriteRequestValues slicePairs, VarWriteResponseValues?)> writeVarsSlices(Iterable<(int id, int value)> ids) => iterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_WRITE, ids.slices(8));
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Stream
@@ -49,7 +49,7 @@ class MotProtocolSocket extends ProtocolSocket {
     return periodicRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, ids, delay: delay);
   }
 
-  Stream<(VarReadRequestValues segmentIds, VarReadResponseValues?)> readVarsSlicesStream(Iterable<int> ids, {Duration delay = const Duration(milliseconds: 50)}) {
+  Stream<(VarReadRequestValues sliceIds, VarReadResponseValues?)> readVarsSlicesStream(Iterable<int> ids, {Duration delay = const Duration(milliseconds: 50)}) {
     return periodicIterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, ids.slices(VarReadRequest.idCountMax), delay: delay);
   }
 
@@ -85,10 +85,7 @@ class MotProtocolSocket extends ProtocolSocket {
     final sliceSize = min(MemReadRequest.sizeMax, data.lengthInBytes);
     if (await writeMem(address, sliceSize, config, data) case int statusCode when statusCode != successCode) return statusCode;
 
-    final nextAddress = address + sliceSize;
-    final nextSize = size - sliceSize;
-    final nextData = Uint8List.sublistView(data, sliceSize);
-    return await writeMemSlicesRecursive(nextAddress, nextSize, config, nextData, successCode);
+    return await writeMemSlicesRecursive(address + sliceSize, size - sliceSize, config, Uint8List.sublistView(data, sliceSize), successCode);
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -159,8 +156,7 @@ class MotProtocolSocket extends ProtocolSocket {
 
 // Future<int> requestReadVar(int id) => procRequestResponse(MotPacketPayloadId.MOT_PACKET_READ_VAR);
 // Future<int> requestWriteVar(int id, int value) => procRequestResponse(MotPacketPayloadId.MOT_PACKET_WRITE_VAR, {id: value});
-
-
+ 
 // Stream<(Iterable<int> segmentIds, int? respCode, List<int> values)> readVarsStreamDebug(VarReadRequestPayload ids) {
 //   Stopwatch debugStopwatch = Stopwatch()..start();
 //   final stream = periodicRequestSegmented(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids.slices(16), delay: const Duration(milliseconds: 5));

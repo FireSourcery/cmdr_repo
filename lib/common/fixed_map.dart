@@ -95,7 +95,7 @@ abstract mixin class FixedMap<E extends Enum, V> implements Map<E, V> {
 
 // a builder surrogate for simplifying child class constructors
 // in the case switch mapping is not is provided
-class FixedMapModified<E extends Enum, V> with MapBase<E, V>, FixedMap<E, V>, FixedMap<E, V> {
+class FixedMapModified<E extends Enum, V> with MapBase<E, V>, FixedMap<E, V> {
   const FixedMapModified(this._source, this._modified);
   final FixedMap<E, V> _source;
   final Iterable<MapEntry<E, V>> _modified;
@@ -115,12 +115,13 @@ class FixedMapModified<E extends Enum, V> with MapBase<E, V>, FixedMap<E, V>, Fi
 
   @override
   void clear() => throw UnsupportedError('FixedMapModified does not support clear');
+
   // @override
   // FixedMap<E, V> initWith(Map<E, V?> map) => throw UnsupportedError('FixedMapModified does not support initWith');
 }
 
-class FixedMapBuffer<E extends Enum, V> with MapBase<E, V?>, FixedMap<E, V?>, FixedMap<E, V?> {
-  FixedMapBuffer(this._keys) : _values = List<V?>.filled(_keys.length, null);
+class FixedMapBuffer<E extends Enum, V> with MapBase<E, V?>, FixedMap<E, V?> {
+  FixedMapBuffer(this._keys, [List<V>? values]) : _values = values ?? List<V?>.filled(_keys.length, null);
 
   final List<E> _keys;
   final List<V?> _values;

@@ -28,3 +28,10 @@ extension IsNotNullThen on Object? {
   R? isThen<T, R>(R Function(T value) fn) => switch (this as T?) { T value => fn(value), null => null };
   R? nullThen<R>(R Function() fn) => (this == null) ? fn() : null;
 }
+
+// extension type NumTo<R>(num value) implements num {
+//   // NumTo.parse(String string) : value = num.parse(string);
+//   NumTo.parse(String string) : value = switch (R) { const (int) => int.parse(string), const (double) => double.parse(string), _ => throw TypeError() };
+
+//   // R to<R>() => switch (R) { const (int) => toInt(), const (double) => toDouble(), _ => throw TypeError() } as R;
+// }

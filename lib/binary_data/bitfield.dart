@@ -165,7 +165,6 @@ abstract class _BitFieldFromValues<T extends Bitmask> extends BitsMapBase<T, int
   List<T> get keys => throw UnsupportedError("Extend BitFieldBase");
 }
 
-// potentially use value.bitLength over passing width
 class _MutableBitFieldFromValues<T extends Bitmask> extends _BitFieldFromValues<T> implements BitField<T> {
   _MutableBitFieldFromValues(super.width, this.bits);
   @override

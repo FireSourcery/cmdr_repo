@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-extension on num {
-  R to<R>() => switch (R) { const (int) => toInt(), const (double) => toDouble(), _ => throw TypeError() } as R;
-}
-
-// T functions as generic type behavior, as well as selection parameter, unless explicitly defined
-abstract interface class IOField<T> implements StatelessWidget {
-  /// Select using union config
+/// Select using union config
+// T functions as generic type, as well as selection parameter, unless explicitly defined
+abstract interface class IOField<T> extends Widget {
   factory IOField(IOFieldConfig<T> config, {Key? key}) {
     if (config.isReadOnly) return IOFieldReader<T>.config(config: config);
     if (config.stringMap?.isNotEmpty ?? false) return IOFieldMenu<T>.config(config: config);
@@ -94,6 +90,8 @@ class IOFieldConfig<T> {
   final Map<T, String>? stringMap; //  enum Key : label
   final num? valueMin;
   final num? valueMax;
+  //todo combine
+  // final (num min, num max)? numLimits; // required for num type, slider and input range check on submit
 
   final ValueChanged<T>? sliderChanged;
   // final bool useBoolButton;
@@ -129,6 +127,10 @@ class IOFieldConfig<T> {
       sliderChanged: sliderChanged ?? this.sliderChanged,
     );
   }
+}
+
+extension on num {
+  R to<R>() => switch (R) { const (int) => toInt(), const (double) => toDouble(), _ => throw TypeError() } as R;
 }
 
 // case of InputDecorator, manually update error
@@ -177,9 +179,11 @@ class IOFieldReader<T> extends StatelessWidget implements IOField<T> {
   final ValueGetter<bool>? errorGetter;
   final ValueGetter<String>? valueStringGetter; // enums may define user friendly string
 
+  String _getText() => valueGetter().toString();
+
   @override
   Widget build(BuildContext context) {
-    final ValueGetter<String> textGetter = valueStringGetter ?? () => valueGetter().toString();
+    final ValueGetter<String> textGetter = valueStringGetter ?? _getText;
 
     final widget = ListenableBuilder(
       listenable: listenable,
@@ -199,8 +203,9 @@ class IOFieldReader<T> extends StatelessWidget implements IOField<T> {
 /// T == num or String
 // textField rebuild based on user input
 // textController update based on control logic, and propagates to partial textfield rebuild
-class IOFieldText<T> extends StatelessWidget implements IOField<T> {
-  IOFieldText({required this.listenable, required this.valueGetter, this.valueSetter, this.decoration, this.numMin, this.numMax, super.key, this.tip = '', this.errorGetter, this.valueStringGetter});
+class IOFieldText<T> extends StatefulWidget implements IOField<T> {
+  const IOFieldText(
+      {required this.listenable, required this.valueGetter, this.valueSetter, this.decoration, this.numMin, this.numMax, super.key, this.tip = '', this.errorGetter, this.valueStringGetter});
 
   IOFieldText.config({required IOFieldConfig<T> config, super.key})
       : listenable = config.valueListenable,
@@ -224,6 +229,17 @@ class IOFieldText<T> extends StatelessWidget implements IOField<T> {
   final num? numMin;
   final num? numMax;
 
+  String _getText() => valueGetter().toString();
+
+  //  num.parse(numString).clamp(numMin!, numMax!)
+  void submitTextNum(String numString) => valueSetter?.call(num.parse(numString).to<T>());
+  void submitTextString(String string) => valueSetter?.call(string as T);
+
+  @override
+  State<IOFieldText<T>> createState() => _IOFieldTextState<T>();
+}
+
+class _IOFieldTextState<T> extends State<IOFieldText<T>> {
   final List<TextInputFormatter>? inputFormatters = switch (T) {
     const (int) => [FilteringTextInputFormatter.digitsOnly],
     const (double) || const (num) => [FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}'))],
@@ -232,34 +248,49 @@ class IOFieldText<T> extends StatelessWidget implements IOField<T> {
 
   final TextEditingController textController = TextEditingController();
   final MaterialStatesController materialStates = MaterialStatesController();
+  final FocusNode focusNode = FocusNode();
 
-  //  num.parse(numString).clamp(numMin!, numMax!)
-  // void submitTextNumBounded(String numString) => valueSetter(valueOfNumString(numString));
-  void submitTextNum(String numString) => valueSetter?.call(num.parse(numString).to<T>());
-  void submitTextString(String string) => valueSetter?.call(string as T);
+  // alternatively resolve in initializer list
+  late final ValueSetter<String> onSubmitted = switch (T) { const (int) || const (double) || const (num) => widget.submitTextNum, const (String) => widget.submitTextString, _ => throw TypeError() };
+  late final ValueChanged<String>? onChanged = switch (T) { const (int) || const (double) || const (num) when (widget.numMin != null && widget.numMax != null) => changedTextNum, _ => null };
+  late final ValueGetter<String> textGetter = widget.valueStringGetter ?? widget._getText;
 
   // todo optionally check bounds
   void changedTextNum(String numString) {
     final value = numString.isNotEmpty ? num.parse(numString) : 0;
-    materialStates.update(MaterialState.error, (value.clamp(numMin!, numMax!) != value));
+    materialStates.update(MaterialState.error, (value.clamp(widget.numMin!, widget.numMax!) != value));
+  }
+
+  void updateOnFocusLoss() {
+    if (!focusNode.hasFocus) onSubmitted(textController.text);
+  }
+
+  @override
+  void initState() {
+    focusNode.addListener(updateOnFocusLoss);
+    textController.text = textGetter();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    textController.dispose();
+    materialStates.dispose();
+    focusNode.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final ValueSetter<String> onSubmitted = switch (T) { const (int) || const (double) || const (num) => submitTextNum, const (String) => submitTextString, _ => throw TypeError() };
-    final ValueChanged<String>? onChanged = switch (T) { const (int) || const (double) || const (num) when (numMin != null && numMax != null) => changedTextNum, _ => null };
-    final ValueGetter<String> textGetter = valueStringGetter ?? () => valueGetter().toString();
-    textController.text = textGetter();
-
-    final widget = ListenableBuilder(
-      listenable: listenable,
+    final textField = ListenableBuilder(
+      listenable: widget.listenable,
       builder: (context, child) {
         textController.text = textGetter();
-        if (errorGetter != null) materialStates.update(MaterialState.error, errorGetter!());
+        if (widget.errorGetter != null) materialStates.update(MaterialState.error, widget.errorGetter!());
         return child!;
       },
       child: TextField(
-        decoration: decoration,
+        decoration: widget.decoration,
         controller: textController,
         statesController: materialStates,
         onSubmitted: onSubmitted,
@@ -269,6 +300,7 @@ class IOFieldText<T> extends StatelessWidget implements IOField<T> {
         enabled: true,
         expands: false,
         canRequestFocus: true,
+        // focusNode: ,
         maxLines: 1,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         inputFormatters: inputFormatters,
@@ -276,7 +308,7 @@ class IOFieldText<T> extends StatelessWidget implements IOField<T> {
       ),
     );
 
-    return Tooltip(message: tip, child: widget);
+    return Tooltip(message: widget.tip, child: textField);
   }
 }
 
@@ -315,9 +347,11 @@ class IOFieldMenu<T> extends StatelessWidget implements IOField<T> {
 
   List<PopupMenuEntry<T>> entries(BuildContext context) => [for (final entry in stringMap.entries) PopupMenuItem(value: entry.key, child: Text(entry.value))];
 
+  String getText() => stringMap[valueGetter()] ?? valueGetter().toString();
+
   @override
   Widget build(BuildContext context) {
-    final ValueGetter<String> textGetter = (() => stringMap[valueGetter()] ?? valueGetter().toString());
+    // final ValueGetter<String> textGetter = (() => stringMap[valueGetter()] ?? valueGetter().toString());
 
     final widget = PopupMenuButton<T>(
       itemBuilder: entries,
@@ -331,7 +365,7 @@ class IOFieldMenu<T> extends StatelessWidget implements IOField<T> {
         decoration: decoration,
         tip: tip,
         valueGetter: valueGetter,
-        valueStringGetter: textGetter,
+        valueStringGetter: getText,
         errorGetter: errorGetter,
       ),
     );

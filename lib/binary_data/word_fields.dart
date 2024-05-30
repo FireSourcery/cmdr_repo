@@ -28,6 +28,7 @@ abstract mixin class WordFields<T extends WordField<NativeType>> implements Fixe
   List<T> get keys; // with Enum.values
 
   @mustBeOverridden
+  // return as child type
   WordFields<T> copyWithBase(int state); //if modify and return as child type is required
   // WordFields<T> copyWithBase(WordFields<T> state);
 

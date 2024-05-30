@@ -166,7 +166,6 @@ extension TypedDataOfIterable on Iterable<int> {
   // String toStringAsEncodedNonNulls([int start = 0, int? end]) => toStringAsEncoded(start, end).replaceAll(String.fromCharCode(0), '');
   // String toStringAsEncodedAlphaNumeric([int start = 0, int? end]) => toStringAsEncoded(start, end).replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
   int indexOfMatch(Iterable<int> match) => String.fromCharCodes(this).indexOf(String.fromCharCodes(match));
-  // int indexOfBytes(Uint8List match) => String.fromCharCodes(this).indexOf(String.fromCharCodes(match));
 }
 
 extension StringOfList on List<int> {
@@ -180,6 +179,7 @@ extension StringOfList on List<int> {
 }
 
 extension StringOfBytes on Uint8List {
+  // int indexOfBytes(Uint8List match) => String.fromCharCodes(this).indexOf(String.fromCharCodes(match));
   Uint8List? seekViewOfIndex(int index) => (index > -1) ? Uint8List.sublistView(this, index) : null;
   Uint8List? seekViewOfChar(int match) => seekViewOfIndex(indexOf(match));
   Uint8List? seekViewOfMatch(Iterable<int> match) => seekViewOfIndex(indexOfMatch(match));

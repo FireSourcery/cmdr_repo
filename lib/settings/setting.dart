@@ -17,58 +17,6 @@ abstract interface class Setting<T> {
   R callWithType<R>(R Function<G>() callback);
 }
 
-// SettingBase using SharedPreferences
-// can be inherited by enums
-abstract mixin class SharedPrefSetting<T> implements Setting<T> {
-  String get key;
-  List<T>? get enumValues; // Enum or options set
-  ({num min, num max})? get numLimits;
-  // T get defaultValue;
-
-  // String get key => name; // if implements enum
-  String get label;
-  String get valueString;
-
-  @override
-  Type get type => T;
-
-  @override
-  T? get value {
-    return switch (T) {
-      const (bool) || const (int) || const (double) || const (String) || const (List<String>) => SettingsService.main.get<T>(key),
-      const (Enum) => SettingsService.main.get<T>(key, enumValues!),
-      _ => throw UnsupportedError('$T'),
-    };
-  }
-
-  // not needed if all settings are loaded at once in the case of sharedPreferences, may keep interface for network settings
-  // T? load() {
-  //   return switch (T) {
-  //     const (bool) || const (int) || const (double) || const (String) || const (List<String>) => SettingsService.main.load<T>(key),
-  //     const (Enum) => SettingsService.main.loadEnum(key, enumValues!),
-  //     _ => throw UnsupportedError(''),
-  //   } as T;
-  // }
-
-  // bool isBound(num newValue) => (newValue.clamp(numLimits!.min, numLimits!.max) == newValue);
-
-  T _boundValue(T newValue) {
-    if (numLimits == null) return newValue;
-    assert(T == int || T == double, 'Only num types are supported');
-    return (newValue as num).clamp(numLimits!.min, numLimits!.max) as T;
-    // final clamped = (newValue as num).clamp(numLimits!.min, numLimits!.max);
-    // return switch (T) { const (int) => clamped.toInt(), const (double) => clamped.toDouble(), _ => newValue } as T;
-  }
-
-  @override
-  set value(T? newValue) => (newValue != null) ? SettingsService.main.set<T>(key, _boundValue(newValue)) : null;
-
-  @override
-  Future<bool> updateValue(T value) async => await SettingsService.main.update<T>(key, _boundValue(value));
-
-  @override
-  R callWithType<R>(R Function<G>() callback) => callback<T>();
-}
 
 // enum ExampleSetting<T> with SettingBase<T> {
 //   wheelDiameter<double>(),

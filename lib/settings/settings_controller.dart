@@ -5,7 +5,7 @@ import 'setting.dart';
 class SettingsController with ChangeNotifier {
   SettingsController();
 
-  /// Update view without waiting, guarantee of persisting
+  /// Update view without waiting. no guarantee of persisting
   void updateSettingView<T>(Setting<T> setting, T value) {
     setting.value = value;
     notifyListeners();

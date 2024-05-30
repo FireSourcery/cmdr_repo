@@ -21,7 +21,7 @@ class MotConnection {
 
   static bool get isConnected => protocol.link.isConnected;
 
-  static bool begin() {
+  static bool begin({dynamic linkType, String? name, int? baudRate}) {
     //todo connect and begin
     if (isConnected) protocol.begin();
     return isConnected;

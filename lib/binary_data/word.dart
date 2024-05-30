@@ -50,7 +50,7 @@ class Word {
   Uint8List get _bytesString => bits.toBytes(_stringEndian);
   String get asString => _bytesString.toStringAsEncoded(0, bits.byteLength);
 
-  // if big endian index = 8 - index - 1
+  // if big endian,  Word.bytes()  index = 8 - index - 1
   // int modifyByte(int index, int value, [Endian endian = Endian.little]) =>  ;
 }
 

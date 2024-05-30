@@ -27,7 +27,7 @@ enum NumberFormat<T extends NativeType, S> {
   /// Type formats
   /// non cont references
   /// 0 or null, no conversion
-  flags16<Uint16, BitField>(reference: null),
+  flags16<Uint16, int>(reference: null),
   enum16<Uint16, Enum>(reference: null),
   boolean<Bool, bool>(reference: null),
 
