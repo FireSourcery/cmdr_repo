@@ -1,6 +1,6 @@
 import 'dart:collection';
 
-import 'package:cmdr/common/enum_map.dart';
+import 'package:cmdr/common/fixed_map.dart';
 
 // DataMap , named fields, <Object?> type, immutable
 
@@ -14,7 +14,7 @@ abstract mixin class DataField<V> implements Enum {
 
 /// Data as mixed value type maps
 // immutable wrap + mixed values types
-abstract mixin class DataMapBase<E extends DataField<Object?>> implements MapBase<E, Object?>, EnumMap<E, Object?> {
+abstract mixin class DataMapBase<E extends DataField<Object?>> implements FixedMap<E, Object?> {
   const DataMapBase();
 
   // fill values from json
@@ -41,7 +41,7 @@ abstract mixin class DataMapBase<E extends DataField<Object?>> implements MapBas
   // DataMap copyWithEntry(E key, Object? value) => initWith(DataMapBuilder(keys).fillWithEntry(key, value));
 }
 
-abstract class DataMap<E extends DataField<Object?>> with MapBase<E, Object?>, EnumMap<E, Object?>, DataMapBase<E> {
+abstract class DataMap<E extends DataField<Object?>> with MapBase<E, Object?>, FixedMap<E, Object?>, DataMapBase<E> {
   const DataMap();
 
   // DataMap<E> Function(DataMap<E> dataMap) get initWith;
@@ -79,6 +79,27 @@ enum PersonField<V> with DataField<V> {
   id<int>(),
   age<int>(),
   name<String>();
+
+  // void set(DataMap<PersonField> dataMap, V value) {
+  //   switch (this) {
+  //     case PersonField.id:
+  //       dataMap.name = value;
+  //     case PersonField.age:
+  //       dataMap[this] = value;
+  //     case PersonField.name:
+  //       dataMap[this] = value;
+  //   }
+  // }
+  // void modify(Person dataMap, V value) {
+  //   switch (this) {
+  //     case PersonField.id:
+  //       dataMap.name = value;
+  //     case PersonField.age:
+  //       dataMap[this] = value;
+  //     case PersonField.name:
+  //       dataMap[this] = value;
+  //   }
+  // }
 }
 
 class Person extends DataMap<PersonField> {
@@ -110,7 +131,7 @@ class Person extends DataMap<PersonField> {
   List<PersonField> get keys => PersonField.values;
 
   // e.g. inherit copyWith from Base class.
-  Person updateAge(int age) => Person.initWith(DataMapBuilder.cast(keys, this).fillWithEntry(PersonField.age, age));
+  // Person updateAge(int age) => Person.initWith(DataMapBuilder.cast(keys, this).fillWithEntry(PersonField.age, age));
 
 //   @override
 //   DataMap<DataField<Object?>> Function(DataMap<DataField<Object?>> dataMap) get initWith => Person.initWith;

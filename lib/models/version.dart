@@ -2,99 +2,67 @@ import 'dart:collection';
 import 'dart:ffi';
 import 'dart:typed_data';
 
-import 'package:cmdr/byte_struct.dart';
-import 'package:cmdr/binary_data/byte_struct.dart';
-import 'package:cmdr/binary_data/typed_data_ext.dart';
-import 'package:recase/recase.dart';
-
 import '../binary_data/word_fields.dart';
 import '../binary_data/typed_field.dart';
-import '../binary_data/word.dart';
-import '../common/enum_map.dart';
 
 /// standard [optional, major, minor, fix] version
+// if WordFields handles additional name field
+// extension type Version<T extends WordField>(WordFields <T> value)
+class Version extends WordFieldsBase<WordField<NativeType>> {
+// parameterizing T can constrain functions of T key to types the Version is defined with
 // class Version<T extends VersionField> extends WordFields<VersionField> {
-class Version extends WordFields<VersionFieldStandard> {
-  const Version(super.optional, super.major, super.minor, super.fix, [this.name]) : super.msb32();
-  const Version.value(super.value, [this.name]) : super(); // e.g. a stored value
-  // Version.cast(super.word, [this.name]) : super.cast();
-  const Version.name(this.name) : super(0); // init for updateFrom
 
-  Version.initWith(Map<VersionFieldStandard, int> newValue, [String? name])
-      : this(
-          newValue[VersionFieldStandard.optional]!,
-          newValue[VersionFieldStandard.major]!,
-          newValue[VersionFieldStandard.minor]!,
-          newValue[VersionFieldStandard.fix]!,
-          name,
-        );
+  const Version._standard(int optional, int major, int minor, int fix, [this.name])
+      : keys = VersionFieldStandard.values,
+        super.of8s(fix, minor, major, optional);
 
-  Version updateWithMap(Map<VersionFieldStandard, int> newValue) => Version.initWith(newValue, name);
+  const factory Version(int optional, int major, int minor, int fix, [String? name]) = VersionStandard;
 
+  const Version.wide(int optional, int major, int minor, int fix, {this.name, required this.keys}) : super.of16s(fix, minor, major, optional);
+  const Version.init(super.value, {this.name, this.keys = VersionFieldStandard.values}) : super(); // e.g. a stored value
+
+  @override
+  Version copyWithBase(int state) => Version.init(state, name: name, keys: keys);
+  // Version copyWithBase(WordFields state) => Version.init(state.fold(), name: name, keys: keys);
+  ///
+  // Version.initWith(Map<VersionFieldStandard, int> newValue, [String? name]) : this.value(newValue.fold(), name);
+  // Version updateWithMap(Map<VersionFieldStandard, int> newValue) => Version.initWith(newValue, name);
+
+  @override
+  final List<WordField<NativeType>> keys;
   @override
   final String? name;
-
-  @override
-  int get byteLength => (super.byteLength > 4) ? 8 : 4;
-
-  @override
-  List<VersionFieldStandard<NativeType>> get keys => VersionFieldStandard.values;
-
   @override
   (String, String) get asLabelPair => (name ?? '', toStringAsVersion());
+  // @override
+  // int get byteLength => (value.byteLength > 4) ? 8 : 4;
 
-  // int get fix => bytesLE[0];
-  // int get minor => bytesLE[1];
-  // int get major => bytesLE[2];
-  // int get optional => bytesLE[3];
-  int get fix => this[VersionFieldStandard.fix];
-  int get minor => this[VersionFieldStandard.minor];
-  int get major => this[VersionFieldStandard.major];
-  int get optional => this[VersionFieldStandard.optional];
+  /// alias
+  List<int> get numbers => values.toList();
+  Version withNumber(WordField key, int value) => modifyEntry(key, value);
+  Version withAll(Map<WordField, int> map) => modifyAll(map);
+  // Version updateNumbers(Iterable<int> numbers) => modifyEntriesAs( numbers);
 
-  Version updateNumber(int index, int value) => Version.value(modifyByte(index, value), name);
-
-  ///
-  //todo use as interface, .fromWord size
-  //change for copywith? no need to handle swap endian?
-  Version.from(int? value, [Endian endian = Endian.little, this.name]) : super(value ?? 0); // e.g. a network value
-  Version updateFrom(int? value, [Endian endian = Endian.little]) => Version.from(value, endian, name);
-  // new buffer
-  // [optional, major, minor, fix][0,0,0,0]
-  Uint8List get version => toBytesAs(Endian.big); // trimmed view on new buffer big endian 8 bytes
-  // use for passing the same buffer
-  Version updateVersion(Uint8List bytes) => Version.value(bytes.toInt(Endian.big), name);
-
-  List<int> get numbers => toBytesAs(Endian.big);
-  Version updateNumbers(List<int> numbers) => (numbers is Uint8List) ? updateVersion(version) : Version.value(numbers.toBytes().toInt(Endian.big), name);
-
-  ///
-
-  // msb first with dot separator
+  /// msb first with dot separator `optional.major.minor.fix`
   String toStringAsVersion([String left = '', String right = '', String separator = '.']) {
     return (StringBuffer(left)
-          ..writeAll(version, separator)
+          ..writeAll(numbers.reversed, separator)
           ..write(right))
         .toString();
   }
 
-  // check datamap gen
-  Version copyWith({int? optional, int? major, int? minor, int? fix, String? name}) {
-    return Version(optional ?? this.optional, major ?? this.major, minor ?? this.minor, fix ?? this.fix, name ?? this.name);
-  }
-
   /// Json
   factory Version.fromJson(Map<String, dynamic> json) {
-    return Version.value(
+    return Version.init(
       json['value'] as int,
-      json['name'] as String?,
+      name: json['name'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'name': name,
-      'value': value,
+      'value': bits,
       'description': toStringAsVersion(),
     };
   }
@@ -107,29 +75,64 @@ class Version extends WordFields<VersionFieldStandard> {
     }
   }
 
-  factory Version.ofMapEntry(MapEntry<String, int> entry) => Version.value(entry.value, entry.key);
+  factory Version.ofMapEntry(MapEntry<String, int> entry) => Version.init(entry.value, name: entry.key);
 
-  MapEntry<String, int> toMapEntry() => MapEntry<String, int>(name ?? '', value);
+  MapEntry<String, int> toMapEntry() => MapEntry<String, int>(name ?? '', bits);
 
   @override
   bool operator ==(covariant Version other) {
     if (identical(this, other)) return true;
 
-    return other.name == name && other.value == value;
+    return other.name == name && other.bits == bits;
   }
 
   @override
-  int get hashCode => name.hashCode ^ value.hashCode;
+  int get hashCode => name.hashCode ^ bits.hashCode;
 }
 
-enum VersionFieldStandard<T extends NativeType> with TypedField<T> implements WordField<T> {
-  fix<Uint8>(0),
-  minor<Uint8>(1),
-  major<Uint8>(2),
-  optional<Uint8>(3),
+// enum VersionFieldStandard<T extends NativeType> with TypedField<T> implements WordField<T> {
+//   fix<Uint8>(0),
+//   minor<Uint8>(1),
+//   major<Uint8>(2),
+//   optional<Uint8>(3),
+//   ;
+
+//   const VersionFieldStandard(this.offset);
+//   @override
+//   final int offset;
+// }
+
+enum VersionFieldStandard with TypedField<Uint8> implements WordField<Uint8> {
+  fix(0),
+  minor(1),
+  major(2),
+  optional(3),
   ;
 
   const VersionFieldStandard(this.offset);
   @override
   final int offset;
 }
+
+class VersionStandard extends Version {
+  const VersionStandard(super.optional, super.major, super.minor, super.fix, [super.name]) : super._standard();
+
+  @override
+  List<VersionFieldStandard> get keys => VersionFieldStandard.values;
+
+  int get fix => this[VersionFieldStandard.fix];
+  int get minor => this[VersionFieldStandard.minor];
+  int get major => this[VersionFieldStandard.major];
+  int get optional => this[VersionFieldStandard.optional];
+
+  Version copyWith({int? optional, int? major, int? minor, int? fix, String? name}) {
+    return Version(optional ?? this.optional, major ?? this.major, minor ?? this.minor, fix ?? this.fix, name ?? this.name);
+  }
+}
+
+// class VersionWithKeys<T extends WordField<NativeType>> extends Version<T> {
+//   const VersionWithKeys({required this.keys, required int value, String? name}) : super.value(value, name);
+
+//   @override
+//   final List<T> keys;
+// }

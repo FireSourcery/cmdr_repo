@@ -252,7 +252,7 @@ final class VarReadResponse extends Struct implements Payload<VarReadResponseVal
     // final (int idChecksum, int flags)   = requestStatus;
     // final (idChecksum, respCode) = parseVarReadMeta();
     // return ((requestStatus == null) || (requestStatus.$1 == flexUpper16Field)) ? (0, parseVarReadValues()) : (null, null);
-    return (0, header.payloadAt<Uint16List>(0));
+    return (0, header.payloadAt<Uint16List>(0)); //todo code
   }
 
   @override

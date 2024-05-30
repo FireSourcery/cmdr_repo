@@ -29,52 +29,6 @@ int bytesPerElementOf<T extends TypedData>() {
 
 ////////////////////////////////////////////////////////////////////////////////
 /// List values
-/// Non TypedData Conversion
-////////////////////////////////////////////////////////////////////////////////
-extension TypedDataOfIterable on Iterable<int> {
-  // same as Uint8List.fromList when length < this.length
-  // fills length when length > this.length
-  Uint8List toBytes([int? length]) => (Uint8List(length ?? this.length)..setAll(0, take(length ?? this.length))); // from iterable extend length
-
-  // from iterable extend length
-  static ByteData _fromLength<R extends TypedData>(int length) => ByteData(length * bytesPerElementOf<R>());
-  // R must be IntList
-  R toTypedList<R extends TypedData>([int? length]) => (_fromLength<R>(length ?? this.length).asIntList<R>()..setAll(0, take(length ?? this.length))) as R;
-
-  /// String
-  String toStringAsEncoded([int start = 0, int? end]) => String.fromCharCodes(this, start, end);
-  // String toStringAsEncodedTrimNulls([int start = 0, int? end]) => toStringAsEncoded(start, end).replaceAll(RegExp(r'^\u0000+|\u0000+$'), '');
-  // String toStringAsEncodedNonNulls([int start = 0, int? end]) => toStringAsEncoded(start, end).replaceAll(String.fromCharCode(0), '');
-  // String toStringAsEncodedAlphaNumeric([int start = 0, int? end]) => toStringAsEncoded(start, end).replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
-  int indexOfMatch(Iterable<int> match) => String.fromCharCodes(this).indexOf(String.fromCharCodes(match));
-  // int indexOfBytes(Uint8List match) => String.fromCharCodes(this).indexOf(String.fromCharCodes(match));
-}
-
-extension StringOfList on List<int> {
-  // Chars use array index
-  // from User I/O as int literal
-  String charAsValue(int index) => this[index].toString(); // 1 => '1'
-  List<int> modifyAsValue(int index, String value) => this..[index] = int.parse(value); // '1' => 1
-
-  String charAsCode(int index) => String.fromCharCode(this[index]); // 0x31 => '1'
-  List<int> modifyAsCode(int index, String value) => this..[index] = value.runes.single; // '1' => 0x31
-}
-
-extension StringOfBytes on Uint8List {
-  Uint8List? seekViewOfIndex(int index) => (index > -1) ? Uint8List.sublistView(this, index) : null;
-  Uint8List? seekViewOfChar(int match) => seekViewOfIndex(indexOf(match));
-  Uint8List? seekViewOfMatch(Iterable<int> match) => seekViewOfIndex(indexOfMatch(match));
-}
-
-extension StringOfTypedData on TypedData {
-  // index in this.elementSizeInBytes
-  R? seekViewOfIndex<R extends TypedData>(int index) => (index > -1) ? _sublistView<R>(index) : null;
-  R? seekViewOfChar<R extends TypedData>(int match) => seekViewOfIndex(asIntList<R>().indexOf(match));
-  R? seekViewOfMatch<R extends TypedData>(Iterable<int> match) => seekViewOfIndex(asIntList<R>().indexOfMatch(match));
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/// List values
 /// TypedData Cat Conversion
 ////////////////////////////////////////////////////////////////////////////////
 /// Effectively ByteBuffer conversion function, but on view segment accounting for offset
@@ -102,7 +56,7 @@ extension GenericSublistView on TypedData {
   R asTypedList<R extends TypedData>([int typedOffset = 0, int? end]) => _sublistView<R>(typedOffset, end);
   // R cast<R extends TypedData>() => _sublistView<R>();
   // sublist with extendable length, R == this.runtimeType
-  // R sublistOrExtend<R extends TypedData>([int? length]) => (ByteData((length ?? this.length) * bytesPerElementOf<R>()).intListView<R>()..setAll(0, take(length ?? this.length))) as R;
+  // R toTypedList<R extends TypedData>([int? length]) => (ByteData((length ?? this.length) * bytesPerElementOf<R>()).intListView<R>()..setAll(0, take(length ?? this.length))) as R;
 
   // prefer super function anti pattern, since sublistView cannot compose from all types without overlap
   // use to essentially case type for convenience
@@ -179,16 +133,63 @@ extension GenericWord on ByteData {
 /// Word value for intervals not of pow2
 ////////////////////////////////////////////////////////////////////////////////
 extension SizedWord on TypedData {
-  // sizedWordAt creates a new buffer
-  // caller assert(lengthInBytes < 8)
-  // size <= 8, and lengthInBytes > size
-  int valueAt(int byteOffset, int size, [Endian endian = Endian.little]) => (Uint8List(8)..setAll(0, buffer.asUint8List(offsetInBytes + byteOffset, size))).toInt64(endian);
   // caller assert(lengthInBytes >= 8)
   int toInt64([Endian endian = Endian.little]) => buffer.asByteData().getInt64(offsetInBytes, endian); // equivalent to ByteData.sublistView(this).getInt64(0, endian)
 
-  int valueAtOr64(int byteOffset, int size, [Endian endian = Endian.little]) => (lengthInBytes >= 8) ? toInt64(endian) : valueAt(byteOffset, size.clamp(0, lengthInBytes), endian);
+  // sizedWordAt creates a new buffer
+  // caller assert(lengthInBytes < 8)
+  // size <= 8, and lengthInBytes > size
+  // toInt64 will be called with the instance's offsetInBytes, 0
+  int valueAt(int byteOffset, int size, [Endian endian = Endian.little]) => (Uint8List(8)..setAll(0, buffer.asUint8List(offsetInBytes + byteOffset, size))).toInt64(endian);
 
   int toInt([Endian endian = Endian.little]) => (lengthInBytes >= 8) ? toInt64(endian) : valueAt(0, lengthInBytes, endian);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// List values
+/// Non TypedData Conversion
+////////////////////////////////////////////////////////////////////////////////
+extension TypedDataOfIterable on Iterable<int> {
+  // same as Uint8List.fromList when length < this.length
+  // fills length when length > this.length
+  Uint8List toBytes([int? length]) => Uint8List(length ?? this.length)..setAll(0, take(length ?? this.length)); // from iterable extend length
+
+  // from iterable extend length
+  static ByteData _fromLength<R extends TypedData>(int length) => ByteData(length * bytesPerElementOf<R>());
+  // R must be IntList
+  R toTypedList<R extends TypedData>([int? length]) => (_fromLength<R>(length ?? this.length).asIntList<R>()..setAll(0, take(length ?? this.length))) as R;
+
+  /// String
+  String toStringAsEncoded([int start = 0, int? end]) => String.fromCharCodes(this, start, end);
+
+  // String toStringAsEncodedTrimNulls([int start = 0, int? end]) => toStringAsEncoded(start, end).replaceAll(RegExp(r'^\u0000+|\u0000+$'), '');
+  // String toStringAsEncodedNonNulls([int start = 0, int? end]) => toStringAsEncoded(start, end).replaceAll(String.fromCharCode(0), '');
+  // String toStringAsEncodedAlphaNumeric([int start = 0, int? end]) => toStringAsEncoded(start, end).replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
+  int indexOfMatch(Iterable<int> match) => String.fromCharCodes(this).indexOf(String.fromCharCodes(match));
+  // int indexOfBytes(Uint8List match) => String.fromCharCodes(this).indexOf(String.fromCharCodes(match));
+}
+
+extension StringOfList on List<int> {
+  // Chars use array index
+  // from User I/O as int literal
+  String charAsValue(int index) => this[index].toString(); // 1 => '1'
+  List<int> modifyAsValue(int index, String value) => this..[index] = int.parse(value); // '1' => 1
+
+  String charAsCode(int index) => String.fromCharCode(this[index]); // 0x31 => '1'
+  List<int> modifyAsCode(int index, String value) => this..[index] = value.runes.single; // '1' => 0x31
+}
+
+extension StringOfBytes on Uint8List {
+  Uint8List? seekViewOfIndex(int index) => (index > -1) ? Uint8List.sublistView(this, index) : null;
+  Uint8List? seekViewOfChar(int match) => seekViewOfIndex(indexOf(match));
+  Uint8List? seekViewOfMatch(Iterable<int> match) => seekViewOfIndex(indexOfMatch(match));
+}
+
+extension StringOfTypedData on TypedData {
+  // index in this.elementSizeInBytes
+  R? seekViewOfIndex<R extends TypedData>(int index) => (index > -1) ? _sublistView<R>(index) : null;
+  R? seekViewOfChar<R extends TypedData>(int match) => seekViewOfIndex(asIntList<R>().indexOf(match));
+  R? seekViewOfMatch<R extends TypedData>(Iterable<int> match) => seekViewOfIndex(asIntList<R>().indexOfMatch(match));
 }
 
 // extension ByteBufferData on ByteBuffer {

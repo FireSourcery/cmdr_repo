@@ -6,8 +6,7 @@ export 'widgets/io_field.dart';
 export 'widgets/logo.dart';
 export 'widgets/layouts/menu_anchor_layout.dart';
 
-export 'models/model_views/word_map_view.dart';
-export 'models/model_views/version_view.dart';
+export 'widgets/string_view.dart';
 
 export 'widgets/time_chart/chart_controller.dart';
 export 'widgets/time_chart/chart_data.dart';

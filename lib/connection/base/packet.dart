@@ -329,7 +329,7 @@ abstract interface class PacketHeaderSync {
 /// [Payload] Constructor - handler per id
 /// Struct.create<T>
 typedef PayloadCaster<V> = Payload<V> Function(TypedData typedData);
-typedef PayloadSubTypeCaster<P extends Payload<V>, V> = P Function(TypedData typedData);
+// typedef PayloadSubTypeCaster<P extends Payload<V>, V> = P Function(TypedData typedData);
 // abstract interface class PayloadFactory<T extends Payload> {
 //   T call(TypedData typedData);
 //   T allocate();

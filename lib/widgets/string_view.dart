@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../binary_data/word.dart';
+import '../binary_data/word.dart';
 
 /// Editable views
-// input as string literal
-class WordFormField extends StatelessWidget {
-  const WordFormField({required this.word, this.label, super.key, this.isReadOnly = false, this.onSaved, this.maxLength = 8});
+// todo input as string literal
+class StringFormField extends StatelessWidget {
+  const StringFormField({required this.word, this.label, super.key, this.isReadOnly = false, this.onSaved, this.maxLength = 8});
   final Word word;
   final String? label;
   final bool isReadOnly;
@@ -20,7 +20,7 @@ class WordFormField extends StatelessWidget {
       initialValue: word.asString,
       readOnly: false,
       maxLengthEnforcement: MaxLengthEnforcement.enforced,
-      maxLength: maxLength.clamp(0, 8),
+      maxLength: maxLength,
       // autofillHints: [''],
       // buildCounter: (context, {required currentLength, required isFocused, required maxLength}) => SizedBox.shrink(),
       onSaved: (String? newValue) => onSaved?.call(Word.string(newValue!)), // validator will reject null
@@ -32,8 +32,8 @@ class WordFormField extends StatelessWidget {
   }
 }
 
-class WordStringTile extends StatelessWidget {
-  const WordStringTile({required this.nameId, this.label = "Name Id", super.key});
+class StringTile extends StatelessWidget {
+  const StringTile({required this.nameId, this.label = "Name Id", super.key});
   final Word nameId;
   final String? label;
 
@@ -48,7 +48,3 @@ class WordStringTile extends StatelessWidget {
     );
   }
 }
-
-
-// named enum maps
-// NamedFieldView

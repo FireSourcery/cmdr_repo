@@ -51,6 +51,30 @@ class ByteStructBase {
   // V getAs<R extends ByteStructBase, V>(ByteStructCaster<R> caster, [dynamic  stateMeta]) => caster(bytes).parse(this, stateMeta);
 }
 
+// extension type ByteStruct._(TypedData bytes) implements TypedData {
+//   // const ByteStruct._(this.bytes);
+//   ByteStruct(TypedData bytes, [int offset = 0, int? length]) : bytes = Uint8List.sublistView(bytes, offset, length);
+//   ByteStruct.origin(ByteBuffer bytesBuffer, [int offset = 0, int? length]) : bytes = Uint8List.view(bytesBuffer, offset, length ?? bytesBuffer.lengthInBytes - offset);
+
+//   // final Uint8List bytes;
+//   int get length => bytes.lengthInBytes;
+
+//   // wrapping TypedData extensions... this class is still needed to enforce constructor type
+//   Uint8List range(int offset, [int? length]) => Uint8List.sublistView(bytes, offset, length);
+//   TypedData rangeAs<T extends TypedData>(int offset, [int? length]) => bytes.asTypedList<T>(offset, length);
+//   List<int> rangeAsIntList<T extends TypedData>(int byteOffset) => bytes.asIntList<T>(byteOffset);
+
+//   // field names need code gen
+//   ByteData get byteData => ByteData.sublistView(bytes);
+
+//   int? fieldValue<V extends NativeType>(int offset) => byteData.wordAt<V>(offset);
+//   void setFieldValue<V extends NativeType>(int offset, int value) => byteData.setWordAt<V>(offset, value);
+//   int? fieldValueOrNull<V extends NativeType>(int offset) => byteData.wordOrNullAt<V>(offset);
+
+//   // dynamic setAs<T extends ByteStructBase, V>(ByteStructCaster<T> caster, V values) => caster(bytes).build(values, this);
+//   // V getAs<R extends ByteStructBase, V>(ByteStructCaster<R> caster, [dynamic  stateMeta]) => caster(bytes).parse(this, stateMeta);
+// }
+
 // Abstract Factory
 abstract interface class ByteStructInterface {
   int get lengthMax;
@@ -70,8 +94,6 @@ abstract interface class ByteStructInterface {
 //   // Uint8List get _byteBuffer; //alternatively use length value
 //   set length(int value) => bytes = Uint8List.view(bytes.buffer, bytes.offsetInBytes, value);
 // }
-
-// abstract mixin class ByteStructCastable<T> {}
 
 // // wrapper around ffi.Struct or  extend ByteStructBase
 // class ByteStructBuffer<T> with ByteStructMutable {
