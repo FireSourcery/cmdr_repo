@@ -13,7 +13,7 @@ extension type const Bits(int value) implements int {
   // // return flags.foldIndexed<int>(0, (index, previous, element) => previous.modifyBool(index, element) );
   // Bits.ofBools(Iterable<bool> flags) : value = flags.fold<int>(0, (previous, element) => (previous << 1) | (element ? 1 : 0));
 
-  // width values
+  // width value pairs
   Bits.fromWidth(Map<int, int> map) : value = Bitmasks.fromWidths(map.keys).apply(map.values);
 
   set value(int newValue) => value = newValue;
@@ -77,6 +77,9 @@ extension BinaryOfInt on int {
 
   String charAsValue(int index, [bool isSigned = false]) => byteAt(index).toString(); // 1 => '1'
   int modifyAsValue(int index, String char) => modifyByte(index, int.parse(char)); // '1' => 1
+
+  // alternatively iterate over bits
+  String toStringAsEncoded([Endian endian = Endian.little]) => String.fromCharCodes(toBytes(endian), 0, byteLength);
 
   /// TypedData Byte List operations
   // fixed size buffer then trim view with length likely better performance than iterative build with flex size BytesBuilder
