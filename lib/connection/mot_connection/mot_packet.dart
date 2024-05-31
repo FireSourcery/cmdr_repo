@@ -145,9 +145,10 @@ enum MotPacketSyncId implements PacketIdSync, MotPacketId {
   MOT_PACKET_SYNC_ACK(0xA2),
   MOT_PACKET_SYNC_NACK(0xA3),
   MOT_PACKET_SYNC_ABORT(0xA4),
+  // MOT_PACKET_SYNC_RESV(0xA5),
   // MOT_PACKET_FEED_WATCHDOG(0xA6),
-  MOT_PACKET_ENTER_BOOT(0xBB),
-  MOT_PACKET_ID_RESERVED_255(0xFF),
+  MOT_PACKET_PING_ALT(0xAB),
+  // MOT_PACKET_ID_RESERVED_255(0xFF),
   ;
 
   const MotPacketSyncId(this.intId);
@@ -161,7 +162,7 @@ enum MotPacketRequestId<T, R> implements PacketIdRequest<T, R>, MotPacketId {
   MOT_PACKET_STOP_ALL(0x00, requestCaster: StopRequest.cast, responseCaster: StopResponse.cast),
   MOT_PACKET_VERSION(0x01, requestCaster: VersionRequest.cast, responseCaster: VersionResponse.cast),
 
-  MOT_PACKET_CALL(0xCC, requestCaster: CallRequest.cast, responseCaster: CallResponse.cast),
+  MOT_PACKET_CALL(0xC0, requestCaster: CallRequest.cast, responseCaster: CallResponse.cast),
   // MOT_PACKET_CALL_ADDRESS(0xCA),
   // MOT_PACKET_FIXED_VAR_READ(0xB1),
   // MOT_PACKET_FIXED_VAR_WRITE(0xB2),
@@ -178,7 +179,6 @@ enum MotPacketRequestId<T, R> implements PacketIdRequest<T, R>, MotPacketId {
   MOT_PACKET_DATA_MODE_READ(0xDA, requestCaster: DataModeInitRequest.cast, responseCaster: DataModeInitResponse.cast),
   MOT_PACKET_DATA_MODE_WRITE(0xDB, requestCaster: DataModeInitRequest.cast, responseCaster: DataModeInitResponse.cast),
   MOT_PACKET_DATA_MODE_DATA(0xDD, requestCaster: DataModeData.cast, responseCaster: DataModeData.cast),
-  // MOT_PACKET_DATA_MODE_ABORT = MOT_PACKET_SYNC_ABORT,
 
   MOT_PACKET_ID_RESERVED_255(0xFF),
   ;

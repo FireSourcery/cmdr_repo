@@ -34,6 +34,7 @@ Uint8List packetHedad = Uint8List.fromList([164, 165, 180, 210, 2, /**/ 20, 0, 6
 Uint8List packetHedad1 = Uint8List.fromList([164, 180, 200, 2, /**/ 20, 0, 6, 0, /**/ 1, 0, 100, 0, 2, 0, 200, 0, 3, 0, 44, 1, 2]);
 Uint8List packetInRepeatStart = Uint8List.fromList([165, 165, 165]);
 Uint8List packetInRepeatStart2 = Uint8List.fromList([165, 165]);
+// _Uint8ArrayView ([165, 162, 165, 219, 145, 1, 10, 0])
 
 final StreamController<Uint8List> inputController = StreamController.broadcast();
 final Stream<Packet> packetStream =

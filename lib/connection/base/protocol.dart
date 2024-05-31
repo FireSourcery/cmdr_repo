@@ -33,10 +33,13 @@ class Protocol {
     // if sockets implements listen on the transformed stream, although the observer pattern is implemented, the check id routine must still run iteratively. but a map would not be necessary.
     return packetStream!.listen(
       (packet) {
+        print("RX ${packet.bytes.take(4)} ${packet.bytes.skip(4).take(4)} ${packet.bytes.skip(8)}");
+        // optionally handle sync to all sockets, or 2 levels of keys
         if (respSocketMap[packet.packetId] case ProtocolSocket socket) {
           socket.add(packet);
+          print("Socket [${socket.hashCode}] Time: ${socket.timer.elapsedMilliseconds}");
         } else {
-          throw const ProtocolException('no matching socket');
+          handleProtocolException(const ProtocolException('No matching socket'));
         }
       },
       onError: onError,
@@ -237,12 +240,18 @@ class ProtocolSocket implements Sink<Packet> {
       await Future.delayed(delay); // todo as byte time
     }
   }
+
   // Stream<R?> iterativeUpdate<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> Function() requestArgsGetter, {Duration delay = datagramDelay}) async* {
   //   for (final segmentArgs in requestArgsGetter()) {
   //     yield await requestResponse<T, R>(requestId, segmentArgs);
   //     await Future.delayed(delay);
   //   }
   // }
+
+  Future<PacketIdSync?> ping(covariant PacketIdSync id, [covariant PacketIdSync? respId]) async {
+    protocol.mapResponse(respId ?? id, this);
+    return sendSync(id).then((_) async => await recvSync());
+  }
 
   // Future<void> sendRaw(Uint8List bytes, {Duration timeout = timeoutDefault}) async {}
   // Uint8List recvRaw(int bytes, {int timeout = -1})
@@ -253,7 +262,6 @@ class ProtocolSocket implements Sink<Packet> {
   @protected
   Future<PayloadMeta> sendRequest<V>(PacketIdRequest<V, dynamic> packetId, V requestArgs, {Duration timeout = timeoutDefault}) async {
     final PayloadMeta requestMeta = packetBufferOut.buildRequest<V>(packetId, requestArgs);
-
     timer.reset();
     timer.start();
     // protocol.mapRequestResponse(packetId, this);
@@ -268,11 +276,11 @@ class ProtocolSocket implements Sink<Packet> {
   }
 
   // host side initiated wait
-  @protected
-  Future<V?> expectResponse<V>(PacketIdRequest<dynamic, V> packetId, {PayloadMeta? reqStateMeta, Duration timeout = timeoutDefault}) async {
-    protocol.mapResponse(packetId.responseId ?? packetId, this);
-    return recvResponse<V>(packetId, reqStateMeta: reqStateMeta, timeout: timeoutDefault);
-  }
+  // @protected
+  // Future<V?> expectResponse<V>(PacketIdRequest<dynamic, V> packetId, {PayloadMeta? reqStateMeta, Duration timeout = timeoutDefault}) async {
+  //   protocol.mapResponse(packetId.responseId ?? packetId, this);
+  //   return recvResponse<V>(packetId, reqStateMeta: reqStateMeta, timeout: timeoutDefault);
+  // }
 
   /// respondSync
   @protected
@@ -283,9 +291,14 @@ class ProtocolSocket implements Sink<Packet> {
 
   @protected
   Future<PacketIdSync?> recvSync([Duration timeout = timeoutDefault]) {
-    // protocol.mapSync(this);
     return tryRecv<PacketIdSync>(() => packetBufferIn.parseSyncId(), timeout);
   }
+
+  // @protected
+  // Future<PacketIdSync?> expectSync([Duration timeout = timeoutDefault]) {
+  //   protocol.mapSync(this);
+  //   return recvSync(timeout);
+  // }
 
   // lock receiving side only?
   @protected
@@ -320,10 +333,6 @@ class ProtocolSocket implements Sink<Packet> {
   void add(Packet event) {
     timer.stop();
     packetBufferIn.copyBytes(event.bytes); // sets buffer in length, exceeding length max handled by PacketReceiver
-
-    print("Socket [$hashCode] RX ${packetBufferIn.bytes.take(4)} ${packetBufferIn.bytes.skip(4).take(4)} ${packetBufferIn.bytes.skip(8)}");
-    print("Socket [$hashCode] Time: ${timer.elapsedMilliseconds}");
-
     // socket table does not unmap. might receive packets following completion
     if (!_recved.isCompleted) _recved.complete();
   }
@@ -334,6 +343,7 @@ class ProtocolSocket implements Sink<Packet> {
   }
 }
 
+// mixin on id
 abstract mixin class PacketIdRequestCall<T, R> implements PacketIdRequest<T, R> {
   ProtocolSocket get socket;
 

@@ -229,6 +229,9 @@ abstract mixin class Packet implements PacketInterface {
   /// derived values using field offset + size
   PacketId? get packetIdOrNull => switch (idFieldOrNull) { int value => idOf(value), null => null }; // null if not found or invalid..
   int? get packetLengthOrNull => switch (packetIdOrNull) { PacketIdSync() => idHeaderLength, PacketId() => lengthFieldOrNull, null => null };
+  // bool? get isLengthValid => switch (packetIdOrNull) { PacketIdSync() => idHeaderLength, PacketId() => lengthFieldOrNull, null => null };
+  // bool? get isChecksumValid => switch (packetIdOrNull) { PacketIdSync() => idHeaderLength, PacketId() => lengthFieldOrNull, null => null };
+
   bool get isPacketComplete => switch (packetLengthOrNull) { int value => (length >= value), null => false };
 
   ////////////////////////////////////////////////////////////////////////////////

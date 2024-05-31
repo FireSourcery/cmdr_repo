@@ -53,7 +53,7 @@ class HeaderStatus {
   bool get isPacketComplete {
     assert(isStartValid == true);
     assert(isIdValid != false);
-    assert(isLengthValid != false);
+    // assert(isLengthValid != false); buffer.packet.isLengthValid
     return buffer.packet.isPacketComplete;
   }
 
@@ -78,7 +78,7 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
     //   print('');
     //   print('---');
     //   print('remainder: ${parserBuffer.bytes}');
-    //   print('bytesIn: $bytesIn');
+    // print('bytesIn: $bytesIn');
     //   return true;
     // }());
 
@@ -97,14 +97,9 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
           case HeaderStatus(isIdValid: false):
             throw ProtocolException.meta;
 
-          case HeaderStatus(isLengthValid: false):
-            throw ProtocolException.meta;
-
           case HeaderStatus(isPacketComplete: true):
             parserBuffer.completePacket(); // set length for checksum operation
-            // print('parserBuffer completePacket() ${parserBuffer.bytes}');
-            // print('parserBuffer trailing ${parserBuffer.trailing}');
-            assert(parserBuffer.packet.lengthFieldOrNull == parserBuffer.length);
+            // print('parserBuffer completePacket() ${parserBuffer.bytes} trailing ${parserBuffer.trailing}');
             switch (parserBuffer.status.isChecksumValid) {
               case true || null: // null when no checksum implemented
                 /// pass on the packet, full buffer including
@@ -116,6 +111,10 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
                 parserBuffer.seekTrailing();
                 throw ProtocolException.checksum;
             }
+
+          /// in case of [sync][sync]
+          case HeaderStatus(isLengthValid: false):
+            throw ProtocolException.meta;
 
           /// no recognizable id, or recognized as incomplete
           case HeaderStatus(isPacketComplete: false):
@@ -130,11 +129,11 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
           parserBuffer.clear(); // ensure remainder buffer is cleared this way
         case ProtocolException.checksum:
       }
-      // print('PacketTransformer: ${e.message}');
+      print('PacketTransformer: ${e.message}');
       _outputSink.addError(e);
     } catch (e) {
       parserBuffer.clear();
-      // print(e);
+      print(e);
     } finally {
       //  parserBuffer.seekTrailing(); alternatively, always start with 0 trailing, and seek after packet complete
       // print('- finally');

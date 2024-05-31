@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 
+import '../base/packet.dart';
 import '../base/protocol.dart';
 import 'mot_packet.dart';
 
@@ -14,16 +15,8 @@ class MotProtocolSocket extends ProtocolSocket {
   ////////////////////////////////////////////////////////////////////////////////
   /// Base wrappers
   ////////////////////////////////////////////////////////////////////////////////
-  Future<int?> ping() async {
-    sendSync(MotPacketSyncId.MOT_PACKET_PING);
-    return (await recvSync())?.intId;
-    // return (await recvSync()) as MotPacketSyncId;
-  }
-
-  Future<int?> pingBoot() async {
-    sendSync(MotPacketSyncId.MOT_PACKET_ENTER_BOOT);
-    return (await recvSync())?.intId;
-  }
+  @override
+  Future<PacketIdSync?> ping([MotPacketSyncId id = MotPacketSyncId.MOT_PACKET_PING, MotPacketSyncId? respId]) async => super.ping(id, respId);
 
   Future<int?> stopMotors() async => requestResponse(MotPacketRequestId.MOT_PACKET_STOP_ALL, null);
   Future<VersionResponseValues?> version() async => await requestResponse(MotPacketRequestId.MOT_PACKET_VERSION, null);
@@ -109,10 +102,11 @@ class MotProtocolSocket extends ProtocolSocket {
   // add success code match
   Future<int?> writeDataMode(int address, int sizeBytes, Uint8List data, [void Function(int bytesComplete)? progressCallback]) async {
     assert(sizeBytes == data.length);
-    if (sizeBytes != data.length) return -1; // alternatively remove
+    // if (sizeBytes != data.length) return -1; // alternatively remove
 
-    if (await initDataModeWrite(address, sizeBytes, 0) case int? response when response != 0) return response;
-
+    if (await initDataModeWrite(address, sizeBytes, 0) case int? response when response != 0) {
+      return response;
+    }
     // alternatively return a stream of statuses prompt for input
     try {
       for (var index = 0; index < sizeBytes; index += DataModeData.sizeMax) {
