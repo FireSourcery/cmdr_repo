@@ -1,11 +1,4 @@
-import 'dart:collection';
-import 'dart:ffi';
-import 'dart:typed_data';
-
-import 'package:cmdr/byte_struct.dart';
 import 'package:cmdr/binary_data/typed_data_ext.dart';
-import 'package:ffi/ffi.dart';
-import 'package:meta/meta.dart';
 
 import 'typed_field.dart';
 
@@ -15,12 +8,6 @@ import 'typed_field.dart';
 // typedef StructConstructor<T> = T Function([TypedData typedData]);
 typedef ByteStructCaster<T> = T Function(TypedData typedData);
 typedef ByteStructCreator<T> = T Function([TypedData typedData]);
-
-// abstract mixin class ByteStruct {
-//   factory ByteStruct.view(ByteStructCaster byteStructCaster, ByteStructBase packet, int offset, [int? length]) => byteStructCaster(packet.view(offset, length));
-
-//   TypedData get bytes;
-// }
 
 // effectively TypedData, with a constructor
 // cannot extended TypedData, need to add constructor to extension on TypedData
@@ -51,10 +38,10 @@ class ByteStructBase {
   // V getAs<R extends ByteStructBase, V>(ByteStructCaster<R> caster, [dynamic  stateMeta]) => caster(bytes).parse(this, stateMeta);
 }
 
-// extension type ByteStruct._(TypedData bytes) implements TypedData {
+// extension type const Bytes._(TypedData bytes) implements TypedData {
 //   // const ByteStruct._(this.bytes);
-//   ByteStruct(TypedData bytes, [int offset = 0, int? length]) : bytes = Uint8List.sublistView(bytes, offset, length);
-//   ByteStruct.origin(ByteBuffer bytesBuffer, [int offset = 0, int? length]) : bytes = Uint8List.view(bytesBuffer, offset, length ?? bytesBuffer.lengthInBytes - offset);
+//   Bytes(TypedData bytes, [int offset = 0, int? length]) : bytes = Uint8List.sublistView(bytes, offset, length);
+//   Bytes.origin(ByteBuffer bytesBuffer, [int offset = 0, int? length]) : bytes = Uint8List.view(bytesBuffer, offset, length ?? bytesBuffer.lengthInBytes - offset);
 
 //   // final Uint8List bytes;
 //   int get length => bytes.lengthInBytes;

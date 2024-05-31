@@ -321,8 +321,8 @@ class ProtocolSocket implements Sink<Packet> {
     timer.stop();
     packetBufferIn.copyBytes(event.bytes); // sets buffer in length, exceeding length max handled by PacketReceiver
 
-    print("Socket [${hashCode}] RX ${packetBufferIn.bytes.take(4)} ${packetBufferIn.bytes.skip(4).take(4)} ${packetBufferIn.bytes.skip(8)}");
-    print("Socket [${hashCode}] Time: ${timer.elapsedMilliseconds}");
+    print("Socket [$hashCode] RX ${packetBufferIn.bytes.take(4)} ${packetBufferIn.bytes.skip(4).take(4)} ${packetBufferIn.bytes.skip(8)}");
+    print("Socket [$hashCode] Time: ${timer.elapsedMilliseconds}");
 
     // socket table does not unmap. might receive packets following completion
     if (!_recved.isCompleted) _recved.complete();

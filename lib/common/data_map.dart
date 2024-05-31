@@ -34,8 +34,11 @@ abstract mixin class DataMapBase<E extends DataField<Object?>> implements FixedM
   @override
   void clear() => throw UnsupportedError('DataMap does not support clear');
 
+  @override
   void operator []=(E key, Object? value);
+  @override
   Object? operator [](E key);
+  @override
   List<E> get keys;
 
   // DataMap copyWithEntry(E key, Object? value) => initWith(DataMapBuilder(keys).fillWithEntry(key, value));

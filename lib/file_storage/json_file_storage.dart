@@ -20,7 +20,9 @@ abstract class JsonFileStorage extends FileStorage<JsonMap> {
 
   factory JsonFileStorage.handlers(Object? Function(JsonMap value) fromJson, JsonMap Function() toJson, {String? defaultName}) = _JsonFileStorageWithHandlers;
 
+  @override
   Object? fromContents(JsonMap contents);
+  @override
   JsonMap toContents();
 }
 

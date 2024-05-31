@@ -1,13 +1,6 @@
-import 'package:cmdr/binary_data/bitfield.dart';
-import 'package:cmdr/byte_struct.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
-import 'package:meta/meta.dart';
 
-import '../binary_data/word_fields.dart';
-import '../binary_data/word.dart';
 
 /// Read Only views
 /// possibly change to String,V

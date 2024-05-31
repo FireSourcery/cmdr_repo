@@ -1,7 +1,5 @@
 import 'dart:ffi';
 
-import 'package:flutter/foundation.dart';
-
 /// Data/number format
 /// ffi marker constrains type, only use as marker
 enum NumberFormat<T extends NativeType, S> {

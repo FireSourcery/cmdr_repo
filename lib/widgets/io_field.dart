@@ -150,9 +150,9 @@ class IOFieldDecorator extends StatelessWidget {
     if (isError) {
       effectiveDecoration = effectiveDecoration.copyWith(
         enabledBorder: theme.errorBorder, // if errorBorder is null, enabledBorder is set to null, => default to 'border' resolve material state
-        border: MaterialStateProperty.resolveAs(theme.border, {MaterialState.error}),
+        border: WidgetStateProperty.resolveAs(theme.border, {WidgetState.error}),
         prefixIconColor: theme.errorBorder?.borderSide.color,
-        floatingLabelStyle: MaterialStateProperty.resolveAs(theme.floatingLabelStyle, {MaterialState.error}) ?? theme.errorStyle,
+        floatingLabelStyle: WidgetStateProperty.resolveAs(theme.floatingLabelStyle, {WidgetState.error}) ?? theme.errorStyle,
       );
     }
 
@@ -247,7 +247,7 @@ class _IOFieldTextState<T> extends State<IOFieldText<T>> {
   };
 
   final TextEditingController textController = TextEditingController();
-  final MaterialStatesController materialStates = MaterialStatesController();
+  final WidgetStatesController materialStates = WidgetStatesController();
   final FocusNode focusNode = FocusNode();
 
   // alternatively resolve in initializer list
@@ -258,7 +258,7 @@ class _IOFieldTextState<T> extends State<IOFieldText<T>> {
   // todo optionally check bounds
   void changedTextNum(String numString) {
     final value = numString.isNotEmpty ? num.parse(numString) : 0;
-    materialStates.update(MaterialState.error, (value.clamp(widget.numMin!, widget.numMax!) != value));
+    materialStates.update(WidgetState.error, (value.clamp(widget.numMin!, widget.numMax!) != value));
   }
 
   void updateOnFocusLoss() {
@@ -286,7 +286,7 @@ class _IOFieldTextState<T> extends State<IOFieldText<T>> {
       listenable: widget.listenable,
       builder: (context, child) {
         textController.text = textGetter();
-        if (widget.errorGetter != null) materialStates.update(MaterialState.error, widget.errorGetter!());
+        if (widget.errorGetter != null) materialStates.update(WidgetState.error, widget.errorGetter!());
         return child!;
       },
       child: TextField(

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 /// FileStorage contains
@@ -54,10 +53,14 @@ abstract mixin class FileCodec<S, T> {
 abstract mixin class FileStringCodec<T> implements FileCodec<T, String> {
   const FileStringCodec();
 
+  @override
   String encode(T input);
+  @override
   T decode(String encoded);
 
+  @override
   Future<File> write(File file, T input) async => file.writeAsString(encode(input));
+  @override
   Future<T> read(File file) async => file.readAsString().then((value) => decode(value));
 }
 
@@ -66,10 +69,14 @@ abstract mixin class FileContentCodec<S, T> implements FileCodec<S, T> {
   const FileContentCodec();
 
   FileCodec<T, dynamic> get innerCodec;
+  @override
   T encode(S decoded); // buildContents, encodeOuter
+  @override
   S decode(T contents); // parseContents, decodeInner
 
+  @override
   Future<File> write(File file, S decoded) async => _FusedFileCodec(this, innerCodec).write(file, decoded);
+  @override
   Future<S> read(File file) async => _FusedFileCodec(this, innerCodec).read(file);
 
   // Future<File> write(File file, S decoded) async => innerCodec.write(file, encode(decoded));
@@ -87,7 +94,9 @@ class _FusedFileCodec<S, M, T> extends FileCodec<S, T> {
   @override
   S decode(T encoded) => _first.decode(_second.decode(encoded));
 
+  @override
   Future<File> write(File file, S input) async => _second.write(file, _first.encode(input));
+  @override
   Future<S> read(File file) async => _second.read(file).then((value) => _first.decode(value));
 
   _FusedFileCodec(this._first, this._second);

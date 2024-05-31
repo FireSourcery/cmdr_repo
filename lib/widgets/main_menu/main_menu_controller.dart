@@ -1,13 +1,14 @@
+import 'package:cmdr/settings/settings_view.dart';
 import 'package:flutter/material.dart';
+import 'package:recase/recase.dart';
 
-// todo refactor LinkedMenuController
-class DoubleMenuController {
-  DoubleMenuController(List<MenuEntry> menuListMain, List<MenuEntry> menuListAux)
-      : mainMenu = SingleMenuController(menuListMain, createNavigatorKey: true),
-        auxMenu = SingleMenuController(menuListAux, createNavigatorKey: false);
+class LinkedMenuController {
+  LinkedMenuController(List<MenuEntry> menuListMain, List<MenuEntry> menuListAux)
+      : mainMenu = MainMenuController(menuListMain, createNavigatorKey: true),
+        auxMenu = MainMenuController(menuListAux, createNavigatorKey: false);
 
-  final SingleMenuController mainMenu;
-  final SingleMenuController auxMenu;
+  final MainMenuController mainMenu;
+  final MainMenuController auxMenu;
 
   set auxMenuList(List<MenuEntry>? menuList) => auxMenu.menuList = menuList;
 
@@ -21,10 +22,10 @@ class DoubleMenuController {
 }
 
 /// is expanded and selecct are on the same notifier
-class SingleMenuController with ChangeNotifier {
-  SingleMenuController(this.initialMenuList, {GlobalKey<NavigatorState>? navigatorKeyArg, bool createNavigatorKey = false})
-      : assert(!(navigatorKeyArg != null && createNavigatorKey == true)),
-        navigatorKey = createNavigatorKey ? GlobalKey() : navigatorKeyArg;
+class MainMenuController with ChangeNotifier {
+  MainMenuController(this.initialMenuList, {GlobalKey<NavigatorState>? navigatorKey, bool createNavigatorKey = false})
+      : assert(!(navigatorKey != null && createNavigatorKey == true)),
+        navigatorKey = createNavigatorKey ? GlobalKey() : navigatorKey;
 
   final List<MenuEntry> initialMenuList;
   final GlobalKey<NavigatorState>? navigatorKey;
@@ -67,9 +68,17 @@ class SingleMenuController with ChangeNotifier {
 
 class MenuEntry {
   const MenuEntry({required this.id, this.label = '', this.icon, this.route, this.widget});
-  final Enum id; //menu in order of index
-  final IconData? icon;
+  final Enum id; // menu in order of index
   final String label;
+  final IconData? icon;
   final String? route;
   final Widget? widget;
+}
+
+abstract mixin class MenuEntryId implements MenuEntry, Enum {
+  Enum get id => this;
+  String get label => name.pascalCase;
+  IconData? get icon;
+  String? get route;
+  Widget? get widget;
 }

@@ -3,7 +3,6 @@
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:cmdr/common/defined_types.dart';
 import 'package:collection/collection.dart';
 
 import '../base/protocol.dart';

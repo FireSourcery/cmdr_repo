@@ -15,7 +15,9 @@ abstract interface class VarView<V> implements ValueNotifier<V> {
   // set valueNum(num value);
 
   /// the view value, the value as seen by the user
+  @override
   V get value;
+  @override
   set value(V value);
 
   // // for ValueGetter tare off

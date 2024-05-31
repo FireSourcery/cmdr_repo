@@ -1,4 +1,3 @@
-import 'dart:ffi';
 import 'dart:typed_data';
 import 'package:cmdr/connection/base/packet.dart';
 import 'package:cmdr/connection/mot_connection/mot_packet.dart';

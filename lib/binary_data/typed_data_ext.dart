@@ -207,8 +207,8 @@ extension StringOfTypedData on TypedData {
 class EndianCastList<R extends TypedData> extends ListBase<num> {
   EndianCastList(this._source, this._endian);
 
-  TypedData _source;
-  Endian _endian;
+  final TypedData _source;
+  final Endian _endian;
 
   @override
   int get length => _source.lengthInBytes ~/ _source.elementSizeInBytes;

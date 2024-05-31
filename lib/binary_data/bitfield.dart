@@ -1,5 +1,4 @@
 // ignore_for_file: annotate_overrides
-import 'dart:collection';
 import 'package:collection/collection.dart';
 
 import 'bits_map.dart';
@@ -46,12 +45,6 @@ abstract interface class BitField<T extends Bitmask> implements Map<T, int> {
 
   int get width;
   Bits get bits;
-  // set bits(Bits value);
-
-  // int bitsAt(int index, int width);
-  // int modifyBits(int index, int width, int value);
-  // void setBitsAt(int index, int width, int value);
-  // void reset([bool value = false]);
 
   List<T> get keys; // using Enum.values
   int operator [](covariant T key);

@@ -63,13 +63,18 @@ class SettingsService {
 // SettingBase using SharedPreferences
 // can be inherited by enums
 abstract mixin class SharedPrefSetting<T> implements Setting<T> {
+  @override
   String get key;
+  @override
   List<T>? get enumValues; // Enum or options set
+  @override
   ({num min, num max})? get numLimits;
   // T get defaultValue;
 
   // String get key => name; // if implements enum
+  @override
   String get label;
+  @override
   String get valueString;
 
   @override

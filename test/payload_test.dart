@@ -36,7 +36,7 @@ final class TestPayload extends Struct implements Payload<(int, int)> {
   PayloadMeta build((int, int) args, [Packet? a]) {
     value0 = args.$1;
     value1 = args.$2;
-    return PayloadMeta(0);
+    return const PayloadMeta(0);
   }
 
   @override

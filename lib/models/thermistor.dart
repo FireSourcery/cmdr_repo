@@ -51,7 +51,7 @@ double invSteinhartB(num b, num t0, num r0, num invT) => exp((invT - 1.0 / t0) *
 class Thermistor {
   const Thermistor._({required this.b, required this.r0, this.t0 = 25 - absoluteZeroCelsius, required this.rSeries, this.rParallel});
   const Thermistor({required this.b, required this.r0, required this.rSeries, int? rParallel, double? t0})
-      : t0 = t0 ?? 25 - absoluteZeroCelsius, // passing null inits to default
+      : t0 = t0 ?? (25 - absoluteZeroCelsius), // passing null inits to default
         rParallel = (rParallel == 0) ? null : rParallel; // passing 0 inits to null
 
   final int b;
@@ -122,10 +122,7 @@ class Thermistor {
 
 // case where compile time const, == operator on known values
 class DetachedThermistor {
-  const DetachedThermistor({
-    required this.rSeries,
-    this.rParallel,
-  });
+  const DetachedThermistor({required this.rSeries, this.rParallel});
 
   final int rSeries;
   final int? rParallel;

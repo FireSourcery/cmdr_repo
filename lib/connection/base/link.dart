@@ -4,6 +4,7 @@ abstract interface class Link {
   Link();
 
   LinkException? lastException;
+  String? get portActiveName;
   Stream<Uint8List> get streamIn;
 
   /// Protocol Interface
@@ -21,4 +22,6 @@ class LinkException implements Exception {
   final String subset;
   final Type linkType;
   final Exception? driverException;
+
+  static const LinkException ok = LinkException('Ok');
 }

@@ -42,7 +42,7 @@ class _PaginatedViewState extends State<PaginatedView> with SingleTickerProvider
             children: widget.children,
           ),
         ),
-        TabPageSelector(controller: _tabController, color: colorScheme.background, selectedColor: colorScheme.primary),
+        TabPageSelector(controller: _tabController, color: colorScheme.surface, selectedColor: colorScheme.primary),
       ],
     );
   }
@@ -82,7 +82,7 @@ class PageIndicator extends StatelessWidget {
             },
             icon: const Icon(Icons.arrow_left_rounded, size: 32.0),
           ),
-          TabPageSelector(controller: tabController, color: colorScheme.background, selectedColor: colorScheme.primary),
+          TabPageSelector(controller: tabController, color: colorScheme.surface, selectedColor: colorScheme.primary),
           IconButton(
             splashRadius: 16.0,
             padding: EdgeInsets.zero,

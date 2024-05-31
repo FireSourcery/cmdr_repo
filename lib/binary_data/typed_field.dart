@@ -1,11 +1,6 @@
-import 'dart:collection';
 import 'dart:ffi';
 import 'dart:typed_data';
 
-import 'package:ffi/ffi.dart';
-
-import '../common/fixed_map.dart';
-import 'byte_struct.dart';
 import 'typed_data_ext.dart';
 import 'bits.dart';
 

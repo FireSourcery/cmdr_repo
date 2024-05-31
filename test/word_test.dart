@@ -1,6 +1,3 @@
-import 'dart:typed_data';
-
-import 'package:cmdr/byte_struct.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cmdr/binary_data/word.dart';

@@ -1,5 +1,3 @@
-import 'settings_service.dart';
-
 abstract interface class Setting<T> {
   String get key;
   String get valueString;

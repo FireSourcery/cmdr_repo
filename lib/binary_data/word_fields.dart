@@ -1,8 +1,5 @@
 import 'dart:collection';
-import 'dart:ffi';
 
-import 'package:cmdr/binary_data/bitfield.dart';
-import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 import '../common/fixed_map.dart';
@@ -24,7 +21,9 @@ abstract mixin class WordFields<T extends WordField<NativeType>> implements Fixe
   const factory WordFields.withKeys(List<T> keys, int value) = WordFieldsWithKeys<T>;
   // WordFields.initWith(Map<WordField, int> newValue) : this(Word(newValue.fold()));
 
+  @override
   Bits get bits;
+  @override
   List<T> get keys; // with Enum.values
 
   @mustBeOverridden

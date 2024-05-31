@@ -12,14 +12,12 @@ export 'package:libserialport/libserialport.dart';
 ////////////////////////////////////////////////////////////////////////////////
 class SerialLink implements Link {
   SerialLink();
-
   // static const List<int> baudList = [9600, 19200, 38400, 57600, 115200, 128000, 256000];
   static const List<int> baudList = [19200];
   static List<String> get portsAvailable => SerialPort.availablePorts;
 
   SerialPort? _serialPort; // alternatively allocating a SerialPort with '' name is effectively port with internal nullptr
   SerialPortReader? _serialPortReader;
-  String? get portActiveName => _serialPort?.name;
 
   // alternatively move to SerialPortConfigViewController
   SerialPortConfig portConfig = SerialPortConfig()
@@ -87,6 +85,9 @@ class SerialLink implements Link {
   //   serialPort?.dispose();
   //   serialPortConfig.dispose();
   // }
+
+  @override
+  String? get portActiveName => _serialPort?.name;
 
   // this way only connect() creates a new stream
   @override

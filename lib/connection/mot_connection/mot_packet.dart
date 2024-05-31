@@ -1,7 +1,4 @@
 // ignore_for_file: constant_identifier_names
-import 'dart:ffi';
-import 'dart:typed_data';
-import 'package:ffi/ffi.dart';
 import '../../binary_data/typed_field.dart';
 import '../base/packet.dart';
 

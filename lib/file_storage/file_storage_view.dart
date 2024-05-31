@@ -22,7 +22,7 @@ class SaveFileButton extends FileLoadButton {
 }
 
 class _StatusText extends StatelessWidget {
-  const _StatusText(this.fileNotifier, {super.key});
+  const _StatusText(this.fileNotifier);
   final FileStorageNotifier fileNotifier;
 
   @override

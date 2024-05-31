@@ -1,18 +1,15 @@
-import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:cmdr/binary_data/bitmask.dart';
 
 extension type const Bits(int value) implements int {
-  // const Bits.zero() : value = 0;
-  // const Bits.one() : value = 1;
-  // const Bits.allOnes() : value = _allOnes;
-  // const Bits.allZeros() : value = _allZeros;
-  // alternatively extension on Iterable<Enum>
-  // Bits.ofMap(Map<Enum, bool> map) : value = map.entries.fold<int>(0, (previous, entry) => previous.modifyBool(entry.key.index, entry.value));
-  // // return flags.foldIndexed<int>(0, (index, previous, element) => previous.modifyBool(index, element) );
-  // Bits.ofBools(Iterable<bool> flags) : value = flags.fold<int>(0, (previous, element) => (previous << 1) | (element ? 1 : 0));
+  const Bits.zero() : value = 0;
+  const Bits.allOnes() : value = -1;
+  const Bits.allZeros() : value = 0;
 
+  Bits.ofMap(Map<Enum, bool> map) : value = map.entries.fold<int>(0, (previous, entry) => previous.modifyBool(entry.key.index, entry.value));
+  // return flags.foldIndexed<int>(0, (index, previous, element) => previous.modifyBool(index, element) );
+  Bits.ofBools(Iterable<bool> flags) : value = flags.fold<int>(0, (previous, element) => (previous << 1) | (element ? 1 : 0));
   // width value pairs
   Bits.fromWidth(Map<int, int> map) : value = Bitmasks.fromWidths(map.keys).apply(map.values);
 
@@ -38,13 +35,8 @@ extension type const Bits(int value) implements int {
   // int modifyBytes(int index, int size, int value) => this.value.modifyBytes(index, size, value);
   void setBytesAt(int index, int size, int value) => this.value = modifyBytes(index, size, value);
 
-  // int get byteLength => value.byteLength;
-  bool get isSet => (value != 0);
-
-  // static const int kMaxUnsignedSMI = 0x3FFFFFFFFFFFFFFF;
-  // static const int _smiBits = 62;
-  // static const int _allZeros = 0;
-  // static const int _allOnes = kMaxUnsignedSMI;
+  bool get isNotZero => (value != 0);
+  bool get isZero => (value == 0);
 
   // void reset([bool fill = false]) => value = fill ? _allOnes : _allZeros;
 }
@@ -68,8 +60,7 @@ extension BinaryOfInt on int {
   bool boolAt(int index) => Bitmask.bit(index).read(this) != 0;
   int modifyBool(int index, bool value) => Bitmask.bit(index).modify(this, value ? 1 : 0);
 
-  int get byteLength => (bitLength / 8).ceil();
-  // int get byteLength => ((bitLength - 1) ~/ 8) + 1;
+  int get byteLength => ((bitLength - 1) ~/ 8) + 1; // (bitLength / 8).ceil();
 
   /// String Char operations using Bits
   String charAsCode(int index) => String.fromCharCode(byteAt(index)); // 0x31 => '1'
@@ -97,7 +88,7 @@ extension TrimBytes on Uint8List {
   // trimmed view sublist for copy
   // big endian trim leading. little endian trim trailing
   Uint8List trim(int wordLength, Endian endian) => switch (endian) { Endian.big => trimAsBE(wordLength), Endian.little => trimAsLE(wordLength), Endian() => throw UnsupportedError('Endian') };
-  // todo typed data account fo elementsize
+  // todo typed data account fo element size
   // constructing trimAsBE back to Word will change value, as offset has change, alternatively parameterize with size/type
   Uint8List trimAsBE(int wordLength) => Uint8List.sublistView(this, lengthInBytes - wordLength);
   // constructing trimAsLE back to Word preserves value

@@ -1,11 +1,8 @@
 // ignore_for_file: annotate_overrides
-import 'dart:collection';
 
-import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' as foundation show BitField;
 
 import 'bits_map.dart';
-import 'bitmask.dart';
 import 'bits.dart';
 
 export 'bitmask.dart';
@@ -40,10 +37,6 @@ abstract interface class BitFlags<T extends Enum> implements foundation.BitField
 
   int get width;
   Bits get bits;
-  // set bits(Bits value);
-  // bool boolAt(int index);
-  // void setBoolAt(int index, bool value);
-  // void reset([bool value = false]);
 
   List<T> get keys;
   bool operator [](covariant T key);

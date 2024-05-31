@@ -1,7 +1,9 @@
+import 'package:cmdr/connection/base/link.dart';
+
 import '../base/protocol.dart';
+import '../links/serial_link.dart';
 import 'mot_packet.dart';
 import 'mot_protocol.dart';
-import '../links/serial_link.dart';
 
 // Baud Rate | Byte Time | 24 byte time | 40 byte time
 // 19200 bauds | 520.833 µs | 12.499992 ms | 20.83332 ms
@@ -10,18 +12,19 @@ import '../links/serial_link.dart';
 class MotConnection {
   static final SerialLink serialLink = SerialLink();
   // final BluetoothLink bluetoothLink = BluetoothLink();
-
   static final Protocol protocol = Protocol(serialLink, const MotPacketInterface());
-
   static final MotProtocolSocket general = MotProtocolSocket(protocol);
   static final MotProtocolSocket stop = MotProtocolSocket(protocol);
   static final MotProtocolSocket varRead = MotProtocolSocket(protocol);
   static final MotProtocolSocket varWrite = MotProtocolSocket(protocol);
   // static final MotProtocolSocket events = MotProtocolSocket(protocol);
 
+  static Link get activeLink => protocol.link;
   static bool get isConnected => protocol.link.isConnected;
 
-  static bool begin({dynamic linkType, String? name, int? baudRate}) {
+  static bool begin({Enum? linkType, String? name, int? baudRate}) {
+    serialLink.connect(name: name, baudRate: baudRate);
+
     //todo connect and begin
     if (isConnected) protocol.begin();
     return isConnected;

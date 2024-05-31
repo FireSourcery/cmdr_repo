@@ -1,10 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
-
-import 'package:cmdr/binary_data/typed_data_ext.dart';
-import 'package:cmdr/common/defined_types.dart';
-import 'package:flutter/material.dart';
 import 'package:meta/meta.dart';
+import 'package:cmdr/binary_data/typed_data_ext.dart';
 
 import 'packet.dart';
 import 'protocol.dart';

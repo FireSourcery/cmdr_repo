@@ -1,5 +1,4 @@
 // import 'package:intl/intl.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 
 // typedef GenericFunction<R> = R Function<G>([dynamic context]);

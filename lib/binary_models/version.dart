@@ -1,13 +1,7 @@
-import 'dart:collection';
-import 'dart:ffi';
-import 'dart:typed_data';
-
 import '../binary_data/word_fields.dart';
 import '../binary_data/typed_field.dart';
 
 /// standard [optional, major, minor, fix] version
-// if WordFields handles additional name field
-// extension type Version<T extends WordField>(WordFields <T> value)
 class Version extends WordFieldsBase<WordField<NativeType>> {
 // parameterizing T can constrain functions of T key to types the Version is defined with
 // class Version<T extends VersionField> extends WordFields<VersionField> {
@@ -123,13 +117,7 @@ class VersionStandard extends Version {
   }
 }
 
-// class VersionWithKeys<T extends WordField<NativeType>> extends Version<T> {
-//   const VersionWithKeys({required this.keys, required int value, String? name}) : super.value(value, name);
-
-//   @override
-//   final List<T> keys;
-// }
-
+ 
 // enum VersionFieldStandard<T extends NativeType> with TypedField<T> implements WordField<T> {
 //   fix<Uint8>(0),
 //   minor<Uint8>(1),
