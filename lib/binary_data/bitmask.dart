@@ -1,29 +1,28 @@
 import 'package:collection/collection.dart';
 
-int bitmask(int shift, int width) => ((1 << width) - 1) << shift;
+// int bitmask(int shift, int width) => ((1 << width) - 1) << shift;
 
 // as storable object to use as key
 class Bitmask {
-// extension type const Bitmask(({int shift, int width}) ) {
-// extension type const Bitmask(({int shift, int mask}) ) {
-  const Bitmask(this.shift, this.width) : mask = ((1 << width) - 1) << shift;
-  const Bitmask.bits(this.shift, this.width) : mask = ((1 << width) - 1) << shift;
+  const Bitmask(this.shift, this.width) : _bitmask = ((1 << width) - 1) << shift;
+  const Bitmask.bits(int shift, int width) : this(shift, width);
   const Bitmask.bit(int index) : this.bits(index, 1); // (1 << index);
   const Bitmask.bytes(int shift, int size) : this.bits(shift * 8, size * 8);
   const Bitmask.byte(int index) : this.bits(index * 8, 8);
 
-  final int mask;
+  final int _bitmask;
   final int shift;
   final int width; // (_bitmask >> shift).bitLength;
 
-  int apply(int value) => (value << shift) & mask; // get as masked
-  int read(int source) => (source & mask) >> shift; // get as shifted back
-  int modify(int source, int value) => (source & ~mask) | apply(value); // ready for write back
+  int apply(int value) => (value << shift) & _bitmask; // get as masked
+  int read(int source) => (source & _bitmask) >>> shift; // get as shifted back
+  int readSigned(int source) => ((source & _bitmask) >>> shift).toSigned(width);
+  int modify(int source, int value) => (source & ~_bitmask) | apply(value); // ready for write back
   // int maskOff(int source) => (source & ~_mask);
   // int maskOn(int source) => (source | _mask);
   // int mask(int source) => (source & _mask);
 
-  int operator *(int value) => ((value << shift) & mask); // apply as compile time const??
+  int operator *(int value) => ((value << shift) & _bitmask); // apply as compile time const??
   // int call(int value) => ((value << shift) & bits);
 }
 

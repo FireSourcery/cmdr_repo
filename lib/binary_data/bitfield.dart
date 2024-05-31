@@ -32,9 +32,9 @@ abstract interface class BitField<T extends Bitmask> implements Map<T, int> {
   ///   EnumType.name1: 2,
   ///   EnumType.name2: 3,
   /// });
-  // factory BitField.ofMap(Map<T, int> values, [bool mutable = true]) {
-  //   return BitField.from(values.totalWidth, values.fold(), mutable);
-  // }
+  factory BitField.ofMap(Map<T, int> values, [bool mutable = true]) {
+    return BitField.from(values.totalWidth, values.fold(), mutable);
+  }
 
   factory BitField.fromMap(Map<Bitmask, int> values, [bool mutable = true]) {
     return BitField.from(values.totalWidth, values.fold(), mutable);
@@ -95,8 +95,6 @@ abstract mixin class BitFieldMember implements Enum, Bitmask {
   Bitmask get bitmask;
 
   @override
-  int get mask => bitmask.mask;
-  @override
   int get shift => bitmask.shift;
   @override
   int get width => bitmask.width;
@@ -106,6 +104,8 @@ abstract mixin class BitFieldMember implements Enum, Bitmask {
   int apply(int value) => bitmask.apply(value);
   @override
   int read(int source) => bitmask.read(source);
+  @override
+  int readSigned(int source) => bitmask.readSigned(source);
   @override
   int modify(int source, int value) => bitmask.modify(source, value);
   // @override

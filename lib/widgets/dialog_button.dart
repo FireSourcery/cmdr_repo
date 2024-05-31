@@ -11,7 +11,7 @@ class DialogButton<T> extends StatelessWidget {
 
   final WidgetBuilder dialogBuilder; // must build new for async
   final Widget? child;
-  final ValueSetter<T>? onPop;
+  final ValueSetter<T?>? onPop;
   final VoidCallback? onPressed;
   final bool useRootNavigator;
   final DialogButtonStyle? themeStyle;
@@ -32,7 +32,7 @@ class DialogButton<T> extends StatelessWidget {
           builder: dialogBuilder,
           useRootNavigator: useRootNavigator,
         );
-        if (result != null) onPop?.call(result); // alternatively show dialog next over async
+        onPop?.call(result); // alternatively show dialog next over async
       },
       style: buttonStyle,
       child: child,
@@ -134,13 +134,13 @@ class AsyncConfirmationDialog<T> extends StatelessWidget {
 
 // state to maintain selected items
 class SelectionDialog<E> extends StatefulWidget {
-  const SelectionDialog({super.key, this.title, this.icon, this.selectionCountMax, this.iconColor, required this.selection, required this.labelBuilder, this.initialSelected});
+  const SelectionDialog({super.key, this.title, this.icon, this.selectedMax, this.iconColor, required this.selectable, required this.labelBuilder, this.initialSelected});
   final Widget? title;
   final Widget? icon;
   final Color? iconColor;
-  final List<E> selection; // must be a new list, iterable non-primatives do not add to set properly
+  final List<E> selectable; // must be a new list, iterable non-primatives do not add to set properly
   final Iterable<E>? initialSelected;
-  final int? selectionCountMax;
+  final int? selectedMax;
   final Widget Function(E value, bool isSelected) labelBuilder;
 
   @override
@@ -161,12 +161,12 @@ class _SelectionDialogState<E> extends State<SelectionDialog<E>> {
         runSpacing: 5,
         spacing: 5,
         children: [
-          for (final element in widget.selection)
+          for (final element in widget.selectable)
             FilterChip(
               label: widget.labelBuilder(element, selected.contains(element)),
               onSelected: (bool value) => setState(() {
                 if (value) {
-                  if (widget.selectionCountMax != null && selected.length >= widget.selectionCountMax!) return;
+                  if (widget.selectedMax != null && selected.length >= widget.selectedMax!) return;
                   selected.add(element);
                 } else {
                   selected.remove(element);
