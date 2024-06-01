@@ -30,7 +30,8 @@ class Protocol {
 
     status = ProtocolException.ok;
 
-    // if sockets implements listen on the transformed stream, although the observer pattern is implemented, the check id routine must still run iteratively. but a map would not be necessary.
+    // if sockets implements listen on the transformed stream, although the observer pattern is implemented,
+    // the check id routine must still run iteratively. but a map would not be necessary.
     return packetStream!.listen(
       (packet) {
         print("RX ${packet.bytes.take(4)} ${packet.bytes.skip(4).take(4)} ${packet.bytes.skip(8)}");
@@ -46,7 +47,6 @@ class Protocol {
     );
   }
 
-  // alternatively build header, length must be set prior
   Future<void> trySend(Packet packet) async {
     try {
       print("TX ${packet.bytes.take(4)} ${packet.bytes.skip(4).take(4)} ${packet.bytes.skip(8)}");
@@ -162,6 +162,7 @@ class ProtocolSocket implements Sink<Packet> {
           print('--- New Request');
           print('Socket [$hashCode] Request [$requestId] | waiting on lock [$waitingOnLockCount]');
           packetBufferIn.clear();
+          _recved = Completer.sync();
           if (syncOptions.recvSync) protocol.mapSync(this);
           protocol.mapRequestResponse(requestId, this); //move to send request?
           final PayloadMeta requestMeta = await sendRequest(requestId, requestArgs);
@@ -256,7 +257,7 @@ class ProtocolSocket implements Sink<Packet> {
   // Future<void> sendRaw(Uint8List bytes, {Duration timeout = timeoutDefault}) async {}
   // Uint8List recvRaw(int bytes, {int timeout = -1})
 
-  /// handle build and, send using request side of packet
+  /// handle build and, send using request side of packet, response maybe of a different Id, e.g. Sync
   // todo add lock on component functions?
   // buffers must lock, if sockets are shared, i.g not uniquely allocated per thread
   @protected
@@ -272,6 +273,7 @@ class ProtocolSocket implements Sink<Packet> {
   /// using response side
   @protected
   Future<V?> recvResponse<V>(PacketIdRequest<dynamic, V> packetId, {PayloadMeta? reqStateMeta, Duration timeout = timeoutDefault}) async {
+    //todo handle case of rx nack
     return await tryRecv<V>(() => packetBufferIn.parseResponse<V>(packetId, reqStateMeta), timeout);
   }
 
@@ -305,8 +307,6 @@ class ProtocolSocket implements Sink<Packet> {
   Future<R?> tryRecv<R>(R? Function() parse, [Duration timeout = timeoutDefault]) async {
     try {
       // await stream.first.timeout(timeout);
-      // what if add occurs before this point?
-      _recved = Completer.sync(); // using sync completer to execute parse immediately, although code it is not the final computation.
       return await _recved.future.timeout(timeout).then((_) => parse());
     } on TimeoutException {
       print("Socket Recv Response Timeout");
@@ -320,12 +320,19 @@ class ProtocolSocket implements Sink<Packet> {
       print("Protocol Unnamed Exception");
       print(e);
     } on RangeError catch (e) {
+      print(packetBufferIn.bytes);
       print("Protocol Parser Failed");
       print(e);
+      return parse();
+
+      /// todo
     } catch (e) {
       print(e);
       //payload parser may throw if invalid packet passes header parser as valid
-    } finally {}
+    } finally {
+      // mark input as empty
+      _recved = Completer.sync(); // using sync completer to execute parse immediately, although code it is not the final computation.
+    }
     return null;
   }
 
@@ -336,7 +343,11 @@ class ProtocolSocket implements Sink<Packet> {
 
     packetBufferIn.copyBytes(event.bytes); // sets buffer in length, exceeding length max handled by PacketReceiver
     // socket table does not unmap. might receive packets following completion
-    if (!_recved.isCompleted) _recved.complete();
+    if (!_recved.isCompleted) {
+      _recved.complete();
+    } else {
+      print('error complter');
+    }
   }
 
   @override

@@ -1,4 +1,6 @@
 // ignore_for_file: constant_identifier_names
+import 'package:cmdr/binary_data/typed_data_ext.dart';
+
 import '../../binary_data/typed_field.dart';
 import '../base/packet.dart';
 
@@ -249,7 +251,7 @@ final class VarReadResponse extends Struct implements Payload<VarReadResponseVal
     // final (int idChecksum, int flags)   = requestStatus;
     // final (idChecksum, respCode) = parseVarReadMeta();
     // return ((requestStatus == null) || (requestStatus.$1 == flexUpper16Field)) ? (0, parseVarReadValues()) : (null, null);
-    return (0, header.payloadAt<Uint16List>(0)); //todo code
+    return (0, header.payloadAt<Uint16List>(0, header.parsePayloadLength)); //todo code
   }
 
   @override
@@ -303,7 +305,7 @@ base class VarWriteResponse extends Struct implements Payload<VarWriteResponseVa
   VarWriteResponseValues parse(MotPacket header, void stateMeta) {
     // final (idChecksum, respCode) = parseVarWriteMeta();
     // return ((requestStatus == null) || (requestStatus.$1 == idChecksum)) ? (0, parseVarWriteStatuses()) : (null, null);
-    return (header.payloadAt<Uint8List>(0));
+    return (header.payloadAt<Uint8List>(0, header.parsePayloadLength));
   }
 
   // (int? idChecksum, int? respCode) parseMeta(MotPacket header) => (payloadWordAt<Uint16>(0), payloadWordAt<Uint16>(2));
@@ -424,7 +426,7 @@ base class CallRequest extends Struct implements Payload<CallRequestValues> {
 @Packed(1)
 base class CallResponse extends Struct implements Payload<CallResponseValues> {
   @Uint32()
-  external int id;
+  external int id; //todo move ot header
   @Uint16()
   external int status;
 
@@ -506,7 +508,7 @@ base class MemReadResponse extends Struct implements Payload<MemReadResponseValu
   @override
   MemReadResponseValues parse(MotPacket header, void stateMeta) {
     // return (header.packetHeader.flexUpper16FieldValue, header.payload);
-    return (0, header.payload);
+    return (0, header.payloadAt<Uint8List>(0, header.parsePayloadLength) as Uint8List);
   }
 
   @override
@@ -652,5 +654,5 @@ base class DataModeData extends Struct implements Payload<Uint8List> {
   }
 
   @override
-  Uint8List parse(MotPacket header, void stateMeta) => header.payload;
+  Uint8List parse(MotPacket header, void stateMeta) => header.payloadAt<Uint8List>(0, header.parsePayloadLength) as Uint8List;
 }

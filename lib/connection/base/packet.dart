@@ -74,7 +74,7 @@ abstract mixin class Packet implements PacketInterface {
   /// mutable with mixin, or PacketBuffer
   /// immutable, always lengthMax, in case of mixin on struct
   int get length => bytes.lengthInBytes;
-  int get payloadLength => length - payloadIndex;
+  int get payloadLength => length - payloadIndex; // only if casting does not throw
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Header/Payload Pointers using defined boundaries
@@ -106,7 +106,7 @@ abstract mixin class Packet implements PacketInterface {
 
   /// using ffi NativeType for signature types only
   /// with range check
-  List<int> payloadAt<R extends TypedData>(int byteOffset) => payload.asIntListOrEmpty<R>(byteOffset);
+  List<int> payloadAt<R extends TypedData>(int byteOffset, [int? end]) => payload.asIntListOrEmpty<R>(byteOffset, end);
   int payloadWordAt<R extends NativeType>(int byteOffset) => payloadWords.wordAt<R>(byteOffset, endian); // throws if header parser fails, length reports lesser value, while checksum passes
   int? payloadWordAtOrNull<R extends NativeType>(int byteOffset) => payloadWords.wordOrNullAt<R>(byteOffset, endian);
 
@@ -195,6 +195,7 @@ abstract mixin class Packet implements PacketInterface {
   // use shorter type, casting as longer header on smaller bytes will throw. optionally use field offset
   PacketId? get packetId => idOf(headerAsSyncType.idFieldValue); // idOf(idFieldPart.fieldValue(headerWords));
   PacketIdSync? parseSyncId() => switch (packetId) { PacketIdSync syncId => syncId, _ => null };
+  int get parsePayloadLength => headerAsPayloadType.lengthFieldValue - headerLength; // until casting is available
 
   /// for valueOrNull from header status
   bool isValidStart(int value) => (value == startId);
@@ -390,6 +391,9 @@ class PacketBuffer {
   Uint8List _bytesView; // holds truncated view, mutable length.
   Packet _packetView; // final if casting is not implemented, or packet extends struct
 
+  Uint8List get bytes => _bytesView;
+  Packet get packet => _packetView;
+
   @protected
   final PacketCaster packetCaster; // inherited class may use for addition buffers
 
@@ -407,9 +411,6 @@ class PacketBuffer {
   }
 
   void clear() => length = 0;
-
-  Uint8List get bytes => _bytesView;
-  Packet get packet => _packetView;
 
   /// receiving for parse, or socket
   void copyBytes(Uint8List dataIn, [int offset = 0]) {
@@ -429,21 +430,21 @@ class PacketBuffer {
   /// build functions mutate length
   PayloadMeta buildRequest<V>(PacketIdRequest<V, dynamic> packetId, V requestArgs) {
     PayloadMeta meta = _packetBuffer.buildRequest(packetId, requestArgs);
-    length = packet.headerLength + meta.length; // payloadLength = meta.length;
+    length = _packetBuffer.headerLength + meta.length; // payloadLength = meta.length;
     return meta;
   }
 
   void buildSync(PacketId packetId) {
     _packetBuffer.buildHeaderAsSync(packetId);
-    length = packet.idHeaderLength;
+    length = _packetBuffer.idHeaderLength;
   }
 
   /// parse functions redirect, socket call packet directly
   V parseResponse<V>(PacketIdRequest<dynamic, V> packetId, [PayloadMeta? reqStateMeta]) {
-    return packet.parseResponse(packetId, reqStateMeta);
+    return _packetBuffer.parseResponse(packetId, reqStateMeta);
   }
 
-  PacketIdSync? parseSyncId() => packet.parseSyncId();
+  PacketIdSync? parseSyncId() => _packetBuffer.parseSyncId();
 }
 
 ////////////////////////////////////////////////////////////////////////////
