@@ -98,8 +98,6 @@ abstract mixin class BitFieldMember implements Enum, Bitmask {
   @override
   int read(int source) => bitmask.read(source);
   @override
-  int readSigned(int source) => bitmask.readSigned(source);
-  @override
   int modify(int source, int value) => bitmask.modify(source, value);
   // @override
   // int get width;

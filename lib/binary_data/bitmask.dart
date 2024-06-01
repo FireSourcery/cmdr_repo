@@ -16,7 +16,6 @@ class Bitmask {
 
   int apply(int value) => (value << shift) & _bitmask; // get as masked
   int read(int source) => (source & _bitmask) >>> shift; // get as shifted back
-  int readSigned(int source) => ((source & _bitmask) >>> shift).toSigned(width);
   int modify(int source, int value) => (source & ~_bitmask) | apply(value); // ready for write back
   // int maskOff(int source) => (source & ~_mask);
   // int maskOn(int source) => (source | _mask);

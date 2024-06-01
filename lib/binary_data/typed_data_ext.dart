@@ -27,6 +27,11 @@ int bytesPerElementOf<T extends TypedData>() {
   };
 }
 
+/// pow2 only
+int alignDown(int value, int align) => (value & (-align));
+int alignUp(int value, int align) => (-(-value & (-align)));
+bool isAligned(int value, int align) => ((value & (align - 1)) == 0);
+
 ////////////////////////////////////////////////////////////////////////////////
 /// List values
 /// TypedData Cat Conversion
