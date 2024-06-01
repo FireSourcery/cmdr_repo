@@ -98,9 +98,9 @@ class MotProtocolSocket extends ProtocolSocket {
   Future<void> writeDataModeData(Uint8List data) async => sendRequest(MotPacketRequestId.MOT_PACKET_DATA_MODE_DATA, data);
   Future<Uint8List?> readDataModeData() async => recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_DATA);
 
-  Stream<PacketIdSync?> writeDataModeStream(Uint8List data) async* {
+  Stream<int> writeDataModeStream(Uint8List data) async* {
     for (final slice in data.typedSlices<Uint8List>(DataModeData.sizeMax)) {
-      yield await writeDataModeData(slice).then((_) => recvSync());
+      yield await writeDataModeData(slice).then((_) => recvSync()).then((value) => (value == MotPacketSyncId.MOT_PACKET_SYNC_ACK) ? slice.length : 0);
       await Future.delayed(ProtocolSocket.datagramDelay);
     }
   }
@@ -110,81 +110,6 @@ class MotProtocolSocket extends ProtocolSocket {
       yield await (readDataModeData()..then<void>((data) => sendSync(data != null ? MotPacketSyncId.MOT_PACKET_SYNC_ACK : MotPacketSyncId.MOT_PACKET_SYNC_NACK)));
     }
   }
-
-  // ////////////////////////////////////////////////////////////////////////////////
-  // /// DataMode Proc Async function maintains state
-  // /// write without overhead
-  // ////////////////////////////////////////////////////////////////////////////////
-  // // returns status char
-  // // add success code match
-  // /// returns bytes written
-  // Stream<(int? status, int bytesWritten)> writeDataMode(int address, int sizeBytes, Uint8List data, [void Function(int bytesComplete)? progressCallback]) async* {
-  //   assert(sizeBytes <= data.length);
-  //   var bytesWritten = 0;
-  //   if (await initDataModeWrite(address, sizeBytes, 0) case int? response when response != 0) yield (response, bytesWritten); // returns NvMemory_Status
-  //   await for (final event in writeDataModeStream(data)) {
-  //     yield (event?.intId, bytesWritten += bytesWritten);
-  //   }
-  //   yield (await (recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK))), bytesWritten);
-
-  //   // alternatively return a stream of statuses prompt for input
-  //   // try {
-  //   //   for (var index = 0; index < sizeBytes; index += DataModeData.sizeMax) {
-  //   //     await writeDataModeData(Uint8List.sublistView(data, index, min(DataModeData.sizeMax, sizeBytes - index))); // todo host side handle align?
-
-  //   //     if (await recvSync() != MotPacketSyncId.MOT_PACKET_SYNC_ACK) return -1;
-  //   //     progressCallback?.call(index * DataModeData.sizeMax + data.length);
-  //   //   }
-  //   // } finally {
-  //   //   print(sizeBytes);
-  //   // }
-
-  //   // MOT_PACKET_DATA_MODE_WRITE should still be mapped
-  //   // yield (await (recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK))), bytesWritten);
-  // }
-
-  // // Future<int?> readDataMode(int address, int sizeBytes, Uint8List dataBuffer, [void Function(int bytesComplete)? progressCallback]) async {
-  // //   assert(dataBuffer.length >= sizeBytes);
-
-  // //   protocol.mapRequestResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_DATA, this); // map additional id
-
-  // //   if (await initDataModeRead(address, sizeBytes, 0) case int? response when response != 0) return response;
-
-  // //   // return a stream? from iteratively stream and yield
-  // //   for (var index = 0; index < sizeBytes; index += DataModeData.sizeMax) {
-  // //     if (await readDataModeData() case Uint8List data) {
-  // //       dataBuffer.setRange(index, index + data.length, data);
-  // //       await sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK);
-  // //       progressCallback?.call(index + data.length);
-  // //     } else {
-  // //       return -1;
-  // //     }
-  // //   }
-
-  // //   return recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_READ)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
-  // // }
-
-  // Stream<(int? status, Uint8List? data)> readDataMode(int address, int sizeBytes, [void Function(int bytesComplete)? progressCallback]) async* {
-  //   // assert(dataBuffer.length >= sizeBytes);
-  //   protocol.mapRequestResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_DATA, this); // map additional id
-  //   if (await initDataModeRead(address, sizeBytes, 0) case int? response when response != 0) yield (response, null);
-
-  //   await for (final event in readDataModeStream(sizeBytes)) {
-  //     yield (0, event);
-  //   }
-
-  //   // return a stream? from iteratively stream and yield
-  //   // for (var index = 0; index < sizeBytes; index += DataModeData.sizeMax) {
-  //   //   if (await readDataModeData() case Uint8List data) {
-  //   //     dataBuffer.setRange(index, index + data.length, data);
-  //   //     await sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK);
-  //   //     progressCallback?.call(index + data.length);
-  //   //   } else {
-  //   //     return -1;
-  //   //   }
-  //   // }
-  //   yield (await (recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK))), null);
-  // }
 }
 
 // Future<int> requestReadVar(int id) => procRequestResponse(MotPacketPayloadId.MOT_PACKET_READ_VAR);
