@@ -248,9 +248,9 @@ class ProtocolSocket implements Sink<Packet> {
   //   }
   // }
 
-  Future<PacketIdSync?> ping(covariant PacketIdSync id, [covariant PacketIdSync? respId]) async {
+  Future<PacketIdSync?> ping(covariant PacketIdSync id, [covariant PacketIdSync? respId, Duration timeout = timeoutDefault]) async {
     protocol.mapResponse(respId ?? id, this);
-    return sendSync(id).then((_) async => await recvSync());
+    return sendSync(id).then((_) async => await recvSync(timeout));
   }
 
   // Future<void> sendRaw(Uint8List bytes, {Duration timeout = timeoutDefault}) async {}
@@ -260,7 +260,7 @@ class ProtocolSocket implements Sink<Packet> {
   // todo add lock on component functions?
   // buffers must lock, if sockets are shared, i.g not uniquely allocated per thread
   @protected
-  Future<PayloadMeta> sendRequest<V>(PacketIdRequest<V, dynamic> packetId, V requestArgs, {Duration timeout = timeoutDefault}) async {
+  Future<PayloadMeta> sendRequest<V>(PacketIdRequest<V, dynamic> packetId, V requestArgs) async {
     final PayloadMeta requestMeta = packetBufferOut.buildRequest<V>(packetId, requestArgs);
     timer.reset();
     timer.start();
@@ -272,15 +272,8 @@ class ProtocolSocket implements Sink<Packet> {
   /// using response side
   @protected
   Future<V?> recvResponse<V>(PacketIdRequest<dynamic, V> packetId, {PayloadMeta? reqStateMeta, Duration timeout = timeoutDefault}) async {
-    return await tryRecv<V>(() => packetBufferIn.parseResponse<V>(packetId, reqStateMeta));
+    return await tryRecv<V>(() => packetBufferIn.parseResponse<V>(packetId, reqStateMeta), timeout);
   }
-
-  // host side initiated wait
-  // @protected
-  // Future<V?> expectResponse<V>(PacketIdRequest<dynamic, V> packetId, {PayloadMeta? reqStateMeta, Duration timeout = timeoutDefault}) async {
-  //   protocol.mapResponse(packetId.responseId ?? packetId, this);
-  //   return recvResponse<V>(packetId, reqStateMeta: reqStateMeta, timeout: timeoutDefault);
-  // }
 
   /// respondSync
   @protected
@@ -294,6 +287,13 @@ class ProtocolSocket implements Sink<Packet> {
     return tryRecv<PacketIdSync>(() => packetBufferIn.parseSyncId(), timeout);
   }
 
+  // host side initiated wait
+  // @protected
+  // Future<V?> expectResponse<V>(PacketIdRequest<dynamic, V> packetId, {PayloadMeta? reqStateMeta, Duration timeout = timeoutDefault}) async {
+  //   protocol.mapResponse(packetId.responseId ?? packetId, this);
+  //   return recvResponse<V>(packetId, reqStateMeta: reqStateMeta, timeout: timeoutDefault);
+  // }
+
   // @protected
   // Future<PacketIdSync?> expectSync([Duration timeout = timeoutDefault]) {
   //   protocol.mapSync(this);
@@ -305,6 +305,7 @@ class ProtocolSocket implements Sink<Packet> {
   Future<R?> tryRecv<R>(R? Function() parse, [Duration timeout = timeoutDefault]) async {
     try {
       // await stream.first.timeout(timeout);
+      // what if add occurs before this point?
       _recved = Completer.sync(); // using sync completer to execute parse immediately, although code it is not the final computation.
       return await _recved.future.timeout(timeout).then((_) => parse());
     } on TimeoutException {
@@ -332,6 +333,7 @@ class ProtocolSocket implements Sink<Packet> {
   @override
   void add(Packet event) {
     timer.stop();
+
     packetBufferIn.copyBytes(event.bytes); // sets buffer in length, exceeding length max handled by PacketReceiver
     // socket table does not unmap. might receive packets following completion
     if (!_recved.isCompleted) _recved.complete();

@@ -76,7 +76,7 @@ extension GenericSublistView on TypedData {
 }
 
 extension TypedListSlices on TypedData {
-  Iterable<T> slices<T extends TypedData>(int length) sync* {
+  Iterable<T> typedSlices<T extends TypedData>(int length) sync* {
     if (length < 1) throw RangeError.range(length, 1, null, 'length');
     for (var offset = 0; offset < lengthInBytes; offset += length) {
       yield _sublistView<T>(offset, min(offset + length, lengthInBytes));

@@ -118,7 +118,8 @@ class ChartController with TimerNotifier, ChangeNotifier {
   //   // start();
   // }
 
-  List<FlSpot> flSpotsViewOf(int index) => UnmodifiableListView(chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y)));
+  // List<FlSpot> flSpotsViewOf(int index) => UnmodifiableListView(chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y)));
+  List<FlSpot> flSpotsViewOf(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y))];
 
   /// todo visual options with notify
   FlDotData configDotData = const FlDotData(show: true);
