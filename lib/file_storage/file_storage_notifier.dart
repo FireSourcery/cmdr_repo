@@ -28,7 +28,7 @@ abstract mixin class FileStorageNotifier<T> implements FileStorage<T> {
   Future<File?>? _pickedFile; // pick open and pick save
   set pickedFile(Future<File?> value) => (_pickedFile = value).then((value) => file = value);
   Future<File?> get pickedFile => _pickedFile ?? Future.value(null);
-  Future<String>? get pickedFileName => _pickedFile?.then((value) => value?.path ?? 'No file selected') ?? Future.value('Error: Not initialized'); // ?? Future.value('');
+  Future<String>? get pickedFileName => _pickedFile?.then((value) => value?.path ?? 'No file selected') ?? Future.value('Error: Not initialized');
 
   Future<dynamic>? operationCompleted; // return of function pass to processWithNotify
 
@@ -60,11 +60,12 @@ abstract mixin class FileStorageNotifier<T> implements FileStorage<T> {
 
   // full sequence for future builder
   // returns null for no file selected
-  Future<T?> openWithNotify(Future<File?> value) async => processWithNotify<T?>(() async => openAsync(pickedFile = value));
-  Future<Object?> openParseWithNotify(Future<File?> value) async => processWithNotify<Object?>(() async => openParseAsync(pickedFile = value));
+  // await file resolve file set
+  Future<T?> openWithNotify(Future<File?> value) async => processWithNotify<T?>(() async => await openAsync(pickedFile = value));
+  Future<Object?> openParseWithNotify(Future<File?> value) async => processWithNotify<Object?>(() async => await openParseAsync(pickedFile = value));
 
-  Future<File?> saveWithNotify(Future<File?> value, T contents) async => processWithNotify<File?>(() async => saveAsync(pickedFile = value, contents));
-  Future<File?> saveBuildWithNotify(Future<File?> value) async => processWithNotify<File?>(() async => saveBuildAsync(pickedFile = value));
+  Future<File?> saveWithNotify(Future<File?> value, T contents) async => processWithNotify<File?>(() async => await saveAsync(pickedFile = value, contents));
+  Future<File?> saveBuildWithNotify(Future<File?> value) async => processWithNotify<File?>(() async => await saveBuildAsync(pickedFile = value));
 
   // remap status shared with exception
   // Future<T?> tryReadFile(File file) async {
