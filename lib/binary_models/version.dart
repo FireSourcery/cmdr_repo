@@ -3,7 +3,7 @@ import '../binary_data/typed_field.dart';
 
 /// standard [optional, major, minor, fix] version
 class Version extends WordFieldsBase<WordField<NativeType>> {
-// parameterizing T can constrain functions of T key to types the Version is defined with
+// parameterize to constrain functions of T key to types the Version is defined with
 // class Version<T extends VersionField> extends WordFields<VersionField> {
 
   const Version._standard(int optional, int major, int minor, int fix, [this.name])

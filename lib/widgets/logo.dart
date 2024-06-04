@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 abstract interface class LogoButton extends StatelessWidget {
   const LogoButton({super.key, this.onPressed, this.buttonStyle});
   const factory LogoButton.icon({ButtonStyle? buttonStyle, VoidCallback? onPressed, Key? key}) = LogoIconButton;
+  const factory LogoButton.fab({ButtonStyle? buttonStyle, VoidCallback? onPressed, Key? key}) = LogoFabButton;
   const factory LogoButton.wide({ButtonStyle? buttonStyle, VoidCallback? onPressed, Key? key}) = LogoWideButton;
 
   final VoidCallback? onPressed;
@@ -27,17 +28,15 @@ class LogoIconButton extends LogoButton {
     final theme = Theme.of(context).extension<LogoTheme>()!;
     final style = buttonStyle ?? theme.buttonStyle;
 
-    return FloatingActionButton.large(
-      shape: style?.shape?.resolve({}),
-      backgroundColor: style?.backgroundColor?.resolve({}),
-      onPressed: onPressed,
-      child: const LogoImage(),
+    return SizedBox(
+      width: 100,
+      height: 100,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: style!.copyWith(padding: WidgetStateProperty.all(const EdgeInsets.all(15))),
+        child: ImageIcon(theme.imageIcon!, size: 69), // > 100 - padding
+      ),
     );
-    // return ElevatedButton(
-    //   onPressed: onPressed,
-    //   style: buttonStyle ?? theme.buttonStyle,
-    //   child: ImageIcon(theme.imageIcon!, size: 69),
-    // );
   }
 }
 
@@ -47,10 +46,32 @@ class LogoWideButton extends LogoButton {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).extension<LogoTheme>()!;
-    return ElevatedButton(
+
+    return SizedBox(
+      height: 100,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: buttonStyle ?? theme.buttonStyle,
+        child: Image(image: theme.imageExpanded!, height: 69, fit: BoxFit.contain),
+      ),
+    );
+  }
+}
+
+class LogoFabButton extends LogoButton {
+  const LogoFabButton({super.buttonStyle, super.onPressed, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context).extension<LogoTheme>()!;
+    final style = buttonStyle ?? theme.buttonStyle;
+
+    return FloatingActionButton.large(
+      heroTag: UniqueKey(), // when a FAB is used, use
+      shape: style?.shape?.resolve({}),
+      backgroundColor: style?.backgroundColor?.resolve({}),
       onPressed: onPressed,
-      style: buttonStyle ?? theme.buttonStyle,
-      child: Image(image: theme.imageExpanded!, height: 69, fit: BoxFit.contain),
+      child: const LogoImage(),
     );
   }
 }

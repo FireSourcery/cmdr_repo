@@ -58,13 +58,13 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
     bottomSheetController.closed.whenComplete(onClosed);
   }
 
+  // Material? materialWrapOpen(Widget child) => Material(type: MaterialType.card, shadowColor: shadowOpen, elevation: elevationOpen, shape: shape, child: Center(child: child));
+  // Material? materialWrapClose(Widget child) => Material(type: MaterialType.card, shadowColor: shadowClosed, elevation: elevationClosed, shape: shape, child: Center(child: child));
+  Material materialWrap(Widget? child) =>
+      Material(type: MaterialType.canvas, color: color, shadowColor: theme.shadowColor, elevation: theme.elevation ?? 10, shape: shape, child: Center(child: child));
+
   @override
   Widget build(BuildContext context) {
-    // Material? materialWrapOpen(Widget child) => Material(type: MaterialType.card, shadowColor: shadowOpen, elevation: elevationOpen, shape: shape, child: Center(child: child));
-    // Material? materialWrapClose(Widget child) => Material(type: MaterialType.card, shadowColor: shadowClosed, elevation: elevationClosed, shape: shape, child: Center(child: child));
-    Material materialWrap(Widget? child) =>
-        Material(type: MaterialType.canvas, color: color, shadowColor: theme.shadowColor, elevation: theme.elevation ?? 10, shape: shape, child: Center(child: child));
-
     return Container(
       alignment: Alignment.bottomCenter,
       height: appBarHeight,
