@@ -25,7 +25,7 @@ enum NumberFormat<T extends NativeType, S> {
   /// Type formats
   /// non cont references
   /// 0 or null, no conversion
-  flags16<Uint16, int>(reference: null),
+  flags16<Uint16, Map>(reference: null),
   enum16<Uint16, Enum>(reference: null),
   boolean<Bool, bool>(reference: null),
 
@@ -69,7 +69,8 @@ enum NumberFormat<T extends NativeType, S> {
   bool get isFixedPoint => switch (this) { frac16 || ufrac16 || fixed16 || scalar16 => true, _ => false };
   bool get isScalarBase10 => switch (this) { scalar10 || invScalar10 => true, _ => false };
 
-  bool get isNumeric => switch (S) { const (int) || const (double) => true, _ => false };
+  bool get isNumeric => switch (S) { const (int) || const (double) => true, _ => false }; // !isEnum && !isFlags && !isBoolean;
+
   R callTyped<R>(R Function<G>() callback) => callback<S>();
 
   // bool get isInteger => switch (this) { int16 || uint16 => true, _ => false };

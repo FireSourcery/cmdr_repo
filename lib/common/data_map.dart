@@ -2,6 +2,42 @@ import 'dart:collection';
 
 import 'package:cmdr/common/fixed_map.dart';
 
+/// for heterogeneous data types
+// abstract mixin class NamedFields<E extends NamedField<V>, V> implements FixedMap<E, V> {
+//   // factory NamedFields.buffer() = NamedFieldsBuilder;
+
+//   // List<E> get keys;
+//   // List<E> get fields;
+//   // the getter for each field
+//   // V operator [](covariant E key);
+//   // void operator []=(covariant E key, V value);
+
+//   // NamedFields<E, V> cloneWith(covariant Map<E, V?>? map);
+//   // NamedFields<E, V> modify(E key, V value) => copyWithEntry(key, value);
+
+//   // the child class constructor
+//   // cloneWith
+//   // implicitly requires V to be nullable or defined with default value
+//   NamedFields<E, V> initWith(covariant Map<E, V> map); // alternative use a factory class
+
+//   NamedFields<E, V> copyWithEntry(E key, V value) => initWith(NamedFieldsModified<E, V>(this, [MapEntry(key, value)]));
+//   // NamedFields<E, V> copyWithEntry(E key, V value) => initWith(NamedFieldsBuffer<E, V>(keys).fillWithEntry(key, value));
+//   // NamedFields<E, V> copyWithEntries(Iterable<MapEntry<E, V>> entries) => initWith(NamedFieldsBuffer<E, V>(keys).fillWithEntries(entries));
+// }
+
+// abstract mixin class NamedField<V> implements Enum {
+//   const NamedField();
+//   // type checking is more simply implemented internally
+//   Type get type => V;
+//   bool compareType(Object? object) => object is V;
+//   R callTyped<R>(R Function<G>() fn) => fn<V>();
+//   // String get name; // Enum.name
+
+//   // or should get/set implementation be here? and redirect operators?
+//   // probably better to do so in the child class with context of mutable or immutable
+//   // V get(covariant NamedFields fieldsMap);
+// }
+
 // DataMap , named fields, <Object?> type, immutable
 
 // keys with type effectively define memory layout

@@ -7,30 +7,26 @@ import 'bits.dart';
 export 'dart:ffi';
 export 'dart:typed_data';
 
-/// Field for [ByteStruct], and [WordFields]
+/// Field for [ByteStruct]
 /// TypedField, Typed 0-8 bytes
 abstract mixin class TypedField<T extends NativeType> {
   const TypedField._();
   const factory TypedField(int offset) = TypedOffset<T>;
 
   int get offset;
+
   int get size => sizeOf<T>();
   int get end => offset + size; // index of last byte + 1
-
   // int get valueRange => 1 << (size * 8);
 
   /// [ByteStruct]
+  /// alternatively use callWithType<>
   // call with offset with T
   // replaced by struct
   int valueOf(ByteData byteData) => byteData.wordAt<T>(offset);
   void setValueOf(ByteData byteData, int value) => byteData.setWordAt<T>(offset, value);
   // not yet replaceable
   int? valueOrNullOf(ByteData byteData) => byteData.wordOrNullAt<T>(offset);
-
-  /// [WordFields]
-  // necessary to keep Word compile time const
-  int valueOfWord(int source) => source.bytesAt(offset, size);
-  int modifyWord(int source, int value) => source.modifyBytes(offset, size, value);
 }
 
 // class _TypedField<T extends NativeType> extends TypedField<T> {
@@ -46,8 +42,6 @@ class TypedOffset<T extends NativeType> extends TypedField<T> {
   final int offset;
 }
 
-
-
 // /// General case, without NativeType
 // /// `Partition`
 // abstract mixin class Part {
@@ -58,11 +52,7 @@ class TypedOffset<T extends NativeType> extends TypedField<T> {
 
 //   int get end => offset + size;
 
-// //   List<int> typedListOf<R extends TypedData>(TypedData typedList) => typedList.sublistViewOrEmpty<R>(offset, size);
-// // List<int> typedListOf<R extends TypedData>(TypedData typedList) => typedList.sublistViewOrEmpty<R>(offset, size);
-
-// //   int valueOfTypedData(ByteData byteData) => byteData.uintAt(offset, size);
-// //   int valueOfInt(int intData) => intData.valueAt(offset, size);
+// //   List<int> typedListOf<R extends TypedData>(TypedData typedList) => typedList.sublistViewOrEmpty<R>(offset, size); 
 // }
 
 // class _Part with Part {

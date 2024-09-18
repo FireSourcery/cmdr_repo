@@ -181,14 +181,16 @@ class ProtocolSocket implements Sink<Packet> {
       print("Socket lock requestResponse Timeout");
       print(e);
       // return Future.error(e);
+      return null;
     } catch (e) {
       print("Unhandled Socket Exception");
       print(e);
+      return null;
     } finally {
       print('--- End Request');
       waitingOnLockCount--;
     }
-    return null;
+    // return null;
   }
 
   // Future<R?> requestResponse<T, R>(PacketIdRequestResponse<T, R> requestId, T requestArgs, {Duration? timeout = reqRespTimeoutDefault}) async {

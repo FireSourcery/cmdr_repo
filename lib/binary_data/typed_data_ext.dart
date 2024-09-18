@@ -141,11 +141,14 @@ extension SizedWord on TypedData {
   // caller assert(lengthInBytes >= 8)
   int toInt64([Endian endian = Endian.little]) => buffer.asByteData().getInt64(offsetInBytes, endian); // equivalent to ByteData.sublistView(this).getInt64(0, endian)
 
-  // sizedWordAt creates a new buffer
+  // creates a new buffer
   // caller assert(lengthInBytes < 8)
-  // size <= 8, and lengthInBytes > size
-  // toInt64 will be called with the instance's offsetInBytes, 0
-  int valueAt(int byteOffset, int size, [Endian endian = Endian.little]) => (Uint8List(8)..setAll(0, buffer.asUint8List(offsetInBytes + byteOffset, size))).toInt64(endian);
+  // when lengthInBytes > 8, toInt64 avoids copying buffer
+  int valueAt(int byteOffset, int size, [Endian endian = Endian.little]) {
+    assert(size <= 8);
+    final endianOffset = switch (endian) { Endian.big => 8 - size, Endian.little => 0, Endian() => throw StateError('Endian') };
+    return (Uint8List(8)..setAll(endianOffset, buffer.asUint8List(offsetInBytes + byteOffset, size))).toInt64(endian);
+  }
 
   int toInt([Endian endian = Endian.little]) => (lengthInBytes >= 8) ? toInt64(endian) : valueAt(0, lengthInBytes, endian);
 }

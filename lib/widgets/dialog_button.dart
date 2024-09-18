@@ -77,7 +77,7 @@ class AsyncConfirmationDialog<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Completer<void> userConfirmation = Completer();
+    final Completer<void> userConfirmation = Completer(); //todo state to maintain
     late final Future<T> processCompleted;
     // final Future<T> processCompleted = userConfirmation.future.then((_) => onConfirm());
 

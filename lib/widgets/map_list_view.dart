@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-
 /// Read Only views
 /// possibly change to String,V
 class MapRowTiles<K, V> extends StatelessWidget {
   const MapRowTiles({required this.fields, this.title, super.key});
-  final Iterable<(K key, V value)> fields;
+  final Iterable<(K title, V contents)> fields;
   final String? title;
   // Widget Function(K)? keyBuilder;
   // Widget Function(V)? valueBuilder;
@@ -20,12 +19,12 @@ class MapRowTiles<K, V> extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            for (final (key, value) in fields)
+            for (final (title, contents) in fields)
               IntrinsicWidth(
                 child: ListTile(
                   // titleAlignment: ListTileTitleAlignment.bottom,
-                  subtitle: Text(key.toString()),
-                  title: Text(value.toString()),
+                  subtitle: Text(title.toString()),
+                  title: Text(contents.toString()),
                 ),
               ),
           ],

@@ -1,39 +1,54 @@
 import 'dart:collection';
 
+import 'package:cmdr/binary_data/bitfield.dart';
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
-/// [FixedMap] - A simplified map implementation
+/// [FixedMap]/[EnumMap] - A simplified map implementation
 ///   using a direct mapping function, e.g. a provided switch expression on Keys
 ///   optimized for small fixed set of keys
-///   additionally constrains input type and promises non null return
+///   additionally constrains input type guarantees all keys are present
+///      and promises non null return
 ///   assigns String name via Enum.name
-abstract mixin class FixedMap<E extends Enum, V> implements Map<E, V> {
+abstract mixin class FixedMap<K extends Enum, V> implements Map<K, V> {
+  // const factory FixedMap();
   @override
-  List<E> get keys;
+  List<K> get keys;
 
   @override
-  V operator [](covariant E key);
+  V operator [](covariant K key);
+  // V? operator [](covariant E key);
 
-  // if this accepts null then, clear can call to reset
+  // if this V accepts null then, clear can call to reset
   @override
-  void operator []=(covariant E key, V value);
+  void operator []=(covariant K key, V value);
 
   @override
   void clear();
 
   @override
-  V? remove(covariant E key) => throw UnsupportedError('FixedMap does not support remove operation');
+  V? remove(covariant K key) => throw UnsupportedError('FixedMap does not support remove operation');
 
   Iterable<({String name, V value})> get namedValues => keys.map((e) => (name: e.name, value: this[e]));
 
   // MapEntries as Records
-  Iterable<(E, V)> get pairs => keys.map((e) => (e, this[e]));
+  Iterable<(K, V)> get pairs => keys.map((e) => (e, this[e]));
+
+  //todo
+  // need concrete constructor, or child caster constructor
+  // FixedMap<K, V> castAs(FixedMap<K, V>);
+  // FixedMap<K, V> copyWithEntry(K key, V value) =>  castAs(FixedMapModified<K, V>(this, [MapEntry(key, value)]));
+
+  // FixedMap<K, V> copyWithEntry(K key, V value) => FixedMapModified<K, V>(this, [MapEntry(key, value)]);
 
   /// ready to wrap with a child constructor
   ///   initWith(covariant Map<E, V> map); // alternative use a factory class
   /// can be overridden to skip buffering
+  /// withEntry(E key, V value);
   @protected
-  FixedMap<E, V> modifyEntryAsMap(E key, V value) => FixedMapModified<E, V>(this, [MapEntry(key, value)]);
+  FixedMap<K, V> modifyEntryAsMap(K key, V value) => FixedMapModified<K, V>(this, [MapEntry(key, value)]);
+
+  // S modifyEntry<S extends FixedMap>(K key, V value) => FixedMapModified<K, V>(this, [MapEntry(key, value)]) as S;
 
   // /// when `this` is modifiable
   // /// [FixedMap] asserts all keys are present
@@ -46,7 +61,7 @@ abstract mixin class FixedMap<E extends Enum, V> implements Map<E, V> {
   // S fillWithMap<S extends FixedMap>(Map<E, V> map) => (this..addAll(map)) as S;
 
   /// create a new modifiable hash map
-  Map<E, V> toMap() => Map.of(this);
+  Map<K, V> toMap() => Map.of(this);
 
   S fromMapByName<S extends FixedMap>(Map<String, V> map) => (this..addEntries(map.entries.map((e) => MapEntry(keys.byName(e.key), e.value)))) as S;
 
@@ -56,42 +71,6 @@ abstract mixin class FixedMap<E extends Enum, V> implements Map<E, V> {
 
   Map<String, V> toMapByName() => {for (final key in keys) key.name: this[key]};
 }
-
-/// for heterogeneous data types
-// abstract mixin class NamedFields<E extends NamedField<V>, V> implements FixedMap<E, V> {
-//   // factory NamedFields.buffer() = NamedFieldsBuilder;
-
-//   // List<E> get keys;
-//   // List<E> get fields;
-//   // the getter for each field
-//   // V operator [](covariant E key);
-//   // void operator []=(covariant E key, V value);
-
-//   // NamedFields<E, V> cloneWith(covariant Map<E, V?>? map);
-//   // NamedFields<E, V> modify(E key, V value) => copyWithEntry(key, value);
-
-//   // the child class constructor
-//   // cloneWith
-//   // implicitly requires V to be nullable or defined with default value
-//   NamedFields<E, V> initWith(covariant Map<E, V> map); // alternative use a factory class
-
-//   NamedFields<E, V> copyWithEntry(E key, V value) => initWith(NamedFieldsModified<E, V>(this, [MapEntry(key, value)]));
-//   // NamedFields<E, V> copyWithEntry(E key, V value) => initWith(NamedFieldsBuffer<E, V>(keys).fillWithEntry(key, value));
-//   // NamedFields<E, V> copyWithEntries(Iterable<MapEntry<E, V>> entries) => initWith(NamedFieldsBuffer<E, V>(keys).fillWithEntries(entries));
-// }
-
-// abstract mixin class NamedField<V> implements Enum {
-//   const NamedField();
-//   // type checking is more simply implemented internally
-//   Type get type => V;
-//   bool compareType(Object? object) => object is V;
-//   R callTyped<R>(R Function<G>() fn) => fn<V>();
-//   // String get name; // Enum.name
-
-//   // or should get/set implementation be here? and redirect operators?
-//   // probably better to do so in the child class with context of mutable or immutable
-//   // V get(covariant NamedFields fieldsMap);
-// }
 
 // a builder surrogate for simplifying child class constructors
 // in the case switch mapping is not is provided
@@ -104,7 +83,8 @@ class FixedMapModified<E extends Enum, V> with MapBase<E, V>, FixedMap<E, V> {
   List<E> get keys => _source.keys;
   @override
   V operator [](E key) {
-    return _modified.firstWhere((element) => element.key == key, orElse: () => MapEntry(key, _source[key]!)).value;
+    // return _modified.firstWhere((element) => element.key == key, orElse: () => MapEntry(key, _source[key]!)).value;
+    return _modified.firstWhereOrNull((element) => element.key == key)?.value ?? _source[key];
   }
 
   @override
@@ -120,11 +100,16 @@ class FixedMapModified<E extends Enum, V> with MapBase<E, V>, FixedMap<E, V> {
   // FixedMap<E, V> initWith(Map<E, V?> map) => throw UnsupportedError('FixedMapModified does not support initWith');
 }
 
+/// mutable implementation
 class FixedMapBuffer<E extends Enum, V> with MapBase<E, V?>, FixedMap<E, V?> {
   FixedMapBuffer(this._keys, [List<V>? values]) : _values = values ?? List<V?>.filled(_keys.length, null);
+  FixedMapBuffer.initWith(FixedMap<E, V> source)
+      : _keys = source.keys,
+        _values = source.keys.map((e) => source[e]).toList(); // values in parallel order
 
   final List<E> _keys;
   final List<V?> _values;
+
   @override
   List<E> get keys => _keys;
   @override
@@ -133,6 +118,9 @@ class FixedMapBuffer<E extends Enum, V> with MapBase<E, V?>, FixedMap<E, V?> {
   void operator []=(E key, V? value) => _values[key.index] = value;
   @override
   void clear() => _values.fillRange(0, _values.length, null);
+
+  @override
+  FixedMap<E, V> modifyEntryAsMap(E key, V? value) => (this..[key] = value) as FixedMap<E, V>;
 
   // @override
   // FixedMap<E, V?> initWith(Map<E, V?> map) => fillWithMap(map);

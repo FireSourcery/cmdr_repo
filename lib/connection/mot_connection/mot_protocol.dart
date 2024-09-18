@@ -53,7 +53,7 @@ class MotProtocolSocket extends ProtocolSocket {
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Mem
-  /// 8 bytes overhead on write, potentially 4 if moving size and config to header
+  /// 8 bytes overhead on write, potentially 4, moving size and config to header
   ////////////////////////////////////////////////////////////////////////////////
   Future<MemReadResponseValues?> readMem(int address, int size, int config) async {
     assert(size <= MemReadRequest.sizeMax);

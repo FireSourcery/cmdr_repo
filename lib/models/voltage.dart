@@ -1,12 +1,3 @@
-class VBattery {
-  const VBattery(this.vEmpty, this.vFull);
-  final double vEmpty; // v0
-  final double vFull; // v100
-
-  double chargeOf(num volts) => (volts - vEmpty) / (vFull - vEmpty);
-  // double chargeOfAdcu(int adcu) => adcu;
-}
-
 class VDivider {
   const VDivider(this.r1, this.r2);
   final int r1;
@@ -29,4 +20,13 @@ class VDivider {
 
   @override
   int get hashCode => r1.hashCode ^ r2.hashCode;
+}
+
+class VBattery {
+  const VBattery(this.vEmpty, this.vFull);
+  final double vEmpty; // v0
+  final double vFull; // v100
+
+  double chargeOf(num volts) => (volts - vEmpty) / (vFull - vEmpty);
+  // double chargeOfAdcu(int adcu) => adcu;
 }

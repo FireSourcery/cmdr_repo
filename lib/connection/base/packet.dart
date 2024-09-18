@@ -37,6 +37,7 @@ abstract mixin class PacketInterface {
   PacketIdSync get nack;
   PacketIdSync get abort;
 
+  // child class constructor
   Packet cast(TypedData typedData);
 
   // pass to build idOf internally
@@ -259,6 +260,7 @@ abstract mixin class Packet implements PacketInterface {
 
 // allow buffer to be less than packet length, unlike Struct, Payload, Header
 typedef PacketCaster<P extends Packet> = P Function(TypedData typedData);
+// typedef PacketCaster = Packet Function(TypedData typedData);
 
 // non-Struct backed packets, parent constructor, enforce that a sublistView is used
 // optionally resolve getters to fields

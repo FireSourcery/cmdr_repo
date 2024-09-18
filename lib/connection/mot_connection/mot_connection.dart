@@ -10,6 +10,11 @@ import 'mot_protocol.dart';
 // 115200 bauds | 86.806 µs | 2.083344 ms | 3.47224 ms
 
 class MotConnection {
+  // MotConnection._();
+  // factory MotConnection() => _singleton;
+  // static final MotConnection _singleton = MotConnection._();
+  // static MotConnection get main => _singleton;
+
   static final SerialLink serialLink = SerialLink();
   // final BluetoothLink bluetoothLink = BluetoothLink();
   static final Protocol protocol = Protocol(serialLink, const MotPacketInterface());

@@ -248,10 +248,9 @@ final class VarReadResponse extends Struct implements Payload<VarReadResponseVal
 
   @override
   VarReadResponseValues parse(MotPacket header, PayloadMeta? stateMeta) {
-    // final (int idChecksum, int flags)   = requestStatus;
-    // final (idChecksum, respCode) = parseVarReadMeta();
-    // return ((requestStatus == null) || (requestStatus.$1 == flexUpper16Field)) ? (0, parseVarReadValues()) : (null, null);
-    return (0, header.payloadAt<Uint16List>(0, header.parsePayloadLength)); //todo code
+    // under length packet will be reject at parser
+    // return (0, values.asTypedList(16));
+    return (0, header.payloadAt<Uint16List>(0, header.parsePayloadLength)); //todo resp code
   }
 
   @override
@@ -303,8 +302,6 @@ base class VarWriteResponse extends Struct implements Payload<VarWriteResponseVa
 
   @override
   VarWriteResponseValues parse(MotPacket header, void stateMeta) {
-    // final (idChecksum, respCode) = parseVarWriteMeta();
-    // return ((requestStatus == null) || (requestStatus.$1 == idChecksum)) ? (0, parseVarWriteStatuses()) : (null, null);
     return (header.payloadAt<Uint8List>(0, header.parsePayloadLength));
   }
 
