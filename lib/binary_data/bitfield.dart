@@ -134,7 +134,7 @@ abstract mixin class BitFieldMixin<T extends BitFieldMember> implements BitsMap<
   BitField<T> copyWithState(BitsMap<T, int> state) => copyWith(bits: state.bits);
 
   BitField<T> copyWithEntry(T key, int value) => copyWith(bits: bits.withBits(key.bitmask, value));
-  // a hash map need to be copied by iterating each field
+  // a hash map need to be copied by iterating each field, must be of the same keys
   BitField<T> copyWithMap(Map<T, int> map) => copyWith(bits: Bits.ofEntries(map.bitmaskEntries));
 
   S withEntry<S extends BitField<T>>(T key, int value) => copyWithEntry(key, value) as S;
