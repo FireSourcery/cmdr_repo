@@ -29,7 +29,7 @@ abstract mixin class FixedMap<K extends Enum, V> implements Map<K, V> {
   @override
   V? remove(covariant K key) => throw UnsupportedError('FixedMap does not support remove operation');
 
-  Iterable<({String name, V value})> get namedValues => keys.map((e) => (name: e.name, value: this[e]));
+  Iterable<({String name, V value})> get nameValues => keys.map((e) => (name: e.name, value: this[e]));
 
   // MapEntries as Records
   Iterable<(K, V)> get pairs => keys.map((e) => (e, this[e]));

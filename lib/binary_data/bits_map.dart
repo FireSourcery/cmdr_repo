@@ -30,7 +30,7 @@ abstract mixin class BitsMap<K extends Enum, V> implements Map<K, V> {
   Iterable<(K, V)> get pairs => keys.map((e) => (e, this[e]));
 
   //analogous to indexedValues
-  Iterable<({String name, V value})> get namedValues => keys.map((e) => (name: e.name, value: this[e]));
+  Iterable<({String name, V value})> get nameValues => keys.map((e) => (name: e.name, value: this[e]));
 
   @override
   String toString() => '$runtimeType: $values';
@@ -48,8 +48,32 @@ abstract mixin class BitsMap<K extends Enum, V> implements Map<K, V> {
   // BitsMap<K, V> copyWith({Bits? bits});
 }
 
+// // alternatively let flags optimize with override
+// abstract interface class BitsMapKey implements Enum {
+//   Bitmask get bitmask;
+//   // BitsMapKey(this.bitmask);
+//   // BitsMapKey(int offset, int width) : bitmask = Bitmask(offset, width);
+//   // final Bitmask bitmask;
+// }
+
+// extension BitsMapKeyMethods on List<BitsMapKey> {
+//   Bitmasks get bitmasks => map((e) => e.bitmask) as Bitmasks;
+
+//   int get totalWidth => bitmasks.totalWidth;
+//   int apply(Iterable<int> values) => bitmasks.apply(values);
+// }
+
 /// combined mixins
 abstract class BitsMapBase<K extends Enum, V> = MapBase<K, V> with BitsMap<K, V>;
+
+mixin UnmodifiableBitsMixin {
+  // @override
+  set bits(Bits value) => throw UnsupportedError("Cannot modify unmodifiable");
+  // @override
+  // void operator []=(T key, V value) => throw UnsupportedError("Cannot modify unmodifiable");
+  // @override
+  // void reset([bool value = false]) => throw UnsupportedError("Cannot modify unmodifiable");
+}
 
 // for cast of compile time const only, simplify define using map literal
 // alternatively fold map use final instead of const
@@ -67,13 +91,4 @@ abstract class ConstBitsMap<T extends Enum, V> with MapBase<T, V>, BitsMap<T, V>
   V operator [](covariant T key) => valueMap[key]!;
   @override
   void operator []=(T key, V value) => throw UnsupportedError("Cannot modify unmodifiable");
-}
-
-mixin UnmodifiableBitsMixin {
-  // @override
-  set bits(Bits value) => throw UnsupportedError("Cannot modify unmodifiable");
-  // @override
-  // void operator []=(T key, V value) => throw UnsupportedError("Cannot modify unmodifiable");
-  // @override
-  // void reset([bool value = false]) => throw UnsupportedError("Cannot modify unmodifiable");
 }

@@ -91,14 +91,14 @@ abstract mixin class BitFlagsMixin<T extends Enum> implements BitsMapBase<T, boo
   @override
   void operator []=(T key, bool value) {
     assert(key.index < width);
-    bits.value = bits.modifyBool(key.index, value);
+    bits.value = bits.withBoolAt(key.index, value);
   }
 
   @override
-  Iterable<int> get valuesAsBits => values.map((e) => e ? 1 : 0);
+  void reset([bool value = false]) => bits.reset(value);
 
   @override
-  void reset([bool value = false]) => bits.reset(value);
+  Iterable<int> get valuesAsBits => values.map((e) => e ? 1 : 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -5,11 +5,16 @@ extension type const Bits(int value) implements int {
   const Bits.allOnes() : value = -1;
   const Bits.allZeros() : value = 0;
 
-  // move to flags
   // using enum index, name is discarded
-  Bits.ofIndexMap(Map<Enum, bool> map) : value = map.entries.fold<int>(0, (previous, entry) => previous.modifyBool(entry.key.index, entry.value));
-  Bits.ofBools(Iterable<bool> flags) : value = flags.foldIndexed<int>(0, (index, previous, element) => previous.modifyBool(index, element));
-  //  value = flags.fold<int>(0, (previous, element) => (previous << 1) | (element ? 1 : 0)); // first element is ms bit
+  Bits.ofIndexMap(Map<Enum, bool> map) : value = map.entries.fold<int>(0, (previous, entry) => previous.withBoolAt(entry.key.index, entry.value));
+  Bits.ofBools(Iterable<bool> flags) : value = flags.foldIndexed<int>(0, (index, previous, element) => previous.withBoolAt(index, element)); // first element is index 0
+
+  Bits.ofMap(Map<Bitmask, int> map) : this.ofEntries(map.entries);
+  Bits.ofEntries(Iterable<MapEntry<Bitmask, int>> entries) : value = entries.fold<int>(0, (previous, element) => element.key.modify(previous, element.value));
+  Bits.ofPairs(Iterable<(Bitmask, int)> pairs) : value = pairs.fold<int>(0, (previous, element) => element.$1.modify(previous, element.$2));
+
+  // width value pairs
+  // Bits.fromWidth(Iterable<(int, int)> map) : value = Bitmasks.fromWidths(map.keys).apply(map.values) as Bits;
 
   set value(int newValue) => value = newValue;
 
@@ -18,32 +23,29 @@ extension type const Bits(int value) implements int {
 
   void reset([bool fill = false]) => value = fill ? const Bits.allOnes() : const Bits.allZeros();
 
-  //todo fix aliases
-  void write(Bitmask mask, int value) => this.value = modify(mask, value);
+  Bits getBits(Bitmask mask) => value.getBits(mask) as Bits;
+  Bits withBits(Bitmask mask, int value) => value.withBits(mask, value) as Bits;
+  void setBits(Bitmask mask, int value) => this.value = withBits(mask, value);
 
-  // int getBits(Bitmask mask) => this..value.getBits(mask);
-  Bits withBits(Bitmask mask, int value) => this..value.modify(mask, value);
-  // void setBits(Bitmask mask, int value) => this.value = modify(mask, value);
+  Bits bitsAt(int offset, int width) => value.bitsAt(offset, width) as Bits;
+  Bits withBitsAt(int offset, int width, int value) => value.withBitsAt(offset, width, value) as Bits;
+  void setBitsAt(int offset, int width, int value) => this.value = withBitsAt(offset, width, value);
 
-  // int bitsAt(int offset, int width) => value.bitsAt(offset, width);
-  // Bits modifyBits(int offset, int width, int value) => this.value.modifyBits(offset, width, value);
-  void setBitsAt(int offset, int width, int value) => this.value = modifyBits(offset, width, value);
+  Bits bitAt(int index) => value.bitAt(index) as Bits;
+  Bits withBitAt(int index, int value) => this.value.withBitAt(index, value) as Bits;
+  void setBitAt(int index, int value) => this.value = withBitAt(index, value);
 
-  // int bitAt(int index) => value.bitAt(index);
-  // Bits modifyBit(int index, int value) => this.value.modifyBit(index, value);
-  void setBitAt(int index, int value) => this.value = modifyBit(index, value);
+  bool boolAt(int index) => value.boolAt(index);
+  Bits withBoolAt(int index, bool value) => this.value.withBoolAt(index, value) as Bits;
+  void setBoolAt(int index, bool value) => this.value = withBoolAt(index, value);
 
-  // bool boolAt(int index) => value.boolAt(index);
-  // Bits modifyBool(int index, bool value) => this.value.modifyBool(index, value);
-  void setBoolAt(int index, bool value) => this.value = modifyBool(index, value);
+  Bits byteAt(int index) => value.byteAt(index) as Bits;
+  Bits withByteAt(int index, int value) => this.value.withByteAt(index, value) as Bits;
+  void setByteAt(int index, int value) => this.value = withByteAt(index, value);
 
-  // int byteAt(int index) => value.byteAt(index);
-  // Bits modifyByte(int index, int value) => this.value.modifyByte(index, value);
-  void setByteAt(int index, int value) => this.value = modifyByte(index, value);
-
-  // int bytesAt(int index, int size) => value.bytesAt(index, size);
-  // Bits modifyBytes(int index, int size, int value) => this..value.modifyBytes(index, size, value);
-  void setBytesAt(int index, int size, int value) => this.value = modifyBytes(index, size, value);
+  Bits bytesAt(int index, int size) => value.bytesAt(index, size) as Bits;
+  Bits withBytesAt(int index, int size, int value) => this.value.withBytesAt(index, size, value) as Bits;
+  void setBytesAt(int index, int size, int value) => this.value = withBytesAt(index, size, value);
 
   int operator [](int index) => bitAt(index);
   void operator []=(int index, int value) => setBitAt(index, value);
@@ -54,33 +56,29 @@ extension BinaryOfInt on int {
   int get byteLength => ((bitLength - 1) ~/ 8) + 1; // (bitLength / 8).ceil();
 
   /// Bit operations
-  int read(Bitmask mask) => mask.read(this); // (this & mask._bitmask) >>> mask.shift;
-  int modify(Bitmask mask, int value) => mask.modify(this, value);
-
-  // todo fix aliases
-  // int getBits(Bitmask mask) => read(mask);
-  // int withBits(Bitmask mask, int value) => modify(mask, value);
+  int getBits(Bitmask mask) => mask.read(this); // (this & mask._bitmask) >>> mask.shift;
+  int withBits(Bitmask mask, int value) => mask.modify(this, value); // clear(source) | apply(value);
 
   int bitsAt(int offset, int width) => Bitmask.bits(offset, width).read(this);
-  int modifyBits(int offset, int width, int value) => Bitmask.bits(offset, width).modify(this, value);
+  int withBitsAt(int offset, int width, int value) => Bitmask.bits(offset, width).modify(this, value);
 
   int bitAt(int index) => Bitmask.bit(index).read(this);
-  int modifyBit(int index, int value) => Bitmask.bit(index).modify(this, value);
+  int withBitAt(int index, int value) => Bitmask.bit(index).modify(this, value);
 
-  bool boolAt(int index) => Bitmask.bit(index).read(this) != 0;
-  int modifyBool(int index, bool value) => Bitmask.bit(index).modify(this, value ? 1 : 0);
+  // let flags optimize slightly as special case
+  bool boolAt(int index) => (this & (1 << index)) != 0;
+  int withBoolAt(int index, bool value) => (this & ~(1 << index)) | (value ? (1 << index) : 0); // ((value ? 1 : 0) << index);
 
   // use bitmask directly skip TypedData buffer
   int bytesAt(int index, int size) => Bitmask.bytes(index, size).read(this);
-  int modifyBytes(int index, int size, int value) => Bitmask.bytes(index, size).modify(this, value);
+  int withBytesAt(int index, int size, int value) => Bitmask.bytes(index, size).modify(this, value);
 
   int byteAt(int index) => Bitmask.byte(index).read(this);
-  int modifyByte(int index, int value) => Bitmask.byte(index).modify(this, value);
+  int withByteAt(int index, int value) => Bitmask.byte(index).modify(this, value);
 }
 
-// int bitmask(int shift, int width) => ((1 << width) - 1) << shift;
-
 /// Bitmask
+// int bitmask(int shift, int width) => ((1 << width) - 1) << shift;
 // as storable object to use as key
 class Bitmask {
   const Bitmask(this.shift, this.width) : _bitmask = ((1 << width) - 1) << shift;
@@ -93,23 +91,23 @@ class Bitmask {
   final int shift;
   final int width; // (_bitmask >> shift).bitLength;
 
+  // Bits get bits => Bits(_bitmask);
+
   int apply(int value) => (value << shift) & _bitmask; // get as masked
+  int clear(int source) => source & ~_bitmask; // clear bits
   int read(int source) => (source & _bitmask) >>> shift; // get as shifted back
-  int modify(int source, int value) => (source & ~_bitmask) | apply(value); // ready for write back
-  // int maskOff(int source) => (source & ~_mask);
-  // int maskOn(int source) => (source | _mask);
-  // int mask(int source) => (source & _mask);
+  int modify(int source, int value) => clear(source) | apply(value); // ready for write back
 
   int operator *(int value) => ((value << shift) & _bitmask); // apply as compile time const??
   // int call(int value) => ((value << shift) & bits);
 }
 
-extension type Bitmasks._(Iterable<Bitmask> bitmasks) implements Iterable<Bitmask> {
+extension type Bitmasks(Iterable<Bitmask> bitmasks) implements Iterable<Bitmask> {
   Bitmasks.fromWidths(Iterable<int> widths) : bitmasks = Iterable.generate(widths.length, (index) => Bitmask(widths.take(index).sum, widths.elementAt(index)));
 }
 
 extension BitmasksMethods on Iterable<Bitmask> {
   int get totalWidth => map((e) => e.width).sum;
   // assuming same ordering
-  int apply(Iterable<int> values) => values.foldIndexed<int>(0, (index, previous, value) => elementAt(index).modify(previous, value));
+  Bits apply(Iterable<int> values) => values.foldIndexed<int>(0, (index, previous, value) => elementAt(index).modify(previous, value)) as Bits;
 }

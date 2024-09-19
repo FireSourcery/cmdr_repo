@@ -25,15 +25,19 @@ abstract interface class BitField<T extends BitFieldMember> implements BitsMap<T
   ///   EnumType.name2: 3,
   /// });
   /// this way updates to keys propagate
-  factory BitField.cast(List<T> keys, Map<T, int> values, [bool mutable = true]) {
-    return BitField(keys, BitFieldBits.cast(values), mutable);
+  factory BitField.valuesMap(List<T> keys, Map<T, int> map, [bool mutable = true]) {
+    return BitField(keys, Bits.ofEntries(map.bitmaskEntries), mutable);
   }
 
   // changes to keys will not propagate
   // e.g. Enum.values updated
   factory BitField.values(List<T> keys, Iterable<int> values, [bool mutable = true]) {
-    return BitField(keys, BitFieldBits.fromValues(keys, values), mutable);
+    return BitField(keys, keys.apply(values), mutable);
   }
+
+  // factory BitField.cast(List<T> keys, BitsMap<T, int> values, [bool mutable = true]) {
+  //   return BitField(keys, values.bits, mutable);
+  // }
 
   int get width;
   Bits get bits;
@@ -48,46 +52,27 @@ abstract interface class BitField<T extends BitFieldMember> implements BitsMap<T
 
 /// user implement field keys with bitmask parameters
 /// alternatively BitField implements Bitmask bitmaskOf(T Enum key)
-/// alternatively Enum specify only width, derive offset from order
 /// "BitFieldField"
 abstract mixin class BitFieldMember implements Enum {
   Bitmask get bitmask;
-
-  // @override
-  // int get width;
-  // Bitmask get bitmask => Bitmask(index + fold(), width);
 }
 
-extension BitFieldMembersMethods on List<BitFieldMember> {
+extension BitFieldMemberMethods on List<BitFieldMember> {
   Bitmasks get bitmasks => map((e) => e.bitmask) as Bitmasks;
 
   int get totalWidth => bitmasks.totalWidth;
-  int apply(Iterable<int> values) => bitmasks.apply(values);
+  Bits apply(Iterable<int> values) => bitmasks.apply(values);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/// Bits Constructors
-////////////////////////////////////////////////////////////////////////////////
-/// alternatively static methods in BitField
-///  grouped instead of extension, as we only care about the creation, no additional methods
-extension type BitFieldBits(Bits bits) implements Bits {
-  // This is used for casting, since each BitField can be represented as a map
-  BitFieldBits.cast(Map<BitFieldMember, int> values) : bits = values.entries.fold<int>(0, (previous, element) => element.key.bitmask.modify(previous, element.value)) as Bits;
-  // BitFieldBits.ofPairs(Iterable<(BitFieldMember, int)> values) : bits = values.fold<int>(0, (previous, element) => element.$1.bitmask.modify(previous, element.$2)) as Bits;
-
-  // values provide value for each key
-  BitFieldBits.fromValues(List<BitFieldMember> keys, Iterable<int> values) : bits = keys.map((e) => e.bitmask).apply(values) as Bits;
-  // width value pairs
-  BitFieldBits.fromWidth(Map<int, int> map) : bits = Bitmasks.fromWidths(map.keys).apply(map.values) as Bits;
+extension BitFieldMapMethods on Map<BitFieldMember, int> {
+  Iterable<MapEntry<Bitmask, int>> get bitmaskEntries => entries.map((e) => MapEntry(e.key.bitmask, e.value));
+  Iterable<(Bitmask mask, int value)> get bitmaskPairs => entries.map((e) => (e.key.bitmask, e.value));
 }
 
-// alternatively use pairs as representation, convert to pairs use common toBits
-// extension type BitFieldBits(Iterable<(Bitmask, int)> pairs) {
-//   Bits toBits() =>
-
-// extension Test<T> on Map<BitFieldMember, T>   {
-//     int toBits() = values.entries.fold<int>(0, (previous, element) => element.key.bitmask.modify(previous, element.value)) as Bits;
-// }
+// copy using only keys
+extension type BitFieldType<T extends BitFieldMember>(List<T> keys) {
+  BitField<T> create([BitField<T>? state]) => BitField(keys, state?.bits ?? 0);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 /// extendable, with Enum.values
@@ -110,6 +95,7 @@ abstract class MutableBitFieldBase<T extends BitFieldMember> extends BitFieldBas
 abstract class ConstBitFieldBase<T extends BitFieldMember> extends BitFieldBase<T> with UnmodifiableBitsMixin implements BitField<T> {
   const ConstBitFieldBase(this.bits); // inherited abstract constructor
   const factory ConstBitFieldBase.withKeys(List<T> keys, [Bits value]) = _ConstBitFieldWithKeys;
+  // ConstBitFieldBase.cast(BitsMap<T, int> map) : bits = map.bits;
 
   @override
   final Bits bits;
@@ -137,17 +123,19 @@ abstract mixin class BitFieldMixin<T extends BitFieldMember> implements BitsMap<
 
   // Map operators
   @override
-  int operator [](T key) => bits.read(key.bitmask);
+  int operator [](T key) => bits.getBits(key.bitmask);
   @override
-  void operator []=(T key, int value) => bits.write(key.bitmask, value);
+  void operator []=(T key, int value) => bits.setBits(key.bitmask, value);
 
   // copyWith base
   // use withKeys or abstract method holding child caster, effectively assigns keys
   // BitField<T> createWith(BitField<T> state); //also required for a general serializer
   BitField<T> copyWith({Bits? bits}) => BitField.constant(keys, bits ?? this.bits);
+  BitField<T> copyWithState(BitsMap<T, int> state) => copyWith(bits: state.bits);
 
   BitField<T> copyWithEntry(T key, int value) => copyWith(bits: bits.withBits(key.bitmask, value));
-  BitField<T> copyWithMap(Map<T, int> map) => copyWith(bits: BitFieldBits.cast(map));
+  // a hash map need to be copied by iterating each field
+  BitField<T> copyWithMap(Map<T, int> map) => copyWith(bits: Bits.ofEntries(map.bitmaskEntries));
 
   S withEntry<S extends BitField<T>>(T key, int value) => copyWithEntry(key, value) as S;
   S withMap<S extends BitField<T>>(Map<T, int> map) => copyWithMap(map) as S;

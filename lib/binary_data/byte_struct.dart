@@ -9,6 +9,8 @@ import 'typed_field.dart';
 typedef ByteStructCaster<T> = T Function(TypedData typedData);
 typedef ByteStructCreator<T> = T Function([TypedData typedData]);
 
+// packet without header/payload context
+
 // effectively TypedData, with a constructor
 // cannot extended TypedData, need to add constructor to extension on TypedData
 // not a mixin to pass parent constructors, on non ffi.Struct type
@@ -33,6 +35,8 @@ class ByteStructBase {
   int? fieldValue<V extends NativeType>(int offset) => byteData.wordAt<V>(offset);
   void setFieldValue<V extends NativeType>(int offset, int value) => byteData.setWordAt<V>(offset, value);
   int? fieldValueOrNull<V extends NativeType>(int offset) => byteData.wordOrNullAt<V>(offset);
+
+  // operator [] (TypedField<T> field)=> field.callTyped();
 
   // dynamic setAs<T extends ByteStructBase, V>(ByteStructCaster<T> caster, V values) => caster(bytes).build(values, this);
   // V getAs<R extends ByteStructBase, V>(ByteStructCaster<R> caster, [dynamic  stateMeta]) => caster(bytes).parse(this, stateMeta);

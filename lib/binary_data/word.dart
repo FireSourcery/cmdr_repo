@@ -74,10 +74,10 @@ extension BytesOfInt on int {
 
   /// String Char operations using Bits
   String charAsCode(int index) => String.fromCharCode(byteAt(index)); // 0x31 => '1'
-  int modifyAsCode(int index, String char) => modifyByte(index, char.runes.single); // '1' => 0x31
+  int modifyAsCode(int index, String char) => withByteAt(index, char.runes.single); // '1' => 0x31
 
   String charAsLiteral(int index, [bool isSigned = false]) => byteAt(index).toString(); // 1 => '1'
-  int modifyAsLiteral(int index, String char) => modifyByte(index, int.parse(char)); // '1' => 1
+  int modifyAsLiteral(int index, String char) => withByteAt(index, int.parse(char)); // '1' => 1
 
   // alternatively iterate over bits
   String toStringAsEncoded([Endian endian = Endian.little]) => String.fromCharCodes(toBytes(endian), 0, byteLength);
