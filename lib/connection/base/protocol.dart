@@ -153,6 +153,8 @@ class ProtocolSocket implements Sink<Packet> {
   /// Arguments in values, or struct + meta
   /// R - Response Payload Values
   /// T - Request Payload Values
+  ///
+  /// Caller ensure connection is available
   Future<R?> requestResponse<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration? timeout = reqRespTimeoutDefault, ProtocolSyncOptions syncOptions = ProtocolSyncOptions.none}) async {
     waitingOnLockCount++;
     try {
