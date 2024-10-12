@@ -29,7 +29,7 @@ class PropertyFilterChips extends StatelessWidget {
   const PropertyFilterChips({super.key, required this.properties, required this.onSelected, required this.selectedProperties});
 
   final List<PropertyFilter> properties;
-  final ValueSetter<PropertyFilter?> onSelected;
+  final ValueSetter<({PropertyFilter property, bool isSelected})> onSelected;
   final ValueGetter<Set<PropertyFilter>> selectedProperties;
 
   @override
@@ -40,7 +40,7 @@ class PropertyFilterChips extends StatelessWidget {
           FilterChip(
             label: Text(property.name.pascalCase),
             selected: selectedProperties().contains(property),
-            onSelected: (bool value) => onSelected(value ? property : null),
+            onSelected: (bool value) => onSelected((property: property, isSelected: value)),
           ),
       ],
     );

@@ -1,41 +1,94 @@
+import 'package:cmdr/common/defined_types.dart';
+import 'package:cmdr/settings/settings_view.dart';
 import 'package:flutter/material.dart';
+import 'package:recase/recase.dart';
 // import 'package:recase/recase.dart';
 
 import '../binary_data/bitflags.dart';
 
-class FlagIcons<T extends Enum> {
-  const FlagIcons({required this.bitFlags, this.iconsMap, this.textMap, this.onColor = Colors.red, this.offColor = Colors.grey});
+// class FlagTile<T extends Enum> extends StatelessWidget {
+//   const FlagTile({
+//     super.key,
+//   });
 
-  final BitFlags<T> bitFlags;
-  final Color onColor;
-  final Color offColor;
-  final Map<T, IconData?>? iconsMap;
-  final Map<T, String?>? textMap;
+//   final IconData icon;
+//   final Color onColor;
+//   final Color offolor;
 
-  Widget iconOf((T, bool) flag) => Icon(iconsMap?[flag.$1] ?? Icons.circle, color: (flag.$2) ? onColor : offColor);
-  Widget textOf((T, bool) flag) => Text(nameOf(flag), overflow: TextOverflow.ellipsis, maxLines: 1, softWrap: false, style: const TextStyle(fontSize: 12));
-  String nameOf((T, bool) flag) => textMap?[flag.$1] ?? flag.$1.name;
-  // String nameOf(T key) => textMap?[key] ?? key.name;
+//   @override
+//   Widget build(BuildContext context) {
+//     //   // final theme = Theme.of(context).extension<FlagIconsTheme>()!;
+//     return ListTile(
+//       leading: Icon(icon, color: iconColor),
+//       // contentPadding: const EdgeInsets.all(0),
+//       dense: true,
+//     );
+//   }
+// }
 
-  Iterable<Widget> toTiles() {
-    return bitFlags.pairs.map<Widget>((e) {
-      return ListTile(leading: iconOf(e), title: textOf(e), dense: true);
-    });
+// class FlagIcon<T extends Enum> extends StatelessWidget {}
+
+class FlagIcons<T extends Enum> extends StatelessWidget {
+  const FlagIcons({super.key, required this.flags, this.onPressed, this.iconMap, this.toolTipMap, this.textMap});
+  // FlagIcons.bitFlags({Key? key, required BitFlags<T> bitFlags}) : this(flags: bitFlags.pairs);
+
+  // final FlagIconsSource<T> flagIconsSource;
+  final Iterable<(T key, bool isOn)> flags;
+  final ValueChanged<T>? onPressed;
+
+  final Map<T, IconData>? iconMap; // likely compile time const, preferred over callback
+  final Stringifier<T>? toolTipMap; // likely already exists, preferred over callback
+  final Stringifier<T>? textMap;
+
+  final IconData iconDefault = Icons.circle;
+  final Color onColor = Colors.red;
+  final Color offColor = Colors.grey;
+  final bool showText = true;
+  //hover mode => tooltip or name
+
+  String _nameOf(T key) => textMap?.call(key) ?? key.name.pascalCase;
+
+  Widget _iconOf((T, bool) flag) => Icon(iconMap?[flag.$1] ?? iconDefault, color: (flag.$2) ? onColor : offColor);
+  Widget _textOf((T, bool) flag) => Text(_nameOf(flag.$1), overflow: TextOverflow.ellipsis, maxLines: 1, softWrap: false, style: const TextStyle(fontSize: 12));
+
+  Widget iconButton((T, bool) flag) {
+    return IconButton(
+      // selectedIcon: , //alternative to color
+      // isSelected: flag.$2,
+      icon: _iconOf(flag),
+      onPressed: onPressed != null ? () => onPressed!(flag.$1) : null,
+      color: flag.$2 ? onColor : offColor,
+    );
   }
 
-  Iterable<Widget> toIconButtons() {
-    return bitFlags.pairs.map<Widget>((e) {
-      return Tooltip(message: nameOf(e), child: IconButton(icon: iconOf(e), onPressed: null));
-    });
+  Widget flagTile((T, bool) flag) {
+    return ListTile(
+      contentPadding: EdgeInsets.all(0),
+      leading: iconButton(flag),
+      title: (showText) ? _textOf(flag) : null,
+      dense: true,
+    );
   }
 
-  // Widget toListView(context) {
-  //   // final theme = Theme.of(context).extension<FlagIconsTheme>()!;
-  //   return ListView(
-  //     padding: const EdgeInsets.all(0),
-  //     children: toTiles().toList(),
-  //   );
-  // }
+  @override
+  Widget build(BuildContext context) {
+    // final theme = Theme.of(context).extension<FlagIconsTheme>() ;
+    // return Wrap(
+    //   spacing: 0,
+    //   runSpacing: 0,
+    //   alignment: WrapAlignment.start,
+    //   children: [
+    //     for (final flag in flags) flagTile(flag),
+    //   ],
+    // );
+
+    return ListView(
+      padding: const EdgeInsets.all(0),
+      children: [
+        for (final flag in flags) flagTile(flag),
+      ],
+    );
+  }
 }
 
 class FlagIconsTheme extends ThemeExtension<FlagIconsTheme> {

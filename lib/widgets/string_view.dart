@@ -17,7 +17,7 @@ class StringFormField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       decoration: InputDecoration(labelText: label),
-      initialValue: word.asString,
+      initialValue: word.asString(),
       readOnly: false,
       maxLengthEnforcement: MaxLengthEnforcement.enforced,
       maxLength: maxLength,
@@ -43,7 +43,7 @@ class StringTile extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       dense: null,
       titleAlignment: ListTileTitleAlignment.bottom,
-      title: Text(nameId.asString),
+      title: Text(nameId.asString()),
       subtitle: ((label != null) ? Text(label!) : null),
     );
   }

@@ -26,7 +26,7 @@ class ByteStructBase {
   // wrapping TypedData extensions... this class is still needed to enforce constructor type
 
   Uint8List range(int offset, [int? length]) => Uint8List.sublistView(bytes, offset, length);
-  TypedData rangeAs<T extends TypedData>(int offset, [int? length]) => bytes.asTypedList<T>(offset, length);
+  TypedData rangeAs<T extends TypedData>(int offset, [int? length]) => bytes.sublistView<T>(offset, length);
   List<int> rangeAsIntList<T extends TypedData>(int byteOffset) => bytes.asIntList<T>(byteOffset);
 
   // field names need code gen
@@ -37,7 +37,6 @@ class ByteStructBase {
   int? fieldValueOrNull<V extends NativeType>(int offset) => byteData.wordOrNullAt<V>(offset);
 
   // operator [] (TypedField<T> field)=> field.callTyped();
-
   // dynamic setAs<T extends ByteStructBase, V>(ByteStructCaster<T> caster, V values) => caster(bytes).build(values, this);
   // V getAs<R extends ByteStructBase, V>(ByteStructCaster<R> caster, [dynamic  stateMeta]) => caster(bytes).parse(this, stateMeta);
 }

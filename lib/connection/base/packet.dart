@@ -49,6 +49,7 @@ abstract mixin class PacketInterface {
 /// Components extend Struct to convince of defining sized. `PacketCaster` retain mutable length
 ///
 /// ffi.Struct current does not allow length < full struct length, or mixin
+/// alternatively, use extension type on TypedData
 abstract mixin class Packet implements PacketInterface {
   const Packet();
   // factory Packet.view(PacketCaster packetCaster, Packet packet, int offset, [int? length]) => packetCaster(packet.range(offset, length));
@@ -351,6 +352,8 @@ typedef PayloadCaster<V> = Payload<V> Function(TypedData typedData);
 /// build/parse with a reference to the header, although both are part of a contiguous buffer
 /// payload class without direct context of header allows stronger encapsulation
 /// if Payload is a struct, then it does not have to declare filler header fields
+///
+/// for simplicity, the packet header includes all meta parameters, parsing a payload does not need stateMeta
 abstract interface class Payload<V> {
   PayloadMeta build(V values, covariant Packet header);
   V parse(covariant Packet header, covariant PayloadMeta? stateMeta);

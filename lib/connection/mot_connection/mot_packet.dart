@@ -206,7 +206,8 @@ enum MotPacketRequestId<T, R> implements PacketIdRequest<T, R>, MotPacketId {
 /// Resp    [Length, Resv, IdSum] /  [Value16][16]
 ////////////////////////////////////////////////////////////////////////////////
 typedef VarReadRequestValues = Iterable<int>;
-typedef VarReadResponseValues = (int respCode, List<int> values); // values
+typedef VarReadResponseValues = (int respCode, List<int> values);
+// typedef VarReadResponseValues = ({int respCode, List<int> values}); // pref name for typedef?
 
 @Packed(1)
 final class VarReadRequest extends Struct implements Payload<VarReadRequestValues> {
@@ -214,8 +215,8 @@ final class VarReadRequest extends Struct implements Payload<VarReadRequestValue
   @Array(16)
   external Array<Uint16> ids;
 
-  // factory VarReadRequest({required Iterable<int> ids}) => Struct.create<VarReadRequest>()..build(ids);
   factory VarReadRequest.cast(TypedData typedData) => Struct.create<VarReadRequest>(typedData);
+  // factory VarReadRequest({required Iterable<int> ids}) => Struct.create<VarReadRequest>()..build(ids);
 
   static int get idCountMax => 16;
 

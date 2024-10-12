@@ -1,3 +1,5 @@
+import 'package:cmdr/models/linear.dart';
+
 class VDivider {
   const VDivider(this.r1, this.r2);
   final int r1;
@@ -10,6 +12,9 @@ class VDivider {
 
   num voltsOf(int adcu) => adcu * voltsPerAdcu;
   int adcuOf(num volts) => volts ~/ voltsPerAdcu;
+
+  // does this guarantee the variable is cached?
+  // Linear get voltsOfAdcu => LinearConversionFactory(voltsPerAdcu).of;
 
   @override
   bool operator ==(covariant VDivider other) {
