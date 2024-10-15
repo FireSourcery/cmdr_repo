@@ -107,8 +107,8 @@ class ConstBitFieldWithKeys<T extends BitFieldKey> = ConstBitsMapWithKeys<T, int
 
 /// constructor compile time constant by wrapping Map.
 /// alternatively use final and compare using value
-abstract class ConstBitFieldInit<T extends BitFieldKey> extends ConstBitsMapInit<T, int> with BitField<T> {
-  const ConstBitFieldInit(super.source);
+abstract mixin class ConstBitFieldInit<T extends BitFieldKey> implements ConstBitsMapInit<T, int>, BitField<T> {
+  // const ConstBitFieldInit(super.source);
 
   @override
   int get width => source.keys.map((e) => e.bitmask).totalWidth;
@@ -124,3 +124,21 @@ abstract class ConstBitFieldInit<T extends BitFieldKey> extends ConstBitsMapInit
   // @override
   // List<T> get keys => source.keys;
 }
+
+// abstract class ConstBitFieldInit<T extends BitFieldKey> extends ConstBitsMapInit<T, int> with BitField<T> {
+//   const ConstBitFieldInit(super.source);
+
+//   @override
+//   int get width => source.keys.map((e) => e.bitmask).totalWidth;
+//   @override
+//   Bits get bits => Bits.ofEntries(source.entries.map((e) => MapEntry(e.key.bitmask, e.value)));
+
+//   @override
+//   set bits(Bits value) => throw UnsupportedError("Cannot modify unmodifiable");
+
+//   @override
+//   BitField<T> copyWith() => this;
+
+//   // @override
+//   // List<T> get keys => source.keys;
+// }

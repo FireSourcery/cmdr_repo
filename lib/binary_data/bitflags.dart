@@ -59,6 +59,9 @@ abstract mixin class BitFlags<T extends Enum> implements foundation.BitField<T>,
 
   Iterable<int> get valuesAsBits => values.map((e) => e ? 1 : 0); //todo as general extension
   // Iterable<(T, bool)> get entriesAsBits => keys.map((key) => MapEntry(key, this[key] ? 1 : 0));
+
+  String toStringAsFlags() => valuesAsBits.toString(); // (0, 1, 0)
+  String toStringAsNamePair() => pairs.map((e) => ('${e.$1.name}: ${e.$2.toString()} ')).toString(); // (nameOne: true, nameTwo: false)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -72,8 +75,8 @@ class MutableBitFlagsWithKeys<T extends Enum> = MutableBitsMapWithKeys<T, bool> 
 // ignore: missing_override_of_must_be_overridden
 class ConstBitFlagsWithKeys<T extends Enum> = ConstBitsMapWithKeys<T, bool> with BitFlags<T>;
 
-abstract class ConstBitFlagsInit<T extends Enum> extends ConstBitsMapInit<T, bool> with BitFlags<T> {
-  const ConstBitFlagsInit(super.source);
+abstract mixin class ConstBitFlagsInit<T extends Enum> implements ConstBitsMapInit<T, bool>, BitFlags<T> {
+  // const ConstBitFlagsInit(super.source);
 
   @override
   Bits get bits => Bits.ofBoolPairs(source.entries.map((e) => (e.key.index, e.value)));
@@ -84,3 +87,16 @@ abstract class ConstBitFlagsInit<T extends Enum> extends ConstBitsMapInit<T, boo
   @override
   BitFlags<T> copyWith() => this;
 }
+
+// abstract class ConstBitFlagsInit<T extends Enum> extends ConstBitsMapInit<T, bool> with BitFlags<T> {
+//   const ConstBitFlagsInit(super.source);
+
+//   @override
+//   Bits get bits => Bits.ofBoolPairs(source.entries.map((e) => (e.key.index, e.value)));
+
+//   @override
+//   set bits(Bits value) => throw UnsupportedError("Cannot modify unmodifiable");
+
+//   @override
+//   BitFlags<T> copyWith() => this;
+// }

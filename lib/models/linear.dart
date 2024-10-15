@@ -18,6 +18,6 @@ extension type const LinearConversionFactory(num coefficient) {
   num viewOf(int dataValue) => (dataValue * coefficient);
   int dataOf(num viewValue) => (viewValue ~/ coefficient);
 
-  ViewOfData? get viewOfDataFn => (coefficient == double.infinity) ? null : viewOf;
-  DataOfView? get dataOfViewFn => (coefficient == 0 || coefficient == double.infinity) ? null : dataOf;
+  ViewOfData? get viewOfDataFn => (coefficient.isFinite) ? null : viewOf;
+  DataOfView? get dataOfViewFn => (coefficient.isFinite && coefficient != 0) ? null : dataOf;
 }

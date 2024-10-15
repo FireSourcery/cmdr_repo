@@ -2,7 +2,7 @@ import 'dart:ffi';
 
 /// Data/number format
 /// ffi marker constrains type, only use as marker
-enum NumberFormat<T extends NativeType, S> {
+enum NumberFormat<S extends NativeType, V> {
   /// Fixed-point number formats
   /// Q fraction types, view = rawValue * unitsRef/FormatRef
   frac16<Int16, double>(reference: 32767), // Q1.15
@@ -13,7 +13,7 @@ enum NumberFormat<T extends NativeType, S> {
   // int32(reference: Int32, baseType: Int32 ),
 
   ///
-  invScalar10<Uint16, int>(reference: 1 / 10), // view = bytesValue*10
+  scalarInv10<Uint16, int>(reference: 1 / 10), // view = bytesValue*10
   scalar10<Uint16, double>(reference: 10), // view = bytesValue/10
   // scalar100(reference: 100),
   // scalar1000(reference: 1000),
@@ -25,25 +25,23 @@ enum NumberFormat<T extends NativeType, S> {
   /// Type formats
   /// non cont references
   /// 0 or null or 1, no conversion
-  flags16<Uint16, Map>(reference: null),
+  bitField16<Uint16, Map>(reference: null),
   enum16<Uint16, Enum>(reference: null),
   boolean<Bool, bool>(reference: null),
 
-  /// todo remove
-  /// not a number format but a value relative to the client platform,
-  /// special conversion via function or mapped value
-  adcu<Uint16, double>(reference: null), // may be adcu literal or case for special conversion
-  cycles<Uint16, int>(reference: null), // cycles per second
+  /// not a number format but a value relative to the client platform.
+  /// This way simplifies the unit conversion side label
+  adcu<Uint16, double>(reference: null),
   ;
 
   const NumberFormat({required this.reference});
   final num? reference; // conversion divider
 
-  Type get baseType => T;
-  Type get viewType => S;
+  Type get baseType => S;
+  Type get viewType => V;
 
   (int, int) get minMax {
-    return switch (T) {
+    return switch (S) {
       const (Uint16) => (0, 65535),
       const (Int16) => (-32768, 32767),
       const (Bool) => (0, 1),
@@ -55,7 +53,7 @@ enum NumberFormat<T extends NativeType, S> {
   int get max => minMax.$2;
 
   bool get isSigned {
-    return switch (T) {
+    return switch (S) {
       const (Uint16) => false,
       const (Int16) => true,
       const (Bool) => false,
@@ -64,14 +62,16 @@ enum NumberFormat<T extends NativeType, S> {
   }
 
   int _signExtension16(int raw16) => raw16.toSigned(16);
+  int _signExtension32(int raw32) => raw32.toSigned(32);
+
   int Function(int bytes)? get signExtension => (isSigned) ? _signExtension16 : null;
 
   bool get isFixedPoint => switch (this) { frac16 || ufrac16 || fixed16 || scalar16 => true, _ => false };
-  bool get isScalarBase10 => switch (this) { scalar10 || invScalar10 => true, _ => false };
+  bool get isScalarBase10 => switch (this) { scalar10 || scalarInv10 => true, _ => false };
 
-  bool get isNumeric => switch (S) { const (int) || const (double) => true, _ => false }; // !isEnum && !isFlags && !isBoolean;
+  bool get isNumeric => switch (V) { const (int) || const (double) => true, _ => false }; // !isEnum && !isFlags && !isBoolean;
 
-  R callTyped<R>(R Function<G>() callback) => callback<S>();
+  R callTyped<R>(R Function<G>() callback) => callback<V>();
 
   // bool get isInteger => switch (this) { int16 || uint16 => true, _ => false };
   // bool get isFraction => isFixedPoint || isScalar || (this == adcu || this == cycles);

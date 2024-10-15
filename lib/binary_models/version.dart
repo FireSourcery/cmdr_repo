@@ -38,8 +38,12 @@ abstract class Version<T extends WordField> extends WordFieldsBase<T> with EnumM
   // @override
   // Version<T> copyWithBits(Bits value, {String? name}) => _VersionWithKeys(keys, bits, name: name ?? this.name);
 
-  @override
-  Version<T> copyWith({int? optional, int? major, int? minor, int? fix, String? name}) {
+  // @override
+  // Version<T> copyWith( );
+
+  // defaults to 4 fields. alternatively leave undefined
+  // @override
+  Version<T> copyWithStandard({int? optional, int? major, int? minor, int? fix, String? name}) {
     return _VersionWithKeys(
       keys,
       Bits.ofMap({
@@ -149,7 +153,24 @@ class _VersionWithKeys<T extends WordField> extends Version<T> {
   const _VersionWithKeys(this.keys, super.value, {super.name}) : super.word();
   _VersionWithKeys.fromBase(this.keys, super.state, {super.name}) : super.fromBase();
 
-  // _VersionWithKeys.fromNumber(this.keys, super.state, {super.name}) : super.fromBase();
+  _VersionWithKeys.fromValues(List<T> keys, Iterable<int> values, {String? name}) : this(keys, Bits.ofIterables(keys.bitmasks, values), name: name);
+
+  // _VersionWithKeys.fromFields(this.keys, int optional, int major, int minor, int fix, {super.name}) : super.fromBase();
+
+  // @override
+  // Version<T> copyWith({Iterable<int> values}) {
+  //   return _VersionWithKeys(
+  //     keys,
+  //     Bits.ofMap({
+  //       keys[0].bitmask: fix ?? this.fix,
+  //       keys[1].bitmask: minor ?? this.minor,
+  //       keys[2].bitmask: major ?? this.major,
+  //       keys[3].bitmask: optional ?? this.optional,
+  //     }),
+  //     name: name ?? this.name,
+  //   );
+  //   // T size is not known until defined child class
+  // }
 
   @override
   final List<T> keys;

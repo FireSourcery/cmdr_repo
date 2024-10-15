@@ -41,7 +41,6 @@ abstract mixin class BitsMap<K extends Enum, V> implements EnumMap<K, V> {
 
   @override
   bool operator ==(covariant BitsMap<K, V> other) {
-    // bool operator ==(covariant BitsMap other) {
     if (identical(this, other)) return true;
     return other.bits == bits;
   }
@@ -119,7 +118,8 @@ abstract class ConstBitsMapWithKeys<T extends BitsMapKey, V> extends ConstBitsMa
 
 // // if T includes Bitmask in this module, bits can be defined here
 // @override
-// Bits get bits; //if const by wrapping Map, this must be computed at run time
+// Bits get bits; //  by wrapping Map, this must be computed at run time
 // @override
 // int get width;
-abstract class ConstBitsMapInit<T extends Enum, V> = ConstEnumMapInit<T, V> with BitsMap<T, V> implements BitsMap<T, V>;
+typedef ConstBitsMapInit<T extends Enum, V> = ConstEnumMapInit<T, V>;
+// abstract class ConstBitsMapInit<T extends Enum, V> = ConstEnumMapInit<T, V> with BitsMap<T, V> implements BitsMap<T, V>;

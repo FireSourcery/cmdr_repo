@@ -6,6 +6,7 @@ import 'dart:math';
 /// Math
 ////////////////////////////////////////////////////////////////////////////////
 const double absoluteZeroCelsius = -273.15;
+const double roomTemperatureKelvin = 25 - absoluteZeroCelsius;
 
 /*
       Thermistor wired as pull-down resistor R2
@@ -49,10 +50,16 @@ double invSteinhartB(num b, num t0, num r0, num invT) => exp((invT - 1.0 / t0) *
 // static double steinhart(num a, num b, num c, num rThermistor);
 
 class Thermistor {
-  const Thermistor._({required this.b, required this.r0, this.t0 = 25 - absoluteZeroCelsius, required this.rSeries, this.rParallel});
-  const Thermistor({required this.b, required this.r0, required this.rSeries, int? rParallel, double? t0})
-      : t0 = t0 ?? (25 - absoluteZeroCelsius), // passing null inits to default
+  const Thermistor({required this.b, required this.r0, this.t0 = roomTemperatureKelvin, required this.rSeries, this.rParallel});
+
+  const Thermistor.forceDefaults({required this.b, required this.r0, required this.rSeries, int? rParallel, double? t0})
+      : t0 = t0 ?? roomTemperatureKelvin, // passing null inits to default
         rParallel = (rParallel == 0) ? null : rParallel; // passing 0 inits to null
+
+  const Thermistor.detached({required this.rSeries, this.rParallel})
+      : b = 0,
+        r0 = 0,
+        t0 = roomTemperatureKelvin;
 
   final int b;
   final int r0;
@@ -107,6 +114,10 @@ class Thermistor {
     );
   }
 
+  Thermistor asDetached() => Thermistor.detached(rSeries: rSeries, rParallel: rParallel);
+
+  Thermistor updateAsDetached({int? r0, double? t0, int? b}) => copyWith(r0: r0, t0: t0, b: b);
+
   @override
   bool operator ==(covariant Thermistor other) {
     if (identical(this, other)) return true;
@@ -121,52 +132,52 @@ class Thermistor {
 }
 
 // case where compile time const, == operator on known values
-class DetachedThermistor {
-  const DetachedThermistor({required this.rSeries, this.rParallel});
+// class DetachedThermistor {
+//   const DetachedThermistor({required this.rSeries, this.rParallel});
 
-  final int rSeries;
-  final int? rParallel;
+//   final int rSeries;
+//   final int? rParallel;
 
-  Thermistor buildThermistor(int b, int r0, double t0) => Thermistor(b: b, r0: r0, t0: t0, rSeries: rSeries, rParallel: rParallel);
+//   Thermistor buildThermistor(int b, int r0, double t0) => Thermistor(b: b, r0: r0, t0: t0, rSeries: rSeries, rParallel: rParallel);
 
-  DetachedThermistor copyWith({
-    int? rSeries,
-    int? rParallel,
-  }) {
-    return DetachedThermistor(
-      rSeries: rSeries ?? this.rSeries,
-      rParallel: rParallel ?? this.rParallel,
-    );
-  }
+//   DetachedThermistor copyWith({
+//     int? rSeries,
+//     int? rParallel,
+//   }) {
+//     return DetachedThermistor(
+//       rSeries: rSeries ?? this.rSeries,
+//       rParallel: rParallel ?? this.rParallel,
+//     );
+//   }
 
-  Map<String, dynamic> toMap() {
-    return <String, dynamic>{
-      'rSeries': rSeries,
-      'rParallel': rParallel,
-    };
-  }
+//   Map<String, dynamic> toMap() {
+//     return <String, dynamic>{
+//       'rSeries': rSeries,
+//       'rParallel': rParallel,
+//     };
+//   }
 
-  factory DetachedThermistor.fromMap(Map<String, dynamic> map) {
-    return DetachedThermistor(
-      rSeries: map['rSeries'] as int,
-      rParallel: map['rParallel'] != null ? map['rParallel'] as int : null,
-    );
-  }
+//   factory DetachedThermistor.fromMap(Map<String, dynamic> map) {
+//     return DetachedThermistor(
+//       rSeries: map['rSeries'] as int,
+//       rParallel: map['rParallel'] != null ? map['rParallel'] as int : null,
+//     );
+//   }
 
-  String toJson() => json.encode(toMap());
+//   String toJson() => json.encode(toMap());
 
-  factory DetachedThermistor.fromJson(String source) => DetachedThermistor.fromMap(json.decode(source) as Map<String, dynamic>);
+//   factory DetachedThermistor.fromJson(String source) => DetachedThermistor.fromMap(json.decode(source) as Map<String, dynamic>);
 
-  @override
-  String toString() => 'DetachedThermistor(rSeries: $rSeries, rParallel: $rParallel)';
+//   @override
+//   String toString() => 'DetachedThermistor(rSeries: $rSeries, rParallel: $rParallel)';
 
-  @override
-  bool operator ==(covariant DetachedThermistor other) {
-    if (identical(this, other)) return true;
+//   @override
+//   bool operator ==(covariant DetachedThermistor other) {
+//     if (identical(this, other)) return true;
 
-    return other.rSeries == rSeries && other.rParallel == rParallel;
-  }
+//     return other.rSeries == rSeries && other.rParallel == rParallel;
+//   }
 
-  @override
-  int get hashCode => rSeries.hashCode ^ rParallel.hashCode;
-}
+//   @override
+//   int get hashCode => rSeries.hashCode ^ rParallel.hashCode;
+// }

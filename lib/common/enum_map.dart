@@ -302,12 +302,14 @@ class EnumMapProxy<K extends Enum, V> extends EnumMapBase<K, V> implements EnumM
 //     EnumType.name2: 3,
 //   },
 // );
-abstract class ConstEnumMapInit<K extends Enum, V> extends EnumMapBase<K, V> implements EnumMap<K, V> {
-  const ConstEnumMapInit(this.source);
-  const factory ConstEnumMapInit.withKeys(List<K> keys, Map<K, V> source) = ConstEnumMapInitWithKeys<K, V>;
+abstract mixin class ConstEnumMapInit<K extends Enum, V> /* extends EnumMapBase<K, V> */ implements EnumMap<K, V> {
+  // const ConstEnumMapInit(this.source);
+  // const factory ConstEnumMapInit.withKeys(List<K> keys, Map<K, V> source) = ConstEnumMapInitWithKeys<K, V>;
 
-  @protected
-  final Map<K, V> source;
+  // @protected
+  // final Map<K, V> source;
+
+  Map<K, V> get source;
 
   @override
   V operator [](covariant K key) => source[key]!;
@@ -320,8 +322,10 @@ abstract class ConstEnumMapInit<K extends Enum, V> extends EnumMapBase<K, V> imp
 }
 
 // ignore: missing_override_of_must_be_overridden
-class ConstEnumMapInitWithKeys<K extends Enum, V> extends ConstEnumMapInit<K, V> implements EnumMap<K, V> {
-  const ConstEnumMapInitWithKeys(this.keys, super.source);
+class ConstEnumMapInitWithKeys<K extends Enum, V> extends EnumMapBase<K, V> with ConstEnumMapInit<K, V> implements EnumMap<K, V> {
+  const ConstEnumMapInitWithKeys(this.keys, this.source);
   @override
   final List<K> keys;
+  @protected
+  final Map<K, V> source;
 }
