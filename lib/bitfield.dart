@@ -1,3 +1,3 @@
-export 'binary_data/bits_map.dart';
-export 'binary_data/bitfield.dart';
-export 'binary_data/bitflags.dart';
+export 'binary_data/bit_field.dart';
+export 'binary_data/bit_struct.dart';
+export 'binary_data/bool_struct.dart';

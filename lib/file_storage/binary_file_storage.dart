@@ -24,7 +24,7 @@ class FirmwareFileStorage extends FileStorage<Map<int, Uint8List>> {
 
   Map<int, Uint8List> contentsBuffer = const {}; // buffer if needed
   // alternatively as static
-  int get bytesTotal => contentsBuffer.values.fold<int>(0, (previousValue, element) => element.length + previousValue);
+  int get bytesTotal => contentsBuffer.values.fold<int>(0, (previousValue, element) => previousValue + element.length);
 
   Iterable<MapEntry<int, Uint8List>> get segments => contentsBuffer.entries;
 }

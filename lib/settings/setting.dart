@@ -1,17 +1,18 @@
 //with TypedKey
-abstract interface class Setting<T> {
+abstract interface class Setting<V> {
   String get key;
   String get valueString;
-  List<T>? get enumValues; // must be non-null for Enum types
+  List<V>? get enumValues; // must be non-null for Enum types
   ({num min, num max})? get numLimits; // must be null for non-num types
   // T? get defaultValue;
 
   String get label;
 
   Type get type;
-  T? get value;
-  set value(T? value);
-  Future<bool> updateValue(T value);
+  V? get value;
+  set value(V? value);
+  Future<bool> updateValue(V value);
+  // Future<V?> loadValue();
 
   R callWithType<R>(R Function<G>() callback);
 }

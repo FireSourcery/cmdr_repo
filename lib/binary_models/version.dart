@@ -1,16 +1,16 @@
-import 'package:cmdr/binary_data/bitfield.dart';
-import 'package:cmdr/binary_data/bits_map.dart';
+import 'package:cmdr/binary_data/bit_struct.dart';
+import 'package:cmdr/binary_data/bit_field.dart';
 
 import 'package:cmdr/common/enum_map.dart';
 
-import '../binary_data/word_fields.dart';
+import '../binary_data/word_struct.dart';
 import '../binary_data/typed_field.dart';
 import '../binary_data/bits.dart';
 
 /// 4 fields [optional, major, minor, fix] by default, 1 or 2 bytes each
 /// parameterize T to constrain functions of T key to types the Version is defined with
 /// alternatively `class Version extends WordFieldsBase<WordField<NativeType>>` allows for access with any WordField key
-abstract class Version<T extends WordField> extends WordFieldsBase<T> with EnumMapAsSubtype<Version<T>, T, int> {
+abstract class Version<T extends WordField> extends WordStructBase<T> with EnumMapAsSubtype<Version<T>, T, int> {
   // uses VersionFieldStandard keys when no keys AND type parameter is specified
   factory Version(int optional, int major, int minor, int fix, {String? name}) => VersionStandard(optional, major, minor, fix, name: name) as Version<T>;
   // factory Version(int optional, int major, int minor, int fix, {String? name}) = VersionStandard  ;
@@ -24,7 +24,7 @@ abstract class Version<T extends WordField> extends WordFieldsBase<T> with EnumM
   // Version.values(List<T> keys, Iterable<int> values, {String? name}) : this.word(Bits.ofIterables(keys.bitmasks, values), name: name);
 
   // Version.cast(super.state, {this.name}) : super.cast();
-  Version.fromBase(super.state, {this.name}) : super.cast();
+  Version.castBase(super.state, {this.name}) : super.castBase();
 
   // @override
   // Version<T> copyWith({Bits? bits, String? name}) {
@@ -151,11 +151,11 @@ abstract class Version<T extends WordField> extends WordFieldsBase<T> with EnumM
 // ignore: missing_override_of_must_be_overridden
 class _VersionWithKeys<T extends WordField> extends Version<T> {
   const _VersionWithKeys(this.keys, super.value, {super.name}) : super.word();
-  _VersionWithKeys.fromBase(this.keys, super.state, {super.name}) : super.fromBase();
+  _VersionWithKeys.castBase(this.keys, super.state, {super.name}) : super.castBase();
 
   _VersionWithKeys.fromValues(List<T> keys, Iterable<int> values, {String? name}) : this(keys, Bits.ofIterables(keys.bitmasks, values), name: name);
 
-  // _VersionWithKeys.fromFields(this.keys, int optional, int major, int minor, int fix, {super.name}) : super.fromBase();
+  // _VersionWithKeys.fromFields(this.keys, int optional, int major, int minor, int fix, {super.name}) : super.castBase();
 
   // @override
   // Version<T> copyWith({Iterable<int> values}) {
@@ -197,7 +197,7 @@ class VersionStandard extends Version<VersionFieldStandard> {
   @override
   int get optional => this[VersionFieldStandard.optional];
 
-  /// Json
+  // / Json
   // factory Version.fromJson(Map<String, dynamic> json) {
   //   return fromJson(json);
   // }

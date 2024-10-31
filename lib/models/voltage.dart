@@ -1,4 +1,4 @@
-import 'package:cmdr/models/linear.dart';
+import 'package:cmdr/common/linear.dart';
 
 class VDivider {
   const VDivider(this.r1, this.r2);

@@ -24,19 +24,18 @@ class MotProtocolSocket extends ProtocolSocket {
 
   Future<CallResponseValues?> call(int id, int? arg, [Duration? timeout]) async => requestResponse(MotPacketRequestId.MOT_PACKET_CALL, (id, arg), timeout: timeout);
 
+  ////////////////////////////////////////////////////////////////////////////////
+  /// Vars by Key
+  ////////////////////////////////////////////////////////////////////////////////
   Future<VarReadResponseValues?> readVars(VarReadRequestValues ids) async => requestResponse(MotPacketRequestId.MOT_PACKET_VAR_READ, ids);
   Future<VarWriteResponseValues?> writeVars(VarWriteRequestValues pairs) async => requestResponse(MotPacketRequestId.MOT_PACKET_VAR_WRITE, pairs);
 
-  ////////////////////////////////////////////////////////////////////////////////
   /// Slices
-  ////////////////////////////////////////////////////////////////////////////////
   /// same input signature, but is not the content sent to the packet
   Stream<(VarReadRequestValues sliceIds, VarReadResponseValues?)> readVarsSlices(Iterable<int> ids) => iterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, ids.slices(16));
   Stream<(VarWriteRequestValues slicePairs, VarWriteResponseValues?)> writeVarsSlices(Iterable<(int id, int value)> ids) => iterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_WRITE, ids.slices(8));
 
-  ////////////////////////////////////////////////////////////////////////////////
-  /// Stream
-  ////////////////////////////////////////////////////////////////////////////////
+  /// Periodic Stream
   Stream<VarReadResponseValues?> readVarsStream(VarReadRequestValues ids, {Duration delay = const Duration(milliseconds: 50)}) {
     assert(ids.length <= VarReadRequest.idCountMax);
     return periodicRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, ids, delay: delay);

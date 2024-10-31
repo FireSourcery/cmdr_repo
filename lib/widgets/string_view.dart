@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 
 import '../binary_data/word.dart';
 
+// applies to Word type. todo generalize or rename
+
 /// Editable views
 // todo input as string literal
 class StringFormField extends StatelessWidget {

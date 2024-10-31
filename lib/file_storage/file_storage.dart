@@ -9,9 +9,12 @@ import 'dart:io';
 abstract class FileStorage<T> {
   const FileStorage(this.fileCodec, {this.extensions, this.defaultName});
 
-  final FileCodec<T, dynamic> fileCodec; //possible make this a getter, or mixin instead
+  //per instance
   final List<String>? extensions;
   final String? defaultName;
+
+  // per type
+  final FileCodec<T, dynamic> fileCodec; //possible make this a getter, or mixin instead
 
   /// Abstract functions to handle file contents
   /// called by openAsync, saveAsync
@@ -27,10 +30,12 @@ abstract class FileStorage<T> {
   // returns null for no file selected
   Future<T?> open(File? file) async => (file != null) ? readContents(file) : null;
   Future<T?> openAsync(Future<File?> file) async => file.then(open);
+  // openThenParse
   Future<Object?> openParseAsync(Future<File?> file) async => openAsync(file).then(_fromNullableContents);
 
   Future<File?> save(File? file, T contents) async => (file != null) ? writeContents(file, contents) : null;
   Future<File?> saveAsync(Future<File?> file, T contents) async => file.then((value) => save(value, contents));
+  // saveAfterBuild
   Future<File?> saveBuildAsync(Future<File?> file) async => saveAsync(file, toContents());
 }
 
@@ -86,7 +91,9 @@ abstract mixin class FileContentCodec<S, T> implements FileCodec<S, T> {
 // mapCodec as first fuse stringCodec as second
 // in encoding order
 class _FusedFileCodec<S, M, T> extends FileCodec<S, T> {
-  final FileCodec<S, M> _first; //<Map, T>
+  _FusedFileCodec(this._first, this._second);
+
+  final FileCodec<S, M> _first; // <Map, T>
   final FileCodec<M, T> _second; // <T, String>
 
   @override
@@ -99,7 +106,6 @@ class _FusedFileCodec<S, M, T> extends FileCodec<S, T> {
   @override
   Future<S> read(File file) async => _second.read(file).then((value) => _first.decode(value));
 
-  _FusedFileCodec(this._first, this._second);
   // Converter<S, T> get encoder => _first.encoder.fuse<T>(_second.encoder);
   // Converter<T, S> get decoder => _second.decoder.fuse<S>(_first.decoder);
 }
@@ -126,12 +132,4 @@ extension FileCodecExtension on File {
 //   @override
 //   toString() => message;
 // }
-
-// static Type typeOf<T>() {
-//   if (<T>[] is List<List>) return List;
-//   if (<T>[] is List<Map>) return Map;
-//   return T;
-// }
-
-// static T emptyCollection<T>() => switch (typeOf<T>()) { const (List) => [], const (Map) => {}, _ => throw Exception('Invalid Type') } as T;
-
+ 

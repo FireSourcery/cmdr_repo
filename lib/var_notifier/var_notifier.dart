@@ -1,295 +1,367 @@
-import 'package:flutter/foundation.dart';
+library var_notifier;
 
-///
-abstract interface class VarView<V> implements ValueNotifier<V> {
-  int get id;
-  String get name;
-  // move to tag?
-  String? get groupName;
-  String? get description; // tooltip
-  bool get isReadOnly;
-  ({num min, num max})? get valueRange;
+import 'dart:async';
 
-  // /// num value backing
-  // num get valueNum;
-  // set valueNum(num value);
+import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart' hide BitField;
+import 'package:flutter/material.dart';
+import 'package:meta/meta.dart';
+import 'package:recase/recase.dart';
 
-  /// the view value, the value as seen by the user
+import '../binary_data/bit_struct.dart';
+import '../common/basic_types.dart';
+import '../binary_data/binary_format.dart';
+import '../common/service_io.dart';
+import '../binary_data/bool_struct.dart';
+import '../binary_data/bit_field.dart';
+// import '../binary_data/bitfield.dart';
+// import '../binary_data/word.dart';
+// import '../widgets/string_view.dart';
+
+part 'var_cache.dart';
+// part 'var_context.dart';
+part 'var_key.dart';
+part 'var_controller.dart';
+part 'var_real_time_controller.dart';
+
+// only default status ids need to be overridden
+class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier {
+  VarNotifier({
+    required this.varKey,
+    // required V value,
+    this.viewOfData,
+    this.dataOfView,
+    this.signExtension,
+    this.viewMin,
+    this.viewMax,
+    this.enumRange,
+    this.bitsKeys,
+    this.stringDigits,
+    this.statusOfCode = VarStatus.defaultCode,
+  });
+
+  // VarNotifier.castBase(VarNotifier  base)
+  //     : varKey = base.varKey,
+  //       enumRange = base.enumRange,
+  //       bitsMapKeys = base.bitsMapKeys,
+  //       stringDigits = base.stringDigits,
+  //       viewOfData = base.viewOfData,
+  //       dataOfView = base.dataOfView,
+  //       signExtension = base.signExtension,
+  //       viewMin = base.viewMin,
+  //       viewMax = base.viewMax;
+
+  @protected
+  VarNotifier.ofKey(this.varKey)
+      : assert(V != dynamic),
+        viewOfData = varKey.viewOfData,
+        dataOfView = varKey.dataOfView,
+        signExtension = varKey.binaryFormat?.signExtension,
+        viewMin = varKey.valueNumLimits?.min,
+        viewMax = varKey.valueNumLimits?.max,
+        enumRange = varKey.valueEnumRange,
+        bitsKeys = varKey.valueBitsKeys,
+        stringDigits = varKey.valueStringDigits,
+        statusOfCode = varKey.varStatusOf;
+
+  factory VarNotifier.of(VarKey varKey) {
+    assert(V == dynamic, 'V must be dynamic');
+    return varKey.viewType(<G>() => VarNotifier<G>.ofKey(varKey) as VarNotifier<V>);
+  }
+
   @override
-  V get value;
+  final VarKey varKey;
+
+  /// retain cached values derived from varKey
   @override
-  set value(V value);
+  final int Function(int bytes)? signExtension;
+  @override
+  final ViewOfData? viewOfData; //num conversion only, null for Enum and Bits
+  @override
+  final DataOfView? dataOfView;
+  @override
+  final num? viewMin;
+  @override
+  final num? viewMax;
 
-  // // for ValueGetter tare off
-  // V getValue() => value;
+  // for enum conversion only.
+  // although enumerated types can be implemented using other types, it is generally preferred to use enums.
+  @override
+  final List<Enum>? enumRange;
 
-  /// view determines type after accounting fo varId.valueType
-  // R valueAs<R>();
-  void updateValueChange(V typedValue);
-  void updateValueSubmit(V typedValue);
+  // for bit conversion only.
+  @override
+  final List<BitField>? bitsKeys;
 
-  String get valueString;
-  // String valueStringAs<T>();
+  @override
+  final int? stringDigits;
 
-  int get statusCode;
-  bool get statusIsError;
-  String get statusString;
+  VarStatus Function(int statusCode) statusOfCode;
+
+  @override
+  VarStatus statusOf(int statusCode) => statusOfCode(statusCode);
+
+  @override
+  String toString() => '$runtimeType { key: ${varKey.label}, value: $numValue, status: $statusCode }';
 }
-
-// typedef ViewOfData = num Function(int data);
-// typedef DataOfView = int Function(num view);
-
-// class VarTag<V> {
-//   // const VarTag({
-//   //   required this.label,
-//   //   required this.unitsLabel,
-//   //   required this.valueType,
-//   //   required this.valueMin,
-//   //   required this.valueMax,
-//   //   required this.valueDefault,
-//   //   required this.valueList,
-//   //   required this.valueMap,
-//   //   required this.valueEnum,
-//   // });
-
-//   final String label;
-//   final String suffix;
-//   final Type valueType;
-//   final num valueMin;
-//   final num valueMax;
-//   final num valueDefault;
-//   final List<num> valueList;
-//   final Map<num, String> valueMap;
-//   final List<Enum> valueEnum;
-// }
 
 /// A notifier combining a value and status code on a single listenable.
 ///  supports conversion between view and data values.
-// class VarNotifier<V> extends VarNotifierBase<V> with ChangeNotifier {
-//   VarNotifier({
-//     this.viewOfData,
-//     this.dataOfView,
-//     this.signExtension,
-//     required V value,
-//     this.viewMin,
-//     this.viewMax,
-//   });
+abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
+  VarKey get varKey; // allow varKey to be assigned as dynamic
 
-//   @override
-//   int get varId => throw UnimplementedError();
-//   final int Function(int bytes)? signExtension;
-//   final ViewOfData? viewOfData;
-//   final DataOfView? dataOfView;
-//   final num? viewMin;
-//   final num? viewMax;
+  /// by default get from varKey. resolve in constructor to cache
+  /// retain cached values derived from varKey
+  int Function(int bytes)? get signExtension;
+  ViewOfData? get viewOfData; //num conversion only, null for Enum and Bits
+  DataOfView? get dataOfView;
 
-//   int dataOfBytes(int bytesValue) => signExtension?.call(bytesValue) ?? bytesValue;
-//   num viewOf(int data) => viewOfData?.call(data) ?? data;
-//   int dataOf(num view) => dataOfView?.call(view) ?? view.toInt();
+  // still effective if set for a non num V
+  num? get viewMin;
+  num? get viewMax;
+  // doubles only
+  int? get stringDigits;
+  // for enum conversion only.
+  // although range bound types can include other types, it is generally preferred to use enums.
+  List<Enum>? get enumRange;
+  // for bits conversion only.
+  List<BitField>? get bitsKeys;
 
-//   @override
-//   Enum statusIdOf(int statusCode) {
-//     throw UnimplementedError();
-//   }
+  int dataOfBytes(int bytes) => signExtension?.call(bytes) ?? bytes;
+  num viewOf(int data) => viewOfData?.call(data) ?? data; // 'view base'
+  int dataOf(num view) => dataOfView?.call(view) ?? view.toInt();
 
-//   @override
-//   Enum valueNameOf(int value) {
-//     throw UnimplementedError();
-//   }
-// }
+  num clamp(num value) => switch ((viewMin, viewMax)) { (num min, num max) => value.clamp(min, max), _ => value };
 
-// abstract mixin class VarNotifierBase<V> implements ValueNotifier<V> {
-//   // VarNotifierBase({
-//   //   this.viewOfData,
-//   //   this.dataOfView,
-//   //   this.signExtension,
-//   //   required V value,
-//   //   this.viewMin,
-//   //   this.viewMax,
-//   // });
+  Enum? enumOf(int value) => enumRange?.elementAtOrNull(value); // returns null if varName is not associated with enum value type
+  BitFields? bitFieldsOf(int value) => BitStructClass(bitsKeys ?? <BitField>[]).castBits(value);
 
-//   // final int Function(int bytes)? signExtension;
-//   // final ViewOfData? viewOfData;
-//   // final DataOfView? dataOfView;
-//   // final num? viewMin;
-//   // final num? viewMax;
+  // @override
+  // String toString() => '$runtimeType $numValue'; // $statusCode
 
-//   int get varId;
+  /// runtime variables
+  // same as ChangeNotifier._count
+  // alternatively cache need parallel list to track duplicates.
+  int viewerCount = 0;
+  bool isUpdatedByView = false; // pushUpdateFlag
+  // bool outOfRange; // value from client out of range
 
-//   num get viewMin;
-//   num get viewMax;
+  /// superclass implementation
+  @override
+  V get value => valueAs<V>();
+  @override
+  set value(V newValue) => updateByViewAs<V>(newValue);
 
-//   // int dataOfBytes(int bytesValue) => signExtension?.call(bytesValue) ?? bytesValue;
-//   // num viewOf(int data) => viewOfData?.call(data) ?? data;
-//   // int dataOf(num view) => dataOfView?.call(view) ?? view.toInt();
-//   // int dataOfBytes(int bytesValue) => signExtension?.call(bytesValue) ?? bytesValue;
-//   num viewOf(int data);
-//   int dataOf(num view);
+  ////////////////////////////////////////////////////////////////////////////////
+  /// [numValue] The base representation of the value as a num. "view side base"
+  ///   since it is the base for all generic types that can be converted to and from,
+  ///     [valueAs<R>()] can always return a value without throwing; the closest representation possible.
+  ///   primitive/register sized only for now
+  ///   consistent DataOfView interface
+  ///   multiple view on the same value will require conversion anyway
+  ///   using view side num as notifier,
+  ///   notify view side listener on all updates, not all changes are pushed to client
+  ////////////////////////////////////////////////////////////////////////////////
+  num _numValue = 0;
+  num get numValue => _numValue;
+  set numValue(num value) {
+    if (_numValue == value) return;
+    _numValue = value;
+    notifyListeners();
+  }
 
-//   // these values should have no ViewOfData conversion
-//   Enum valueNameOf(int value);
-//   Enum statusIdOf(int statusCode);
-//   // R valueAsExtension<R>();
+  ////////////////////////////////////////////////////////////////////////////////
+  /// [dataValue] from packet. convert on transmit only. lazy update on updateByView
+  ////////////////////////////////////////////////////////////////////////////////
+  int get dataValue => dataOf(numValue);
+  // set dataValue(int value) => updateByData(value);
 
-//   int viewerCount = 0; // alternatively readStream need parallel list to track duplicates.
+  // Always accept client data. correction is handled at client side.
+  // value over view boundaries handle by UI
 
-//   @override
-//   String toString() => '$runtimeType  $numValue $statusCode';
+  // after sign extension
+  void _updateByData(int dataValue) => numValue = viewOf(dataValue);
+  // if (numValue != _clampedNumValue) {
+  //   statusCode = 1;
+  // }
 
-//   ////////////////////////////////////////////////////////////////////////////////
-//   ///
-//   /// Store as num instead of Generic,
-//   ///   a narrower set of types that covers all values
-//   ///   consistent DataOfView interface
-//   ///   multiple view on the same value will require conversion anyway
-//   ///   primitive compatible with ValueNotifier
-//   ///   using view side num as notifier, as not all changes are pushed to data
-//   ///   some view updates do not need to update dataValue immediately
-//   ////////////////////////////////////////////////////////////////////////////////
-//   num _numValue = 0;
-//   num get numValue => _numValue;
-//   set numValue(num value) {
-//     _numValue = value;
-//     notifyListeners();
-//   }
+  // before sign extension
+  void updateByData(int bytesValue) => _updateByData(dataOfBytes(bytesValue));
 
-//   @override
-//   V get value => valueAs<V>();
-//   @override
-//   set value(V value) => updateByView<V>(value);
+  // Var as Entry including key
+  // outbound data
+  int get dataKey => varKey.value;
+  MapEntry<int, int> get dataEntry => MapEntry(dataKey, dataValue);
+  (int key, int value) get dataPair => (dataKey, dataValue);
 
-//   String get valueString => valueStringAs<V>();
+  ////////////////////////////////////////////////////////////////////////////////
+  /// [viewValue] from widgets
+  /// The value in real world units and constraints. as seen by the user
+  ////////////////////////////////////////////////////////////////////////////////
+  /// typed view value
+  V get viewValue => valueAs<V>();
+  // set viewValue(V newValue) => updateByViewAs<V>(newValue);
 
-//   /// packet value, convert on transmit only
-//   int get dataValue => dataOf(numValue);
+  @protected
+  num get valueAsNum => numValue;
+  @protected
+  int get valueAsInt => (numValue).toInt();
+  @protected
+  double get valueAsDouble => (numValue).toDouble();
+  @protected
+  bool get valueAsBool => (numValue != 0);
+  @protected
+  Enum get valueAsEnum => enumOf(valueAsInt)!;
+  @protected
+  BitFields get valueAsBitFields => bitFieldsOf(valueAsInt)!;
+  @protected
+  Uint8List get valueAsBytes => Uint8List(8)..buffer.asByteData().setUint64(0, valueAsInt, Endian.big);
 
-//   // MapEntry<int, int> get dataDataPair => MapEntry(varKey.asDataDataId, dataValue);
-//   // (int id, int value) get dataDataRecord => (varKey.asDataDataId, dataValue);
+  // These should return the proper type as long as V is correct
+  T valueAsEnumType<T>() => valueAsEnum as T;
+  T valueAsBitsType<T>() => valueAsBitFields as T;
 
-//   ////////////////////////////////////////////////////////////////////////////////
-//   /// View Side Value
-//   ////////////////////////////////////////////////////////////////////////////////
-//   num get _valueAsNum => numValue;
-//   int get _valueAsInt => (numValue).toInt();
-//   double get _valueAsDouble => (numValue).toDouble();
-//   bool get _valueAsBool => (numValue != 0);
+  /// view determines type after accounting fo varId.valueType
+  R valueAs<R>() {
+    return switch (R) {
+      const (int) => valueAsInt,
+      const (double) => valueAsDouble,
+      const (num) => valueAsNum,
+      const (bool) => valueAsBool,
+      const (Enum) => valueAsEnum,
+      const (BitFields) => valueAsBitFields,
+      // const (String) => valueAsInt.toStringAsCode(),
+      _ when TypeKey<R>().isSubtype<Enum>() => valueAsEnumType<R>(),
+      _ when TypeKey<R>().isSubtype<BitsBase>() => valueAsBitsType<R>(),
+      // _ => valueAsExtension<R>(),
+      _ => throw UnsupportedError('valueAs: $R'),
+    } as R;
+  }
 
-//   /// view determines type after accounting fo varId.valueType
-//   R valueAs<R>() {
-//     return switch (R) {
-//       const (int) => _valueAsInt,
-//       const (double) => _valueAsDouble,
-//       const (bool) => _valueAsBool,
-//       const (Enum) => valueNameOf(_valueAsInt),
-//       _ => valueAsExtension<R>(),
-//     } as R;
-//   }
+  // @protected
+  // set valueAsEnum(Enum newValue) => numValue = newValue.index;
+  // @protected
+  // set valueAsBitsMap(BitsBase newValue) => numValue = newValue.bits;
 
-//   String valueStringAs<T>() {
-//     return switch (T) {
-//       const (int) => _valueAsInt.toString(),
-//       const (double) => _valueAsDouble.toStringAsFixed(1),
-//       const (bool) => _valueAsBool.toString(),
-//       // const (Enum) => valueNameOf(_valueAsInt).name,
-//       // Uint8List || List => valueAsChars,
-//       _ => throw TypeError(),
-//     };
-//   }
+  // caller handle display state of over boundary.
+  // input bounds checked only to ensure a valid value is sent to client side
+  void updateByViewAs<T>(T typedValue) {
+    numValue = switch (T) {
+      const (double) || const (int) || const (num) => clamp(typedValue as num),
+      const (bool) => (typedValue as bool) ? 1 : 0,
+      // update as Enum subtype check first, in case a value other than enum is selected
+      _ when TypeKey<T>().isSubtype<Enum>() => (typedValue as Enum).index,
+      _ when TypeKey<T>().isSubtype<BitsBase>() => (typedValue as BitsBase).bits,
+      _ => throw UnsupportedError('valueAs: $T'),
+    };
 
-//   // num _clamp(num value) {
-//   //   if (viewMin != null && viewMax != null) {
-//   //     return value.clamp(viewMin!, viewMax!);
-//   //   }
-//   //   return value;
-//   // }
+    isUpdatedByView = true;
+    // if (typedValue case num input when input != numValue) statusCode = 1;
 
-//   void updateByData(int bytesValue) {
-//     // final dataValue = dataOfBytes(bytesValue);
-//     final tempViewValue = viewOf(dataValue);
-//     if (tempViewValue == tempViewValue.clamp(viewMin, viewMax)) {
-//       numValue = tempViewValue;
-//     } else {
-//       statusCode = 1;
-//     }
-//   }
+    // asserts view is set with proper bounds
+    // assert(!((typedValue is num) && (_clamp(typedValue) != numValue)));
 
-//   void updateByView<T>(T typedValue) {
-//     // if (viewValue.clamp(varKey.viewMin, varKey.viewMax) != viewValue) return;
-//     numValue = switch (T) {
-//       const (double) || const (int) => (typedValue as num).clamp(viewMin, viewMax),
-//       const (bool) => (typedValue as bool) ? 1 : 0,
-//       const (Enum) => (typedValue as Enum).index, // other enum or DataVarDataorFeedbackMode
-//       _ => throw TypeError(),
-//     };
-//     // viewValue bound should keep dataValue within format bounds after conversion
-//   }
+    // viewValue bound should keep motValue within format bounds after conversion
+    assert((varKey.binaryFormat?.max != null) ? (dataValue <= varKey.binaryFormat!.max) : true);
+    assert((varKey.binaryFormat?.min != null) ? (dataValue >= varKey.binaryFormat!.min) : true);
+  }
 
-//   ////////////////////////////////////////////////////////////////////////////////
-//   /// DataVarStatus
-//   ////////////////////////////////////////////////////////////////////////////////
-//   int _statusCode = 0;
-//   int get statusCode => _statusCode;
-//   set statusCode(int value) {
-//     _statusCode = value;
-//     notifyListeners();
-//   }
+  void updateByView(V typedValue) => updateByViewAs<V>(typedValue);
 
-//   Enum get statusId => statusIdOf(statusCode);
-//   bool get statusIsError => statusCode != 0;
-//   bool get statusIsSuccess => statusCode == 0;
+  ////////////////////////////////////////////////////////////////////////////////
+  /// Stringify
+  ////////////////////////////////////////////////////////////////////////////////
+  String get valueString => valueStringAs<V>();
 
-//   R statusAs<R>() {
-//     return switch (R) {
-//       const (int) => statusCode,
-//       const (bool) => statusIsSuccess,
-//       const (Enum) => statusId,
-//       _ => throw TypeError(),
-//     } as R;
-//   }
+  // stringifyAs
+  String valueStringAs<T>() => varKey.stringify<T>(valueAs<T>());
 
-//   void updateStatusByData(int status) {
-//     statusCode = status;
-//   }
+  ////////////////////////////////////////////////////////////////////////////////
+  /// Json param config
+  ////////////////////////////////////////////////////////////////////////////////
+  Map<String, Object?> toJson() {
+    return {
+      'varId': varKey.value,
+      'varValue': numValue,
+      'dataValue': dataValue,
+      'description': varKey.toString(),
+    };
+  }
 
-//   void updateStatusByView<T>(T status) {
-//     statusCode = switch (T) {
-//       const (int) => status as int,
-//       const (bool) => (status as bool) ? 1 : 0,
-//       const (Enum) => (status as Enum).index,
-//       Type() => throw TypeError(),
-//     };
-//   }
+  /// init values from json config file, no new/allocation.
+  void loadFromJson(Map<String, Object?> json) {
+    if (json
+        case {
+          'varId': int _,
+          'varValue': num viewValue,
+          'dataValue': int _,
+          'description': String _,
+        }) {
+      updateByViewAs<num>(viewValue);
+    } else {
+      throw const FormatException('Unexpected JSON');
+    }
+  }
+}
 
-//   ////////////////////////////////////////////////////////////////////////////////
-//   /// Json param config
-//   ////////////////////////////////////////////////////////////////////////////////
-//   // Map<String, Object?> toJson() {
-//   //   return {
-//   //     'varId': varKey.asDataDataId,
-//   //     'varValue': numValue,
-//   //     'dataValue': dataValue,
-//   //     'description': varKey.label,
-//   //   };
-//   // }
+////////////////////////////////////////////////////////////////////////////////
+/// VarStatus
+/// Optionally mixin or compose for multiple status
+/// generally for status from client side
+///
+/// alternatively, include code value only, caller handling Enum mapping
+///
+///
+////////////////////////////////////////////////////////////////////////////////
+/// S does not have to be generic if all vars share the same status
+abstract mixin class VarStatusNotifier implements ChangeNotifier {
+  @mustBeOverridden
+  VarStatus statusOf(int statusCode) => VarStatus.defaultCode(statusCode);
 
-//   // /// init values from json config file, no new/allocation.
-//   // void loadFromJson(Map<String, Object?> json) {
-//   //   if (json
-//   //       case {
-//   //         'varId': int _,
-//   //         'varValue': num viewValue,
-//   //         'dataValue': int _,
-//   //         'description': String _,
-//   //       }) {
-//   //     updateByView<num>(viewValue.clamp(varKey.viewMin, varKey.viewMax));
-//   //   } else {
-//   //     throw const FormatException('Unexpected JSON');
-//   //   }
-//   // }
-// }
+  R statusAsEnumSubtype<R extends Enum>() => throw UnimplementedError();
+  R statusAsSubtype<R extends VarStatus>() => throw UnimplementedError();
 
-// // abstract mixin class VarNotifierExtension<V> implements VarNotifier<V> {
-// //   Enum valueNameOf(int value) => throw UnimplementedError();
-// //   Enum statusIdOf(int statusCode) => throw UnimplementedError();
-// //   R valueAsExtension<R>() => throw UnimplementedError();
-// // }
+  int _statusCode = 0;
+  int get statusCode => _statusCode;
+  set statusCode(int value) {
+    _statusCode = value;
+    notifyListeners();
+  }
+
+  void updateStatusByData(int status) => statusCode = status;
+
+  /// view typed
+  VarStatus get status => statusAs<VarStatus>(); // not necessary unless Status is generic
+  set status(VarStatus newValue) => updateStatusByViewAs<VarStatus>(newValue);
+  VarStatus get statusId => statusOf(statusCode);
+
+  Enum? get statusAsEnum => statusId.enumId;
+  bool get statusIsError => statusCode != 0;
+  bool get statusIsSuccess => statusCode == 0;
+
+  R statusAs<R>() {
+    return switch (R) {
+      const (int) => statusCode,
+      const (bool) => statusIsSuccess,
+      const (Enum) => statusId.enumId ?? VarStatusUnknown.unknown,
+      const (VarStatus) => statusId,
+      // _ when TypeKey<R>().isSubtype<VarStatus>() => statusId, // statusOf must have been overridden for R
+      // _ when TypeKey<R>().isSubtype<Enum>() => statusId.enumId,
+      _ => throw TypeError(),
+    } as R;
+  }
+
+  void updateStatusByViewAs<T>(T status) {
+    statusCode = switch (T) {
+      const (int) => status as int,
+      const (bool) => (status as bool) ? 1 : 0,
+      const (Enum) => (status as Enum).index,
+      const (VarStatus) => (status as VarStatus).code,
+      _ when TypeKey<T>().isSubtype<VarStatus>() => (status as VarStatus).code,
+      _ when TypeKey<T>().isSubtype<Enum>() => (status as Enum).index,
+      _ => throw TypeError(),
+    };
+  }
+
+  void updateStatusByView(VarStatus status) => updateStatusByViewAs<VarStatus>(status);
+}

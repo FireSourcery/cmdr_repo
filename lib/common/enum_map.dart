@@ -1,51 +1,54 @@
 import 'dart:collection';
 
+import 'package:cmdr/common/basic_types.dart';
 import 'package:meta/meta.dart';
 import 'package:flutter/foundation.dart';
 
 /// [EnumMap] - A simplified map implementation
+///   A [Map] with the additional constraint that Keys are a `fixed set`, via Enum.
 ///   optimized for small fixed set of keys
-///   using Enum for keys provides -
-///     index via Enum.index - creates a parallel array map by default
-///     String name via Enum.name
-///   guarantees all keys are present via constrain on input type
-///   can guarantee non null return if V is defined as non nullable
-///   optionally using a direct mapping function, e.g. a provided switch expression on Keys
+///     guarantees all keys are present
+///     can guarantee non null return - if V is defined as non nullable
+///   Keys inherit from Enum -
+///     index via Enum.index -> create a parallel array map by default
+///     String name via Enum.name -> directly use for serialization
 ///
 /// `abstract mixin class` combines interface and implemented methods
+///
+/// optionally using a direct mapping function, e.g. a provided switch expression on Keys
 abstract mixin class EnumMap<K extends Enum, V> implements Map<K, V> {
   const EnumMap();
+
+  // factory EnumMap.ofValues(List<K> keys, List<V> values) = EnumMapDefault<K, V>._fromValues;
 
   @override
   List<K> get keys; // Enum.values
   @override
   V operator [](covariant K key);
   @override
-  void operator []=(covariant K key, V value); // should this accept V? as a way of setting a default?
+  void operator []=(covariant K key, V value);
   @override
-  void clear(); // deferring clear simplifies implementation of immutable case
+  void clear();
 
-  // V? get nil; child class may implement when a non null default is available. e.g. 0, false or ''
-  // void clear() => updateAll((key, value) => fill);
-  // if this V accepts null then, clear can call to reset, or icnlud fill
-  // bool isType<Vx>() => V == Vx;
-  // bool get isNullable => isType<V?>();
   // @override
   // void clear() {
-  //   if (isType<V?>()) {
-  //     for (var i = 0; i < keys.length; i++) {
-  //       this[keys[i]] = null;
-  //     }
-  //   } else {
-  //     throw UnsupportedError('EnumMap does not support clear operation');
+  //   if (TypeKey<V>().isNullable) {
+  //     updateAll((key, value) => null as V);
   //   }
+  //   // if Key contains default value
+  //   // else if (TypeKey<K>().isSubtype<TypeKey>()) {
+  //   //   updateAll((key, value) => (key as TypeKey).defaultValue as V);
+  //   // }
+  //   // alternatively V? get nil => null; // child class may implement when a non null default is available. e.g. 0, false or ''
+  //   // or []= accepts V? as a way of setting a default?
+  //   throw UnsupportedError('EnumMap does not support clear operation');
   // }
 
   @override
   V? remove(covariant K key) => throw UnsupportedError('EnumMap does not support remove operation');
 
-  @override
-  String toString() => '$runtimeType: $values';
+  // @override
+  // String toString() => '$runtimeType: $values';
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Convenience methods
@@ -61,16 +64,14 @@ abstract mixin class EnumMap<K extends Enum, V> implements Map<K, V> {
   ////////////////////////////////////////////////////////////////////////////////
   /// Immutable Case
   ////////////////////////////////////////////////////////////////////////////////
-  // override in child class, parameterized by child class field names
+  // Overridden the in child class to call the child class constructor, returning a instance of the child class type
   // copyWith will refer to the child class constructor
+  //   copyWith empty parameters always returns itself
   @mustBeOverridden
   EnumMap<K, V> copyWith() => this;
   // EnumMap<K, V> copyWith() => EnumMapProxy<K, V>(this);
 
-  // // EnumMap representing internal state
-  // EnumMap<K, V> copyWithBase(covariant EnumMap<K, V> source) => EnumMapProxy<K, V>.cast(source);
-
-  /// default implementation copy to new buffer use shared child constructor
+  /// default implementation copy to a new buffer use shared child constructor
   /// an child class with optimized copyWith can override to skip buffering
   // analogous to operator []=, but returns a new instance
   EnumMap<K, V> withField(K key, V value) => (EnumMapProxy<K, V>(this)..[key] = value).copyWith();
@@ -87,16 +88,12 @@ abstract mixin class EnumMap<K extends Enum, V> implements Map<K, V> {
   // fill values from json
   void addJson(Map<String, Object?> json) {
     if (json is Map<String, V>) {
+      // handle mixed types case, V is Object
       if (keys is List<TypedEnumKey>) {
-        // typed keys case
-        // for (final key in keys) {
-        //   if (key.compareType(json[key.name])) this[key] = json[key.name];
-        // }
         for (final TypedEnumKey key in keys as List<TypedEnumKey>) {
           if (!key.compareType(json[key.name])) throw FormatException('$runtimeType: ${key.name} is not of type ${key.type}');
         }
       }
-      // homogeneous V case
       addAllByName(json);
     } else {
       throw FormatException('$runtimeType: $json is not of type Map<String, V>');
@@ -112,7 +109,12 @@ abstract mixin class EnumMap<K extends Enum, V> implements Map<K, V> {
 }
 
 // combine mixins
-abstract class EnumMapBase<K extends Enum, V> = MapBase<K, V> with EnumMap<K, V> implements EnumMap<K, V>;
+abstract class EnumMapBase<K extends Enum, V> = MapBase<K, V> with EnumMap<K, V>;
+
+// define an interface for constructors?
+// abstract class EnumMapBase<K extends Enum, V> extends MapBase<K, V> with EnumMap<K, V> {
+//   EnumMapBase.castFrom(EnumMap<K, V> state);
+// }
 
 /// auto typing return as child class.
 mixin EnumMapAsSubtype<S extends EnumMap<K, V>, K extends Enum, V> on EnumMap<K, V> {
@@ -126,29 +128,29 @@ mixin EnumMapAsSubtype<S extends EnumMap<K, V>, K extends Enum, V> on EnumMap<K,
 
 typedef EnumKey = Enum;
 
-// only necessary for non heterogeneous V typed keys
-abstract mixin class TypedEnumKey<V> implements Enum {
-  R callTyped<R>(R Function<G>() callback) => callback<V>();
-  // type checking is more simply implemented internally
-  Type get type => V;
-  bool compareType(Object? object) => object is V;
+// only necessary for mixed V type keys
+abstract mixin class TypedEnumKey<V> implements Enum, TypeKey<V> {
+  //  V? get defaultValue => null; allows additional handling of Map<K, V?>
 
-  // or should get/set implementation be here? and redirect operators?
-  // probably better to do so in the map class with context of mutable or immutable
-  // V call(covariant EnumMap<TypedEnumKey<V>, V> map) => map[this] as V;
+  // although implementation of operators may be preferable in the containing class
+  // with full context of relationships;  mutable or immutable.
+  // this may simplify some cases
+  // V valueFrom(covariant EnumMap<TypedEnumKey<V>, V> map);
 }
 
+/// Class/Type/Factory
 /// Keys list effectively define EnumMap type and act as factory
 /// inheritable constructors
 /// this way all factory constructors are related by a single point of interface.
 ///   otherwise each factory in the child must wrap the parent factory.
-///   e.g. Child factory fromJson(Map<String, Object?> json) => Child.fromBase(Super.fromJson(json));
+///   e.g. Child factory fromJson(Map<String, Object?> json) => Child.castBase(Super.fromJson(json));
 /// additionally
 /// no passing keys as parameter
 /// partial/nullable return
 extension type const EnumMapFactory<S extends EnumMap<K, V>, K extends EnumKey, V>(List<K> keys) {
   // only this needs to be redefined in child class
-  S fromBase(EnumMap<K, V> state) => state as S;
+  // or castFrom
+  S castBase(EnumMap<K, V> state) => state as S;
 
   // alternatively use copyWith.
   // or allow user end to maintain 2 separate routines?
@@ -158,40 +160,36 @@ extension type const EnumMapFactory<S extends EnumMap<K, V>, K extends EnumKey, 
   //   if (state == null) {
   //     return EnumMapDefault<K, V?>.filled(keys, null);
   //   } else {
-  //     return fromBase(state);
+  //     return castBase(state);
   //   }
   // }
 
   // EnumMap<K, V?> filled(V? fill) => EnumMapDefault<K, V?>.filled(keys, null);
   // EnumMap<K, V?> fromValues([List<V>? values, V? fill]) => EnumMapDefault<K, V?>._fromValues(keys, values);
 
-  EnumMap<K, V> _fromEntries(Iterable<MapEntry<K, V>> entries) {
-    assert(keys.every((key) => entries.map((entry) => entry.value).contains(key)));
-    // fill then add to ensure all values are mapped by index
-    return (EnumMapDefault<K, V?>.filled(keys, null)..addEntries(entries)) as EnumMapDefault<K, V>;
-  }
+  EnumMap<K, V> _fromEntries(Iterable<MapEntry<K, V>> entries) => EnumMapDefault<K, V>.fromEntries(keys, entries);
 
   // assert all keys are present
-  S fromEntries(Iterable<MapEntry<K, V>> entries) => fromBase(_fromEntries(entries));
-  S fromMap(Map<K, V> map) => fromBase(_fromEntries(map.entries));
+  S fromEntries(Iterable<MapEntry<K, V>> entries) => castBase(_fromEntries(entries));
+  S fromMap(Map<K, V> map) => castBase(_fromEntries(map.entries));
 
   // parseJson()
   // by default allocate new list buffer
   EnumMap<K, V> _fromJson(Map<String, Object?> json) {
     if (json is Map<String, V>) {
+      // field of mixed types case, check type
       if (keys is List<TypedEnumKey>) {
         for (final key in keys as List<TypedEnumKey>) {
-          if (!key.compareType(json[key.name])) throw FormatException('DataMap.fromJson: ${key.name} is not of type ${key.type}');
+          if (!key.compareType(json[key.name])) throw FormatException('EnumMap.fromJson: ${key.name} is not of type ${key.type}');
         }
       }
-      // return EnumMapDefault.filled(keys, null)..addJson(json);
       return _fromEntries(json.entries.map((e) => MapEntry(keys.byName(e.key), e.value)));
     } else {
-      throw FormatException('DataMap.fromJson: $json is not of type Map<String, V>');
+      throw FormatException('EnumMap.fromJson: $json is not of type Map<String, V>');
     }
   }
 
-  S fromJson(Map<String, Object?> json) => fromBase(_fromJson(json));
+  S fromJson(Map<String, Object?> json) => castBase(_fromJson(json));
 }
 
 /// Default implementations concerning optimizing data structure without child class details
@@ -202,37 +200,39 @@ extension type const EnumMapFactory<S extends EnumMap<K, V>, K extends EnumKey, 
 class EnumMapDefault<K extends Enum, V> extends EnumMapBase<K, V> implements EnumMap<K, V> {
   // default by assignment, initialize const using list literal
   // a new list should always be allocated
-  const EnumMapDefault._(this._keys, this._values) : assert(_keys.length == _values.length);
+  const EnumMapDefault._(this._keysReference, this._valuesBuffer) : assert(_keysReference.length == _valuesBuffer.length);
   EnumMapDefault._fromValues(List<K> keys, Iterable<V> values) : this._(keys, List<V>.of(values, growable: false));
 
   /// constructors always pass original keys, concrete class cannot use getter, do not derive from Map.keys
   EnumMapDefault.filled(List<K> keys, V fill) : this._(keys, List<V>.filled(keys.length, fill, growable: false));
 
-  // alternatively keep in factory
+  // possibly with nullable entries value V checking key for default value first
   EnumMapDefault.fromEntries(List<K> keys, Iterable<MapEntry<K, V>> entries)
-      : assert(keys.every((key) => entries.map((entry) => entry.value).contains(key))),
-        _keys = keys,
-        _values = ((EnumMapDefault<K, V?>.filled(keys, null)..addEntries(entries)) as EnumMapDefault<K, V>)._values,
-        // _values = [for (final key in keys) entries.firstWhere((element) => element.key == key).value], // increased time complexity although includes assertion
+      : assert(keys.every((key) => entries.map((entry) => entry.key).contains(key))),
+        _keysReference = keys,
+        _valuesBuffer = (EnumMapDefault<K, V?>.filled(keys, null)..addEntries(entries))._valuesBuffer as List<V>,
+        // _values = [for (final key in keys) entries.singleWhere((element) => element.key == key).value], // increased time complexity although includes assertion
         super();
+
+  // placeholder for holding values, when type is known, cast with keys later
+  EnumMapDefault.keyless(Iterable<V> values) : this._(const [], List<V>.of(values, growable: false));
 
   // default copyFrom implementation
   // withState -> with on constructors is better reserved for defining attribute of the 'class' as oppose to the object instance, in the case of abstract class
   // copyWithState -> longer, although refers to compatibility with copyWith
   // copyFrom -> 2 verbs, less meaning projected
-  // fromState -> fromBase more precise
-  EnumMapDefault.fromBase(EnumMap<K, V> state) : this._(state.keys, List<V>.of(state.values, growable: false));
+  // fromState -> castBase more precise
+  EnumMapDefault.castBase(EnumMap<K, V> state) : this._(state.keys, List<V>.of(state.values, growable: false));
 
-  final List<K> _keys;
-  final List<V> _values;
-  // final V? _fill;
+  final List<K> _keysReference;
+  final List<V> _valuesBuffer;
 
   @override
-  List<K> get keys => _keys;
+  List<K> get keys => _keysReference;
   @override
-  V operator [](K key) => _values[key.index]!;
+  V operator [](K key) => _valuesBuffer[key.index]!;
   @override
-  void operator []=(K key, V value) => _values[key.index] = value;
+  void operator []=(K key, V value) => _valuesBuffer[key.index] = value;
 
   /// let fill throw if V is defined as non nullable and [fill] is null
   @override
@@ -273,7 +273,7 @@ class EnumMapProxy<K extends Enum, V> extends EnumMapBase<K, V> implements EnumM
   final EnumMap<K, V> _source;
 
   // a new EnumMap is optimized over a searchable List<MapEntry<K, V>>
-  //   equal preemptively to allocating a fixed size _modified list
+  //   equal to preemptively allocating a fixed size _modified list
   //   if a non growable list is used, EnumMap allocates the same size buffer
   //   a growable list either allocates a larger buffer or invoke performance penalties
   final EnumMapDefault<K, V?> _modified;
@@ -289,7 +289,7 @@ class EnumMapProxy<K extends Enum, V> extends EnumMapBase<K, V> implements EnumM
   void operator []=(K key, V value) => _modified[key] = value;
 
   @override
-  void clear() => throw UnsupportedError('EnumMap does not support clear operation');
+  void clear() => throw UnsupportedError("Cannot modify unmodifiable");
 }
 
 // cast of general map - must have all keys
@@ -302,14 +302,13 @@ class EnumMapProxy<K extends Enum, V> extends EnumMapBase<K, V> implements EnumM
 //     EnumType.name2: 3,
 //   },
 // );
-abstract mixin class ConstEnumMapInit<K extends Enum, V> /* extends EnumMapBase<K, V> */ implements EnumMap<K, V> {
-  // const ConstEnumMapInit(this.source);
-  // const factory ConstEnumMapInit.withKeys(List<K> keys, Map<K, V> source) = ConstEnumMapInitWithKeys<K, V>;
+// ignore: missing_override_of_must_be_overridden
+// may need to be mixin
+class ConstEnumMapInit<K extends Enum, V> extends EnumMapBase<K, V> implements EnumMap<K, V> {
+  const ConstEnumMapInit(this.source);
 
-  // @protected
-  // final Map<K, V> source;
-
-  Map<K, V> get source;
+  @protected
+  final Map<K, V> source;
 
   @override
   V operator [](covariant K key) => source[key]!;
@@ -319,13 +318,20 @@ abstract mixin class ConstEnumMapInit<K extends Enum, V> /* extends EnumMapBase<
 
   @override
   void clear() => throw UnsupportedError("Cannot modify unmodifiable");
+
+  // @override
+  // EnumMap<K, V> copyWith() => this;
+
+  @override
+  List<K> get keys {
+    if (source is EnumMap<K, V>) return (source as EnumMap<K, V>).keys; // only step to generalize for EnumMap as source
+    return UnmodifiableListView(source.keys);
+  }
 }
 
 // ignore: missing_override_of_must_be_overridden
-class ConstEnumMapInitWithKeys<K extends Enum, V> extends EnumMapBase<K, V> with ConstEnumMapInit<K, V> implements EnumMap<K, V> {
-  const ConstEnumMapInitWithKeys(this.keys, this.source);
+class ConstEnumMapInitWithKeys<K extends Enum, V> extends ConstEnumMapInit<K, V> implements EnumMap<K, V> {
+  const ConstEnumMapInitWithKeys(this.keys, super.source);
   @override
   final List<K> keys;
-  @protected
-  final Map<K, V> source;
 }

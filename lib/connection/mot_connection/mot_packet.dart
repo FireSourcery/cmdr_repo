@@ -4,7 +4,7 @@ import 'package:cmdr/binary_data/typed_data_ext.dart';
 import '../../binary_data/typed_field.dart';
 import '../base/packet.dart';
 
-mixin class MotPacketInterface implements PacketInterface {
+mixin class MotPacketInterface implements PacketClass {
   const MotPacketInterface();
 
   @override

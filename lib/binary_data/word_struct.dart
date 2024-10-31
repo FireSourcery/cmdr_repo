@@ -2,27 +2,21 @@ import 'dart:collection';
 import 'package:meta/meta.dart';
 
 import '../common/enum_map.dart';
-import 'typed_field.dart';
-import 'bitfield.dart';
-import 'bits_map.dart';
+import 'bit_struct.dart';
+import 'bit_field.dart';
 import 'bits.dart';
 import 'word.dart';
+import 'typed_field.dart';
 
-/// BitField enforcing byte aligned fields
 ///
-/// [Bits] + operators <WordField, int> + [Bytes] up to 8 bytes
+/// [Bits]/[Word] + [] Map operators returning [int]
 ///
-/// [Word] with named fields, associated keys
+/// effectively,
+/// [BitField] enforcing byte aligned fields, up to 8 bytes
 ///
 /// Implementation centric DataMap, up to 8 bytes, int values only
-///   a special case where the data struct is known, does not need child constructor
-///
-abstract mixin class WordFields<T extends WordField> implements BitField<T> {
-  const WordFields();
-// factory WordFields.withKeys(List<T> keys, [Bits value]) = _WordFieldsWithKeys;
-// factory WordFields.withState(BitsMap<T, int> state) = WordFieldsBase(state.bits);
-
-//no additional fields for now
+abstract mixin class WordStruct<T extends WordField> implements BitStruct<T> {
+  const WordStruct();
 
   int get byteLength => bits.byteLength;
 }
@@ -30,33 +24,31 @@ abstract mixin class WordFields<T extends WordField> implements BitField<T> {
 // /// a field within a Word, unlike BitField
 // for user to define map operator and name
 /// interface for including [TypedField<T>], [Enum]
+
 /// type ensure bitmask is power of 2
-abstract mixin class WordField<V extends NativeType> implements TypedField<V>, BitFieldKey, Enum {
+abstract mixin class WordField<V extends NativeType> implements TypedField<V>, BitField, Enum {
   // alternatively store the bitmask
   @override
   Bitmask get bitmask => Bitmask.bytes(offset, size);
-
-  // static Bitmask bitmaskOf<T extends NativeType>(int offset) => Bitmask.bytes(offset, sizeOf<T>());
-  // TypedField<V> get typedField; // alternatively compose so it does not need to be implemented
 }
 
 // BitField with Word constructors
-abstract class WordFieldsBase<T extends WordField> extends ConstBitFieldBase<T> with WordFields<T> {
+abstract class WordStructBase<T extends WordField> extends ConstBitStructBase<T> with WordStruct<T> {
   // const WordFieldsBase.bits(super.bits) : super();
 
   // re-implementation of Word constructors for const
-  const WordFieldsBase(int bits) : super(bits as Bits);
+  const WordStructBase(int bits) : super(bits as Bits);
 
-  const WordFieldsBase.of32s(int ls32, [int ms32 = 0]) : this((ms32 << 32) | (ls32 & _mask32));
+  const WordStructBase.of32s(int ls32, [int ms32 = 0]) : this((ms32 << 32) | (ls32 & _mask32));
 
-  const WordFieldsBase.of16s(int ls16, [int upperLs16 = 0, int lowerMs16 = 0, int ms16 = 0])
+  const WordStructBase.of16s(int ls16, [int upperLs16 = 0, int lowerMs16 = 0, int ms16 = 0])
       : this.of32s(
           (upperLs16 << 16) | (ls16 & _mask16),
           (ms16 << 16) | (lowerMs16 & _mask16),
         );
 
   // assign with parameters in little endian order for byteLength
-  const WordFieldsBase.of8s(int lsb, [int lsb1 = 0, int lsb2 = 0, int lsb3 = 0, int msb3 = 0, int msb2 = 0, int msb1 = 0, int msb = 0])
+  const WordStructBase.of8s(int lsb, [int lsb1 = 0, int lsb2 = 0, int lsb3 = 0, int msb3 = 0, int msb2 = 0, int msb1 = 0, int msb = 0])
       : this.of16s(
           (lsb1 << 8) | (lsb & _mask8),
           (lsb3 << 8) | (lsb2 & _mask8),
@@ -68,15 +60,15 @@ abstract class WordFieldsBase<T extends WordField> extends ConstBitFieldBase<T> 
   static const int _mask16 = 0xFFFF;
   static const int _mask32 = 0xFFFFFFFF;
 
-  WordFieldsBase.cast(super.state) : super.fromBase();
+  WordStructBase.castBase(super.state) : super.castBase();
 
   // WordFieldsBase.values(List<T> keys, Iterable<int> values, [bool mutable = true]) {
   //   return WordFieldsBaseWithKeys(keys, keys.bitmasks.apply(values), mutable);
   // }
 }
 
-//constructors passed through
-class WordFieldsBaseWithKeys<T extends WordField> = ConstBitFieldWithKeys<T> with WordFields<T>;
+// constructors passed through
+class WordStructBaseWithKeys<T extends WordField> = ConstBitStructWithKeys<T> with WordStruct<T>;
 
 /// alternatively
 /// Must extend Word for const constructor, until const expressions are supported

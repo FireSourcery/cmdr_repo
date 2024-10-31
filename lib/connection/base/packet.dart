@@ -1,18 +1,19 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
-import 'package:cmdr/common/defined_types.dart';
 
+import '../../common/basic_types.dart';
+import '../../common/basic_ext.dart';
 import '../../binary_data/byte_struct.dart';
 import '../../binary_data/typed_data_ext.dart';
 import '../../binary_data/typed_field.dart';
 
 export '../../binary_data/byte_struct.dart';
 
-/// Collective def of Packet format specs
+/// Collective def of Packet format specs. 'Class variables'
 // Abstract factory pattern
 // for values available without a Packet instance, over prototype object
 // effectively the child packet type encapsulated, child class 'static' methods
-abstract mixin class PacketInterface {
+abstract mixin class PacketClass {
   // const for each packet instance
   // can implement in PacketId for per packet behavior
   int get startId; // alternatively Uint8List
@@ -50,12 +51,12 @@ abstract mixin class PacketInterface {
 ///
 /// ffi.Struct current does not allow length < full struct length, or mixin
 /// alternatively, use extension type on TypedData
-abstract mixin class Packet implements PacketInterface {
+abstract mixin class Packet implements PacketClass {
   const Packet();
   // factory Packet.view(PacketCaster packetCaster, Packet packet, int offset, [int? length]) => packetCaster(packet.range(offset, length));
 
   // alternatively
-  // PacketInterface get packetInterface;
+  // PacketClass get packetClass;
 
   /// derive from either header or packetInterface
   int get payloadIndex => headerLength;
@@ -70,7 +71,9 @@ abstract mixin class Packet implements PacketInterface {
   // pointer to a buffer, immutable.
   // mutable view use PacketBuffer
   // Holds offset, not directly retain ByteBuffer, to allow packets parts to be defined relatively
-  Uint8List get bytes;
+
+  ByteData get byteData;
+  Uint8List get bytes => Uint8List.sublistView(byteData);
 
   /// immutable, of varying length, by default
   /// mutable with mixin, or PacketBuffer
@@ -110,7 +113,7 @@ abstract mixin class Packet implements PacketInterface {
   /// with range check
   List<int> payloadAt<R extends TypedData>(int byteOffset, [int? end]) => payload.asIntListOrEmpty<R>(byteOffset, end);
   int payloadWordAt<R extends NativeType>(int byteOffset) => payloadWords.wordAt<R>(byteOffset, endian); // throws if header parser fails, length reports lesser value, while checksum passes
-  int? payloadWordAtOrNull<R extends NativeType>(int byteOffset) => payloadWords.wordOrNullAt<R>(byteOffset, endian);
+  int? payloadWordAtOrNull<R extends NativeType>(int byteOffset) => payloadWords.wordAtOrNull<R>(byteOffset, endian);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// [Checksum]
@@ -214,13 +217,11 @@ abstract mixin class Packet implements PacketInterface {
   /// On partial header, truncated view, header status during parsing
   /// defined using TypedOffset
   ////////////////////////////////////////////////////////////////////////////////
-  ByteData get _byteData => ByteData.sublistView(bytes);
-
   // header struct cannot cast less than full length
-  int? get startFieldOrNull => startFieldPart.valueOrNullOf(_byteData);
-  int? get idFieldOrNull => idFieldPart.valueOrNullOf(_byteData);
-  int? get lengthFieldOrNull => lengthFieldPart.valueOrNullOf(_byteData);
-  int? get checksumFieldOrNull => checksumFieldPart.valueOrNullOf(_byteData);
+  int? get startFieldOrNull => startFieldPart.valueOrNullOf(byteData);
+  int? get idFieldOrNull => idFieldPart.valueOrNullOf(byteData);
+  int? get lengthFieldOrNull => lengthFieldPart.valueOrNullOf(byteData);
+  int? get checksumFieldOrNull => checksumFieldPart.valueOrNullOf(byteData);
 
   // null if not yet received
   bool? get isStartFieldValid => startFieldOrNull.isThen(isValidStart);
@@ -267,7 +268,7 @@ typedef PacketCaster<P extends Packet> = P Function(TypedData typedData);
 // optionally resolve getters to fields
 abstract class PacketBase extends ByteStructBase with Packet {
   PacketBase(super.bytes, [super.offset = 0, super.length]);
-  PacketBase.origin(super.bytesBuffer, [super.offset = 0, super.length]) : super.origin();
+  // PacketBase.origin(super.bytesBuffer, [super.offset = 0, super.length]) : super.origin();
 }
 
 // abstract mixin class PacketCreator {
@@ -376,7 +377,7 @@ class PayloadMeta {
 ////////////////////////////////////////////////////////////////////////////
 /// Packet with `mutable length` , copyBytes, + casters
 ///
-/// pass [PacketCaster] or [PacketInterface], this way user does not have to extend PacketBuffer with child type methods
+/// pass [PacketCaster] or [PacketClass], this way user does not have to extend PacketBuffer with child type methods
 /// alternatively implements Packet require proxy or user create separate class mixin ChildType
 /// ideally this could implement packet and uin8list
 class PacketBuffer {
@@ -388,7 +389,7 @@ class PacketBuffer {
   PacketBuffer.size(PacketCaster packetCaster, int size) : this.buffer(packetCaster, Uint8List(size));
 
   // todo user packet interface for accessors
-  PacketBuffer(PacketInterface packetInterface, [int? size]) : this.buffer(packetInterface.cast, Uint8List(size ?? packetInterface.lengthMax));
+  PacketBuffer(PacketClass packetInterface, [int? size]) : this.buffer(packetInterface.cast, Uint8List(size ?? packetInterface.lengthMax));
 
   final ByteBuffer _byteBuffer; // PacketBuffer can directly retain byteBuffer, its own buffer starts at offset 0, methods are provided as relative via Packet,
   final Packet _packetBuffer; // holds full view, max length buffer, with named fields. build functions uncontrained, then sets length

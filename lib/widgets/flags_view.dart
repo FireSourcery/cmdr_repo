@@ -1,10 +1,10 @@
-import 'package:cmdr/common/defined_types.dart';
+import 'package:cmdr/common/basic_types.dart';
 import 'package:cmdr/settings/settings_view.dart';
 import 'package:flutter/material.dart';
 import 'package:recase/recase.dart';
 // import 'package:recase/recase.dart';
 
-import '../binary_data/bitflags.dart';
+import '../binary_data/bool_struct.dart';
 
 // class FlagTile<T extends Enum> extends StatelessWidget {
 //   const FlagTile({
@@ -30,7 +30,7 @@ import '../binary_data/bitflags.dart';
 
 class FlagIcons<T extends Enum> extends StatelessWidget {
   const FlagIcons({super.key, required this.flags, this.onPressed, this.iconMap, this.toolTipMap, this.textMap});
-  // FlagIcons.bitFlags({Key? key, required BitFlags<T> bitFlags}) : this(flags: bitFlags.pairs);
+  // FlagIcons.boolStruct({Key? key, required BoolStruct<T> boolStruct}) : this(flags: boolStruct.pairs);
 
   // final FlagIconsSource<T> flagIconsSource;
   final Iterable<(T key, bool isOn)> flags;

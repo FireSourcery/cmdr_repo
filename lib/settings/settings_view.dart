@@ -85,8 +85,9 @@ class SettingTextField<T> extends SettingTypedWidget<T> {
       valueGetter: () => setting.value,
       valueSetter: (value) => settingsController.updateSetting<T>(setting, value),
       decoration: const InputDecoration().applyDefaults(Theme.of(context).inputDecorationTheme).copyWith(isDense: true),
-      numMax: setting.numLimits?.max,
-      numMin: setting.numLimits?.min,
+      numLimits: setting.numLimits,
+      // numMax: setting.numLimits?.max,
+      // numMin: setting.numLimits?.min,
       tip: setting.key,
     );
   }
@@ -106,7 +107,8 @@ class SettingMenu<T> extends SettingTypedWidget<T> {
       listenable: settingsController,
       valueGetter: () => setting.value,
       valueSetter: (value) async => await settingsController.updateSetting<T>(setting, value),
-      stringMap: {for (var e in setting.enumValues ?? []) e: string(e)},
+      // stringMap: {for (var e in setting.enumValues ?? []) e: string(e)},
+      valueEnumRange: setting.enumValues!,
       tip: setting.key,
     );
   }

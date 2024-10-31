@@ -7,12 +7,12 @@ class MenuAnchorButton extends StatelessWidget {
   final List<Widget> items; //MenuItemButton
   final Widget icon;
 
+  Widget builder(BuildContext context, MenuController controller, Widget? child) {
+    return IconButton(onPressed: () => (controller.isOpen) ? controller.close() : controller.open(), icon: icon);
+  }
+
   @override
   Widget build(BuildContext context) {
-    Widget builder(BuildContext context, MenuController controller, Widget? child) {
-      return IconButton(onPressed: () => (controller.isOpen) ? controller.close() : controller.open(), icon: icon);
-    }
-
     return MenuAnchor(
       menuChildren: items,
       builder: builder,
@@ -32,16 +32,16 @@ class MenuAnchorOverlay extends StatelessWidget {
   final VoidCallback? onOpen;
   final VoidCallback? onClose;
 
+  void onSecondaryTapDown(TapDownDetails details) => menuController!.open(position: details.localPosition);
+  void onLongPress() => menuController!.open();
+
   @override
   Widget build(BuildContext context) {
     final MenuController controller = menuController ?? MenuController();
 
-    void onSecondaryTapDown(TapDownDetails details) => controller.open(position: details.localPosition);
-    void onLongPress() => controller.open();
-
     return GestureDetector(
-      onSecondaryTapDown: onSecondaryTapDown,
-      onLongPress: onLongPress,
+      onSecondaryTapDown: (menuController != null) ? onSecondaryTapDown : null,
+      onLongPress: (menuController != null) ? onLongPress : null,
       child: MenuAnchor(
         menuChildren: items,
         controller: controller,

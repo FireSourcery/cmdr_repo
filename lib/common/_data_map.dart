@@ -3,24 +3,22 @@ import 'dart:collection';
 import 'package:cmdr/common/enum_map.dart';
 import 'package:meta/meta.dart';
 
-/// immutable wrap + mixed values types
-// abstract mixin class DataMap<T extends DataField<V>, V extends Object?> implements EnumMap<T, V> {
+import 'basic_types.dart';
+
+/// EnumMap mixed values types + immutable
 // alternatively allow V to to define restriction Object or Object?
+// abstract mixin class DataMap<T extends DataField<V>, V extends Object?> implements EnumMap<T, V> {
+@immutable
 abstract mixin class DataMap<T extends DataField<Object?>> implements EnumMap<T, Object?> {
   const DataMap();
 
-  // casted as  parameter input
+  // casted as parameter input
   // let V be defined by key
   // V _get<V>(covariant T key) => this[key] as V;
-  // R get<R>(covariant T key) => key.callTyped<R>(<G>() => _get<G>(key) as R);
+  // R get<R>(covariant T key) => key.callWithType<R>(<G>() => _get<G>(key) as R);
+  // R get<R>(covariant T key) => key.callWithType<R>(<G>() => (this[key] as G) as R);
 
-  // V get<V>(covariant T key) {
-  //   // assert(key is DataField<V>);
-  //   assert(key.type == V);
-  //   return this[key] as V;
-  // }
-
-  R get<R>(covariant T key) => key.call(this) as R;
+  dynamic get(covariant T key) => key.callWithType<dynamic>(<G>() => (this[key] as G));
 
   @override
   void operator []=(covariant DataField<Object?> key, Object? value) => throw UnsupportedError("Cannot modify unmodifiable");
@@ -32,11 +30,14 @@ abstract mixin class DataMap<T extends DataField<Object?>> implements EnumMap<T,
   // DataMap<T, > copyWith() => this;
 }
 
-// typedef DataField<V> = TypedEnumKey<V>;
+// typedef DataField<V extends Object?> = TypedEnumKey<V>;
 // keys with type effectively define memory layout
-abstract mixin class DataField<V extends Object?> implements TypedEnumKey<V>, Enum {
+abstract mixin class DataField<V extends Object?> implements TypedEnumKey<V> {
   const DataField();
-  V call(covariant DataMap<DataField<Object?>> map) {
+
+  // V? get defaultValue => null;
+
+  V valueFrom(covariant DataMap<DataField<Object?>> map) {
     // assert(map.keys.contains(this));
     assert(map.keys[index] == this);
     return map[this] as V;
@@ -45,36 +46,39 @@ abstract mixin class DataField<V extends Object?> implements TypedEnumKey<V>, En
 
 // todo use regular class to simplify inheritance?
 extension type const DataMapFactory<T extends DataField<Object?>>(List<T> keys) implements EnumMapFactory<DataMap<T>, T, Object?> {
-  // EnumMapFactory<T, Object?> get _super => EnumMapFactory(keys);
-  DataMap<T> fromBase(DataMap<T> state) => _DataMapDefault.fromBase(state);
-
-  // DataMap<T> fromJson(Map<String, Object?> json) => _DataMapDefault.cast(EnumMapDefault.filled(keys, null));
-  // @redeclare
-  // DataMap<T> fromJson(Map<String, Object?> json) => _DataMapDefault.fromBase(_super.fromJson(json));
-  // DataMap<T> fromJson1(Map<String, Object?> json) => fromJson(json);
-
-  // @redeclare
-  // DataMap<T> fromValues(Iterable<Object?> values) => _DataMapDefault.fromBase(_super.fromValues(values));
+  DataMap<T> castBase(DataMap<T> state) => _DataMapDefault.castBase(state);
 }
 
-// alternatively with MapBase<K, Object?>, EnumMap<K, Object?>, DataMap<K>
+// combine mixins 'with MapBase<K, Object?>, EnumMap<K, Object?>, DataMap<K>'
+@immutable
 abstract class DataMapBase<K extends DataField<Object?>> = MapBase<K, Object?> with EnumMap<K, Object?>, DataMap<K>;
 
-// allow a stand alone DataMap without named accessors.
+// default DataMap without named accessors.
 // ignore: missing_override_of_must_be_overridden
 class _DataMapDefault<K extends DataField<Object?>> = EnumMapDefault<K, Object?> with DataMap<K>;
+
+// abstract class DataClass<T extends DataClass<dynamic>> extends DataMapBase<DataField<Object?>> {
+//   const DataClass();
+//   factory DataClass.castBase(DataMap<DataField<Object?>> map) {
+//     DataMapFactory(keys).fill()..addAll(map);
+//   }
+
+//   // static T of<T extends DataClass>(List<T> keys) {
+//   //   return DataMapFactory(keys).fill();
+//   // }
+// }
 
 /// e.g
 ///
 
 // a key to each field, with an generated string, use as json key; an type parameter, effectively describe the memory allocation requirements
-enum PersonField<V extends Object> with TypedEnumKey<V>, DataField<V> {
+enum PersonField<V extends Object> with TypeKey<V>, TypedEnumKey<V>, DataField<V> {
   id<int>(),
   age<int>(),
   name<String>();
 }
 
-class Person extends DataMapBase<PersonField<Object>> {
+class Person extends DataMapBase<PersonField<Object>> /* with EnumMapAsSubtype<Person, PersonField<Object>, Object>  */ {
   // static const DataMapFactory<PersonField<Object>> personFactory = DataMapFactory(PersonField.values);
 
   const Person(this.id, this.name, this.age);
@@ -85,8 +89,8 @@ class Person extends DataMapBase<PersonField<Object>> {
 
   // the user side class only needs to provide a function to map the values of a known memory layout/interface to the user's class' memory layout
   // one point of interface to the base class
-  // fromBase
-  Person.fromBase(DataMap<PersonField> map)
+
+  Person.castBase(DataMap<PersonField> map)
       : id = map.get(PersonField.id),
         name = map.get(PersonField.name),
         age = map.get(PersonField.age);
@@ -94,15 +98,20 @@ class Person extends DataMapBase<PersonField<Object>> {
   // and a function using a known interface access the fields of the user's class, maps ids to getters
   @override
   Object operator [](PersonField key) {
-    return switch (key) { PersonField.id => id, PersonField.name => name, PersonField.age => age };
+    return switch (key) {
+      PersonField.id => id,
+      PersonField.name => name,
+      PersonField.age => age,
+    };
   }
 
-  // in this case, we must go through a intermediary step of jsonMap -> known memory layout/interface -> user's class, at runtime.
+  Person.fromMap(Map<PersonField, Object?> map) : this.castBase(const DataMapFactory(PersonField.values).fromMap(map));
+
+  // in this case, as a provided default, we must go through a intermediary step of jsonMap -> known memory layout/interface -> user's class, at runtime.
   // where as code gen can directly map jsonMap -> user class, which is less cost during runtime. although this approach is in principle is the same as [StringBuffer]
   // however the code for mapping json directly to the user class, unique to each user class, would also require an expense of memory in ROM, arguable more expensive the intermediary buffer in RAM
   factory Person.fromJson(Map<String, Object?> json) {
-    return Person.fromBase(const DataMapFactory(PersonField.values).fromJson(json));
-    // return Person.fromBase(const DataMap.fromJson(PersonField.values, json));
+    return Person.castBase(const DataMapFactory(PersonField.values).fromJson(json));
   }
 
   @override
@@ -112,6 +121,11 @@ class Person extends DataMapBase<PersonField<Object>> {
   Person copyWith({String? name, int? id, int? age}) {
     return Person(id ?? this.id, name ?? this.name, age ?? this.age);
   }
+
+  // inherited
+  // Person withField(PersonField key, Object? value);
+  // Person withEntries(Iterable<MapEntry<K, V>> newEntries);
+  // Person withAll(Map<K, V> map);
 
   // e.g.
   // without override allocates a small temporary buffer, length keys, or less using iterative search

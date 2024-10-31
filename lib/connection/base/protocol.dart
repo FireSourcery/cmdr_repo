@@ -11,9 +11,9 @@ class Protocol {
   Protocol(this.link, this.packetInterface) : headerParser = HeaderParser(packetInterface.cast, packetInterface.lengthMax * 4);
 
   final Link link;
-  final PacketInterface packetInterface;
+  final PacketClass packetInterface;
   final HeaderParser headerParser;
-  final Map<PacketId, ProtocolSocket> respSocketMap = {}; // map response id to socket
+  final Map<PacketId, ProtocolSocket> respSocketMap = {}; // map response id to socket, listeners
   final Lock _lock = Lock();
 
   ProtocolException status = ProtocolException.ok;
@@ -30,8 +30,9 @@ class Protocol {
 
     status = ProtocolException.ok;
 
-    // if sockets implements listen on the transformed stream, although the observer pattern is implemented,
-    // the check id routine must still run iteratively. but a map would not be necessary.
+    // if sockets implements listen on the transformed stream,
+    //  although the observer pattern is still implemented,
+    //  the check id routine must still run for each socket. but a map would not be necessary.
     return packetStream!.listen(
       (packet) {
         print("RX ${packet.bytes.take(4)} ${packet.bytes.skip(4).take(4)} ${packet.bytes.skip(8)}");
@@ -141,7 +142,7 @@ class ProtocolSocket implements Sink<Packet> {
   static const Duration reqRespTimeoutDefault = Duration(milliseconds: 1000);
   static const Duration datagramDelay = Duration(milliseconds: 1);
 
-  PacketInterface get packetInterface => protocol.packetInterface;
+  PacketClass get packetInterface => protocol.packetInterface;
 
   /// async function maintains state
   /// locks buffer, packet buildPayload function must be defined with override to include during lock
@@ -195,23 +196,20 @@ class ProtocolSocket implements Sink<Packet> {
     // return null;
   }
 
-  // Future<R?> requestResponse<T, R>(PacketIdRequestResponse<T, R> requestId, T requestArgs, {Duration? timeout = reqRespTimeoutDefault}) async {
+  // without options
+  // Future<R?> requestResponse1<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration? timeout = reqRespTimeoutDefault}) async {
   //   try {
   //     return await _lock.synchronized<R?>(
   //       () async {
   //         packetBufferIn.clear();
-  //         await sendRequest(requestId, requestArgs);
-  //         return await recvResponse(requestId);
+  //         protocol.mapRequestResponse(requestId, this); //move to send request?
+  //         return await sendRequest(requestId, requestArgs).then((value) => recvResponse(requestId, reqStateMeta: value));
   //       },
   //       timeout: timeout,
   //     );
   //   } on TimeoutException {
-  //     print("Socket lock requestResponseWithSync Timeout");
   //   } catch (e) {
-  //     print(e);
-  //   } finally {
-  //     print('---');
-  //   }
+  //   } finally {}
   //   return null;
   // }
 
@@ -222,6 +220,7 @@ class ProtocolSocket implements Sink<Packet> {
     }
   }
 
+  /// Must return as stream, so callback can run following each response. This way eliminates additional buffering. Reducing to Iterable would direct each element to the same packet buffer.
   Stream<(T segmentArgs, R? segmentResponse)> iterativeRequest<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> requestSlices, {Duration delay = datagramDelay}) async* {
     for (final segmentArgs in requestSlices) {
       yield (segmentArgs, await requestResponse<T, R>(requestId, segmentArgs));
@@ -231,10 +230,7 @@ class ProtocolSocket implements Sink<Packet> {
 
   Stream<(T segmentArgs, R? segmentResponse)> periodicIterativeRequest<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> requestSlices, {Duration delay = datagramDelay}) async* {
     while (true) {
-      for (final segmentArgs in requestSlices) {
-        yield (segmentArgs, await requestResponse<T, R>(requestId, segmentArgs));
-        await Future.delayed(delay);
-      }
+      yield* iterativeRequest<T, R>(requestId, requestSlices, delay: delay);
     }
   }
 
@@ -357,17 +353,6 @@ class ProtocolSocket implements Sink<Packet> {
   @override
   void close() {
     print('Socket closed');
-  }
-}
-
-// mixin on id
-abstract mixin class PacketIdRequestCall<T, R> implements PacketIdRequest<T, R> {
-  ProtocolSocket get socket;
-
-  // Function get _call => socket.requestResponse;
-
-  Future<R?> call(T request, {Duration? timeout = ProtocolSocket.reqRespTimeoutDefault, ProtocolSyncOptions syncOptions = ProtocolSyncOptions.none}) async {
-    return await socket.requestResponse<T, R>(this, request);
   }
 }
 

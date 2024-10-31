@@ -1,6 +1,7 @@
 import 'package:cmdr/settings/setting.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+//SharedPreference Service
 class SettingsService {
   SettingsService._();
   static final SettingsService main = SettingsService._();
@@ -22,9 +23,9 @@ class SettingsService {
     return switch (R) {
       const (bool) || const (String) || const (List<String>) => _get<R>(key),
       const (int) || const (double) => _get<R>(key),
-      const (Enum) => _getEnum(key, bounds),
+      const (Enum) => _getEnum(key, bounds) as R?,
       _ => throw UnsupportedError('$R'),
-    } as R?;
+    };
   }
 
   // loaded on init

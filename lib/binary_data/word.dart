@@ -8,7 +8,7 @@ export 'bits.dart';
 /// [Word] - A register width variable.
 /// Implementation of [Bits] with byte granularity constructors/accessors.
 /// Effectively [ByteData] with a length of 8 bytes.
-/// can be compile time constant, use as enum entry
+/// Can be compile time constant, use as enum entry
 extension type const Word(int _value) implements Bits, int {
   /// must be standard class for constructors to be passed to child as const, and derived classes can be used as compile time constants
   /// alternatively defer most distant child class to call Word constructor
@@ -41,8 +41,11 @@ extension type const Word(int _value) implements Bits, int {
   //   e.g. for a value of 1, big endian, user must input <int>[0, 0, 0, 0, 0, 0, 0, 1], <int>[1] would be treated as 0x0100'0000'0000'0000
   // if byteBuffer is at least 8 bytes, skip copying to buffer, otherwise copies to a new buffer
   Word.bytes(TypedData bytes, [Endian endian = Endian.little]) : this(bytes.toInt(endian));
-  // Runes, take first 8 bytes
-  Word.chars(Iterable<int> chars, [Endian endian = _stringEndian]) : this(chars.toBytes(8).toInt(endian));
+  // as byte chars for now, take first 8 bytes
+  Word.chars(Iterable<int> chars, [Endian endian = _stringEndian]) : this(IntArray<Uint8List>.from(chars, 8).toInt(endian));
+
+  // 1 unit width for now
+  // Word.runes(Runes runes, [int? unitWidth = 1, Endian endian = _stringEndian]) : this();
   Word.string(String string) : this.chars(string.runes, _stringEndian);
   // Word.origin(ByteBuffer bytes, [int offset = 0, Endian endian = Endian.little]) : value = bytes.toInt(offset, endian);
 
@@ -57,7 +60,7 @@ extension type const Word(int _value) implements Bits, int {
   // Uint8List toBytes([Endian endian = Endian.big]) => toByteData(endian).buffer.asUint8List();
   // Uint8List toBytesAs(Endian endian, [int? byteLength]) => toByteData(endian).trim(byteLength ?? this.byteLength, endian).buffer.asUint8List();
 
-  // List<int>   numList(unitLength) => toBytes(Endian.little);
+  // List<int> numList(unitLength) => toBytes(Endian.little);
 
   // // auto trim length
   // Uint8List get bytes => toBytes(Endian.little);
@@ -73,64 +76,71 @@ extension type const Word(int _value) implements Bits, int {
   // void operator []=(int index, int value) => setByteAt(index, value);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// Word value for intervals not of pow2
+////////////////////////////////////////////////////////////////////////////////
+// IntOfBytes
+extension SizedWord on TypedData {
+  // allows non pow2 intervals. use case [2][3][3] stored in a int64
+  // truncates if size > lengthInBytes, i.e. lengthInBytes the comparable ByteData.get[Int]
+  // creates a new buffer
+  // does not sign extend
+  // move this to constructor?
+  int valueAt(int byteOffset, int size, [Endian endian = Endian.little]) {
+    assert(size <= 8);
+    final endianOffset = switch (endian) { Endian.big => 8 - size, Endian.little => 0, Endian() => throw StateError('Endian') };
+    // todo check size as end
+    return (Uint8List(8)..setAll(endianOffset, Uint8List.sublistView(this, byteOffset, byteOffset + size))).toInt64(endian);
+  }
+
+  // lengthInBytes >= 8
+  int toInt64([Endian endian = Endian.little]) => buffer.asByteData().getInt64(offsetInBytes, endian); // ByteData.sublistView(this).wordAt<Int64>(0, endian)
+
+  // valueAt max size is 8, when lengthInBytes >= 8, toInt64 avoids copying buffer
+  int toInt([Endian endian = Endian.little]) => (lengthInBytes >= 8) ? toInt64(endian) : valueAt(0, lengthInBytes, endian);
+
+  Word toWord([Endian endian = Endian.little]) => toInt(endian) as Word;
+}
+
+// converts singular register into bytes
 extension BytesOfInt on int {
   /// TypedData Byte List operations
   // fixed size buffer then trim view with length likely better performance than iterative build with flex size BytesBuilder
   // bytes.length always returns 8 from new buffer
   // ByteData.get[Word] must use same endian
   ByteData toByteData([Endian endian = Endian.little]) => ByteData(8)..setUint64(0, this, endian);
-  ByteData toByteDataAs(Endian endian, [int? byteLength]) => toByteData(endian).trim(byteLength ?? this.byteLength, endian);
+  Uint8List toBytes([Endian endian = Endian.little]) => Uint8List.sublistView(toByteData(endian));
 
-  Uint8List toBytes([Endian endian = Endian.big]) => toByteData(endian).sublistView();
-  Uint8List toBytesAs(Endian endian, [int? byteLength]) => Uint8List.sublistView(toByteData(endian).trim(byteLength ?? this.byteLength, endian));
+  // todo with mask?
+//ToBytesTrimmed
+  ByteData toByteDataAs(Endian endian, [int? byteLength]) => toByteData(endian).trimWord(byteLength ?? this.byteLength, endian);
+  Uint8List toBytesAs(Endian endian, [int? byteLength]) => Uint8List.sublistView(toByteDataAs(endian, byteLength));
 
   // R toList<R extends TypedData>(Endian endian, [int? byteLength]) => toByteData(endian).trim(byteLength ?? this.byteLength, endian).sublistView<R>();
 
   /// String Char operations using Bits
-  String charAsCode(int index) => String.fromCharCode(byteAt(index)); // 0x31 => '1'
+  String charOfCode(int index) => String.fromCharCode(byteAt(index)); // 0x31 => '1'
   int withCharAsCode(int index, String char) => withByteAt(index, char.runes.single); // '1' => 0x31
 
   // num literal only
-  String charAsLiteral(int index, [bool isSigned = false]) => byteAt(index).toString(); // 1 => '1'
+  String charOfLiteral(int index, [bool isSigned = false]) => byteAt(index).toString(); // 1 => '1'
   int withCharAsLiteral(int index, String char) => withByteAt(index, int.parse(char)); // '1' => 1
 
   // toCharAsCode
   String toCharAsCode() => String.fromCharCode(this);
-  // alternatively iterate over bits
   // toStringAsCode
-  String toStringAsCode([Endian endian = Endian.little, int charSize = 1]) => String.fromCharCodes(Uint8List.sublistView(toByteData(endian)), 0, byteLength);
+  String toStringAsCode([Endian endian = Endian.little, int charSize = 1]) => String.fromCharCodes(toBytes(endian), 0, byteLength);
 }
 
 // on ByteData as it is the designated type for int conversion
 extension TrimByteData on ByteData {
   // big endian trim leading. little endian trim trailing
   // asTrimmed, asTrimmedView
-  ByteData trim(int wordLength, Endian endian) => switch (endian) { Endian.big => trimAsBE(wordLength), Endian.little => trimAsLE(wordLength), Endian() => throw StateError('Endian') };
+  ByteData trimWord(int wordLength, Endian endian) => switch (endian) { Endian.big => trimLeading(wordLength), Endian.little => trimTrailing(wordLength), Endian() => throw StateError('Endian') };
 
+  // trimLeading, trimTrailing
   // constructing trimAsBE back to Word will change value, unless offset is accounted for.
-  ByteData trimAsBE(int wordLength) => ByteData.sublistView(this, lengthInBytes - wordLength);
+  ByteData trimLeading(int targetLength) => ByteData.sublistView(this, lengthInBytes - targetLength);
   // constructing trimAsLE back to Word preserves value
-  ByteData trimAsLE(int wordLength) => ByteData.sublistView(this, 0, wordLength);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/// Word value for intervals not of pow2
-////////////////////////////////////////////////////////////////////////////////
-// IntOfBytes
-extension SizedWord on TypedData {
-  // caller assert(lengthInBytes >= 8)
-  int toInt64([Endian endian = Endian.little]) => buffer.asByteData().getInt64(offsetInBytes, endian); // equivalent to ByteData.sublistView(this).getInt64(0, endian)
-
-  // creates a new buffer
-  // caller assert(lengthInBytes < 8)
-  // when lengthInBytes > 8, toInt64 avoids copying buffer
-  // allows non pow2 intervals. use case [2][3][3] stored in a int64
-  int valueAt(int byteOffset, int size, [Endian endian = Endian.little]) {
-    assert(size <= 8);
-    final endianOffset = switch (endian) { Endian.big => 8 - size, Endian.little => 0, Endian() => throw StateError('Endian') };
-    return (Uint8List(8)..setAll(endianOffset, Uint8List.sublistView(this, byteOffset, size))).toInt64(endian);
-    // return (TypedList(8)..copy(this)).toInt64(endian);
-  }
-
-  int toInt([Endian endian = Endian.little]) => (lengthInBytes >= 8) ? toInt64(endian) : valueAt(0, lengthInBytes, endian);
+  ByteData trimTrailing(int targetLength) => ByteData.sublistView(this, 0, targetLength);
 }
