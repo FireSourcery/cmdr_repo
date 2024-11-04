@@ -1,0 +1,5 @@
+name: cmdr_monorepo
+
+packages:
+  - apps/**
+  - packages/**

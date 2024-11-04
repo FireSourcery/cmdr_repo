@@ -1,9 +1,9 @@
-name: cmdr_monorepo
-description: "Monorepo for the cmdr package and its dependencies."
+name: cmdr
+description: "Commander/Host side utilities for interfacing with embedded devices + other general utilities."
 version: 0.0.1
 homepage:
 
-# publish_to: 'none'
+publish_to: 'none'
 
 environment:
   sdk: ^3.4.0
@@ -12,6 +12,16 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  cmdr_common:  
+    path: ../cmdr_common
+    # git:
+      # url: https://github.com/FireSourcery/cmdr/packages/cmdr_common
+  binary_data:  
+    path: ../binary_data
+    # git:
+      # url: https://github.com/FireSourcery/cmdr/packages/cmdr_common
+
+
   collection: ^1.18.0
   csv: ^6.0.0
   file_picker: ^8.0.3
@@ -31,5 +41,4 @@ dev_dependencies:
   melos: ^6.2.0 
   lints: ^4.0.0
  
-flutter:
  

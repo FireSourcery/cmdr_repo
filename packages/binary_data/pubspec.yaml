@@ -3,22 +3,19 @@ description: "Bitwise operations and binary data manipulation utilities."
 version: 0.0.1
 homepage:
 
-# publish_to: 'none'
+publish_to: 'none'
 
 environment:
-  sdk: ^3.4.0
-  # flutter: ">=1.17.0"
+  sdk: ^3.4.0 
 
-dependencies:
-  # flutter:
-  #   sdk: flutter
+dependencies: 
   collection: ^1.18.0 
-  meta: ^1.11.0
-  # recase: ^4.1.0 
+  meta: ^1.11.0 
+  cmdr_common:  
+    path: ../cmdr_common
+    # git:
+      # url: https://github.com/FireSourcery/cmdr/packages/cmdr_common
 
-dev_dependencies:
-  # flutter_test:
-  #   sdk: flutter
-  # flutter_lints: ^4.0.0
-
- 
+dev_dependencies:  
+  lints: ^4.0.0
+  flutter_lints: ^4.0.0

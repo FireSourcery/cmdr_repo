@@ -1,6 +1,6 @@
 import 'dart:ffi';
 import 'dart:typed_data';
-import 'package:cmdr/connection/base/packet.dart';
+import '../packages/binary_data/lib/src/binary_models/packet.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 typedef PayloadCaster<T extends Payload> = T Function([TypedData typedData]);

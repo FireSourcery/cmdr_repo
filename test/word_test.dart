@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:cmdr/binary_data/word.dart';
+import '../packages/binary_data/lib/src/binary_data/word.dart';
 // enum Tester {
 //   b1(value: Bits(1)),
 //   ;
