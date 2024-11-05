@@ -75,22 +75,21 @@ abstract mixin class VarEventViewer<V> {
 //   }
 // }
 
-class VarEventBuilder extends StatelessWidget {
-  const VarEventBuilder({super.key, required this.varController, required this.eventBuilder, this.child});
+// class VarEventBuilder extends StatelessWidget {
+//   const VarEventBuilder({super.key, required this.varController, required this.eventBuilder, this.child});
 
-  final VarEventController varController;
-  final TransitionBuilder eventBuilder; // the wrapping widget, reactive to events
-  final Widget? child; // the var widget
+//   final VarEventController varController;
+//   final TransitionBuilder eventBuilder; // the wrapping widget, reactive to events
+//   final Widget? child; // the var widget
 
-  @override
-  Widget build(BuildContext context) {
-    return ListenableBuilder(listenable: varController.eventNotifier, builder: eventBuilder, child: child);
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return ListenableBuilder(listenable: varController.eventNotifier, builder: eventBuilder, child: child);
+//   }
+// }
 
 /// Retrieves VarNotifier/Controller using VarKey via InheritedWidget/BuildContext
 /// if the callers context/class does not directly contain the VarCache,
-
 /// [VarContext] and [VarKeyContext] must be provided.
 class VarKeyBuilder extends StatelessWidget {
   const VarKeyBuilder(this.varKey, this.builder, {super.key});
@@ -114,8 +113,16 @@ class VarKeyBuilder extends StatelessWidget {
     final varNotifier = cacheController.cache.allocate(varKey);
     return varKey.viewType.callWithType(<G>() => effectiveBuilder<G>(varNotifier));
   }
+
+  // Widget buildWithKey(BuildContext context, VarKey value, Widget? child) {
+  //   return VarKeyBuilder(value, builder);
+  //   return builder(varController);
+  // }
+
+  // ValueWidgetBuilder<VarKey> asValueWidgetBuilder() => buildWithKey;
 }
 
+// allocate Var and Controller
 class VarKeyEventBuilder extends StatelessWidget {
   const VarKeyEventBuilder({super.key, required this.varKey, required this.eventBuilder, this.child});
 
@@ -123,11 +130,10 @@ class VarKeyEventBuilder extends StatelessWidget {
   // final Widget Function<G>(VarNotifier, Child) builder;
   final TransitionBuilder eventBuilder; // the wrapping widget, reactive to events
   final Widget? child; // the var widget
+  // final T eventMatch;
 
   @override
   Widget build(BuildContext context) {
-    // final cacheController = VarContext.ofKey(context, varKey).controller;
-    // final varNotifier = cacheController.cache.allocate(varKey);
     final cacheController = VarContext.ofKey(context, varKey).controller;
     final varNotifier = cacheController.cache.allocate(varKey);
     final varController = VarEventController(cacheController: cacheController, varNotifier: varNotifier); // this is allocated in build. dispose will be passed onto ListenableBuilder
@@ -136,31 +142,8 @@ class VarKeyEventBuilder extends StatelessWidget {
   }
 }
 
-/// creates the ValueWidgetBuilder<VarKey> using a widget constructor, with the signature 'Widget Function(VarNotifier)'
-// extension WidgetBuilder on Widget Function(VarNotifier) {
-//   ValueWidgetBuilder<VarKey?> asValueWidgetBuilder() => (context, value, child) => VarKeyBuilder(value! /* ?? VarKey.undefined */, this);
-// }
-
-extension type VarKeyWidgetBuilder._(ValueWidgetBuilder<VarKey?> _builder) {
-  VarKeyWidgetBuilder(Widget Function(VarNotifier) constructor) : this._((context, value, child) => VarKeyBuilder(value! /* ?? VarKey.undefined */, <G>(varNotifier) => constructor(varNotifier)));
-  VarKeyWidgetBuilder.withType(Widget Function<G>(VarNotifier) constructor) : this._((context, value, child) => VarKeyBuilder(value! /* ?? VarKey.undefined */, constructor));
-
-  // static Widget buildWithKey(BuildContext context, VarKey? value, Widget? child) {
-  //   return VarKeyBuilder(value! /* ?? VarKey.undefined */, builder);
-  //   // final varController = value?.allocateIn(context) ?? VarKey.undefined.allocateVarController(context);
-  //   // return builder(varController);
-  // }
-}
-
-// class VarKeyWidgetBuilder {
-//   const VarKeyWidgetBuilder(this.builder);
-//   final Widget Function(VarNotifier) builder;
-
-//   Widget buildWithKey(BuildContext context, VarKey? value, Widget? child) {
-//     return VarKeyBuilder(value! /* ?? VarKey.undefined */, builder);
-//     // final varController = value?.allocateIn(context) ?? VarKey.undefined.allocateVarController(context);
-//     // return builder(varController);
-//   }
-
-//   ValueWidgetBuilder<VarKey> asValueWidgetBuilder() => buildWithKey;
+/// creates the ValueWidgetBuilder<VarKey> using a widget constructor 'Widget Function(VarNotifier)'
+// extension type VarKeyWidgetBuilder._(ValueWidgetBuilder<VarKey?> _builder) {
+//   VarKeyWidgetBuilder(Widget Function(VarNotifier) constructor) : this._((context, value, child) => VarKeyBuilder(value! /* ?? VarKey.undefined */, <G>(varNotifier) => constructor(varNotifier)));
+//   VarKeyWidgetBuilder.withType(Widget Function<G>(VarNotifier) constructor) : this._((context, value, child) => VarKeyBuilder(value! /* ?? VarKey.undefined */, constructor));
 // }

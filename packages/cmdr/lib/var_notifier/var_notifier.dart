@@ -15,7 +15,6 @@ export 'package:cmdr_common/service_io.dart';
 export 'package:binary_data/binary_data.dart';
 
 part 'var_cache.dart';
-// part 'var_context.dart';
 part 'var_key.dart';
 part 'var_controller.dart';
 part 'var_real_time_controller.dart';
@@ -92,10 +91,13 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   @override
   final int? stringDigits;
 
-  VarStatus Function(int statusCode) statusOfCode;
+  final VarStatus Function(int statusCode) statusOfCode;
+
+  // Compile time const defined in VarKey. Does not need to build and cache.
 
   @override
-  VarStatus statusOf(int statusCode) => statusOfCode(statusCode);
+  // VarStatus statusOf(int statusCode) => statusOfCode(statusCode);
+  VarStatus statusOf(int statusCode) => varKey.varStatusOf(statusCode);
 
   @override
   String toString() => '$runtimeType { key: ${varKey.label}, value: $numValue, status: $statusCode }';
@@ -130,7 +132,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   num clamp(num value) => switch ((viewMin, viewMax)) { (num min, num max) => value.clamp(min, max), _ => value };
 
   Enum? enumOf(int value) => enumRange?.elementAtOrNull(value); // returns null if varName is not associated with enum value type
-  BitFields? bitFieldsOf(int value) => BitStructClass(bitsKeys ?? <BitField>[]).castBits(value);
+  BitFields bitFieldsOf(int value) => BitStructClass(bitsKeys ?? const <BitField>[]).castBits(value);
 
   // @override
   // String toString() => '$runtimeType $numValue'; // $statusCode
@@ -145,7 +147,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   /// superclass implementation
   @override
   V get value => valueAs<V>();
-  @override
+  @override // check new == previous?
   set value(V newValue) => updateByViewAs<V>(newValue);
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -207,12 +209,14 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   @protected
   bool get valueAsBool => (numValue != 0);
   @protected
-  Enum get valueAsEnum => enumOf(valueAsInt)!;
+  Enum get valueAsEnum => enumOf(valueAsInt) ?? VarValueUnknown.unknown;
   @protected
-  BitFields get valueAsBitFields => bitFieldsOf(valueAsInt)!;
+  BitFields get valueAsBitFields => bitFieldsOf(valueAsInt);
   @protected
   Uint8List get valueAsBytes => Uint8List(8)..buffer.asByteData().setUint64(0, valueAsInt, Endian.big);
 
+  // todo handle enum out of range
+  // value as subtypes
   // These should return the proper type as long as V is correct
   T valueAsEnumType<T>() => valueAsEnum as T;
   T valueAsBitsType<T>() => valueAsBitFields as T;
@@ -227,8 +231,8 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
       const (Enum) => valueAsEnum,
       const (BitFields) => valueAsBitFields,
       // const (String) => valueAsInt.toStringAsCode(),
-      _ when TypeKey<R>().isSubtype<Enum>() => valueAsEnumType<R>(),
       _ when TypeKey<R>().isSubtype<BitsBase>() => valueAsBitsType<R>(),
+      _ when TypeKey<R>().isSubtype<Enum>() => valueAsEnumType<R>(), // if a default is not provided, the return must be R?, returning common Meta will be type error
       // _ => valueAsExtension<R>(),
       _ => throw UnsupportedError('valueAs: $R'),
     } as R;
@@ -299,6 +303,9 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
     }
   }
 }
+
+// default for over bounds
+enum VarValueUnknown { unknown }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// VarStatus

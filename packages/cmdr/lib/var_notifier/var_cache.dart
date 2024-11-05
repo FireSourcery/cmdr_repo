@@ -1,8 +1,8 @@
 part of 'var_notifier.dart';
 
 ////////////////////////////////////////////////////////////////////////////////
-/// VarCache
-///   map views to common listenable value
+/// VarCache - Model of Client Side Entity
+///   map views to shared listenable value
 ///   visible/active on pages
 ///   Read/Write Vars => use for stream and synced view
 ///   Write-Only Vars => use to maintain synced view only
@@ -11,8 +11,6 @@ part of 'var_notifier.dart';
 ////////////////////////////////////////////////////////////////////////////////
 @immutable
 class VarCache {
-  /// when a value is remove its listener will no longer received updates
-  /// if an value of the same id is reinserted into the map. the disconnected listener, VarController, need be remapped to the new VarValue
   VarCache([this.lengthMax]) : _cache = {};
 
   // stores key in value when using dynamically generated iterable
@@ -36,6 +34,9 @@ class VarCache {
   /// `allocate` the same VarNotifier storage if found. `create if not found`
   ///
   /// Caller block cache map iteration before running allocate/deallocate
+  ///
+  /// when a value is remove its listener will no longer received updates. from stream data updates. view updates still occur
+  /// if an value of the same id is reinserted into the map. the disconnected listener, VarController, need be remapped to the new VarValue
   VarNotifier allocate(VarKey varKey) {
     if (lengthMax case int max when _cache.length >= max) _cache.remove(_cache.entries.first.key);
     return _cache.putIfAbsent(varKey.value, () => constructor(varKey))..viewerCount += 1;
@@ -46,6 +47,7 @@ class VarCache {
     return _cache.update(varKey.value, (_) => constructor(varKey))..viewerCount += 1;
   }
 
+  // in preallocated case, where size is not constrained. deallocate and replace is not necessary
   // remove viewer
   bool deallocate(VarKey? varKey) {
     if (_cache[varKey?.value] case VarNotifier varEntry) {
@@ -53,7 +55,11 @@ class VarCache {
       print('deallocate: ${varEntry.viewerCount}');
       print('varEntry.hasListeners: ${varEntry.hasListeners}');
 
-      if (varEntry.hasListeners) {}
+      // caller removes itself as listener first
+      // if (!varEntry.hasListeners) {
+      //   _cache.remove(varKey?.value)?.dispose();
+      //   return true;
+      // }
       varEntry.viewerCount--;
       if (varEntry.viewerCount < 1) {
         _cache.remove(varKey?.value)?.dispose();
@@ -136,6 +142,21 @@ class VarCache {
   /// Collective updateByView
   ///   Single update use VarValue directly
   ////////////////////////////////////////////////////////////////////////////////
+  void updateByView(Iterable<(VarKey, dynamic)> pairs) {
+    for (final (varKey, value) in pairs) {
+      _cache[varKey.value]?.updateByView(value);
+    }
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  ///
+  ////////////////////////////////////////////////////////////////////////////////
+  String? dependentsString(VarKey key, [String prefix = '', String divider = ': ', String separator = '\n']) {
+    return (StringBuffer(prefix)
+          ..writeAll(key.dependents?.map((k) => '${k.label}$divider${this[k]?.viewValue}') ?? [], separator)
+          ..writeln(''))
+        .toString();
+  }
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Json
@@ -160,25 +181,47 @@ class VarCache {
   }
 }
 
-mixin VarCacheAsSubtype<V extends VarNotifier> on VarCache {
+// abstract mixin as compile time const instead of function variable
+mixin VarDependents on VarCache {
+  // caller provides function via switch case
+  // resetDependentsOfKey
+  // final void Function(VarKey key)? dependentsResetter;
+
+  // Map<VarKey, VoidCallback?> _dependents; / /caller provides function via map
+  //
+  // propagateSet
+  void updateDependents(covariant VarKey key);
+}
+
+// gives Notifier context of cache for dependents
+// mixin VarDependents on VarNotifier {
+//   VarCache get cache;
+//   void updateDependents();
+// }
+
+mixin VarCacheAsSubtype<K extends VarKey, V extends VarNotifier> on VarCache {
   // @override
   // Map<int, V> get _cache => super._cache as Map<int, V>;
 
+  @override
   @mustBeOverridden
-  V constructor(covariant VarKey varKey);
+  V constructor(covariant K varKey);
 
   @override
-  V allocate(VarKey varKey) => super.allocate(varKey) as V;
+  Iterable<K> get keys => super.keys.cast<K>();
 
   @override
-  V reallocate(VarKey varKey) => super.reallocate(varKey) as V;
+  V allocate(covariant K varKey) => super.allocate(varKey) as V;
 
   @override
-  V? operator [](VarKey varKey) => super[varKey] as V?;
+  V reallocate(covariant K varKey) => super.reallocate(varKey) as V;
+
+  @override
+  V? operator [](covariant K varKey) => super[varKey] as V?;
 
   @override
   Iterable<V> get entries => super.entries.cast<V>();
 
   @override
-  Iterable<V> entriesOf(Iterable<VarKey> keys) => super.entriesOf(keys).cast<V>();
+  Iterable<V> entriesOf(covariant Iterable<K> keys) => super.entriesOf(keys).cast<V>();
 }

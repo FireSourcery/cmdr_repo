@@ -5,7 +5,7 @@ abstract mixin class VarKey implements ValueKey<int> {
   const VarKey();
 
   @override
-  int get value; // int id of the key
+  int get value; // int id of the key, NOT the value of associated Var
 
   // the varNotifier type parameter
   TypeKey<dynamic> get viewType => binaryFormat!.viewType; // override if binaryFormat is null
@@ -15,9 +15,12 @@ abstract mixin class VarKey implements ValueKey<int> {
   // Units get units;
   // num? get valueDefault;
 
+  List<VarKey>? get dependents;
+
   VarStatus varStatusOf(int code); // should only be one. instances shared
 
   String stringify<V>(V value);
+  // String stringify<V>(V? value);
 
   /// Union type properties.
   ({num min, num max})? get valueNumLimits;
@@ -41,6 +44,9 @@ abstract mixin class VarKey implements ValueKey<int> {
   // primaryCategory, secondaryCategory, tertiaryCategory
   String? get suffix;
   String? get tip;
+
+  /// View Widgets properties
+  ///
 
   @override
   String toString() {
@@ -129,5 +135,3 @@ enum VarStatusUnknown with VarStatus {
 
 // typed filter via having()
 // }
-
- 

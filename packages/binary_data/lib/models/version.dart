@@ -4,7 +4,7 @@ import '../word/word_struct.dart';
 
 /// 4 fields [optional, major, minor, fix] by default, 1 or 2 bytes each
 /// parameterize T to constrain functions of T key to types the Version is defined with
-/// alternatively `class Version extends WordFieldsBase<WordField<NativeType>>` allows for access with any WordField key
+// alternatively `class Version extends WordFieldsBase<WordField<NativeType>>` allows for access with any WordField key
 abstract class Version<T extends WordField> extends WordStructBase<T> with EnumMapAsSubtype<Version<T>, T, int> {
   // uses VersionFieldStandard keys when no keys AND type parameter is specified
   factory Version(int optional, int major, int minor, int fix, {String? name}) => VersionStandard(optional, major, minor, fix, name: name) as Version<T>;

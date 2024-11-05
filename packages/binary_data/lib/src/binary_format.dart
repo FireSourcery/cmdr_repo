@@ -99,8 +99,8 @@ class ConversionPair {
   });
 
   ConversionPair.linear(num coefficient)
-      : viewOfData = LinearConversionFactory(coefficient).viewOfData,
-        dataOfView = LinearConversionFactory(coefficient).dataOfView;
+      : viewOfData = BinaryConversion(coefficient).viewOfData,
+        dataOfView = BinaryConversion(coefficient).dataOfView;
 
   // num viewOf(int dataValue);
   // int dataOf(num viewValue);
@@ -110,7 +110,7 @@ class ConversionPair {
   // final Function(int bytes)? get signExtension
 }
 
-extension type const LinearConversionFactory(num coefficient) {
+extension type const BinaryConversion(num coefficient) {
   num viewOf(int dataValue) => (dataValue * coefficient);
   int dataOf(num viewValue) => (viewValue ~/ coefficient);
 

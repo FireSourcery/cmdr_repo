@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-typedef EventWidgetBuilder<T> = Widget Function(BuildContext context, T? value);
+typedef EventWidgetBuilder<T> = Widget Function(BuildContext context, T? event);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// [DialogAnchor]
@@ -67,12 +67,16 @@ class _DialogAnchorState<T> extends State<DialogAnchor> {
   void initState() {
     super.initState();
     _focusNode.addListener(_handleFocusChange);
-    widget.eventNotifier?.addListener(_showEventDialog);
+    if (widget.eventNotifier != null && widget.eventDialogBuilder != null) {
+      widget.eventNotifier!.addListener(_showEventDialog);
+    }
   }
 
   @override
   void dispose() {
-    widget.eventNotifier?.removeListener(_showEventDialog);
+    if (widget.eventNotifier != null && widget.eventDialogBuilder != null) {
+      widget.eventNotifier!.removeListener(_showEventDialog);
+    }
     _focusNode.dispose();
     super.dispose();
   }
@@ -83,12 +87,12 @@ class _DialogAnchorState<T> extends State<DialogAnchor> {
     }
   }
 
+  // eventDialogBuilder must not be null, checked on init
   void _showEventDialog() {
     //   if (value == eventMatch)
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        // if eventNotifier is provided, then eventDialogBuilder must not be null
         return widget.eventDialogBuilder!(context, widget.eventGetter?.call());
       },
     );

@@ -12,14 +12,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cmdr_common:  
-    path: ../cmdr_common
-    # git:
-      # url: https://github.com/FireSourcery/cmdr/packages/cmdr_common
-  binary_data:  
-    path: ../binary_data
-    # git:
-      # url: https://github.com/FireSourcery/cmdr/packages/cmdr_common
+  cmdr_common:   
+  binary_data: 
 
 
   collection: ^1.18.0
