@@ -28,6 +28,9 @@ class ConfirmationDialog<T> extends StatelessWidget {
   }
 }
 
+/// [AsyncConfirmationDialog] is a dialog that performs an async operation on confirm.
+///   It displays a loading indicator while the operation is in progress.
+///   The dialog closes when the operation is complete.
 class AsyncConfirmationDialog<T> extends StatefulWidget {
   const AsyncConfirmationDialog({super.key, required this.onConfirm, required this.initialContent, required this.onConfirmContent, this.title, this.icon, this.iconColor});
 
@@ -149,7 +152,7 @@ class _SelectionDialogState<E> extends State<SelectionDialog<E>> {
         runSpacing: 5,
         spacing: 5,
         children: [
-          //todo move this to selection chips?
+          //todo move this to selection chips? MultiSelectChips
           for (final element in widget.selectable)
             FilterChip(
               label: widget.labelBuilder(element, selected.contains(element)),

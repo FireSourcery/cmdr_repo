@@ -67,3 +67,14 @@ class VarSlider extends StatelessWidget with VarNotifierViewer<double> {
     return ListenableBuilder(listenable: varNotifier, builder: builder);
   }
 }
+// only when widget directly depends on notifer
+// class VarListenablBuilder extends ListenableBuilder {
+//   final VarNotifier varNotifier;
+//   final Widget Function(VarNotifier) varBuilder;
+
+//   VarBuilder({super.key, required this.varNotifier, required this.varBuilder, super.child})
+//       : super(
+//           listenable: varNotifier,
+//           builder: (context, child) => varBuilder(varNotifier),
+//         );
+// }

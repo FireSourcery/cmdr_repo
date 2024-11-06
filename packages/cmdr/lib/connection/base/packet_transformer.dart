@@ -64,7 +64,8 @@ class HeaderStatus {
   bool? get isChecksumValid => buffer.packet.isChecksumFieldValid; // (isPacketComplete == true), buffer.length == buffer.lengthFieldOrNull
 }
 
-/// combine partial packets
+/// combine partial/fragmented packets
+/// emitted [Packet] is a reference to the buffer, not a copy. handling must be synchronous, before returning control to the transformer
 class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> implements EventSink<Uint8List> {
   PacketTransformer({required this.parserBuffer});
 

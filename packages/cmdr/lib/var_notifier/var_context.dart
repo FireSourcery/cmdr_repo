@@ -87,24 +87,10 @@ class VarRealTimeContext extends VarContext {
 //   static T of<T extends VarConfigContext>(BuildContext context) => VarContext.of<T>(context);
 // }
 
-// extension type const VarMapper(VarKey key) {
-//   // todo derive context type from key
-//   VarNotifier varFrom(BuildContext context) {
-//     return switch (key) {
-//       VarKey(isRealTime: true) => VarRealTimeContext.of(context).controller.cache.allocate(key),
-//       VarKey(isConfig: true) => VarConfigContext.of(context).controller.cache.allocate(key),
-//       VarKey(isConfig: false, isRealTime: false) => throw TypeError(),
-//     };
-//   }
-// }
+extension VarKeyMapper on VarKey {
+  VarNotifier varFrom(BuildContext context) => VarContext.ofKey(context, this).controller.cache.allocate(this);
+}
 
-// extension VarKeyMapper on VarKey {
-//   VarNotifier varFrom(BuildContext context) {
-//     return contextType.callWithRestrictedType(<G extends VarContext>() => VarContext.of<G>(context) as VarContext).controller.cache.allocate(this);
-//   }
-// }
-
-// extension VarNotifierContext on BuildContext {
-//   VarRealTimeViewer get realTimeViewer => VarRealTimeContext.of(this).controller;
-//   VarSettingsViewer get settingsViewer => VarSettingsContext.of(this).controller;
-// }
+extension VarNotifierContext on BuildContext {
+  VarCacheController varController<T extends VarContext>() => VarContext.of<T>(this).controller;
+}

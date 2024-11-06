@@ -61,39 +61,50 @@ abstract mixin class VarEventViewer<V> {
   // Future<S?> Function(V value) get valueResponseSetter => isConnected ? submitAndWrite : _asyncSubmitByView;
 }
 
-// alternatively extend ListenableBuilder directly
+// combining logic by deferring until build
+// alternatively, use a interface Widget.
 // class VarBuilder extends StatelessWidget {
-//   const VarBuilder({required this.varNotifier, required this.valueBuilder, super.key});
+//   const VarBuilder({super.key, required this.varNotifier, required this.builder}) : varKey = null;
+//   const VarBuilder.byKey({super.key, required this.varKey, required this.builder}) : varNotifier = null;
 
-//   // VarBuilder.byKey({required this.varNotifierKey, required this.builder, varController, super.key});
-//   final VarNotifier varNotifier;
-//  final Widget Function(VarNotifier) varBuilder;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return ListenableBuilder(listenable: varNotifier, builder: valueBuilder, child: const Text('Placeholder'));
-//   }
-// }
-
-// class VarEventBuilder extends StatelessWidget {
-//   const VarEventBuilder({super.key, required this.varController, required this.eventBuilder, this.child});
-
-//   final VarEventController varController;
-//   final TransitionBuilder eventBuilder; // the wrapping widget, reactive to events
-//   final Widget? child; // the var widget
+//   final VarKey? varKey;
+//   final VarNotifier? varNotifier;
+//   final Widget Function(VarNotifier) builder;
 
 //   @override
 //   Widget build(BuildContext context) {
-//     return ListenableBuilder(listenable: varController.eventNotifier, builder: eventBuilder, child: child);
+//     final varNotifier_ = switch ((varKey, varNotifier)) {
+//       (VarKey key, null) => VarContext.ofKey(context, key).controller.cache.allocate(key),
+//       (null, VarNotifier notifier) => notifier,
+//       (null, null) => throw StateError('VarKey and VarNotifier cannot be both null'),
+//       (VarKey(), VarNotifier()) => throw StateError('VarKey and VarNotifier cannot be both defined'),
+//     };
+
+//     return builder(varNotifier_);
 //   }
 // }
+
+abstract mixin class VarBuilder implements StatelessWidget {
+  factory VarBuilder(VarNotifier varNotifier, Widget Function(VarNotifier) builder) = _VarBuilder;
+  factory VarBuilder.byKey(VarKey varKey, Widget Function(VarNotifier) builder) = VarKeyBuilder;
+}
+
+class _VarBuilder extends StatelessWidget implements VarBuilder {
+  const _VarBuilder(this.varNotifier, this.builder, {super.key});
+
+  final VarNotifier varNotifier;
+  final Widget Function(VarNotifier) builder;
+
+  @override
+  Widget build(BuildContext context) => builder(varNotifier);
+}
 
 /// Retrieves VarNotifier/Controller using VarKey via InheritedWidget/BuildContext
 /// if the callers context/class does not directly contain the VarCache,
 /// [VarContext] and [VarKeyContext] must be provided.
-class VarKeyBuilder extends StatelessWidget {
+class VarKeyBuilder extends StatelessWidget implements VarBuilder {
   const VarKeyBuilder(this.varKey, this.builder, {super.key});
-  const VarKeyBuilder.withType(this.varKey, Widget Function<G>(VarNotifier<G>) builder, {super.key}) : builder = builder;
+  const VarKeyBuilder.typed(this.varKey, Widget Function<G>(VarNotifier<G>) builder, {super.key}) : builder = builder;
 
   final VarKey varKey;
   final Widget Function(VarNotifier) builder;
@@ -122,23 +133,36 @@ class VarKeyBuilder extends StatelessWidget {
   // ValueWidgetBuilder<VarKey> asValueWidgetBuilder() => buildWithKey;
 }
 
+// rebuild on event match, if not included in the target widget
 // allocate Var and Controller
 class VarKeyEventBuilder extends StatelessWidget {
-  const VarKeyEventBuilder({super.key, required this.varKey, required this.eventBuilder, this.child});
+  const VarKeyEventBuilder({super.key, required this.varKey, required this.builder, this.child, required this.eventMatch});
 
   final VarKey varKey;
-  // final Widget Function<G>(VarNotifier, Child) builder;
-  final TransitionBuilder eventBuilder; // the wrapping widget, reactive to events
+  // final Widget Function<G>(VarNotifier, child) builder;
+  final TransitionBuilder builder; // the wrapping widget, reactive to events
   final Widget? child; // the var widget
-  // final T eventMatch;
+  final VarViewEvent eventMatch;
+
+  Widget _eventBuilder(BuildContext context, VarViewEvent? event, Widget? initialBuild) {
+    if (event == eventMatch) return builder(context, child); // also pass event back to builder?
+
+    return initialBuild!;
+  }
 
   @override
   Widget build(BuildContext context) {
     final cacheController = VarContext.ofKey(context, varKey).controller;
     final varNotifier = cacheController.cache.allocate(varKey);
+
     final varController = VarEventController(cacheController: cacheController, varNotifier: varNotifier); // this is allocated in build. dispose will be passed onto ListenableBuilder
 
-    return ListenableBuilder(listenable: varController.eventNotifier, builder: eventBuilder, child: child);
+    // return ListenableBuilder(listenable: varController.eventNotifier, builder: eventBuilder, child: child);
+    return ValueListenableBuilder<VarViewEvent?>(
+      valueListenable: varController.eventNotifier,
+      builder: _eventBuilder,
+      child: builder(context, child), // initialBuild
+    );
   }
 }
 

@@ -32,7 +32,7 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
     this.enumRange,
     this.bitsKeys,
     this.stringDigits,
-    this.statusOfCode = VarStatus.defaultCode,
+    // this.statusOfCode = VarStatus.defaultCode,
   });
 
   // VarNotifier.castBase(VarNotifier  base)
@@ -56,8 +56,8 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
         viewMax = varKey.valueNumLimits?.max,
         enumRange = varKey.valueEnumRange,
         bitsKeys = varKey.valueBitsKeys,
-        stringDigits = varKey.valueStringDigits,
-        statusOfCode = varKey.varStatusOf;
+        stringDigits = varKey.valueStringDigits;
+  // statusOfCode = varKey.varStatusOf
 
   factory VarNotifier.of(VarKey varKey) {
     assert(V == dynamic, 'V must be dynamic');
@@ -67,7 +67,7 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   @override
   final VarKey varKey;
 
-  /// retain cached values derived from varKey
+  /// Derived from [VarKey] and cached
   @override
   final int Function(int bytes)? signExtension;
   @override
@@ -91,26 +91,40 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   @override
   final int? stringDigits;
 
-  final VarStatus Function(int statusCode) statusOfCode;
-
-  // Compile time const defined in VarKey. Does not need to build and cache.
-
+  /// [VarStatus] type is the same for all vars in most cases.
+  /// Compile time const defined in [VarKey]. Does not need to build and cache.
   @override
-  // VarStatus statusOf(int statusCode) => statusOfCode(statusCode);
   VarStatus statusOf(int statusCode) => varKey.varStatusOf(statusCode);
 
+  // alternatively change to remove dependency on VarKey
+  // final VarStatus Function(int statusCode) statusOfCode;
+  // VarStatus statusOf(int statusCode) => statusOfCode(statusCode);
+
+  // @override
+  // String toString() => '$runtimeType { key: ${varKey.label}, value: $numValue, status: $statusCode }';
+
+  // @override
+  // void updateStatusByData(int status) {
+  //   super.updateStatusByData(status);
+  //   isUpdatedByView = false;
+  // }
+
   @override
-  String toString() => '$runtimeType { key: ${varKey.label}, value: $numValue, status: $statusCode }';
+  String toString() => '${describeIdentity(this)}($value)';
 }
 
 /// A notifier combining a value and status code on a single listenable.
 ///  supports conversion between view and data values.
 abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   VarKey get varKey; // allow varKey to be assigned as dynamic
+  // alternatively
+  // int get dataKey;
+  // int get dataMin;
+  // int get dataMax;
 
   /// by default get from varKey. resolve in constructor to cache
   /// retain cached values derived from varKey
-  int Function(int bytes)? get signExtension;
+  int Function(int binary)? get signExtension;
   ViewOfData? get viewOfData; //num conversion only, null for Enum and Bits
   DataOfView? get dataOfView;
 
@@ -125,7 +139,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // for bits conversion only.
   List<BitField>? get bitsKeys;
 
-  int dataOfBytes(int bytes) => signExtension?.call(bytes) ?? bytes;
+  int dataOfBinary(int binary) => signExtension?.call(binary) ?? binary;
   num viewOf(int data) => viewOfData?.call(data) ?? data; // 'view base'
   int dataOf(num view) => dataOfView?.call(view) ?? view.toInt();
 
@@ -136,6 +150,8 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
 
   // @override
   // String toString() => '$runtimeType $numValue'; // $statusCode
+  @override
+  String toString() => '${describeIdentity(this)}($value)';
 
   /// runtime variables
   // same as ChangeNotifier._count
@@ -184,7 +200,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // }
 
   // before sign extension
-  void updateByData(int bytesValue) => _updateByData(dataOfBytes(bytesValue));
+  void updateByData(int bytesValue) => _updateByData(dataOfBinary(bytesValue));
 
   // Var as Entry including key
   // outbound data

@@ -3,8 +3,8 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../packages/cmdr/lib/connection.dart';
-import '../packages/cmdr/lib/connection/mot_connection/mot_packet.dart';
+import '../lib/connection.dart';
+import '../lib/connection/mot_connection/mot_packet.dart';
 
 void handleProtocolException(Object e) {
   print('handleProtocolException ${(e as ProtocolException).message}');

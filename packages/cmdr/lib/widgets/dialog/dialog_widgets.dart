@@ -4,7 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-typedef EventWidgetBuilder<T> = Widget Function(BuildContext context, T? event);
+typedef EventWidgetBuilder<T> = Widget Function(BuildContext context, T event);
+// typedef EventWidgetBuilder1<T> = ValueWidgetBuilder<T>;
 
 ////////////////////////////////////////////////////////////////////////////////
 /// [DialogAnchor]
@@ -16,8 +17,7 @@ class DialogAnchor<T> extends StatefulWidget {
     super.key,
     required this.child,
     this.eventNotifier,
-    this.eventGetter,
-    this.initialSelectDialog,
+    this.initialDialogBuilder,
     this.eventDialogBuilder,
   });
 
@@ -29,30 +29,27 @@ class DialogAnchor<T> extends StatefulWidget {
     required Widget child,
   }) {
     if (displayCondition == null) {
-      return DialogAnchor(eventNotifier: null, child: child);
+      return DialogAnchor<T>(eventNotifier: null, child: child);
     } else {
       return _ConditionalEditWarningDialog<T>(displayCondition: displayCondition, child: child);
     }
   }
 
-  final Widget? initialSelectDialog;
-
+  final WidgetBuilder? initialDialogBuilder;
   // user match widget built to the notification event
-  final Listenable? eventNotifier;
-  final ValueGetter<T?>? eventGetter;
-  // final ValueListenable<T?>? eventNotifier;
+  final ValueListenable<T?>? eventNotifier;
   final EventWidgetBuilder<T?>? eventDialogBuilder;
-
   final Widget child;
 
-  static const String initialMessageDefault = 'Are you sure you want to continue?';
-  static const String finalMessageDefault = 'You have completed editing this field.';
+  // would eventNotifier be defined separately by the user?
+  // final Listenable? eventNotifier;
+  // final ValueGetter<T?>? eventGetter;
 
   @override
   State<DialogAnchor> createState() => _DialogAnchorState<T>();
 }
 
-class _DialogAnchorState<T> extends State<DialogAnchor> {
+class _DialogAnchorState<T> extends State<DialogAnchor<T>> {
   final FocusNode _focusNode = FocusNode();
   bool _focusedOnce = false;
 
@@ -82,8 +79,8 @@ class _DialogAnchorState<T> extends State<DialogAnchor> {
   }
 
   void _showInitialDialog() {
-    if (widget.initialSelectDialog != null) {
-      showDialog(context: context, builder: (context) => widget.initialSelectDialog!);
+    if (widget.initialDialogBuilder != null) {
+      showDialog(context: context, builder: widget.initialDialogBuilder!);
     }
   }
 
@@ -93,7 +90,7 @@ class _DialogAnchorState<T> extends State<DialogAnchor> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return widget.eventDialogBuilder!(context, widget.eventGetter?.call());
+        return widget.eventDialogBuilder!(context, widget.eventNotifier!.value);
       },
     );
   }
@@ -111,8 +108,8 @@ class _ConditionalEditWarningDialog<T> extends DialogAnchor<T> {
     required this.displayCondition,
     required super.child,
     super.eventNotifier,
-    super.eventGetter,
-    super.initialSelectDialog,
+    // super.eventGetter,
+    super.initialDialogBuilder,
     super.eventDialogBuilder,
   });
 

@@ -1,6 +1,6 @@
 import 'dart:typed_data';
-import '../packages/binary_data/lib/src/binary_models/packet.dart';
-import '../packages/cmdr/lib/connection/mot_connection/mot_packet.dart';
+import '../../binary_data/lib/src/binary_models/packet.dart';
+import '../lib/connection/mot_connection/mot_packet.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 R? checkType<T, R>(PacketIdRequest<Payload<T>, Payload<R>> requestId, T requestArgs) {

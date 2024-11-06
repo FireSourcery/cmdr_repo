@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:cmdr_common/basic_types.dart';
 
 import '../../widgets/io_field.dart';
+import '../var_context.dart';
 import '../var_notifier.dart';
 import '../var_widget.dart';
+import 'var_dialog_anchor.dart';
 
 ////////////////////////////////////////////////////////////////////////////////
 /// IO Field
@@ -73,13 +75,13 @@ class _VarIOField<V> extends StatelessWidget implements VarIOField {
 //   }
 // }
 
-class VarIOFieldWithSlider<V> extends StatelessWidget {
+class VarIOFieldWithSlider<V> extends StatelessWidget implements VarIOField {
   const VarIOFieldWithSlider(this.varKey, {super.key});
   final VarKey varKey;
 
   @override
   Widget build(BuildContext context) {
-    return VarKeyBuilder.withType(varKey, <G>(varNotifier) => IOField<G>.withSlider(VarIOFieldConfig<G>(varNotifier)));
+    return VarKeyBuilder.typed(varKey, <G>(varNotifier) => IOField<G>.withSlider(VarIOFieldConfig<G>(varNotifier)));
   }
 }
 
@@ -95,6 +97,8 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
 
   final VarNotifier<dynamic> varNotifier;
 
+  // alternatively handle in constructor
+  // VarIOFieldConfig._(this.varNotifier);
   final FloatingLabelAlignment? labelAlignment;
   final bool showLabel;
   final bool showPrefix;
@@ -163,21 +167,42 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   bool get useSwitchBorder => true;
 
   @override
-  IOFieldConfig<V> copyWith(
-      {InputDecoration? idDecoration,
-      bool? isReadOnly,
-      String? tip,
-      Listenable? valueListenable,
-      ValueGetter<V?>? valueGetter,
-      ValueSetter<V>? valueSetter,
-      ValueGetter<bool>? errorGetter,
-      ValueGetter<String>? valueStringGetter,
-      Stringifier<V>? valueStringifier,
-      List<V>? valueEnumRange,
-      ValueChanged<V>? sliderChanged,
-      bool? useSliderBorder,
-      bool? useSwitchBorder,
-      IOFieldBoolStyle? boolStyle}) {
+  IOFieldConfig<V> copyWith({
+    InputDecoration? idDecoration,
+    bool? isReadOnly,
+    String? tip,
+    Listenable? valueListenable,
+    ValueGetter<V?>? valueGetter,
+    ValueSetter<V>? valueSetter,
+    ValueGetter<bool>? errorGetter,
+    ValueGetter<String>? valueStringGetter,
+    Stringifier<V>? valueStringifier,
+    List<V>? valueEnumRange,
+    ValueChanged<V>? sliderChanged,
+    bool? useSliderBorder,
+    bool? useSwitchBorder,
+    IOFieldBoolStyle? boolStyle,
+  }) {
     throw UnimplementedError();
   }
 }
+//mveo to edxample
+// class VarIOFieldWithDialog<V> extends StatelessWidget implements VarIOField {
+//   const VarIOFieldWithDialog(this.varKey, {super.key});
+//   final VarKey varKey;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final cacheController = VarContext.ofKey(context, varKey).controller;
+//     final varNotifier = cacheController.cache.allocate(varKey);
+//     // final varController = VarEventController(cacheController: cacheController, varNotifier: varNotifier); // this is allocated in build. dispose will be passed onto ListenableBuilder
+
+//     return varKey.viewType.callWithType(<G>() {
+//       return VarEditDialog(
+//         varNotifier: varNotifier,
+//         controller: cacheController,
+//         child: IOField<G>(VarIOFieldConfig<G>(varNotifier)),
+//       );
+//     });
+//   }
+// }

@@ -23,6 +23,14 @@ class VarCache {
   final Map<int, VarNotifier> _cache; // <int, VarNotifier> allows direct access by updateBy
   final int? lengthMax;
 
+  // final Map<VarKey, VarNotifier> _cache; //  this way keys are retained
+  // final Set<VarKey>? preallocatedKeys; // retain if generated,
+
+  // @protected
+  // void allocateAll(Iterable<VarKey> varKeys, VarNotifier Function(VarKey) constructor) {
+  //   _cache.addEntries(varKeys.map((varKey) => MapEntry(varKey.value, constructor(varKey))));
+  // }
+
   // using default status ids unless overridden
   @mustBeOverridden
   VarNotifier<dynamic> constructor(covariant VarKey varKey) => VarNotifier.of(varKey);
@@ -128,6 +136,7 @@ class VarCache {
     }
   }
 
+  /// DataWriteResponse
   /// Update Status by mot response to view initiated write, per var status
   void updateStatuses(Iterable<int> ids, Iterable<int> statusesIn, [bool clearWriteBit = true]) {
     assert(statusesIn.length == ids.length);
@@ -151,7 +160,8 @@ class VarCache {
   ////////////////////////////////////////////////////////////////////////////////
   ///
   ////////////////////////////////////////////////////////////////////////////////
-  String? dependentsString(VarKey key, [String prefix = '', String divider = ': ', String separator = '\n']) {
+  // group with mixin?
+  String dependentsString(VarKey key, [String prefix = '', String divider = ': ', String separator = '\n']) {
     return (StringBuffer(prefix)
           ..writeAll(key.dependents?.map((k) => '${k.label}$divider${this[k]?.viewValue}') ?? [], separator)
           ..writeln(''))
@@ -166,6 +176,7 @@ class VarCache {
     for (final paramJson in json) {
       if (paramJson case {'varId': int motVarId, 'varValue': num _, 'motValue': int _, 'description': String _}) {
         _cache[motVarId]?.loadFromJson(paramJson);
+        // this[VarKey.from(motVarId)]?.loadFromJson(paramJson);
       } else {
         throw const FormatException('Unexpected JSON');
       }
@@ -188,8 +199,9 @@ mixin VarDependents on VarCache {
   // final void Function(VarKey key)? dependentsResetter;
 
   // Map<VarKey, VoidCallback?> _dependents; / /caller provides function via map
-  //
+
   // propagateSet
+  // caller provides function via switch case
   void updateDependents(covariant VarKey key);
 }
 

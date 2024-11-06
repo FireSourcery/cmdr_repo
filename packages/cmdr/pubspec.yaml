@@ -12,9 +12,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cmdr_common:   
-  binary_data: 
-
+  cmdr_common: ^0.0.1
+  binary_data: ^0.0.1 
 
   collection: ^1.18.0
   csv: ^6.0.0

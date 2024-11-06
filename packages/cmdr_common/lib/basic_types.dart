@@ -23,6 +23,7 @@ extension WhereFilter<T> on Iterable<T> {
   Iterable<T> whereFilter(PropertyFilter<T>? filter) => filter?.call(this) ?? this;
 }
 
+/// Mixin for methods, or Instantiate temporary object for type checking
 // TypeCarrier, TypeHost, TypeKey
 mixin class TypeKey<T> {
   const TypeKey();
@@ -44,6 +45,7 @@ mixin class TypeKey<T> {
   // T callAsKey(T Function<G>(TypeKey key) callback) => callback<T>(this);
 }
 
+/// Union of generic types
 // A primitive union type key
 // boundary depending on type
 abstract mixin class UnionTypeKey<V> implements TypeKey<V> {

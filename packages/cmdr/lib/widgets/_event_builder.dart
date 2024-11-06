@@ -20,6 +20,7 @@ class EventNotifier<T> with ChangeNotifier implements ValueNotifier<T?> {
   }
 }
 
+/// same as ValueListenableBuilder, but matches event before setState
 class EventBuilder<T> extends StatelessWidget {
   const EventBuilder({
     super.key,
@@ -31,19 +32,21 @@ class EventBuilder<T> extends StatelessWidget {
 
   final ValueNotifier<T?> eventNotifier;
   final T eventMatch;
-  final Widget Function(BuildContext context, Widget? child) builder;
-  final Widget? child;
+  final TransitionBuilder builder; // the wrapping widget, reactive to events
+  final Widget? child; // the users child widget, that is passed back to the builder
+
+  Widget _eventBuilder(BuildContext context, T? event, Widget? initialBuild) {
+    if (event == eventMatch) {
+      return builder(context, child); // also pass event back to builder?
+    }
+    return initialBuild!;
+  }
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<T?>(
       valueListenable: eventNotifier,
-      builder: (context, event, initialBuild) {
-        if (event == eventMatch) {
-          return builder(context, child);
-        }
-        return initialBuild!;
-      },
+      builder: _eventBuilder,
       child: builder(context, child), // initialBuild
     );
   }
