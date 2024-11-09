@@ -41,7 +41,7 @@ extension BitFieldMapMethods on Map<BitField, int> {
 
 /// [BitFields]
 /// `Bits Struct Base` base. BitsBase constrained with [EnumMap] - typed, fixed set, keys.
-/// Common interface for [BitStruct], [BoolStruct]
+/// Common interface for [BitStruct], [BoolStruct]. cast before use, analogous to num -> int, double
 /// A special case of [EnumMap], all values retrieve from a [Bits] object
 /// implementations assign V type, [] operators, whether accessor use bitmask; derived or defined etc.
 /// T is Enum / Bitmask
@@ -106,7 +106,7 @@ abstract class ConstBitFieldsWithKeys<T extends Enum, V> extends ConstBitFieldsB
 }
 
 // remove?
-typedef ConstBitFieldsInit<T extends Enum, V> = ConstEnumMapInit<T, V>;
+// typedef ConstBitFieldsInit<T extends Enum, V> = ConstEnumMapInit<T, V>;
 // class ConstBitsMapInit<T extends Enum, V> extends ConstEnumMapInit<T, V> with BitsMap<T, V> implements BitsMap<T, V>
 
 /// combined mixins

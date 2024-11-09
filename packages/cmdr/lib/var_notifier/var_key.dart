@@ -48,11 +48,11 @@ abstract mixin class VarKey implements ValueKey<int> {
   /// View Widgets properties
   ///
 
-  @override
-  String toString() {
-    // return '[$runtimeType: <$value>]';
-    return '[$runtimeType ${binaryFormat?.viewType.type} <$value>]';
-  }
+  // @override
+  // String toString() {
+  //   // return '[$runtimeType: <$value>]';
+  //   return '[$runtimeType ${binaryFormat?.viewType.type} <$value>]';
+  // }
 }
 
 extension VarMinMaxs on Iterable<VarKey> {

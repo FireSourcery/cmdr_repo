@@ -119,6 +119,19 @@ extension GenericSublistView on TypedData {
     };
   }
 
+  TypeRestrictedKey<TypedData, TypedData> get typeRestrictedKey {
+    return switch (this) {
+      Uint8List() => const TypeRestrictedKey<Uint8List, TypedData>(),
+      Uint16List() => const TypeRestrictedKey<Uint16List, TypedData>(),
+      Uint32List() => const TypeRestrictedKey<Uint32List, TypedData>(),
+      Int8List() => const TypeRestrictedKey<Int8List, TypedData>(),
+      Int16List() => const TypeRestrictedKey<Int16List, TypedData>(),
+      Int32List() => const TypeRestrictedKey<Int32List, TypedData>(),
+      ByteData() => const TypeRestrictedKey<ByteData, TypedData>(),
+      _ => throw UnimplementedError(),
+    };
+  }
+
   // R callAsThis<R>(R Function<G extends TypedData>() callback) => typeKey.callWithRestrictedType(callback);
 
   // offset uses type of 'this', not R type.
@@ -130,11 +143,14 @@ extension GenericSublistView on TypedData {
   List<int> asIntList<R extends TypedData>([int typedOffset = 0, int? end]) => IntArray<R>.cast(this, typedOffset, end).asThis;
   List<int> asIntListOrEmpty<R extends TypedData>([int typedOffset = 0, int? end]) => (typedOffset * elementSizeInBytes < lengthInBytes) ? asIntList<R>(typedOffset, end) : const <int>[];
 
+  TypedData? _local<G extends TypedData>() => asTypedArrayOrNull<G>();
+
   // sublistView as 'this' type
-  TypedData? seek(int index) => typeKey.callWithRestrictedType(asTypedArrayOrNull);
+  TypedData? seek(int index) => typeRestrictedKey.callWithRestrictedType(<G extends TypedData>() => asTypedArrayOrNull<G>(index));
+  // TypedData? seek1(int index) => TypedArray.cast(this, index);
 
   // IntList only
-  String asString() => typeKey.callWithRestrictedType(asIntListOrEmpty).asString();
+  String asString() => typeRestrictedKey.callWithRestrictedType(<G extends TypedData>() => asIntListOrEmpty<G>()).asString();
 }
 
 /// buffer types

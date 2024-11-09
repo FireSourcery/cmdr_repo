@@ -4,7 +4,8 @@ export 'widgets/drive_shift.dart';
 export 'widgets/flags_view.dart';
 export 'widgets/io_field.dart';
 export 'widgets/logo.dart';
-export 'widgets/flyweight_menu/menu_anchor_layout.dart';
+export 'widgets/flyweight_menu/menu_anchor_widgets.dart';
+export 'widgets/dialog/dialog_anchor.dart';
 
 export 'widgets/string_view.dart';
 

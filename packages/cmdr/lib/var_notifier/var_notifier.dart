@@ -23,7 +23,6 @@ part 'var_real_time_controller.dart';
 class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier {
   VarNotifier({
     required this.varKey,
-    // required V value,
     this.viewOfData,
     this.dataOfView,
     this.signExtension,
@@ -34,17 +33,6 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
     this.stringDigits,
     // this.statusOfCode = VarStatus.defaultCode,
   });
-
-  // VarNotifier.castBase(VarNotifier  base)
-  //     : varKey = base.varKey,
-  //       enumRange = base.enumRange,
-  //       bitsMapKeys = base.bitsMapKeys,
-  //       stringDigits = base.stringDigits,
-  //       viewOfData = base.viewOfData,
-  //       dataOfView = base.dataOfView,
-  //       signExtension = base.signExtension,
-  //       viewMin = base.viewMin,
-  //       viewMax = base.viewMax;
 
   @protected
   VarNotifier.ofKey(this.varKey)
@@ -64,12 +52,9 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
     return varKey.viewType(<G>() => VarNotifier<G>.ofKey(varKey) as VarNotifier<V>);
   }
 
-  @override
-  final VarKey varKey;
-
   /// Derived from [VarKey] and cached
   @override
-  final int Function(int bytes)? signExtension;
+  final int Function(int binaryValue)? signExtension;
   @override
   final ViewOfData? viewOfData; //num conversion only, null for Enum and Bits
   @override
@@ -79,6 +64,9 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   @override
   final num? viewMax;
 
+  // from Key, change either refer to key or remove key dependency
+  @override
+  final VarKey varKey;
   // for enum conversion only.
   // although enumerated types can be implemented using other types, it is generally preferred to use enums.
   @override
@@ -96,6 +84,8 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   @override
   VarStatus statusOf(int statusCode) => varKey.varStatusOf(statusCode);
 
+  bool pushDataFlag = false; // case where push is not on all viewValue updates
+
   // alternatively change to remove dependency on VarKey
   // final VarStatus Function(int statusCode) statusOfCode;
   // VarStatus statusOf(int statusCode) => statusOfCode(statusCode);
@@ -109,12 +99,13 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   //   isUpdatedByView = false;
   // }
 
-  @override
-  String toString() => '${describeIdentity(this)}($value)';
+  // @override
+  // String toString() => '${describeIdentity(this)}($value)';
 }
 
 /// A notifier combining a value and status code on a single listenable.
 ///  supports conversion between view and data values.
+/// alternatively move notifier to upper layer
 abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   VarKey get varKey; // allow varKey to be assigned as dynamic
   // alternatively
@@ -122,42 +113,69 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // int get dataMin;
   // int get dataMax;
 
-  /// by default get from varKey. resolve in constructor to cache
-  /// retain cached values derived from varKey
+  /// by default get from varKey.
+  /// resolve in constructor to cached values derived from varKey
   int Function(int binary)? get signExtension;
   ViewOfData? get viewOfData; //num conversion only, null for Enum and Bits
   DataOfView? get dataOfView;
 
-  // still effective if set for a non num V
+  /// view base limits, still effective for non-num V, if set
   num? get viewMin;
   num? get viewMax;
-  // doubles only
+
+  // double only
   int? get stringDigits;
+
   // for enum conversion only.
   // although range bound types can include other types, it is generally preferred to use enums.
-  List<Enum>? get enumRange;
+  List<Enum>? get enumRange; //+ defualt must be provided for non null return
+
   // for bits conversion only.
   List<BitField>? get bitsKeys;
 
+  // BitStruct? get bitsPrototype;
+
+  // V Function(int value) enumOfIndex;
+
+  ///
   int dataOfBinary(int binary) => signExtension?.call(binary) ?? binary;
   num viewOf(int data) => viewOfData?.call(data) ?? data; // 'view base'
   int dataOf(num view) => dataOfView?.call(view) ?? view.toInt();
 
   num clamp(num value) => switch ((viewMin, viewMax)) { (num min, num max) => value.clamp(min, max), _ => value };
 
-  Enum? enumOf(int value) => enumRange?.elementAtOrNull(value); // returns null if varName is not associated with enum value type
-  BitFields bitFieldsOf(int value) => BitStructClass(bitsKeys ?? const <BitField>[]).castBits(value);
+  Enum enumOf(int value) => enumRange?.elementAtOrNull(value) ?? VarValueUnknown.unknown;
+  BitStruct<BitField> bitFieldsOf(int value) => BitStructClass(bitsKeys ?? const <BitField>[]).castBits(value);
+  // BitStruct<BitField> bitFieldsOf(int value) => bitsPrototype.copywithBits(value);
 
-  // @override
-  // String toString() => '$runtimeType $numValue'; // $statusCode
+  ////////////////////////////////////////////////////////////////////////////////
+  /// returning user defined subtypes
+  /// returns the as the exact type, to account for user defined method on that type
+
+  //  subtype return nullable,
+  //  a constructor is provided
+  //  a default value is provided
+  //  a prototype object is provided
+
+  V? enumSubtypeOf(int value) => enumRange?.elementAtOrNull(value) as V?; // returns null if varName is not associated with enum value type
+  V? bitsSubtypeOf(int value) => (bitsKeys != null) ? BitStructClass(bitsKeys!).castBits(value) as V? : null;
+
+  // alternatively pass function, for non nullable
+  // value as subtypes
+  // These should return the proper type as long as V is correct
+  T valueAsEnumType<T>() => valueAsEnum as T; // todo handle enum out of range
+  T valueAsBitsType<T>() => valueAsBitFields as T;
+
   @override
-  String toString() => '${describeIdentity(this)}($value)';
+  String toString() => '${describeIdentity(this)}($value)($numValue)';
 
   /// runtime variables
   // same as ChangeNotifier._count
   // alternatively cache need parallel list to track duplicates.
   int viewerCount = 0;
   bool isUpdatedByView = false; // pushUpdateFlag
+
+  // if separating internal and external status
   // bool outOfRange; // value from client out of range
 
   /// superclass implementation
@@ -165,6 +183,12 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   V get value => valueAs<V>();
   @override // check new == previous?
   set value(V newValue) => updateByViewAs<V>(newValue);
+
+  // Var as Entry including key
+  // outbound data
+  int get dataKey => varKey.value;
+  MapEntry<int, int> get dataEntry => MapEntry(dataKey, dataValue);
+  (int key, int value) get dataPair => (dataKey, dataValue);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// [numValue] The base representation of the value as a num. "view side base"
@@ -202,12 +226,6 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // before sign extension
   void updateByData(int bytesValue) => _updateByData(dataOfBinary(bytesValue));
 
-  // Var as Entry including key
-  // outbound data
-  int get dataKey => varKey.value;
-  MapEntry<int, int> get dataEntry => MapEntry(dataKey, dataValue);
-  (int key, int value) get dataPair => (dataKey, dataValue);
-
   ////////////////////////////////////////////////////////////////////////////////
   /// [viewValue] from widgets
   /// The value in real world units and constraints. as seen by the user
@@ -231,11 +249,8 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   @protected
   Uint8List get valueAsBytes => Uint8List(8)..buffer.asByteData().setUint64(0, valueAsInt, Endian.big);
 
-  // todo handle enum out of range
-  // value as subtypes
-  // These should return the proper type as long as V is correct
-  T valueAsEnumType<T>() => valueAsEnum as T;
-  T valueAsBitsType<T>() => valueAsBitFields as T;
+  /// generic getter use switch on type literal, and require extension to account for subtypes
+  /// generic setter use switch on object type
 
   /// view determines type after accounting fo varId.valueType
   R valueAs<R>() {
@@ -265,7 +280,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
     numValue = switch (T) {
       const (double) || const (int) || const (num) => clamp(typedValue as num),
       const (bool) => (typedValue as bool) ? 1 : 0,
-      // update as Enum subtype check first, in case a value other than enum is selected
+      // todo update as Enum subtype check first, in case a value other than enum.index is selected
       _ when TypeKey<T>().isSubtype<Enum>() => (typedValue as Enum).index,
       _ when TypeKey<T>().isSubtype<BitsBase>() => (typedValue as BitsBase).bits,
       _ => throw UnsupportedError('valueAs: $T'),
@@ -280,6 +295,16 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
     // viewValue bound should keep motValue within format bounds after conversion
     assert((varKey.binaryFormat?.max != null) ? (dataValue <= varKey.binaryFormat!.max) : true);
     assert((varKey.binaryFormat?.min != null) ? (dataValue >= varKey.binaryFormat!.min) : true);
+  }
+
+  void updateAsDynamic(dynamic typedValue) {
+    numValue = switch (typedValue) {
+      num value => clamp(value),
+      bool value => (value) ? 1 : 0,
+      Enum value => value.index,
+      BitsBase value => value.bits,
+      _ => throw UnsupportedError(' '),
+    };
   }
 
   void updateByView(V typedValue) => updateByViewAs<V>(typedValue);
@@ -330,9 +355,9 @@ enum VarValueUnknown { unknown }
 ///
 /// alternatively, include code value only, caller handling Enum mapping
 ///
-///
+/// Does not mixin ValueNotifier<VarStatus> to not take up single inheritance
+/// S does not have to be generic if all vars share the same status type
 ////////////////////////////////////////////////////////////////////////////////
-/// S does not have to be generic if all vars share the same status
 abstract mixin class VarStatusNotifier implements ChangeNotifier {
   @mustBeOverridden
   VarStatus statusOf(int statusCode) => VarStatus.defaultCode(statusCode);
@@ -350,11 +375,11 @@ abstract mixin class VarStatusNotifier implements ChangeNotifier {
   void updateStatusByData(int status) => statusCode = status;
 
   /// view typed
-  VarStatus get status => statusAs<VarStatus>(); // not necessary unless Status is generic
-  set status(VarStatus newValue) => updateStatusByViewAs<VarStatus>(newValue);
-  VarStatus get statusId => statusOf(statusCode);
+  // VarStatus get status => statusAs<VarStatus>(); // not necessary unless Status is generic
+  // set status(VarStatus newValue) => updateStatusByViewAs<VarStatus>(newValue);
+  VarStatus get status => statusOf(statusCode);
 
-  Enum? get statusAsEnum => statusId.enumId;
+  Enum? get statusAsEnum => status.enumId;
   bool get statusIsError => statusCode != 0;
   bool get statusIsSuccess => statusCode == 0;
 
@@ -362,11 +387,11 @@ abstract mixin class VarStatusNotifier implements ChangeNotifier {
     return switch (R) {
       const (int) => statusCode,
       const (bool) => statusIsSuccess,
-      const (Enum) => statusId.enumId ?? VarStatusUnknown.unknown,
-      const (VarStatus) => statusId,
+      const (Enum) => status.enumId ?? VarStatusUnknown.unknown,
+      const (VarStatus) => status,
       // _ when TypeKey<R>().isSubtype<VarStatus>() => statusId, // statusOf must have been overridden for R
       // _ when TypeKey<R>().isSubtype<Enum>() => statusId.enumId,
-      _ => throw TypeError(),
+      _ => throw UnsupportedError('statusAs: $R'),
     } as R;
   }
 
@@ -378,7 +403,7 @@ abstract mixin class VarStatusNotifier implements ChangeNotifier {
       const (VarStatus) => (status as VarStatus).code,
       _ when TypeKey<T>().isSubtype<VarStatus>() => (status as VarStatus).code,
       _ when TypeKey<T>().isSubtype<Enum>() => (status as Enum).index,
-      _ => throw TypeError(),
+      _ => throw UnsupportedError('updateStatusByViewAs: $T'),
     };
   }
 

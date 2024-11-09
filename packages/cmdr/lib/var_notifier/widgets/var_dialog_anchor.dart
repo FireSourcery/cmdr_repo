@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
 
-import '../../widgets/dialog/dialog_widgets.dart';
+import '../../widgets/dialog/dialog_anchor.dart';
 import '../var_notifier.dart';
-import '../var_widget.dart';
+import 'var_widget.dart';
 
-class VarEditDialog extends StatelessWidget {
-  const VarEditDialog({
+class VarInputDialog extends StatelessWidget {
+  const VarInputDialog({
     super.key,
     required this.child,
     required this.varNotifier,
-    required this.controller,
+    required this.varCache,
+    this.eventController,
     this.beginEditMessage = initialMessageDefault,
     this.endEditMessage = finalMessageDefault,
-    ValueGetter<bool>? displayCondition,
+    // this.displayCondition,
   });
 
   final VarNotifier varNotifier;
-  final VarCacheController controller;
-  final Widget child; // io field most cases
+  final VarCache varCache;
+  final VarEventController? eventController;
+  final Widget child; // caller may map child callbacks to the same event controller
 
   final String? beginEditMessage;
   final String? endEditMessage;
@@ -25,14 +27,25 @@ class VarEditDialog extends StatelessWidget {
   static const String initialMessageDefault = 'Are you sure you want to continue?';
   static const String finalMessageDefault = 'You have completed editing this field.';
 
+  // ValueGetter<bool>? displayCondition;
+// Widget? title,
+// Widget? content,
   // optionally include onpop
 
-  Widget initialDialog(context) {
+  Widget initialDialog(BuildContext context) {
+    final theme = Theme.of(context);
     return AlertDialog(
-      title: Text('Edit ${varNotifier.varKey.label}'),
+      // title: const Text('Edit'),
+      title: Text(varNotifier.varKey.label),
       content: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(beginEditMessage ?? ''),
+          const Divider(),
+          // Text(beginEditMessage ?? ''),
+          if (varNotifier.varKey.dependents != null) ...[
+            const Text('The following values will be updated:\n'),
+            Text(varCache.dependentsString(varNotifier.varKey), textAlign: TextAlign.left),
+          ]
         ],
       ),
       actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Ok'))],
@@ -40,32 +53,41 @@ class VarEditDialog extends StatelessWidget {
   }
 
   // if (value == VarViewEvent.submit) matching handled by DialogAnchor
-  Widget eventDialog(context, value) {
+  Widget eventDialog(BuildContext context, VarViewEvent? value) {
+    final theme = Theme.of(context);
     return AlertDialog(
-      title: Text('Completed Editing ${varNotifier.varKey.label}'),
+      // title: const Text('Completed Editing'),
+      title: Text(varNotifier.varKey.label),
       content: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(endEditMessage ?? ''),
-
-          /// list dependent values
-          if (varNotifier.varKey.dependents != null) Text(controller.cache.dependentsString(varNotifier.varKey)),
+          const Divider(),
+          // Text(endEditMessage ?? ''),
+          if (varNotifier.varKey.dependents != null) ...[
+            const Text('The following values have been updated:\n'),
+            Text(varCache.dependentsString(varNotifier.varKey), textAlign: TextAlign.left),
+          ]
         ],
       ),
       actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Ok'))],
     );
-    // }
   }
 
   @override
   Widget build(BuildContext context) {
-    final VarEventController eventController = VarEventController(cacheController: controller, varNotifier: varNotifier); // remove listener handled by DialogAnchor
+    final effectiveEventController = eventController ?? VarEventController(varCache: varCache, varNotifier: varNotifier); // DialogAnchor handles dispose / remove listener
 
-    // change to conditional
-    return DialogAnchor<VarViewEvent>(
-      eventNotifier: eventController.eventNotifier,
-      initialDialogBuilder: initialDialog,
-      eventDialogBuilder: eventDialog, // todo need to trigger using childs submit, or decendent notifier
-      child: child,
-    );
+    if (varNotifier.varKey.dependents != null) {
+      // change to conditional
+      return DialogAnchor<VarViewEvent>(
+        // displayCondition: displayCondition,
+        eventNotifier: effectiveEventController,
+        initialDialogBuilder: initialDialog,
+        eventDialogBuilder: eventDialog,
+        eventMatch: VarViewEvent.submit,
+        child: child,
+      );
+    }
+    return child;
   }
 }

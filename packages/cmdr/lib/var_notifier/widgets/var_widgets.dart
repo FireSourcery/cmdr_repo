@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../var_notifier.dart';
-import '../var_widget.dart';
+import 'var_widget.dart';
 
 /// End Widgets using VarNotifier
 
@@ -41,21 +41,22 @@ class VarSwitch extends StatelessWidget with VarNotifierViewer<bool> {
 }
 
 class VarSlider extends StatelessWidget with VarNotifierViewer<double> {
-  const VarSlider(this.varNotifier, {super.key});
+  const VarSlider(this.varNotifier, {super.key, this.eventController});
 
   final VarNotifier<dynamic> varNotifier;
+  final VarEventController? eventController;
 
   Widget builder(BuildContext context, Widget? child) {
-    // must be defined if type is numeric
+    // must be num defined if type is numeric
     final min = varNotifier.viewMin!.toDouble();
     final max = varNotifier.viewMax!.toDouble();
 
     return Slider.adaptive(
       // label: varNotifier.varKey.label,
-      // divisions: varNotifier.varKey.tag.unitViewMax - min ~/ 1,
+      // divisions: ((max - min) ~/ 1).clamp(2, 100),
       value: viewValue.clamp(min, max),
       onChanged: valueChanged,
-      onChangeEnd: valueChanged,
+      onChangeEnd: (eventController?.submitByView) ?? valueChanged,
       min: min,
       max: max,
     );
@@ -67,6 +68,7 @@ class VarSlider extends StatelessWidget with VarNotifierViewer<double> {
     return ListenableBuilder(listenable: varNotifier, builder: builder);
   }
 }
+
 // only when widget directly depends on notifer
 // class VarListenablBuilder extends ListenableBuilder {
 //   final VarNotifier varNotifier;

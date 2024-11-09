@@ -2,7 +2,7 @@ import 'dart:ffi';
 
 import 'package:cmdr_common/basic_types.dart';
 
-import '../bits/bit_field.dart';
+import 'bit_field.dart';
 
 /// Data/number format
 /// ffi marker constrains type, only use as marker

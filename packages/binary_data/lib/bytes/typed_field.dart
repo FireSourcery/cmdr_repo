@@ -117,7 +117,7 @@ extension GenericTypedWord on ByteData {
 
 //   int get end => offset + size;
 
-// //   List<int> arrayOf<R extends TypedData>(TypedData typedList) => typedList.sublistViewOrEmpty<R>(offset, size);
+//   List<int> arrayOf<R extends TypedData>(TypedData typedList) => typedList.sublistViewOrEmpty<R>(offset, size);
 // }
 
 // class _Part with Part {

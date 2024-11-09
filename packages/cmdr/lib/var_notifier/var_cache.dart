@@ -11,7 +11,7 @@ part of 'var_notifier.dart';
 ////////////////////////////////////////////////////////////////////////////////
 @immutable
 class VarCache {
-  VarCache([this.lengthMax]) : _cache = {};
+  // VarCache([this.lengthMax]) : _cache = {};
 
   // stores key in value when using dynamically generated iterable
   VarCache.preallocate(
@@ -19,11 +19,13 @@ class VarCache {
     VarNotifier Function(VarKey) constructor = VarNotifier.of,
     this.lengthMax,
   }) : _cache = {for (final varKey in varKeys) varKey.value: constructor(varKey)};
+  // todo preallocate as Map.unmodifiable, VarNotifier need to change some fields to getters
+  // re generating varnotifer parameters will need to create a new cache
 
   final Map<int, VarNotifier> _cache; // <int, VarNotifier> allows direct access by updateBy
   final int? lengthMax;
 
-  // final Map<VarKey, VarNotifier> _cache; //  this way keys are retained
+  // final Map<VarKey, VarNotifier> _cache; //  this way keys are retained, access without going through var
   // final Set<VarKey>? preallocatedKeys; // retain if generated,
 
   // @protected
@@ -57,42 +59,42 @@ class VarCache {
 
   // in preallocated case, where size is not constrained. deallocate and replace is not necessary
   // remove viewer
-  bool deallocate(VarKey? varKey) {
-    if (_cache[varKey?.value] case VarNotifier varEntry) {
-      print('deallocate: ${varKey?.value} ${varEntry.varKey}');
-      print('deallocate: ${varEntry.viewerCount}');
-      print('varEntry.hasListeners: ${varEntry.hasListeners}');
+  // bool deallocate(VarKey? varKey) {
+  //   if (_cache[varKey?.value] case VarNotifier varEntry) {
+  //     print('deallocate: ${varKey?.value} ${varEntry.varKey}');
+  //     print('deallocate: ${varEntry.viewerCount}');
+  //     print('varEntry.hasListeners: ${varEntry.hasListeners}');
 
-      // caller removes itself as listener first
-      // if (!varEntry.hasListeners) {
-      //   _cache.remove(varKey?.value)?.dispose();
-      //   return true;
-      // }
-      varEntry.viewerCount--;
-      if (varEntry.viewerCount < 1) {
-        _cache.remove(varKey?.value)?.dispose();
-        return true;
-      }
-    }
-    return false;
-  }
+  //     // caller removes itself as listener first
+  //     // if (!varEntry.hasListeners) {
+  //     //   _cache.remove(varKey?.value)?.dispose();
+  //     //   return true;
+  //     // }
+  //     varEntry.viewerCount--;
+  //     if (varEntry.viewerCount < 1) {
+  //       _cache.remove(varKey?.value)?.dispose();
+  //       return true;
+  //     }
+  //   }
+  //   return false;
+  // }
 
-  VarNotifier replace(VarKey add, [VarKey? remove]) => (this..deallocate(remove)).allocate(add);
+  // VarNotifier replace(VarKey add, [VarKey? remove]) => (this..deallocate(remove)).allocate(add);
 
-  void replaceAll(Iterable<VarKey> varKeys) {
-    clear();
-    varKeys.forEach(allocate);
-  }
+  // void replaceAll(Iterable<VarKey> varKeys) {
+  //   clear();
+  //   varKeys.forEach(allocate);
+  // }
 
   bool contains(VarKey varKey) => _cache.containsKey(varKey.value);
-  void clear() => _cache.clear();
   void zero() => _cache.forEach((key, value) => value.numValue = 0);
+  // void clear() => _cache.clear();
 
   bool get isEmpty => _cache.isEmpty;
 
   void dispose() {
     _cache.forEach((_, value) => value.dispose());
-    _cache.clear();
+    // _cache.clear();
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -236,4 +238,87 @@ mixin VarCacheAsSubtype<K extends VarKey, V extends VarNotifier> on VarCache {
 
   @override
   Iterable<V> entriesOf(covariant Iterable<K> keys) => super.entriesOf(keys).cast<V>();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// VarHandler, VarViewer
+/// [VarEventController] - a controller for a single [VarNotifier] with context of [VarCache]
+/// Use cases requiring notifications less than every VarNotifier value updateByView
+///    Var selection - e.g. change select with Menu
+///    Submit notifier - e.g. generating dialog
+///    Updating dependents residing in the same VarCache
+/// single var service - move to separate mixin
+////////////////////////////////////////////////////////////////////////////////
+class VarEventController with ChangeNotifier implements ValueNotifier<VarViewEvent> {
+  VarEventController({required this.varCache, this.varNotifier});
+  VarEventController.byKey({required this.varCache, required VarKey varKey}) : varNotifier = varCache.allocate(varKey);
+
+  // VarCacheController if combining with service
+  final VarCache varCache; // a reference to the cache containing this varNotifier, use controller to include service
+
+  /// Type assigned by VarKey/VarCache
+  // use null for default. If a 'empty' VarNotifier is attached, it may register excess callbacks, and dispatch meaningless notifications.
+  VarNotifier<dynamic>? varNotifier; // always typed by Key returning as dynamic.
+  // set varNotifier(VarNotifier notifier) => varNotifier = notifier;
+
+// single listener table, notfiy with id. this way invokes extra notifications
+// or use separate changeNotifier?
+//    separate tables for different types of events
+  VarViewEvent _value = VarViewEvent.none;
+  @override
+  VarViewEvent get value => _value;
+  // always update value, even if the same
+  @override
+  set value(VarViewEvent newValue) {
+    _value = newValue;
+    notifyListeners();
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  ///
+  ////////////////////////////////////////////////////////////////////////////////
+  // update Var by VarKey, notify with parent class
+  // caller update Stream when using realtime
+  // Future<void> select(VarKey key) async {
+  //   // varNotifier = varCache.replace(key, varNotifier?.varKey);
+  //   value = VarViewEvent.select;
+  //   // await cacheController.updatePeriodicStream([key]);
+  // }
+
+  // void notifyDependents(VarKey key) => varCache.updateDependents(varNotifier!.varKey);
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /// User submit
+  ///   associated with UI component, rather than VarNotifier
+  ///   with context of cache for dependents
+  ///   Listeners to the VarNotifier on another UI component will not be notified of submit
+  ////////////////////////////////////////////////////////////////////////////////
+  void submitByViewAs<T>(T varValue) {
+    if (varNotifier == null) return;
+    varNotifier!.updateByViewAs<T>(varValue);
+    // if varCache has mixin VarDependents, update dependents
+    if (varCache case VarDependents typedCache) {
+      typedCache.updateDependents(varNotifier!.varKey);
+    }
+    //isSubmittedByView
+    value = VarViewEvent.submit;
+  }
+
+  void submitByView(dynamic typedValue) {
+    if (varNotifier == null) return;
+    varNotifier!.updateAsDynamic(typedValue);
+    if (varCache case VarDependents typedCache) {
+      typedCache.updateDependents(varNotifier!.varKey);
+    }
+    value = VarViewEvent.submit;
+  }
+}
+
+enum VarViewEvent {
+  select,
+  submit,
+  // update,
+  // error,
+  // clear,
+  none
 }

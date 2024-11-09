@@ -2,25 +2,6 @@ import '../../settings/settings_view.dart';
 import 'package:flutter/material.dart';
 import 'package:recase/recase.dart';
 
-class LinkedMenuController {
-  LinkedMenuController(List<MenuEntry> menuListMain, List<MenuEntry> menuListAux)
-      : mainMenu = MainMenuController(menuListMain, createNavigatorKey: true),
-        auxMenu = MainMenuController(menuListAux, createNavigatorKey: false);
-
-  final MainMenuController mainMenu;
-  final MainMenuController auxMenu;
-
-  set auxMenuList(List<MenuEntry>? menuList) => auxMenu.menuList = menuList;
-
-  Enum get mainSelectedId => mainMenu.selectedId;
-  Enum get auxSelectedId => auxMenu.selectedId;
-
-  void toggleDouble() {
-    mainMenu.toggleExpanded();
-    auxMenu.isExpanded = mainMenu.isExpanded;
-  }
-}
-
 /// is expanded and selecct are on the same notifier
 class MainMenuController with ChangeNotifier {
   MainMenuController(this.initialMenuList, {GlobalKey<NavigatorState>? navigatorKey, bool createNavigatorKey = false})
@@ -64,6 +45,25 @@ class MainMenuController with ChangeNotifier {
 
   String get selectedRoute => menuList[indexOf(selectedId)].route ?? '';
   String get selectedLabel => menuList[indexOf(selectedId)].label;
+}
+
+class LinkedMenuController {
+  LinkedMenuController(List<MenuEntry> menuListMain, List<MenuEntry> menuListAux)
+      : mainMenu = MainMenuController(menuListMain, createNavigatorKey: true),
+        auxMenu = MainMenuController(menuListAux, createNavigatorKey: false);
+
+  final MainMenuController mainMenu;
+  final MainMenuController auxMenu;
+
+  set auxMenuList(List<MenuEntry>? menuList) => auxMenu.menuList = menuList;
+
+  Enum get mainSelectedId => mainMenu.selectedId;
+  Enum get auxSelectedId => auxMenu.selectedId;
+
+  void toggleDouble() {
+    mainMenu.toggleExpanded();
+    auxMenu.isExpanded = mainMenu.isExpanded;
+  }
 }
 
 class MenuEntry {

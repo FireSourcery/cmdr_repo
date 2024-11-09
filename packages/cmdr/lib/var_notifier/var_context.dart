@@ -22,22 +22,25 @@ final class VarKeyContext extends InheritedWidget {
     return result!;
   }
 
-  /// Control type properties
-  // effectively provides varKey.contextType
-  // without directly including type in VarKey, as that results in dependency of view layer
-  final TypeKey<VarContext> Function(VarKey) contextTypeOfVarKey;
+  /// User provides function - using control type properties to determine the [VarContext] and [VarCacheController] type
+  // effectively provides varKey.contextType, without directly including type in VarKey, as that results in dependency of view layer
+  // final TypeKey<VarContext> Function(VarKey) contextTypeOfVarKey;
 
-  // controllers per keycontext, no search by context type
+  /// slight workaround for `T extends VarContext`
+  final TypeRestrictedKey<VarContext, VarContext> Function(VarKey) contextTypeOfVarKey;
+
+  // Alternatively, controllers per keyContext, instead of search by context type
   // // holds the cache allocations
-  // // CacheControllerType to CacheController
+  // // VarCacheController Type to CacheController
   // final Map<Type, VarCacheController> controllers;
+  // T? controller<T extends VarCacheController>() => controllers[T] as T?;
 
-  // // although its possible to map from key to controller, this way enforces a condensed map
-  // // as well as provide an additional way of accessing the controller via `controller<T extends VarCacheController>()`
+  // passing control from user to library
+  // Alternative to map key to controller,
+  // This way is modular, and enforces a condensed map
   // final TypeKey<VarCacheController> Function(VarKey) controllerTypeOfVarKey;
 
-  // T? controller<T extends VarCacheController>() => controllers[T] as T?;
-  // // returned controller is the type determined by the varKey. caller cast to sub type for subtype methods
+  // returned controller is the type determined by the varKey. caller cast to sub type for subtype methods
   // VarCacheController? controllerOf(VarKey varKey) => controllerTypeOfVarKey(varKey).callWithRestrictedType(controller);
 
   @override
@@ -45,9 +48,11 @@ final class VarKeyContext extends InheritedWidget {
 }
 
 /// For additional sub contexts
+// abstract class VarContext<T extends VarContext<dynamic>> extends InheritedWidget { //alternatively pass parameter type
 abstract class VarContext extends InheritedWidget {
-  const VarContext({super.key, required this.controller, required super.child});
+  const VarContext({super.key, required this.cacheController, required super.child});
 
+  /// `T extends VarContext`
   static T? maybeOf<T extends VarContext>(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<T>();
   }
@@ -58,26 +63,32 @@ abstract class VarContext extends InheritedWidget {
     return result!;
   }
 
+  // static T _of<T>(BuildContext context) {
+  //   final T? result = maybeOf<T>(context);
+  //   assert(result != null, 'No $T found in context');
+  //   return result!;
+  // }
+
   /// this method requires [VarKeyContext] to be provided
   static VarContext ofKey(BuildContext context, VarKey varKey) {
-    return VarKeyContext.of(context).contextTypeOfVarKey(varKey).callWithRestrictedType(<G extends VarContext>() => VarContext.of<G>(context) as VarContext);
+    return VarKeyContext.of(context).contextTypeOfVarKey(varKey).callWithRestrictedType(<G extends VarContext>() => VarContext.of<G>(context));
   }
 
-  final VarCacheController controller;
+  final VarCacheController cacheController;
 
   @override
-  bool updateShouldNotify(covariant VarContext oldWidget) => controller != oldWidget.controller;
+  bool updateShouldNotify(covariant VarContext oldWidget) => cacheController != oldWidget.cacheController;
 }
 
-// /// 2 types by default. RealTime and Settings
-// // Real-Time Vars use VarRealTimeController
+/// 2 types by default. RealTime and Settings
+// Real-Time Vars use VarRealTimeController
 class VarRealTimeContext extends VarContext {
-  const VarRealTimeContext({super.key, required VarRealTimeController super.controller, required super.child});
+  const VarRealTimeContext({super.key, required VarRealTimeController super.cacheController, required super.child});
 
   // static T of<T extends VarRealTimeContext>(BuildContext context) => VarContext.of<T>(context);
 
   @override
-  VarRealTimeController get controller => super.controller as VarRealTimeController;
+  VarRealTimeController get cacheController => super.cacheController as VarRealTimeController;
 }
 
 // // Configuration Vars use base VarCacheController
@@ -88,9 +99,9 @@ class VarRealTimeContext extends VarContext {
 // }
 
 extension VarKeyMapper on VarKey {
-  VarNotifier varFrom(BuildContext context) => VarContext.ofKey(context, this).controller.cache.allocate(this);
+  VarNotifier varFrom(BuildContext context) => VarContext.ofKey(context, this).cacheController.cache.allocate(this);
 }
 
 extension VarNotifierContext on BuildContext {
-  VarCacheController varController<T extends VarContext>() => VarContext.of<T>(this).controller;
+  VarCacheController varController<T extends VarContext>() => VarContext.of<T>(this).cacheController;
 }

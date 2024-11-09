@@ -1,11 +1,14 @@
+import 'package:cmdr/var_notifier/widgets/var_menu.dart';
 import 'package:flutter/material.dart';
 
 import 'package:cmdr_common/basic_types.dart';
 
+import '../../widgets/flyweight_menu/flyweight_menu.dart';
+import '../../widgets/flyweight_menu/flyweight_menu_widgets.dart';
 import '../../widgets/io_field.dart';
 import '../var_context.dart';
 import '../var_notifier.dart';
-import '../var_widget.dart';
+import 'var_widget.dart';
 import 'var_dialog_anchor.dart';
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -13,32 +16,46 @@ import 'var_dialog_anchor.dart';
 ////////////////////////////////////////////////////////////////////////////////
 /// Interface without type parameter to be determined by Var
 abstract interface class VarIOField extends StatelessWidget {
-  factory VarIOField(VarNotifier varNotifier, {bool showLabel, bool isCompact, bool showPrefix, bool showSuffix, Key? key}) = _VarIOField;
-  factory VarIOField.compact(VarNotifier varNotifier, {bool showLabel, bool showPrefix, bool showSuffix, Key? key}) = _VarIOField.compact;
-  // factory VarIOField.withMenu(VarNotifier varNotifier, {bool showLabel, bool isCompact, bool showPrefix, bool showSuffix, Key? key}) =  ;
-  // factory VarIOField.withSlider(VarNotifier varNotifier, {bool showLabel, bool isCompact, bool showPrefix, bool showSuffix, Key? key}) =  ;
+  // assigns type, maps additional options to config
+  factory VarIOField(
+    VarNotifier<dynamic> varNotifier, {
+    VarEventController? eventController,
+    bool showLabel = true,
+    bool showPrefix = true,
+    bool showSuffix = true,
+    bool isDense = false,
+    Key? key,
+  }) {
+    // convenience for passing parameters
+    _VarIOField<V> local<V>() {
+      final config = VarIOFieldConfig<V>(varNotifier, eventController: eventController, showLabel: showLabel, showPrefix: showPrefix, showSuffix: showSuffix, isDense: isDense);
+      return _VarIOField<V>._(config);
+    }
+
+    return varNotifier.varKey.viewType(local);
+  }
+
+  factory VarIOField.compact(
+    VarNotifier varNotifier, {
+    VarEventController? eventController,
+    bool showLabel = false,
+    bool showPrefix = false,
+    bool showSuffix = false,
+    bool isDense = false,
+    Key? key,
+  }) {
+    return VarIOField(varNotifier, eventController: eventController, showLabel: showLabel, isDense: isDense, showPrefix: showPrefix, showSuffix: showSuffix);
+  }
+
+  // factory VarIOField.withMenu(VarNotifier varNotifier, {bool showLabel, bool isDense, bool showPrefix, bool showSuffix, Key? key}) =  ;
+  // factory VarIOField.withSlider(VarNotifier varNotifier, {bool showLabel, bool isDense, bool showPrefix, bool showSuffix, Key? key}) =  ;
 }
 
-/// map VarNotifier to IOFieldConfig and build
+/// map [VarNotifier] to [IOFieldConfig] and build
 /// options mapped in constructor
 class _VarIOField<V> extends StatelessWidget implements VarIOField {
   // accepts the type parameter passed to constructor
   const _VarIOField._(this.config, {super.key});
-
-  // assigns type, discard T passed
-  // main builder, maps additional options to config
-  factory _VarIOField(VarNotifier<dynamic> varNotifier, {bool showLabel = true, bool showPrefix = true, bool showSuffix = true, bool isCompact = false, Key? key}) {
-    // convenience for passing parameters
-    _VarIOField<V1> local<V1>(VarNotifier localVar) {
-      final config = VarIOFieldConfig<V1>(varNotifier, showLabel: showLabel, showPrefix: showPrefix, showSuffix: showSuffix, isCompact: isCompact);
-      return _VarIOField<V1>._(config);
-    }
-
-    return varNotifier.varKey.viewType(<G>() => local<G>(varNotifier) as _VarIOField<V>);
-  }
-
-  factory _VarIOField.compact(VarNotifier varNotifier, {bool showLabel = false, bool showPrefix = false, bool showSuffix = false, Key? key}) =>
-      _VarIOField(varNotifier, showLabel: showLabel, isCompact: true, showPrefix: showPrefix, showSuffix: showSuffix);
 
   final IOFieldConfig<V> config;
 
@@ -46,34 +63,47 @@ class _VarIOField<V> extends StatelessWidget implements VarIOField {
   Widget build(BuildContext context) => IOField<V>(config);
 }
 
-// option to pass var selection
-// class VarIOFieldWithMenu extends StatelessWidget {
-//   const VarIOFieldWithMenu({this.initialVarKey, this.varSelectController, super.key});
-//   final VarKey? initialVarKey;
-//   final VarSelectController? varSelectController;
+class VarIOFieldWithMenu<T extends VarKey> extends StatelessWidget {
+  const VarIOFieldWithMenu({this.initialVarKey, required this.varEventController, super.key, required this.menuSource});
 
-//   @override
-//   Widget build(BuildContext context) {
-//     final realTimeController = VarRealTimeContext.of(context).controller;
-//     final selectController = varSelectController ?? VarSelectController(realTimeController, initialVarKey: initialVarKey);
-//     final menuSource = VarMenuSource.realTime(selectController: selectController);
+  final FlyweightMenuSource<T> menuSource;
+  final T? initialVarKey;
+  final VarEventController? varEventController;
 
-//     return Row(
-//       children: [
-//         menuSource.toButton(),
-//         const VerticalDivider(thickness: 0, color: Colors.transparent),
-//         // config rebuilds on varNotifier select update
-//         Expanded(child: menuSource.contain((_, __) => VarIOField(selectController.varNotifier, showLabel: true, isCompact: false, showPrefix: true, showSuffix: true))),
-//       ],
-//     );
+  Widget buildVar(VarNotifier varNotifier) {
+    return VarIOField(varNotifier, eventController: varEventController, showLabel: true, isDense: false, showPrefix: true, showSuffix: true);
+  }
 
-//     // return ListTile(
-//     //   // dense: true,
-//     //   leading: menuSource.toButton(),
-//     //   title: menuSource.contain((_, __) => _VarIOFieldBuilder.options(selectController.varNotifier, showLabel: true, isCompact: false, showPrefix: true, showSuffix: true)),
-//     // );
-//   }
-// }
+  Widget buildByContext(BuildContext context, T value, Widget? child) {
+    return VarKeyBuilder(value, buildVar);
+  }
+
+  Widget buildByController(BuildContext context, T value, Widget? child) {
+    return VarBuilder(varEventController!.varCache.allocate(value), buildVar); // builder optionally includes the same eventController
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final menu = menuSource.create(); // todo with dispose
+    late final ValueWidgetBuilder<T> effectiveBuilder = (varEventController != null) ? buildByController : buildByContext;
+    // final widget = FlyweightMenuListenableBuilder(menu: menu, builder: buildKey);
+
+    return Row(
+      children: [
+        VarMenuButton<T>(menu: menu),
+        const VerticalDivider(thickness: 0, color: Colors.transparent),
+        // config rebuilds on varNotifier select update
+        Expanded(child: FlyweightMenuListenableBuilder<T>(menu: menu, builder: buildByContext)),
+      ],
+    );
+
+    // return ListTile(
+    //   // dense: true,
+    //   leading: menuSource.toButton(),
+    //   title: menuSource.contain((_, __) => _VarIOFieldBuilder.options(selectController.varNotifier, showLabel: true, isDense: false, showPrefix: true, showSuffix: true)),
+    // );
+  }
+}
 
 class VarIOFieldWithSlider<V> extends StatelessWidget implements VarIOField {
   const VarIOFieldWithSlider(this.varKey, {super.key});
@@ -86,16 +116,18 @@ class VarIOFieldWithSlider<V> extends StatelessWidget implements VarIOField {
 }
 
 class VarIOFieldConfig<V> implements IOFieldConfig<V> {
-  VarIOFieldConfig(
+  const VarIOFieldConfig(
     this.varNotifier, {
+    this.eventController,
     this.labelAlignment = FloatingLabelAlignment.start,
     this.showLabel = true,
     this.showPrefix = true,
     this.showSuffix = true,
-    this.isCompact = false,
+    this.isDense = false,
   });
 
-  final VarNotifier<dynamic> varNotifier;
+  final VarNotifier<dynamic> varNotifier; //should this be cast here?
+  final VarEventController? eventController;
 
   // alternatively handle in constructor
   // VarIOFieldConfig._(this.varNotifier);
@@ -103,16 +135,16 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   final bool showLabel;
   final bool showPrefix;
   final bool showSuffix;
-  final bool? isCompact;
+  final bool? isDense;
 
-  // for brevity assign type then copyWith options, this way options do not have to be included in every typed constructor
+  // for simplicity assign type then copyWith options, this way options do not have to be included in every typed constructor
   // applying options needs VarIOFieldConfig with constructor and fields, or use parent class copyWith
   // IOFieldConfig<T> buildWith({
   //   FloatingLabelAlignment? labelAlignment = FloatingLabelAlignment.start,
   //   bool showLabel = true,
   //   bool showPrefix = true,
   //   bool showSuffix = true,
-  //   bool? isCompact = false,
+  //   bool? isDense = false,
   // }) {
   //   return copyWith(
   //     idDecoration: InputDecoration(
@@ -120,7 +152,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   //       prefixIcon: (showPrefix) ? idDecoration.prefixIcon : null,
   //       suffixText: (showSuffix) ? idDecoration.suffixText : null,
   //       floatingLabelAlignment: labelAlignment,
-  //       isDense: isCompact,
+  //       isDense: isDense,
   //     ),
   //   );
   // }
@@ -132,7 +164,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
       labelText: (showLabel) ? varNotifier.varKey.label : null,
       prefixIcon: (showPrefix) ? (!varNotifier.varKey.isReadOnly ? const Icon(Icons.input) : null) : null,
       suffixText: (showSuffix) ? varNotifier.varKey.suffix : null,
-      isCollapsed: isCompact,
+      isDense: isDense,
     );
   }
 
@@ -147,7 +179,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   @override
   ValueGetter<bool> get errorGetter => () => varNotifier.statusIsError;
   @override
-  ValueSetter<V> get valueSetter => varNotifier.updateByViewAs<V>;
+  ValueSetter<V> get valueSetter => (eventController != null) ? eventController!.submitByViewAs<V> : varNotifier.updateByViewAs<V>;
   @override
   ValueChanged<V> get sliderChanged => varNotifier.updateByViewAs<V>;
   @override
@@ -186,23 +218,3 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
     throw UnimplementedError();
   }
 }
-//mveo to edxample
-// class VarIOFieldWithDialog<V> extends StatelessWidget implements VarIOField {
-//   const VarIOFieldWithDialog(this.varKey, {super.key});
-//   final VarKey varKey;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final cacheController = VarContext.ofKey(context, varKey).controller;
-//     final varNotifier = cacheController.cache.allocate(varKey);
-//     // final varController = VarEventController(cacheController: cacheController, varNotifier: varNotifier); // this is allocated in build. dispose will be passed onto ListenableBuilder
-
-//     return varKey.viewType.callWithType(<G>() {
-//       return VarEditDialog(
-//         varNotifier: varNotifier,
-//         controller: cacheController,
-//         child: IOField<G>(VarIOFieldConfig<G>(varNotifier)),
-//       );
-//     });
-//   }
-// }

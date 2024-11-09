@@ -41,7 +41,7 @@ extension type const TypedArray<T extends TypedData>._(T _this) implements Typed
   //         const (Int32List) => Int32List(length),
   //       };
 
-// final endianOffset = switch (endian) { Endian.big => 8 - size, Endian.little => 0, Endian() => throw StateError('Endian') };
+  // final endianOffset = switch (endian) { Endian.big => 8 - size, Endian.little => 0, Endian() => throw StateError('Endian') };
   // TypedArray.word([int? value]) : this(8);
 
   // sublist with extendable length

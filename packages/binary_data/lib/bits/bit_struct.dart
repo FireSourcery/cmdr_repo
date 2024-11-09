@@ -8,7 +8,9 @@ abstract mixin class BitStruct<T extends BitField> implements BitFields<T, int> 
   // const constructor cannot be defined in extension type
   const factory BitStruct.constant(List<T> keys, Bits bits) = ConstBitStructWithKeys;
   // const factory BitField.constInit(Map<T, int> values) = ConstBitFieldMap;
-  factory BitStruct.keyless(Bits bits) => ConstBitStructWithKeys(const [], bits);
+
+  factory BitStruct.generic(Bits bits) => ConstBitStructWithKeys<Never>(const [], bits);
+  const factory BitStruct.prototype(List<T> keys) = ConstBitStructWithKeys<T>;
 
   // defined by child class
   List<T> get keys; // using Enum.values
@@ -38,6 +40,11 @@ abstract mixin class BitStruct<T extends BitField> implements BitFields<T, int> 
   @override
   BitStruct<T> withAll(Map<T, int> map) => withEntries(map.entries);
 }
+
+/// Subtype considerations:
+/// to return a subtype of [BitStruct], :
+///   provide the constructor of the subtype
+///   use a prototype object .copyWithBits()
 
 // Keys list effectively define type and act as factory
 // Separates subtype `class variables` from instance
@@ -81,7 +88,6 @@ abstract class ConstBitStructBase<T extends BitField> = ConstBitFieldsBase<T, in
 class MutableBitStructWithKeys<T extends BitField> = MutableBitFieldsWithKeys<T, int> with BitStruct<T>;
 // ignore: missing_override_of_must_be_overridden
 class ConstBitStructWithKeys<T extends BitField> = ConstBitFieldsWithKeys<T, int> with BitStruct<T>;
-
 
 // user combines mixins
 // ignore: missing_override_of_must_be_overridden

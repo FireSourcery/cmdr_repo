@@ -4,4 +4,4 @@ export 'bits.dart';
 export 'bytes.dart';
 export 'models.dart';
 
-export "src/binary_format.dart";
+export "bits/binary_format.dart";

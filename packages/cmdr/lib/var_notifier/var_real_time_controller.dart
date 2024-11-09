@@ -1,75 +1,12 @@
 part of 'var_notifier.dart';
 
+/// Poll/Push Periodic Stream Controller
 class VarRealTimeController extends VarCacheController {
   VarRealTimeController({required super.cache, required super.protocolService});
 
   // if an entry is removed from the cache map, listener will still exist synced with previously allocated.
-  // it will no longer be updated by ReadStream. call again to remap.
-
-  // as the slice are created, although there is no active tx/rx via the service, the stream may re-iterate the keys.
-  // views must not add/remove keys, when calling add/remove, either await lock, await cancel, or preallocate keys
-
-  // Future<VarNotifier<dynamic, VarStatus>> open(VarKey varKey) async {
-  //   // acquire lock or
-  //   switch (varKey) {
-  //     case VarKey(isPolling: true):
-  //       await readStreamProcessor.end();
-  //     // readStreamProcessor.selectedKeys.add(varKey);
-
-  //     case VarKey(isPushing: true):
-  //     // writeStreamProcessor.selectedKeys.add(varKey);
-  //   }
-
-  //   try {
-  //     return cache.allocate(varKey);
-  //   } finally {
-  //     beginRead();
-  //   }
-  // }
-
-  // // closeView
-  // // case of deallocating a var that is actively used by a stream - req/resp mismatch will be handled by null aware operator in cache update
-  // // however
-  // Future<void> close(VarKey varKey) async {
-  //   // await readStreamProcessor.end();
-  //   if (cache.deallocate(varKey)) {
-  //     // void nil = switch (varKey) {
-  //     //   VarKey(isPeriodicRead: true) => readStreamProcessor.selectedKeys.remove(varKey),
-  //     //   VarKey(isPeriodicWrite: true) => writeStreamProcessor.selectedKeys.remove(varKey),
-  //     //   VarKey(isPeriodicRead: false, isPeriodicWrite: false) => null,
-  //     // };
-  //   }
-  // }
-
-  // VarNotifier replace(VarKey add, VarKey remove) => (this..close(remove)).open(add);
-  // await restartReadStream();
-
-  // void replaceAll(Iterable<VarKey> varKeys) async {
-  //   cache.clear();
-  //   varKeys.forEach(open);
-  //   // await readStreamProcessor.restart();
-  //   // await writeStreamProcessor.restart();
-  // }
-
-  ////////////////////////////////////////////////////////////////////////////////
-  /// Periodic Process Stream
-  /// A var should not be in both streams, that would be a loop back.
-  /// A var may be both read and write, but not both periodic.
-  ///   e.g. periodic read, but write on update only
-  // Cache keeps views in sync, each Var entry occurs only once in the cache.
-  // Streams may be per cache
-
-  // returning on a yield should complete a send/receive request, so there cannot be send/receive mismatch
-  // begin create a new copy of keys, updating selected keys to the working set
-  // need stream getter or begin() to call stream.listen(onData)
-  ////////////////////////////////////////////////////////////////////////////////
-
-  // synchronously allocate, update does not need to await stop stream. refreshPeriodicStreams to update ids
-  // Future<bool> refreshPeriodicStreams() async {
-  //   await readStreamProcessor.restart(_readStream, _onReadSlice);
-  //   await writeStreamProcessor.restart(_writeStream, _onWriteSlice); //write stream always uses getter
-  //   return true;
-  // }
+  // it will no longer be updated by ReadStream.
+  // ensure call dispose
 
   bool begin() {
     if (!protocolService.isConnected) return false;
@@ -84,10 +21,33 @@ class VarRealTimeController extends VarCacheController {
     // cache.clear();
   }
 
+  // synchronously allocate, update does not need to await stop stream. refreshPeriodicStreams to update ids
+  // Future<bool> refreshPeriodicStreams() async {
+  //   await readStreamProcessor.restart(_readStream, _onReadSlice);
+  //   await writeStreamProcessor.restart(_writeStream, _onWriteSlice); //write stream always uses getter
+  //   return true;
+  // }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /// Periodic Process Stream
+  /// A var should not be in both streams, that would be a loop back.
+  /// A var may be both read and write, but not both periodic.
+  ///   e.g. periodic read, but write on update only
+  // Cache keeps views in sync, each Var entry occurs only once in the cache.
+  // Streams may be per cache
+
+  // as the slice are created, although there is no active tx/rx via the service, the stream may re-iterate the keys.
+  // views must not add/remove keys, when calling add/remove, either await lock, await cancel, or preallocate keys
+
+  // returning on a yield should complete a send/receive request, so there cannot be send/receive mismatch
+  // begin create a new copy of keys, updating selected keys to the working set
+  // need stream getter or begin() to call stream.listen(onData)
+  ////////////////////////////////////////////////////////////////////////////////
+
   ////////////////////////////////////////////////////////////////////////////////
   ///
   ////////////////////////////////////////////////////////////////////////////////
-  VarPeriodicProcessor readStreamProcessor = VarPeriodicProcessor();
+  VarPeriodicHandler readStreamProcessor = VarPeriodicHandler();
 
   // final Set<VarKey> selectedRead = {}; // maintain list on allocate may be better performance and iterate keys on begin
 
@@ -114,7 +74,7 @@ class VarRealTimeController extends VarCacheController {
   ////////////////////////////////////////////////////////////////////////////////
   ///
   ////////////////////////////////////////////////////////////////////////////////
-  VarPeriodicProcessor writeStreamProcessor = VarPeriodicProcessor();
+  VarPeriodicHandler writeStreamProcessor = VarPeriodicHandler();
 
   // final Set<VarKey> selectedWrite  = {};
   // Iterable<VarKey> get periodicWriteKeys => cache.entries.map((e) => e.varKey).where((e) => e.isPeriodicWrite);
@@ -123,8 +83,10 @@ class VarRealTimeController extends VarCacheController {
   // List<int> get _writeIds => writeKeys.map((e) => e.value).toList();
 
   Future<void> writeBatchCompleted(VarKey varKey) async {
-    await Future.delayed(const Duration(milliseconds: 50));
+    // await Future.delayed(const Duration(milliseconds: 10));
+    Stopwatch timer = Stopwatch()..start();
     await Future.doWhile(() async => (cache[varKey]!.isUpdatedByView));
+    // print(timer.elapsedMilliseconds);
   }
 
   Iterable<VarKey> get _writeKeys => cache.entries.where((e) => e.isUpdatedByView || e.varKey.isPushing).map((e) => e.varKey);
@@ -149,8 +111,8 @@ class VarRealTimeController extends VarCacheController {
   }
 }
 
-class VarPeriodicProcessor {
-  VarPeriodicProcessor();
+class VarPeriodicHandler {
+  VarPeriodicHandler();
 
   StreamSubscription? streamSubscription;
   bool get isStopped => streamSubscription == null;
@@ -159,3 +121,45 @@ class VarPeriodicProcessor {
   Future<void> end() async => streamSubscription?.cancel().whenComplete(() => streamSubscription = null);
   Future<void> restart<T>(Stream<T> stream, void Function(T)? onData) async => end().whenComplete(() => listenWith<T>(stream, onData));
 }
+
+// Future<VarNotifier<dynamic, VarStatus>> open(VarKey varKey) async {
+//   // acquire lock or
+//   switch (varKey) {
+//     case VarKey(isPolling: true):
+//       await readStreamProcessor.end();
+//     // readStreamProcessor.selectedKeys.add(varKey);
+
+//     case VarKey(isPushing: true):
+//     // writeStreamProcessor.selectedKeys.add(varKey);
+//   }
+
+//   try {
+//     return cache.allocate(varKey);
+//   } finally {
+//     beginRead();
+//   }
+// }
+
+// // closeView
+// // case of deallocating a var that is actively used by a stream - req/resp mismatch will be handled by null aware operator in cache update
+// // however
+// Future<void> close(VarKey varKey) async {
+//   // await readStreamProcessor.end();
+//   if (cache.deallocate(varKey)) {
+//     // void nil = switch (varKey) {
+//     //   VarKey(isPeriodicRead: true) => readStreamProcessor.selectedKeys.remove(varKey),
+//     //   VarKey(isPeriodicWrite: true) => writeStreamProcessor.selectedKeys.remove(varKey),
+//     //   VarKey(isPeriodicRead: false, isPeriodicWrite: false) => null,
+//     // };
+//   }
+// }
+
+// VarNotifier replace(VarKey add, VarKey remove) => (this..close(remove)).open(add);
+// await restartReadStream();
+
+// void replaceAll(Iterable<VarKey> varKeys) async {
+//   cache.clear();
+//   varKeys.forEach(open);
+//   // await readStreamProcessor.restart();
+//   // await writeStreamProcessor.restart();
+// }

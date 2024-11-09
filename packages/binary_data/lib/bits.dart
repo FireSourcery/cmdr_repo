@@ -11,7 +11,7 @@ export "bits/bit_field.dart";
 export "bits/bit_struct.dart";
 export "bits/bool_struct.dart";
 
-export "src/binary_format.dart";
+export "bits/binary_format.dart";
 
 export "word/word.dart";
 export "word/word_struct.dart";

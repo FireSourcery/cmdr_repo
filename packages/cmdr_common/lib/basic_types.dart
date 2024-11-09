@@ -1,14 +1,13 @@
-// import 'package:flutter/foundation.dart';
-
 typedef KeyValuePair<K, V> = (K key, V value);
 typedef KeyValueEntry<K, V> = ({K key, V value});
 
 typedef Stringifier<T> = String Function(T input);
-// typedef Stringifier<T> = String Function(T? input);
+typedef GenericStringifier = String Function<T>(T input);
+typedef NullableStringifier<T> = String Function(T? input); // defining non-nullable type allows null input
 
 typedef ValueTest<T> = bool Function(T input);
 
-// filter with a name
+// encapsulated for selection
 abstract mixin class PropertyFilter<T> implements Enum {
   const PropertyFilter();
 
@@ -16,7 +15,7 @@ abstract mixin class PropertyFilter<T> implements Enum {
 
   Iterable<T> call(Iterable<T> input) => input.where(test);
 
-  // IterableFilter<T> get asIterableFilter => call;
+  Iterable<T> Function(Iterable<T> input) get asIterableFilter => call;
 }
 
 extension WhereFilter<T> on Iterable<T> {
@@ -32,7 +31,8 @@ mixin class TypeKey<T> {
   bool isSubtype<S>() => this is TypeKey<S>;
   bool isSupertype<S>() => TypeKey<S>() is TypeKey<T>;
   bool isExactType<S>() => S == T;
-  bool get isNullable => isExactType<T?>();
+  // bool get isNullable => isExactType<T?>();
+  bool get isNullable => null is T;
 
   bool compareType(Object? object) => object is T;
 
@@ -41,8 +41,13 @@ mixin class TypeKey<T> {
   // callGeneric, callTyped
   R callWithType<R>(R Function<G>() callback) => callback<T>();
   // callWithTypeAsRestricted
-  R callWithRestrictedType<R>(R Function<G extends T>() callback) => callback<T>();
-  // T callAsKey(T Function<G>(TypeKey key) callback) => callback<T>(this);
+  // R callAsKey<R>(R Function<G>(TypeKey key) callback) => callback<T>(this);
+}
+
+// workaround for calling generic methods with type restrictions
+mixin class TypeRestrictedKey<T extends S, S> {
+  const TypeRestrictedKey();
+  R callWithRestrictedType<R>(R Function<G extends S>() callback) => callback<T>();
 }
 
 /// Union of generic types
