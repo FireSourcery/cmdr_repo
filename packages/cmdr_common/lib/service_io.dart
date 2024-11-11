@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 
+import 'basic_types.dart';
+
 ///
 /// Common interface for mapping key-value paradigm services
 /// `<Key, Value, Status>`
@@ -89,4 +91,25 @@ abstract mixin class ServiceIO<K, V, S> {
       }
     }
   }
+}
+
+// IdKey, EntityKey, DataKey, FieldKey, VarKey,
+// ServiceKey for retrieving data of dynamic type from external source and casting
+abstract mixin class ServiceKey<K, V> implements UnionTypeKey<V> {
+  // VarKey
+  K get key;
+  String get label;
+  // Stringifier? get valueStringifier;
+
+  // a serviceKey can directly access the value with a provided reference to service
+  // ServiceIO? get service;
+  // V? get value => service?.get(keyValue);
+  V? get value;
+  set value(V? value);
+  Future<bool> updateValue(V value);
+  Future<V?> loadValue();
+  String get valueString;
+
+  // Type get type;
+  TypeKey<V> get valueType => TypeKey<V>();
 }

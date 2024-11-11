@@ -1,24 +1,12 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
+
 import 'flyweight_menu.dart';
 import 'menu_anchor_widgets.dart';
 
 // Widgets not fully parameterized, defaults/examples, are denoted as _widgets.dart
 
-class FlyweightMenuButton<T> extends StatelessWidget {
-  const FlyweightMenuButton({super.key, required this.menu});
-
-  final FlyweightMenu<T> menu;
-
-  @override
-  Widget build(BuildContext context) {
-    return FlyweightMenuContext<T>(
-      notifier: menu,
-      child: MenuAnchorButton(menuItems: menu.menuItems),
-    );
-  }
-}
-
-// Menu 'hosts' must wrap MenuAnchor under MenuSourceContext, to allow for the notifier to be accessed by the menu items
+// Menu 'hosts' must wrap MenuAnchor (with menu.menuItems) under MenuSourceContext -> menuItems access menu and its notifier via context
 class FlyweightMenuAnchor<T> extends StatelessWidget {
   const FlyweightMenuAnchor({super.key, required this.menu, this.child, required this.builder});
 
@@ -41,16 +29,58 @@ class FlyweightMenuAnchor<T> extends StatelessWidget {
   }
 }
 
-// case where child depends on menu without displaying the menu
-class FlyweightMenuListenableBuilder<T> extends StatelessWidget {
-  const FlyweightMenuListenableBuilder({super.key, required this.builder, required this.menu, this.child});
+class FlyweightMenuButton<T> extends StatelessWidget {
+  const FlyweightMenuButton({super.key, required this.menu});
 
   final FlyweightMenu<T> menu;
-  final ValueWidgetBuilder<T> builder;
-  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<T>(valueListenable: menu, builder: builder, child: child);
+    return FlyweightMenuContext<T>(
+      notifier: menu,
+      child: MenuAnchorButton(menuItems: menu.menuItems),
+    );
   }
 }
+
+// case where child depends on menu without displaying the menu
+class FlyweightMenuListenableBuilder<T> extends ValueListenableBuilder<T> {
+  const FlyweightMenuListenableBuilder({super.key, required super.builder, super.child, required FlyweightMenu<T> menu}) : super(valueListenable: menu);
+}
+
+// /// build from source
+// class FlyweightMenuContainer<T> extends StatefulWidget {
+//   const FlyweightMenuContainer({
+//     super.key,
+//     required this.menuSource,
+//     required this.builder,
+//     this.anchorMenu = true,
+//   });
+
+//   final FlyweightMenuSource<T> menuSource;
+//   final ValueWidgetBuilder<T> builder;
+//   final bool anchorMenu;
+
+//   final Function(BuildContext context, FlyweightMenu menu, T menuKey) menufulWidgetBuild;
+
+//   final T? initialValue = null;
+//   final ValueSetter<T>? onPressed = null;
+
+//   @override
+//   State<FlyweightMenuContainer<T>> createState() => _FlyweightMenuContainerState<T>();
+// }
+
+// class _FlyweightMenuContainerState<T> extends State<FlyweightMenuContainer<T>> {
+//   late final FlyweightMenu<T> menu = widget.menuSource.create(initialValue: widget.initialValue, onPressed: widget.onPressed);
+
+//   @override
+//   void dispose() {
+//     menu.dispose();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return widget.menufulWidgetBuild(context, menu, menu.value);
+//   }
+// }

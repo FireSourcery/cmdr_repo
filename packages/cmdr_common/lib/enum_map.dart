@@ -30,20 +30,6 @@ abstract mixin class EnumMap<K extends Enum, V> implements Map<K, V> {
   @override
   void clear();
 
-  // @override
-  // void clear() {
-  //   if (TypeKey<V>().isNullable) {
-  //     updateAll((key, value) => null as V);
-  //   }
-  //   // if Key contains default value
-  //   // else if (TypeKey<K>().isSubtype<TypeKey>()) {
-  //   //   updateAll((key, value) => (key as TypeKey).defaultValue as V);
-  //   // }
-  //   // alternatively V? get nil => null; // child class may implement when a non null default is available. e.g. 0, false or ''
-  //   // or []= accepts V? as a way of setting a default?
-  //   throw UnsupportedError('EnumMap does not support clear operation');
-  // }
-
   @override
   V? remove(covariant K key) => throw UnsupportedError('EnumMap does not support remove operation');
 
@@ -53,28 +39,29 @@ abstract mixin class EnumMap<K extends Enum, V> implements Map<K, V> {
   ////////////////////////////////////////////////////////////////////////////////
   /// Convenience methods
   ////////////////////////////////////////////////////////////////////////////////
-  // String name, value pairs
-  Iterable<(String name, V value)> get labeled => entries.map((e) => (e.key.name, e.value));
-  Iterable<({String name, V value})> get nameValues => keys.map((e) => (name: e.name, value: this[e]));
-  Iterable<({String name, K key, V value})> get triplets => keys.map((e) => (name: e.name, key: e, value: this[e]));
-
   // MapEntries as Records
   Iterable<(K, V)> get pairs => keys.map((e) => (e, this[e]));
+  Iterable<({K key, V value})> get fields => keys.map((e) => (key: e, value: this[e]));
+
+  // String name, value pairs
+  Iterable<(String name, V value)> get valuesNamed => entries.map((e) => (e.key.name, e.value));
+  Iterable<({String name, V value})> get fieldsByName => keys.map((e) => (name: e.name, value: this[e]));
+  Iterable<({String name, K key, V value})> get triplets => keys.map((e) => (name: e.name, key: e, value: this[e]));
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Immutable Case
+  ///   default implementation copy to a new buffer, then pass to child constructor
+  ///   an child class with optimized copyWith can override to skip buffering
   ////////////////////////////////////////////////////////////////////////////////
   // Overridden the in child class to call the child class constructor, returning a instance of the child class type
   // copyWith will refer to the child class constructor
-  //   copyWith empty parameters always returns itself
+  //  copyWith empty parameters always returns itself
   @mustBeOverridden
   EnumMap<K, V> copyWith() => this;
-  // EnumMap<K, V> copyWith() => EnumMapProxy<K, V>(this);
 
-  /// default implementation copy to a new buffer, then pass to child constructor
-  /// an child class with optimized copyWith can override to skip buffering
   // analogous to operator []=, but returns a new instance
   EnumMap<K, V> withField(K key, V value) => (EnumMapProxy<K, V>(this)..[key] = value).copyWith();
+  //
   EnumMap<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => (EnumMapProxy<K, V>(this)..addEntries(newEntries)).copyWith();
   // A general values map representing external input, may be a partial map
   EnumMap<K, V> withAll(Map<K, V> map) => (EnumMapProxy<K, V>(this)..addAll(map)).copyWith();
@@ -107,6 +94,19 @@ abstract mixin class EnumMap<K extends Enum, V> implements Map<K, V> {
   Map<String, Object?> toJson() => toMapByName();
 }
 
+///
+typedef Field<K, V> = ({K key, V value});
+typedef EnumKey = Enum;
+
+// only necessary for mixed V type keys
+abstract mixin class TypedEnumKey<V> implements Enum, TypeKey<V> {
+  // although implementation of operators may be preferable in the containing, map, class
+  // with full context of relationships; mutable or immutable.
+  // the key maintains scope of V, may simplify some cases
+  V valueOf(covariant EnumMap map);
+  V? get defaultValue => null; //allows additional handling of Map<K, V?>
+}
+
 // combine mixins
 abstract class EnumMapBase<K extends Enum, V> = MapBase<K, V> with EnumMap<K, V>;
 
@@ -123,18 +123,6 @@ mixin EnumMapAsSubtype<S extends EnumMap<K, V>, K extends Enum, V> on EnumMap<K,
   S withEntries(Iterable<MapEntry<K, V>> entries) => super.withEntries(entries) as S;
   @override
   S withAll(Map<K, V> map) => super.withAll(map) as S;
-}
-
-typedef EnumKey = Enum;
-
-// only necessary for mixed V type keys
-abstract mixin class TypedEnumKey<V> implements Enum, TypeKey<V> {
-  //  V? get defaultValue => null; allows additional handling of Map<K, V?>
-
-  // although implementation of operators may be preferable in the containing class
-  // with full context of relationships;  mutable or immutable.
-  // this may simplify some cases
-  V valueOf(covariant EnumMap map);
 }
 
 /// Class/Type/Factory
@@ -209,7 +197,7 @@ class EnumMapDefault<K extends Enum, V> extends EnumMapBase<K, V> implements Enu
   EnumMapDefault.fromEntries(List<K> keys, Iterable<MapEntry<K, V>> entries)
       : assert(keys.every((key) => entries.map((entry) => entry.key).contains(key))),
         _keysReference = keys,
-        _valuesBuffer = (EnumMapDefault<K, V?>.filled(keys, null)..addEntries(entries))._valuesBuffer as List<V>,
+        _valuesBuffer = (EnumMapDefault<K, V?>.filled(keys, null)..addEntries(entries))._valuesBuffer.cast<V>(),
         // _values = [for (final key in keys) entries.singleWhere((element) => element.key == key).value], // increased time complexity although includes assertion
         super();
 
@@ -236,11 +224,15 @@ class EnumMapDefault<K extends Enum, V> extends EnumMapBase<K, V> implements Enu
   /// let fill throw if V is defined as non nullable and [fill] is null
   @override
   void clear() {
-    // if (_fill == null) {
-    //   throw UnsupportedError('EnumMap does not support clear operation');
-    // } else {
-    // _values.fillRange(0, _values.length, _fill);
+    // if (TypeKey<V>().isNullable) {
+    //   updateAll((key, value) => null as V);
     // }
+    // // if Key contains default value
+    // // else if (TypeKey<K>() case TypedEnumKey<V> key when key.defaultValue != null) {
+    // else if (this case EnumMap<TypedEnumKey, V> asTyped when null is! V) {
+    //   asTyped.updateAll((key, value) => key.defaultValue as V);
+    // }
+    throw UnsupportedError('EnumMap default clear operation not defined');
   }
 
   // @override

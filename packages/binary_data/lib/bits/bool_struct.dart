@@ -1,7 +1,7 @@
 // import 'package:flutter/foundation.dart' as foundation show BitField;
 
-import 'bit_field.dart';
-export 'bit_field.dart';
+import 'bits_map.dart';
+export 'bits_map.dart';
 
 ////////////////////////////////////////////////////////////////////////////////
 /// [Bits] + [] Map operators returning [bool]
@@ -16,7 +16,7 @@ export 'bit_field.dart';
 ///
 ////////////////////////////////////////////////////////////////////////////////
 // implements foundation.BitField<T>,
-abstract mixin class BoolStruct<T extends Enum> implements BitFields<T, bool> {
+abstract mixin class BoolStruct<T extends Enum> implements BitsMap<T, bool> {
   const BoolStruct();
 
   // factory BoolStruct(List<T> keys, [int bits = 0, bool mutable = true]) {
@@ -74,6 +74,8 @@ abstract mixin class BoolStruct<T extends Enum> implements BitFields<T, bool> {
   // String toStringAsFlags() => valuesAsBits.toString(); // (0, 1, 0)
   // String toStringAsNamePair() => pairs.map((e) => ('${e.$1.name}: ${e.$2.toString()} ')).toString(); // (nameOne: true, nameTwo: false)
 }
+
+// typedef BoolKey = BitsIndexKey;
 
 ////////////////////////////////////////////////////////////////////////////////
 /// extendable

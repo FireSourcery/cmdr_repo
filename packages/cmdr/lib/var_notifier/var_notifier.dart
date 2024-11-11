@@ -74,7 +74,7 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
 
   // for bit conversion only.
   @override
-  final List<BitField>? bitsKeys;
+  final List<BitFieldKey>? bitsKeys;
 
   @override
   final int? stringDigits;
@@ -119,6 +119,8 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   ViewOfData? get viewOfData; //num conversion only, null for Enum and Bits
   DataOfView? get dataOfView;
 
+  // S Function<S>(num value)? get valueOfSubtype;
+
   /// view base limits, still effective for non-num V, if set
   num? get viewMin;
   num? get viewMax;
@@ -131,11 +133,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   List<Enum>? get enumRange; //+ defualt must be provided for non null return
 
   // for bits conversion only.
-  List<BitField>? get bitsKeys;
-
-  // BitStruct? get bitsPrototype;
-
-  // V Function(int value) enumOfIndex;
+  List<BitFieldKey>? get bitsKeys;
 
   ///
   int dataOfBinary(int binary) => signExtension?.call(binary) ?? binary;
@@ -144,27 +142,29 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
 
   num clamp(num value) => switch ((viewMin, viewMax)) { (num min, num max) => value.clamp(min, max), _ => value };
 
-  Enum enumOf(int value) => enumRange?.elementAtOrNull(value) ?? VarValueUnknown.unknown;
-  BitStruct<BitField> bitFieldsOf(int value) => BitStructClass(bitsKeys ?? const <BitField>[]).castBits(value);
-  // BitStruct<BitField> bitFieldsOf(int value) => bitsPrototype.copywithBits(value);
+  Enum enumOf(int value) => enumRange?.elementAtOrNull(value) ?? VarValueEnum.unknown;
+  BitStruct<BitFieldKey> bitFieldsOf(int value) => BitStructClass(bitsKeys ?? const <BitFieldKey>[]).castBits(value);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// returning user defined subtypes
   /// returns the as the exact type, to account for user defined method on that type
+
+  // V? get enumPrototype; // include a default
+  // V? get bitsPrototype;
 
   //  subtype return nullable,
   //  a constructor is provided
   //  a default value is provided
   //  a prototype object is provided
 
-  V? enumSubtypeOf(int value) => enumRange?.elementAtOrNull(value) as V?; // returns null if varName is not associated with enum value type
-  V? bitsSubtypeOf(int value) => (bitsKeys != null) ? BitStructClass(bitsKeys!).castBits(value) as V? : null;
-
   // alternatively pass function, for non nullable
   // value as subtypes
-  // These should return the proper type as long as V is correct
-  T valueAsEnumType<T>() => valueAsEnum as T; // todo handle enum out of range
-  T valueAsBitsType<T>() => valueAsBitFields as T;
+  ///todo subtype hand subtypes
+  // V? enumSubtypeOf(int value) => enumRange?.elementAtOrNull(value) as V?; // returns null if varName is not associated with enum value type
+  // V? bitsSubtypeOf(int value) => (bitsKeys != null) ? BitStructClass(bitsKeys!).castBits(value) as V? : null;
+
+  // T? valueAsEnumType<T>() => valueAsEnum as T; // todo handle enum out of range
+  // T? valueAsBitsType<T>() => valueAsBitFields as T;
 
   @override
   String toString() => '${describeIdentity(this)}($value)($numValue)';
@@ -243,11 +243,15 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   @protected
   bool get valueAsBool => (numValue != 0);
   @protected
-  Enum get valueAsEnum => enumOf(valueAsInt) ?? VarValueUnknown.unknown;
+  Enum get valueAsEnum => enumOf(valueAsInt);
   @protected
-  BitFields get valueAsBitFields => bitFieldsOf(valueAsInt);
+  BitStruct<BitFieldKey> get valueAsBitFields => bitFieldsOf(valueAsInt);
   @protected
   Uint8List get valueAsBytes => Uint8List(8)..buffer.asByteData().setUint64(0, valueAsInt, Endian.big);
+  @protected
+  String get valueAsString => String.fromCharCodes(valueAsBytes);
+
+  T valueAsSubtype<T>() => throw UnsupportedError('valueAsSubtype: $T');
 
   /// generic getter use switch on type literal, and require extension to account for subtypes
   /// generic setter use switch on object type
@@ -260,15 +264,16 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
       const (num) => valueAsNum,
       const (bool) => valueAsBool,
       const (Enum) => valueAsEnum,
-      const (BitFields) => valueAsBitFields,
-      // const (String) => valueAsInt.toStringAsCode(),
-      _ when TypeKey<R>().isSubtype<BitsBase>() => valueAsBitsType<R>(),
-      _ when TypeKey<R>().isSubtype<Enum>() => valueAsEnumType<R>(), // if a default is not provided, the return must be R?, returning common Meta will be type error
-      // _ => valueAsExtension<R>(),
-      _ => throw UnsupportedError('valueAs: $R'),
+      const (BitsMap) => valueAsBitFields,
+      const (BitStruct) => valueAsBitFields,
+      const (String) => valueAsString,
+      _ => valueAsSubtype<R>(),
+      // _ when TypeKey<R>().isSubtype<BitsBase>() => valueAsBitsType<R>(),
+      // _ when TypeKey<R>().isSubtype<Enum>() => valueAsEnumType<R>(), // if a default is not provided, the return must be R?, returning common Meta will be type error
     } as R;
   }
 
+  // todo update as Enum subtype check first, in case a value other than enum.index is selected
   // @protected
   // set valueAsEnum(Enum newValue) => numValue = newValue.index;
   // @protected
@@ -280,9 +285,8 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
     numValue = switch (T) {
       const (double) || const (int) || const (num) => clamp(typedValue as num),
       const (bool) => (typedValue as bool) ? 1 : 0,
-      // todo update as Enum subtype check first, in case a value other than enum.index is selected
-      _ when TypeKey<T>().isSubtype<Enum>() => (typedValue as Enum).index,
-      _ when TypeKey<T>().isSubtype<BitsBase>() => (typedValue as BitsBase).bits,
+      _ when typedValue is Enum => (typedValue as Enum).index,
+      _ when typedValue is BitsBase => (typedValue as BitsBase).bits,
       _ => throw UnsupportedError('valueAs: $T'),
     };
 
@@ -346,7 +350,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
 }
 
 // default for over bounds
-enum VarValueUnknown { unknown }
+enum VarValueEnum { unknown }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// VarStatus

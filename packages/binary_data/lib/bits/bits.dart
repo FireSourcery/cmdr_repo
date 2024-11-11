@@ -15,6 +15,7 @@ extension type const Bits(int _bits) implements int {
 
   // width value pairs
   // Bits.fromWidth(Iterable<(int width, int value)> pairs) : _bits = Bitmasks.fromWidths(pairs.keys).apply(map.values) as Bits;
+  Bits.ofBitsMap(Map<BitsKey, int> map) : this.ofEntries(map.bitsEntries);
 
   // general bool case
   Bits.ofIndexValues(Iterable<(int index, bool value)> flags) : _bits = const Bits.allZeros().withEachBool(flags);
@@ -126,14 +127,6 @@ extension BitmasksMethods on Iterable<Bitmask> {
 //   Bits asBits() => Bits.ofEntries(entries);
 // }
 
-abstract mixin class BitsKey {
-  Bitmask get bitmask;
-
-  int valueOf(BitsBase bitsBase) => bitsBase.get(bitmask);
-  void setValueOf(BitsBase bitsBase, int value) => bitsBase.set(bitmask, value);
-  // int? valueOrNullOf(BitsBase bitsBase) => bitsBase.get(bitmask);
-}
-
 /// [BitsBase]
 /// Contain bits for setters
 /// for classes backed by Bits
@@ -222,8 +215,9 @@ class ConstBitsBase with BitsBase {
 ///   EnumType.name1: 2,
 ///   EnumType.name2: 3,
 /// });
-///  mixin so user can extend it own class first
+/// mixin so user can extend its own class first
 abstract mixin class ConstBitsBaseInit implements BitsBase {
+// abstract mixin class ConstBitsBaseInit<T extends BitsBase> implements BitsBase {
   @protected
   Map<Bitmask, int> get source;
 
@@ -237,55 +231,28 @@ abstract mixin class ConstBitsBaseInit implements BitsBase {
   // ConstBitsBase copyWithBits(Bits value) => ConstBitsBase(bits);
 }
 
-/// No type restriction on Keys, or include of Keys.
-/// hence .values will not be available
-/// Useful for capturing bits value to cast with keys later
-/// cast as BitStruct or BoolStruct with keys
-// abstract mixin class _BitsMap implements BitsBase, Map<Bitmask, int> {
-//   const _BitsMap();
+/// Keys
+///
+// this allows BitMap to be use independently
+abstract mixin class BitsKey {
+  Bitmask get bitmask;
 
-//   Bits get bits;
-//   set bits(Bits value);
+  // maskRead
+  // int valueOf(BitsBase bitsBase) => bitsBase.get(bitmask);
+  // void setValueOf(BitsBase bitsBase, int value) => bitsBase.set(bitmask, value);
+  // int? valueOrNullOf(BitsBase bitsBase) => bitsBase.get(bitmask); //compare shift to width
+}
 
-//   @override
-//   int get width => 64;
-//   @override
-//   List<Bitmask> get keys => [];
-//   @override
-//   int operator [](covariant Bitmask key) => get(key);
-//   @override
-//   void operator []=(covariant Bitmask key, int value) => set(key, value);
-//   @override
-//   void clear() => bits = const Bits.allZeros();
-//   @override
-//   Never remove(Object? key) => throw UnsupportedError('BitsMap does not support remove');
+abstract mixin class BitsIndexKey implements BitsKey {
+  int get index;
+  Bitmask get bitmask => Bitmask.index(index);
+}
 
-//   @override
-//   _BitsMap copyWithBits(Bits value);
-// }
+/// alternatively BitsKey implements Bitmask
+extension BitsKeysMethods on Iterable<BitsKey> {
+  Bitmasks get bitmasks => map((e) => e.bitmask) as Bitmasks;
+}
 
-// // MutableBitsBase
-// class BitsMap extends MapBase<Bitmask, int> with BitsBase, _BitsMap {
-//   BitsMap([this.bits = const Bits.allZeros()]);
-
-//   @override
-//   Bits bits;
-
-//   @override
-//   BitsMap copyWithBits(Bits value) => BitsMap(value);
-// }
-
-// // ConstBitsBase
-// @immutable
-// class ConstBitsMap extends MapBase<Bitmask, int> with BitsBase, _BitsMap {
-//   const ConstBitsMap([this.bits = const Bits.allZeros()]);
-
-//   @override
-//   final Bits bits;
-
-//   @override
-//   set bits(Bits value) => throw UnsupportedError('Cannot modify unmodifiable');
-
-//   @override
-//   ConstBitsMap copyWithBits(Bits value) => ConstBitsMap(value);
-// }
+extension BitsEntryMethods on Map<BitsKey, int> {
+  Iterable<MapEntry<Bitmask, int>> get bitsEntries => entries.map((e) => MapEntry(e.key.bitmask, e.value));
+}

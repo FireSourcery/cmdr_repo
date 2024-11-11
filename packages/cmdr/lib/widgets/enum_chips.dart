@@ -3,6 +3,8 @@ import 'package:recase/recase.dart';
 
 typedef MultiWidgetBuilder = Widget Function(BuildContext context, List<Widget> children);
 
+/// ChipSelection - allows user's `_selection_` from a `_selection_` of chips
+
 // single select
 // Generic parameter to ensure getter and setter are of the exact same type as List<Enum>
 class SingleSelectChips<T extends Enum> extends StatelessWidget {

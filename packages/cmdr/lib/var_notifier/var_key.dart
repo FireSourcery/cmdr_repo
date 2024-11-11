@@ -25,7 +25,7 @@ abstract mixin class VarKey implements ValueKey<int> {
   /// Union type properties.
   ({num min, num max})? get valueNumLimits;
   List<Enum>? get valueEnumRange;
-  List<BitField>? get valueBitsKeys;
+  List<BitFieldKey>? get valueBitsKeys;
   int? get valueStringDigits;
 
   // // replace with cache type

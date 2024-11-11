@@ -1,12 +1,11 @@
-import 'package:cmdr/var_notifier/widgets/var_menu.dart';
 import 'package:flutter/material.dart';
 
 import 'package:cmdr_common/basic_types.dart';
+import 'package:cmdr/var_notifier/widgets/var_menu.dart';
 
 import '../../widgets/flyweight_menu/flyweight_menu.dart';
 import '../../widgets/flyweight_menu/flyweight_menu_widgets.dart';
 import '../../widgets/io_field.dart';
-import '../var_context.dart';
 import '../var_notifier.dart';
 import 'var_widget.dart';
 import 'var_dialog_anchor.dart';
@@ -32,7 +31,7 @@ abstract interface class VarIOField extends StatelessWidget {
       return _VarIOField<V>._(config);
     }
 
-    return varNotifier.varKey.viewType(local);
+    return varNotifier.varKey.viewType.callWithType(local);
   }
 
   factory VarIOField.compact(
@@ -63,58 +62,72 @@ class _VarIOField<V> extends StatelessWidget implements VarIOField {
   Widget build(BuildContext context) => IOField<V>(config);
 }
 
-class VarIOFieldWithMenu<T extends VarKey> extends StatelessWidget {
-  const VarIOFieldWithMenu({this.initialVarKey, required this.varEventController, super.key, required this.menuSource});
+/// with menu
+///
+/// decouple from Var? to
+/// SelectableIOField
+///
+///
+class VarIOFieldWithMenu<T extends VarKey> extends StatefulWidget {
+  const VarIOFieldWithMenu({this.initialVarKey, this.eventController, super.key, required this.menuSource});
 
   final FlyweightMenuSource<T> menuSource;
   final T? initialVarKey;
-  final VarEventController? varEventController;
+  final VarEventController? eventController;
 
   Widget buildVar(VarNotifier varNotifier) {
-    return VarIOField(varNotifier, eventController: varEventController, showLabel: true, isDense: false, showPrefix: true, showSuffix: true);
-  }
-
-  Widget buildByContext(BuildContext context, T value, Widget? child) {
-    return VarKeyBuilder(value, buildVar);
-  }
-
-  Widget buildByController(BuildContext context, T value, Widget? child) {
-    return VarBuilder(varEventController!.varCache.allocate(value), buildVar); // builder optionally includes the same eventController
+    return VarIOField(varNotifier, eventController: eventController, showLabel: true, isDense: false, showPrefix: true, showSuffix: true);
   }
 
   @override
-  Widget build(BuildContext context) {
-    final menu = menuSource.create(); // todo with dispose
-    late final ValueWidgetBuilder<T> effectiveBuilder = (varEventController != null) ? buildByController : buildByContext;
-    // final widget = FlyweightMenuListenableBuilder(menu: menu, builder: buildKey);
+  State<VarIOFieldWithMenu<T>> createState() => _VarIOFieldWithMenuState<T>();
+}
 
+class _VarIOFieldWithMenuState<T extends VarKey> extends State<VarIOFieldWithMenu<T>> {
+  late final FlyweightMenu<T> menu = widget.menuSource.create(initialValue: widget.initialVarKey /*  onPressed: widget.onPressed */);
+  late final ValueWidgetBuilder<T> effectiveBuilder = VarKeyWidgetBuilder(builder: widget.buildVar, eventController: widget.eventController).asValueWidgetBuilder;
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       children: [
         VarMenuButton<T>(menu: menu),
         const VerticalDivider(thickness: 0, color: Colors.transparent),
         // config rebuilds on varNotifier select update
-        Expanded(child: FlyweightMenuListenableBuilder<T>(menu: menu, builder: buildByContext)),
+        Expanded(child: FlyweightMenuListenableBuilder<T>(menu: menu, builder: effectiveBuilder)),
       ],
     );
 
     // return ListTile(
     //   // dense: true,
-    //   leading: menuSource.toButton(),
-    //   title: menuSource.contain((_, __) => _VarIOFieldBuilder.options(selectController.varNotifier, showLabel: true, isDense: false, showPrefix: true, showSuffix: true)),
+    //   leading: VarMenuButton<T>(menu: menu),
+    //   title: FlyweightMenuListenableBuilder<T>(menu: menu, builder: effectiveBuilder),
     // );
   }
 }
 
+/// with
+///
+///
 class VarIOFieldWithSlider<V> extends StatelessWidget implements VarIOField {
   const VarIOFieldWithSlider(this.varKey, {super.key});
   final VarKey varKey;
 
   @override
   Widget build(BuildContext context) {
-    return VarKeyBuilder.typed(varKey, <G>(varNotifier) => IOField<G>.withSlider(VarIOFieldConfig<G>(varNotifier)));
+    return VarKeyContextBuilder.typed(varKey, <G>(varNotifier) => IOField<G>.withSlider(VarIOFieldConfig<G>(varNotifier)));
+
+    //     return LayoutBuilder(
+    //   builder: (context, constraints) {
+    //     return (constraints.maxWidth > breakWidth) ? Row(children: [Expanded(child: ioField), Expanded(flex: 2, child: slider)]) : OverflowBar(children: [ioField, slider]);
+    //   },
+    // );
   }
 }
 
+///
+///
+///
 class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   const VarIOFieldConfig(
     this.varNotifier, {
@@ -157,7 +170,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   //   );
   // }
 
-  // control over whether the callbacks from VarNotifier are passed
+  // control over whether the parameters from VarNotifier are passed
   @override
   InputDecoration get idDecoration {
     return InputDecoration(

@@ -8,7 +8,7 @@ export '../bytes/byte_struct.dart';
 
 /// Collective def of Packet format specs. 'Class variables'
 // Abstract factory pattern
-// effectively the child packet type encapsulated, child class 'static' methods
+// effectively the child packet type encapsulated
 //  values available without a Packet instance, over prototype object
 abstract mixin class PacketClass {
   // const for each packet instance
@@ -48,6 +48,8 @@ abstract mixin class PacketClass {
 ///
 /// ffi.Struct current does not allow length < full struct length, or mixin
 /// alternatively, use extension type on TypedData
+///
+/// Class variables as mixin
 abstract mixin class Packet implements PacketClass {
   const Packet();
   // factory Packet.view(PacketCaster packetCaster, Packet packet, int offset, [int? length]) => packetCaster(packet.range(offset, length));

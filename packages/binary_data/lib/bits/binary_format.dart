@@ -2,7 +2,7 @@ import 'dart:ffi';
 
 import 'package:cmdr_common/basic_types.dart';
 
-import 'bit_field.dart';
+import 'bits_map.dart';
 
 /// Data/number format
 /// ffi marker constrains type, only use as marker
@@ -35,7 +35,7 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
   boolean<Bool, bool>(reference: null),
 
   /// keyed types, has type dependencies
-  bits16<Uint16, BitFields>(reference: null), // or BitsMap
+  bits16<Uint16, BitsMap>(reference: null), // or BitsMap
   enum16<Uint16, Enum>(reference: null),
   ;
 
