@@ -30,7 +30,7 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
     this.viewMax,
     this.enumRange,
     this.bitsKeys,
-    this.stringDigits,
+    // this.stringDigits,
     // this.statusOfCode = VarStatus.defaultCode,
   });
 
@@ -43,8 +43,9 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
         viewMin = varKey.valueNumLimits?.min,
         viewMax = varKey.valueNumLimits?.max,
         enumRange = varKey.valueEnumRange,
-        bitsKeys = varKey.valueBitsKeys,
-        stringDigits = varKey.valueStringDigits;
+        bitsKeys = varKey.valueBitsKeys
+  // stringDigits = varKey.valueStringDigits,
+  ;
   // statusOfCode = varKey.varStatusOf
 
   factory VarNotifier.of(VarKey varKey) {
@@ -52,7 +53,10 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
     return varKey.viewType(<G>() => VarNotifier<G>.ofKey(varKey) as VarNotifier<V>);
   }
 
+  // introduce mutablity here? so cache prealloccate can be immutable?
+
   /// Derived from [VarKey] and cached
+  ///  cached key getters
   @override
   final int Function(int binaryValue)? signExtension;
   @override
@@ -76,13 +80,15 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   @override
   final List<BitFieldKey>? bitsKeys;
 
-  @override
-  final int? stringDigits;
+  // @override
+  // final int? stringDigits;
 
   /// [VarStatus] type is the same for all vars in most cases.
   /// Compile time const defined in [VarKey]. Does not need to build and cache.
   @override
   VarStatus statusOf(int statusCode) => varKey.varStatusOf(statusCode);
+
+  // String stringifyAs<T>(T value) => varKey.stringify<T>(value);
 
   bool pushDataFlag = false; // case where push is not on all viewValue updates
 
@@ -122,15 +128,14 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // S Function<S>(num value)? get valueOfSubtype;
 
   /// view base limits, still effective for non-num V, if set
+  // num? get viewMin => varKey.valueNumLimits?.min;
+  // num? get viewMax => varKey.valueNumLimits?.max;
   num? get viewMin;
   num? get viewMax;
 
-  // double only
-  int? get stringDigits;
-
   // for enum conversion only.
-  // although range bound types can include other types, it is generally preferred to use enums.
-  List<Enum>? get enumRange; //+ defualt must be provided for non null return
+  // other range bound types, e.g String, provide by enum.
+  List<Enum>? get enumRange; // + defualt must be provided for non null return
 
   // for bits conversion only.
   List<BitFieldKey>? get bitsKeys;
@@ -141,30 +146,27 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   int dataOf(num view) => dataOfView?.call(view) ?? view.toInt();
 
   num clamp(num value) => switch ((viewMin, viewMax)) { (num min, num max) => value.clamp(min, max), _ => value };
+  // alternatively required for num types
+  // num clamp(num value) => value.clamp(viewMin!, viewMax!);
 
   Enum enumOf(int value) => enumRange?.elementAtOrNull(value) ?? VarValueEnum.unknown;
-  BitStruct<BitFieldKey> bitFieldsOf(int value) => BitStructClass(bitsKeys ?? const <BitFieldKey>[]).castBits(value);
+  BitStruct<BitFieldKey> bitFieldsOf(int value) => BitStruct.constant(bitsKeys ?? const <BitFieldKey>[], value as Bits);
 
   ////////////////////////////////////////////////////////////////////////////////
-  /// returning user defined subtypes
-  /// returns the as the exact type, to account for user defined method on that type
+  /// User defined subtypes
+  /// Returns the as the exact type, to account for user defined method on that type
+  //  Subtype return nullable,
+  //    a constructor is provided
+  //    a default value is provided
+  //    a prototype object is provided
 
   // V? get enumPrototype; // include a default
   // V? get bitsPrototype;
 
-  //  subtype return nullable,
-  //  a constructor is provided
-  //  a default value is provided
-  //  a prototype object is provided
-
-  // alternatively pass function, for non nullable
-  // value as subtypes
-  ///todo subtype hand subtypes
+  // if a default is not provided, the return must be R?, returning common Meta will be type error
   // V? enumSubtypeOf(int value) => enumRange?.elementAtOrNull(value) as V?; // returns null if varName is not associated with enum value type
   // V? bitsSubtypeOf(int value) => (bitsKeys != null) ? BitStructClass(bitsKeys!).castBits(value) as V? : null;
-
-  // T? valueAsEnumType<T>() => valueAsEnum as T; // todo handle enum out of range
-  // T? valueAsBitsType<T>() => valueAsBitFields as T;
+  T valueAsSubtype<T>() => throw UnsupportedError('valueAsSubtype: $T');
 
   @override
   String toString() => '${describeIdentity(this)}($value)($numValue)';
@@ -251,10 +253,8 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   @protected
   String get valueAsString => String.fromCharCodes(valueAsBytes);
 
-  T valueAsSubtype<T>() => throw UnsupportedError('valueAsSubtype: $T');
-
   /// generic getter use switch on type literal, and require extension to account for subtypes
-  /// generic setter use switch on object type
+  /// generic setter can optionally switch on object type
 
   /// view determines type after accounting fo varId.valueType
   R valueAs<R>() {
@@ -268,8 +268,6 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
       const (BitStruct) => valueAsBitFields,
       const (String) => valueAsString,
       _ => valueAsSubtype<R>(),
-      // _ when TypeKey<R>().isSubtype<BitsBase>() => valueAsBitsType<R>(),
-      // _ when TypeKey<R>().isSubtype<Enum>() => valueAsEnumType<R>(), // if a default is not provided, the return must be R?, returning common Meta will be type error
     } as R;
   }
 
@@ -285,6 +283,8 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
     numValue = switch (T) {
       const (double) || const (int) || const (num) => clamp(typedValue as num),
       const (bool) => (typedValue as bool) ? 1 : 0,
+      const (Enum) => (typedValue as Enum).index,
+      const (BitsBase) => (typedValue as BitsBase).bits,
       _ when typedValue is Enum => (typedValue as Enum).index,
       _ when typedValue is BitsBase => (typedValue as BitsBase).bits,
       _ => throw UnsupportedError('valueAs: $T'),
@@ -405,8 +405,8 @@ abstract mixin class VarStatusNotifier implements ChangeNotifier {
       const (bool) => (status as bool) ? 1 : 0,
       const (Enum) => (status as Enum).index,
       const (VarStatus) => (status as VarStatus).code,
-      _ when TypeKey<T>().isSubtype<VarStatus>() => (status as VarStatus).code,
-      _ when TypeKey<T>().isSubtype<Enum>() => (status as Enum).index,
+      _ when status is VarStatus => (status as VarStatus).code,
+      _ when status is Enum => (status as Enum).index,
       _ => throw UnsupportedError('updateStatusByViewAs: $T'),
     };
   }

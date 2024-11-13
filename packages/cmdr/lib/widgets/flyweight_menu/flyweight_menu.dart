@@ -18,7 +18,7 @@ class FlyweightMenuSource<T> {
     T? defaultValue,
   }) : this(menuItems: itemsFrom<T>(itemKeys: itemKeys, itemBuilder: itemBuilder), defaultKey: defaultValue);
 
-  final List<FlyweightMenuItem> menuItems; // keep as MenuSourceItem in case implementation changes
+  final List<FlyweightMenuItem<T>> menuItems; // keep as MenuSourceItem in case implementation changes
   final T? defaultKey;
 
   // createFlyweight()
@@ -39,7 +39,7 @@ class FlyweightMenuSource<T> {
   }
 }
 
-/// A `Flyweight copy` of the source.
+/// A `Flyweight copy` of the source. [FlyweightMenuInstance]
 ///    - Original values by reference, including the view widgets
 ///    - A unique [ValueNotifier<T>], for widgets below the menu
 ///    - original values, including callbacks can be overridden
@@ -48,7 +48,7 @@ class FlyweightMenu<T> extends FlyweightMenuSource<T> with ChangeNotifier implem
   //maybe make this private
 
   FlyweightMenu(
-    FlyweightMenuSource menuSource, {
+    FlyweightMenuSource<T> menuSource, {
     this.onPressed,
     T? initialValue,
     // IterableFilter<T>? filter,
@@ -153,6 +153,7 @@ final class FlyweightMenuContext<T> extends InheritedNotifier<FlyweightMenu<T>> 
   // }
 }
 
+/// not used by library layer
 /// a context for MenuSource. Does not hold a notifier.
 /// use cases where a number of view widgets do not need to recreate a MenuSource.
 // class FlyweightMenuSourceContext<T extends FlyweightMenuSourceContext<dynamic>> extends InheritedWidget {
@@ -184,4 +185,48 @@ class FlyweightMenuTheme extends ThemeExtension<FlyweightMenuTheme> {
   ThemeExtension<FlyweightMenuTheme> lerp(covariant ThemeExtension<FlyweightMenuTheme>? other, double t) {
     throw UnimplementedError();
   }
+}
+
+// resolves source to instance notifier
+class MenuAnchorBuilder<T> extends StatefulWidget {
+  const MenuAnchorBuilder({
+    super.key,
+    required this.menuSource,
+    // required this.menuInstance,
+    this.initialItem,
+    required this.menuWidgetBuilder,
+    required this.menuKeyBuilder,
+    this.child,
+  });
+
+  final FlyweightMenuSource<T> menuSource;
+  // final FlyweightMenu<T> menuInstance;  // provide one of either
+  final T? initialItem;
+
+  final Widget Function(BuildContext context, List<FlyweightMenuItem<T>> menuItems, Widget keyWidget) menuWidgetBuilder;
+  final ValueWidgetBuilder<T> menuKeyBuilder; // passed to menuWidgetBuilder
+  final Widget? child; // passed to menuKeyBuilder
+
+  @override
+  State<MenuAnchorBuilder<T>> createState() => _MenuAnchorBuilderState<T>();
+}
+
+class _MenuAnchorBuilderState<T> extends State<MenuAnchorBuilder<T>> {
+  // late final FlyweightMenuSource<T> menuSource = widget.menuSource ?? FlyweightMenuSourceContext<T>.of(context).menuSource; // if including find by context
+  late final FlyweightMenu<T> menu = widget.menuSource.create(initialValue: widget.initialItem /*  onPressed: widget.onPressed */);
+  late final Widget keyListener = ValueListenableBuilder<T>(valueListenable: menu, builder: widget.menuKeyBuilder, child: widget.child);
+
+  @override
+  Widget build(BuildContext context) {
+    return FlyweightMenuContext<T>(
+      notifier: menu,
+      child: widget.menuWidgetBuilder(context, menu.menuItems, keyListener),
+    );
+  }
+}
+
+// case where child depends on menu without displaying the menu
+// requires FlyweightMenu Instance
+class MenuListenableBuilder<T> extends ValueListenableBuilder<T> {
+  const MenuListenableBuilder({super.key, required super.builder, super.child, required FlyweightMenu<T> menu}) : super(valueListenable: menu);
 }

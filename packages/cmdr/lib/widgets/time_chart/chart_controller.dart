@@ -32,6 +32,12 @@ class ChartController with TimerNotifier, ChangeNotifier {
 
   static const int kSelectionCountMax = 8; // fixed 16 selections max
 
+  @override
+  void dispose() {
+    stop();
+    super.dispose();
+  }
+
   Duration updateInterval;
 
   ChartData _chartData; // line data models, derive from entry, file storage

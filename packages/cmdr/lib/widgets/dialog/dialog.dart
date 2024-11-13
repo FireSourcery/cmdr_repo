@@ -31,12 +31,13 @@ class ConfirmationDialog<T> extends StatelessWidget {
 /// [AsyncConfirmationDialog] is a dialog that performs an async operation on confirm.
 ///   It displays a loading indicator while the operation is in progress.
 ///   The dialog closes when the operation is complete.
+///   T is the return type of the async operation, and is passed to the onConfirmContent builder.
 class AsyncConfirmationDialog<T> extends StatefulWidget {
   const AsyncConfirmationDialog({super.key, required this.onConfirm, required this.initialContent, required this.onConfirmContent, this.title, this.icon, this.iconColor});
 
-  final AsyncValueGetter<T> onConfirm; // process on confirm
   final Widget initialContent;
-  final AsyncWidgetBuilder<T> onConfirmContent; //onConfirm, pending completion
+  final AsyncValueGetter<T> onConfirm; // process on confirm, asyncProcess
+  final AsyncWidgetBuilder<T> onConfirmContent; // onConfirm, pending completion, asyncProcessContent
 
   final Widget? icon;
   final Color? iconColor;
@@ -48,7 +49,7 @@ class AsyncConfirmationDialog<T> extends StatefulWidget {
 
 class _AsyncConfirmationDialogState<T> extends State<AsyncConfirmationDialog<T>> {
   final Completer<void> userConfirmation = Completer(); // results of 'Confirm' button
-  late final Future<T> processCompleted; // process onConfirm. is it more defensive to leave uninitialized?
+  late final Future<T> onConfirmCompleted; // process onConfirm. is it more defensive to leave uninitialized?
 
   // @override
   // void initState() {
@@ -62,7 +63,7 @@ class _AsyncConfirmationDialogState<T> extends State<AsyncConfirmationDialog<T>>
 
   void onPressedConfirm() {
     userConfirmation.complete();
-    processCompleted = widget.onConfirm();
+    onConfirmCompleted = widget.onConfirm();
   }
 
   @override
@@ -75,36 +76,40 @@ class _AsyncConfirmationDialogState<T> extends State<AsyncConfirmationDialog<T>>
         future: userConfirmation.future,
         builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
           return switch (snapshot) {
+            AsyncSnapshot(connectionState: ConnectionState.none || ConnectionState.active) => widget.initialContent,
             AsyncSnapshot(connectionState: ConnectionState.waiting) => widget.initialContent,
-            AsyncSnapshot(connectionState: ConnectionState.none || ConnectionState.active || ConnectionState.done) => FutureBuilder(future: processCompleted, builder: widget.onConfirmContent),
+            AsyncSnapshot(connectionState: ConnectionState.done) => FutureBuilder(future: onConfirmCompleted, builder: widget.onConfirmContent),
           };
         },
       ),
 
       // Buttons
       actions: [
+        /// Cancel Button
         FutureBuilder(
           future: userConfirmation.future,
           builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
             return switch (snapshot) {
-              AsyncSnapshot(connectionState: ConnectionState.waiting) => TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+              AsyncSnapshot(connectionState: ConnectionState.waiting) => TextButton(onPressed: Navigator.of(context).pop, child: const Text('Cancel')),
               AsyncSnapshot(connectionState: ConnectionState.none || ConnectionState.active || ConnectionState.done) => const SizedBox.shrink(),
             };
           },
         ),
+
+        /// Confirm Button
         FutureBuilder(
           future: userConfirmation.future,
           builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
             return switch (snapshot) {
               AsyncSnapshot(connectionState: ConnectionState.waiting) => TextButton(onPressed: onPressedConfirm, child: const Text('Confirm')),
               AsyncSnapshot(connectionState: ConnectionState.none || ConnectionState.active || ConnectionState.done) => FutureBuilder(
-                  future: processCompleted,
+                  future: onConfirmCompleted,
                   builder: (BuildContext context, AsyncSnapshot<T> snapshot) {
                     return switch (snapshot) {
-                      // AsyncSnapshot(hasError: true) => const CircularProgressIndicator(),
-                      // AsyncSnapshot(connectionState: ConnectionState.none) => const CircularProgressIndicator(),
-                      AsyncSnapshot(connectionState: ConnectionState.waiting) => const CircularProgressIndicator(),
-                      AsyncSnapshot(connectionState: ConnectionState.none || ConnectionState.active || ConnectionState.done) =>
+                      // AsyncSnapshot(hasError: true) =>  ,
+                      AsyncSnapshot(connectionState: ConnectionState.none) => const Text('Initialing...'),
+                      AsyncSnapshot(connectionState: ConnectionState.waiting || ConnectionState.active) => const CircularProgressIndicator(),
+                      AsyncSnapshot(connectionState: ConnectionState.done) =>
                         TextButton(onPressed: () => Navigator.of(context).pop(snapshot.data), child: const Text('Ok')), // done with or without error
                     };
                   },

@@ -42,9 +42,10 @@ abstract class SerialLinkView extends StatelessWidget {
 class SerialLinkPortView extends SerialLinkView {
   const SerialLinkPortView(super.configController, {super.key}) : super._inner();
 
+  List<PopupMenuEntry<String>> itemBuilder(_) => [for (final portString in SerialLink.portsAvailable) PopupMenuItem(value: portString, child: Text(portString))];
+
   @override
   Widget build(BuildContext context) {
-    List<PopupMenuEntry<String>> itemBuilder(_) => [for (final portString in SerialLink.portsAvailable) PopupMenuItem(value: portString, child: Text(portString))];
     return PopupMenuButton<String>(
       itemBuilder: itemBuilder,
       initialValue: serialLink.portConfigName,
@@ -69,9 +70,10 @@ class SerialLinkPortView extends SerialLinkView {
 class SerialLinkConfigView extends SerialLinkView {
   const SerialLinkConfigView(super.configController, {super.key}) : super._inner();
 
+  List<PopupMenuEntry<int>> itemBuilder(_) => [for (final baudRate in SerialLink.baudList) PopupMenuItem(value: baudRate, child: Text(baudRate.toString()))];
+
   @override
   Widget build(BuildContext context) {
-    List<PopupMenuEntry<int>> itemBuilder(_) => [for (final baudRate in SerialLink.baudList) PopupMenuItem(value: baudRate, child: Text(baudRate.toString()))];
     return PopupMenuButton<int>(
       itemBuilder: itemBuilder,
       initialValue: serialLink.portConfig.baudRate,

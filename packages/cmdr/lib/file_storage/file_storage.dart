@@ -1,30 +1,29 @@
 import 'dart:async';
 import 'dart:io';
 
-/// FileStorage contains
+/// FileStorage
 ///   abstract functions to handle file contents, interface with user application
 ///   a FileCodec for encoding/decoding, and File read/write
 ///   optionally mixin a notifier for UI updates
 ///   optionally cache contents or user controller
 abstract class FileStorage<T> {
-  const FileStorage(this.fileCodec, {this.extensions, this.defaultName});
+  const FileStorage({this.extensions, this.defaultName});
 
-  //per instance
   final List<String>? extensions;
   final String? defaultName;
 
-  // per type
-  final FileCodec<T, dynamic> fileCodec; //possible make this a getter, or mixin instead
+  // per class/type
+  FileCodec<T, dynamic> get fileCodec; // getter over mixin for codecs with state to maintain encapsulation
 
   /// Abstract functions to handle file contents
   /// called by openAsync, saveAsync
   Object? fromContents(T contents); //parseContents
   T toContents(); //buildContents
 
+  Object? _fromNullableContents(T? contents) => (contents != null) ? fromContents(contents) : null;
+
   Future<T> readContents(File file) async => fileCodec.read(file);
   Future<File> writeContents(File file, T contents) async => fileCodec.write(file, contents);
-
-  Object? _fromNullableContents(T? contents) => (contents != null) ? fromContents(contents) : null;
 
   // full sequence for future builder
   // returns null for no file selected
@@ -88,8 +87,8 @@ abstract mixin class FileContentCodec<S, T> implements FileCodec<S, T> {
   // Future<S> read(File file) async => innerCodec.read(file).then((value) => decode(value));
 }
 
-// mapCodec as first fuse stringCodec as second
 // in encoding order
+// e.g. mapCodec as first, stringCodec as second
 class _FusedFileCodec<S, M, T> extends FileCodec<S, T> {
   _FusedFileCodec(this._first, this._second);
 
@@ -132,4 +131,3 @@ extension FileCodecExtension on File {
 //   @override
 //   toString() => message;
 // }
- 

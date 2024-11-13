@@ -12,7 +12,9 @@ export 'bits_map.dart';
 ///
 /// A collection of `Bit-fields`, in a primitive type variable, e.g int, should be known as Bit-Fields, or Bits Field, Bit Struct, Bit-Field Struct
 ///
-/// BoolStruct will accept BitField Enum keys, and return bool values
+/// Use BitStruct for a general case.
+///   BoolStruct will accept BitField Enum keys, and return bool values.
+///   BoolStruct provides a constraint on the value type, bool, and slight optimization for bitmask operations.
 ///
 ////////////////////////////////////////////////////////////////////////////////
 // implements foundation.BitField<T>,

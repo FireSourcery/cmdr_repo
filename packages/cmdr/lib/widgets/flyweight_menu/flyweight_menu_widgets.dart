@@ -7,8 +7,8 @@ import 'menu_anchor_widgets.dart';
 // Widgets not fully parameterized, defaults/examples, are denoted as _widgets.dart
 
 // Menu 'hosts' must wrap MenuAnchor (with menu.menuItems) under MenuSourceContext -> menuItems access menu and its notifier via context
-class FlyweightMenuAnchor<T> extends StatelessWidget {
-  const FlyweightMenuAnchor({super.key, required this.menu, this.child, required this.builder});
+class FlyweightMenuOverlay<T> extends StatelessWidget {
+  const FlyweightMenuOverlay({super.key, required this.menu, this.child, required this.builder});
 
   final FlyweightMenu<T> menu; // menuItems onPressed will find the notifier from MenuSourceInstance
   final ValueWidgetBuilder<T> builder;
@@ -43,10 +43,7 @@ class FlyweightMenuButton<T> extends StatelessWidget {
   }
 }
 
-// case where child depends on menu without displaying the menu
-class FlyweightMenuListenableBuilder<T> extends ValueListenableBuilder<T> {
-  const FlyweightMenuListenableBuilder({super.key, required super.builder, super.child, required FlyweightMenu<T> menu}) : super(valueListenable: menu);
-}
+
 
 // /// build from source
 // class FlyweightMenuContainer<T> extends StatefulWidget {

@@ -16,9 +16,12 @@ class JsonFileCodec extends FileStringCodec<JsonMap> {
 }
 
 abstract class JsonFileStorage extends FileStorage<JsonMap> {
-  const JsonFileStorage({super.defaultName}) : super(const JsonFileCodec(), extensions: const ['json', 'txt']);
+  const JsonFileStorage({super.defaultName, super.extensions = const ['json', 'txt']}) : super();
 
   factory JsonFileStorage.handlers(Object? Function(JsonMap value) fromJson, JsonMap Function() toJson, {String? defaultName}) = _JsonFileStorageWithHandlers;
+
+  @override
+  JsonFileCodec get fileCodec => const JsonFileCodec();
 
   @override
   Object? fromContents(JsonMap contents);

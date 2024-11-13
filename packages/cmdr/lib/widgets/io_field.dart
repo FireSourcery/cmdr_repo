@@ -51,7 +51,7 @@ abstract mixin class IOField<T> implements Widget {
     String? suffixText,
     String? hintText,
 
-    // if implement copywith null as null here
+    // if implement copyWith null as null here
     // bool showLabel = true,
     // bool showPrefix = true,
     // bool showSuffix = true,

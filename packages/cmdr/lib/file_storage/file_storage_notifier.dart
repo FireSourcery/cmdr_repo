@@ -99,19 +99,24 @@ abstract mixin class FileStorageNotifier<T> implements FileStorage<T> {
 ////////////////////////////////////////////////////////////////////////////////
 /// with View State
 ////////////////////////////////////////////////////////////////////////////////
-class FileStorageWithNotifier<T> extends FileStorage<T> with FileStorageNotifier<T> implements FileStorageNotifier<T> {
-  // FileStorageWithNotifier(super.fileCodec);
-  FileStorageWithNotifier.on(FileStorage<T> fileStorage)
-      : _fromContents = fileStorage.fromContents,
-        _toContents = fileStorage.toContents,
-        super(fileStorage.fileCodec, extensions: fileStorage.extensions, defaultName: fileStorage.defaultName);
-  // FileStorage<T> fileStorage;
+// class FileStorageWithNotifier<T> extends FileStorage<T> with FileStorageNotifier<T> {
+//   // FileStorageWithNotifier(super.fileCodec);
+//   FileStorageWithNotifier.on(FileStorage<T> fileStorage)
+//       : _fromContents = fileStorage.fromContents,
+//         _toContents = fileStorage.toContents,
+//         super(extensions: fileStorage.extensions, defaultName: fileStorage.defaultName);
+  
+//   // FileStorage<T> fileStorage;
 
-  final Object? Function(T contents)? _fromContents;
-  final T Function()? _toContents;
+//   @override 
+//   FileCodec<T, dynamic> get fileCodec => throw UnimplementedError();
 
-  @override
-  Object? fromContents(T contents) => _fromContents?.call(contents);
-  @override
-  T toContents() => _toContents?.call() ?? (throw UnimplementedError());
-}
+//   final Object? Function(T contents)? _fromContents;
+//   final T Function()? _toContents;
+
+//   @override
+//   Object? fromContents(T contents) => _fromContents?.call(contents);
+//   @override
+//   T toContents() => _toContents?.call() ?? (throw UnimplementedError());
+  
+// }

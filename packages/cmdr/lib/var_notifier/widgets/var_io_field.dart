@@ -84,6 +84,7 @@ class VarIOFieldWithMenu<T extends VarKey> extends StatefulWidget {
 }
 
 class _VarIOFieldWithMenuState<T extends VarKey> extends State<VarIOFieldWithMenu<T>> {
+  // late final FlyweightMenuSource<T> menuSource = widget.menuSource ?? FlyweightMenuSourceContext<T>.of(context).menuSource; // if including find by context
   late final FlyweightMenu<T> menu = widget.menuSource.create(initialValue: widget.initialVarKey /*  onPressed: widget.onPressed */);
   late final ValueWidgetBuilder<T> effectiveBuilder = VarKeyWidgetBuilder(builder: widget.buildVar, eventController: widget.eventController).asValueWidgetBuilder;
 
@@ -91,10 +92,10 @@ class _VarIOFieldWithMenuState<T extends VarKey> extends State<VarIOFieldWithMen
   Widget build(BuildContext context) {
     return Row(
       children: [
-        VarMenuButton<T>(menu: menu),
+        FlyweightMenuButton<T>(menu: menu),
         const VerticalDivider(thickness: 0, color: Colors.transparent),
         // config rebuilds on varNotifier select update
-        Expanded(child: FlyweightMenuListenableBuilder<T>(menu: menu, builder: effectiveBuilder)),
+        Expanded(child: MenuListenableBuilder<T>(menu: menu, builder: effectiveBuilder)),
       ],
     );
 

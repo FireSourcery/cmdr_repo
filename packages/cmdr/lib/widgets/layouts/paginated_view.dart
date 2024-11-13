@@ -42,6 +42,7 @@ class _PaginatedViewState extends State<PaginatedView> with SingleTickerProvider
             children: widget.children,
           ),
         ),
+        const SizedBox(height: 5),
         TabPageSelector(controller: _tabController, color: colorScheme.surface, selectedColor: colorScheme.primary),
       ],
     );

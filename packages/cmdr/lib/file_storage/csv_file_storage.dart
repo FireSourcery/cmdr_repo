@@ -65,12 +65,16 @@ class CsvFileMapCodec extends FileContentCodec<Map<String, List<dynamic>>, List<
 }
 
 abstract class CsvFileStorage extends FileStorage<Map<String, List>> {
-  CsvFileStorage({super.defaultName, bool transposeToColumnMap = false}) : super(CsvFileMapCodec(transposeToColumnMap: transposeToColumnMap), extensions: const ['csv', 'txt']);
+  CsvFileStorage({super.defaultName, super.extensions = const ['csv', 'txt'], bool transposeToColumnMap = false}) : _fileCodec = CsvFileMapCodec(transposeToColumnMap: transposeToColumnMap);
 
+  final CsvFileMapCodec _fileCodec;
   // CsvFileStorageCodec withTranspose(bool transposeToColumnMap) {
   // copy with pointer for fromContents/toContents
   //   return (transposeToColumnMap) ? CsvFileStorageCodec.transpose(defaultName: defaultName) : CsvFileStorageCodec(defaultName: defaultName);
   // }
+
+  @override
+  CsvFileMapCodec get fileCodec => _fileCodec;
 
   @override
   Object? fromContents(Map<String, List> contents);
