@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../links/serial_link.dart';
-
 export '../links/serial_link.dart';
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,7 +53,7 @@ class SerialLinkPortView extends SerialLinkView {
       clipBehavior: Clip.hardEdge,
       tooltip: 'Serial Port Name',
       child: InputDecorator(
-        decoration: const InputDecoration(labelText: 'Port'),
+        decoration: const InputDecoration(labelText: 'Port', isDense: false),
         child: ListenableBuilder(
           listenable: configController,
           builder: (context, child) => Text(serialLink.portConfigName ?? 'No Ports Found'),
@@ -82,7 +81,7 @@ class SerialLinkConfigView extends SerialLinkView {
       clipBehavior: Clip.hardEdge,
       tooltip: 'Baud Rate',
       child: InputDecorator(
-        decoration: const InputDecoration(labelText: 'Baud Rate'),
+        decoration: const InputDecoration(labelText: 'Baud Rate', isDense: false),
         child: ListenableBuilder(
           listenable: configController,
           builder: (context, child) => Text(serialLink.portConfig.baudRate.toString()),
@@ -114,14 +113,17 @@ class PortDetailsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (SerialPort.availablePorts.contains(serialPortName)) {
-      final port = SerialPort(serialPortName!);
-      return InputDecorator(
-        decoration: InputDecoration(labelText: serialPortName),
-        child: ListView(
-          padding: const EdgeInsets.symmetric(vertical: 0),
-          prototypeItem: _ListTile('Description', port.description),
-          children: [
+    final port = (SerialPort.availablePorts.contains(serialPortName)) ? SerialPort(serialPortName!) : null;
+
+    return InputDecorator(
+      decoration: const InputDecoration(labelText: 'Port Details'),
+      child: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 0),
+        prototypeItem: const _ListTile('', ''),
+        shrinkWrap: true,
+        children: [
+          _ListTile('Port Name', serialPortName),
+          if (port != null) ...[
             _ListTile('Description', port.description),
             _ListTile('Transport', port.transport.toTransport()),
             _ListTile('USB Bus', port.busNumber?.toPadded()),
@@ -132,16 +134,39 @@ class PortDetailsView extends StatelessWidget {
             _ListTile('Product Name', port.productName),
             _ListTile('Serial Number', port.serialNumber),
             _ListTile('MAC Address', port.macAddress),
-          ],
-        ),
-      );
-    } else {
-      return const InputDecorator(decoration: InputDecoration(labelText: 'Port Details'));
-    }
+          ]
+        ],
+      ),
+    );
+
+    // if (SerialPort.availablePorts.contains(serialPortName)) {
+    //   final port = SerialPort(serialPortName!);
+    //   return InputDecorator(
+    //     decoration: InputDecoration(labelText: serialPortName),
+    //     child: ListView(
+    //       padding: const EdgeInsets.symmetric(vertical: 0),
+    //       prototypeItem: const _ListTile('', ''),
+    //       children: [
+    //         _ListTile('Description', port.description),
+    //         _ListTile('Transport', port.transport.toTransport()),
+    //         _ListTile('USB Bus', port.busNumber?.toPadded()),
+    //         _ListTile('USB Device', port.deviceNumber?.toPadded()),
+    //         _ListTile('Vendor ID', port.vendorId?.toHex()),
+    //         _ListTile('Product ID', port.productId?.toHex()),
+    //         _ListTile('Manufacturer', port.manufacturer),
+    //         _ListTile('Product Name', port.productName),
+    //         _ListTile('Serial Number', port.serialNumber),
+    //         _ListTile('MAC Address', port.macAddress),
+    //       ],
+    //     ),
+    //   );
+    // } else {
+    //   return const InputDecorator(decoration: InputDecoration(labelText: 'Port Details'));
+    // }
   }
 }
 
-extension IntToString on int {
+extension SerialPortInt on int {
   String toHex() => '0x${toRadixString(16)}';
   String toPadded([int width = 3]) => toString().padLeft(width, '0');
   String toTransport() {
