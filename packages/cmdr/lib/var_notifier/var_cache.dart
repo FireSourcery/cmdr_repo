@@ -11,7 +11,7 @@ part of 'var_notifier.dart';
 ////////////////////////////////////////////////////////////////////////////////
 @immutable
 class VarCache {
-  // VarCache([this.lengthMax]) : _cache = {};
+  VarCache([this.lengthMax]) : _cache = {};
 
   // stores key in value when using dynamically generated iterable
   VarCache.preallocate(

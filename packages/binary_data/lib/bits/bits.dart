@@ -154,23 +154,6 @@ abstract mixin class BitsBase {
 
   void reset([bool fill = false]) => bits = fill ? const Bits.allOnes() : const Bits.allZeros();
 
-  // Map operators implemented by subclass depending on V type
-  // alternatively use generic switch
-  // List<K> get keys;
-  // V operator [](covariant K key);
-  // void operator []=(covariant K key, V value);
-  // @override
-  // void clear() => bits = const Bits.allZeros();
-
-  // as a special case for BitsMap, override this function for withX function to return as child type
-  // if T includes Bitmask in this module, the optimized implementation with V as int can be defined here
-  // @mustBeOverridden
-  // @protected
-  // BitsBase copyWithBits(Bits value);
-
-  // @override
-  // BitsBase copyWith() => copyWithBits(bits);
-
   @override
   bool operator ==(covariant BitsBase other) {
     if (identical(this, other)) return true;

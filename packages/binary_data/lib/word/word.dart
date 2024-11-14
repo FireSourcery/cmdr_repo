@@ -10,7 +10,7 @@ export '../bytes/typed_array.dart';
 /// Can be compile time constant, use as enum entry
 extension type const Word(int _value) implements Bits, int {
   /// must be standard class for constructors to be passed to child as const, and derived classes can be used as compile time constants
-  /// alternatively defer most distant child class to call Word constructor
+  /// alternatively, defer until instance creation
   // class Word {
   // const Word(int value) : bits = value as Bits;
 
@@ -32,7 +32,6 @@ extension type const Word(int _value) implements Bits, int {
 
   // const Word.value64msb(int msb, int msb1, int msb2, int msb3, int lsb3, int lsb2, int lsb1, int lsb) : this.of8s(lsb, lsb1, lsb2, lsb3, msb3, msb2, msb1, msb);
   // const Word.value32msb(int msb, int msb1, int msb2, int msb3) : this.of8s(0, 0, 0, 0, msb3, msb2, msb1, msb);
-
   // const Word.byteSwap(int value) : this.of8s(value >> 56, value >> 48, value >> 40, value >> 32, value >> 24, value >> 16, value >> 8, value);
 
   // defaults to little endian for an arbitrary list of bytes, assume external
@@ -61,7 +60,7 @@ extension type const Word(int _value) implements Bits, int {
 
   // List<int> numList(unitLength) => toBytes(Endian.little);
 
-  // // auto trim length
+  // auto trim length
   // Uint8List get bytes => toBytes(Endian.little);
   // Uint8List get bytesLE => value.toBytes(Endian.little).trim(byteLength, Endian.little);
   // Uint8List get bytesBE => value.toBytes(Endian.big).trim(byteLength, Endian.big);
@@ -90,6 +89,7 @@ extension SizedWord on TypedData {
     final endianOffset = switch (endian) { Endian.big => 8 - size, Endian.little => 0, Endian() => throw StateError('Endian') };
     // todo check size as end
     return (Uint8List(8)..setAll(endianOffset, Uint8List.sublistView(this, byteOffset, byteOffset + size))).toInt64(endian);
+    // or copy without offset and mask
   }
 
   // lengthInBytes >= 8

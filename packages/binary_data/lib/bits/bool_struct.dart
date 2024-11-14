@@ -59,6 +59,14 @@ abstract mixin class BoolStruct<T extends Enum> implements BitsMap<T, bool> {
   }
 
   @override
+  Iterable<({T key, int value})> get fieldsAsBits => keys.map((e) => (key: e, value: this[e] ? 1 : 0));
+  @override
+  Iterable<({T key, bool value})> get fieldsAsBool => fields;
+
+  Iterable<int> get valuesAsBits => values.map((e) => e ? 1 : 0);
+  Iterable<MapEntry<T, int>> get entriesAsBits => keys.map((key) => MapEntry(key, this[key] ? 1 : 0));
+
+  @override
   BoolStruct<T> copyWithBits(Bits bits) => ConstBoolStructWithKeys<T>(keys, bits);
   @override
   BoolStruct<T> copyWith() => copyWithBits(bits);
@@ -68,13 +76,7 @@ abstract mixin class BoolStruct<T extends Enum> implements BitsMap<T, bool> {
   @override
   BoolStruct<T> withEntries(Iterable<MapEntry<T, bool>> entries) => copyWithBits(bits.withEachBool(entries.map((e) => (e.key.index, e.value))));
   @override
-  BoolStruct<T> withAll(Map<T, bool> map) => copyWithBits(Bits.ofIndexed(values));
-
-  Iterable<int> get valuesAsBits => values.map((e) => e ? 1 : 0); // todo as general extension
-  Iterable<MapEntry<T, int>> get entriesAsBits => keys.map((key) => MapEntry(key, this[key] ? 1 : 0));
-
-  // String toStringAsFlags() => valuesAsBits.toString(); // (0, 1, 0)
-  // String toStringAsNamePair() => pairs.map((e) => ('${e.$1.name}: ${e.$2.toString()} ')).toString(); // (nameOne: true, nameTwo: false)
+  BoolStruct<T> withAll(Map<T, bool> map) => withEntries(map.entries);
 }
 
 // typedef BoolKey = BitsIndexKey;

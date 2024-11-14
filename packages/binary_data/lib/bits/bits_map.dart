@@ -27,12 +27,19 @@ abstract mixin class BitsMap<K extends Enum, V> implements EnumMap<K, V>, BitsBa
   @override
   void clear() => bits = const Bits.allZeros();
 
+  Iterable<({K key, bool value})> get fieldsAsBool;
+  Iterable<({K key, int value})> get fieldsAsBits;
+  // Iterable<int> get valuesAsBits;
+  // Iterable<bool> get valuesAsBools;
+
+  // as a special case for BitsMap, override this function for withX function to return as child type
+  // by default, EnumMap would allocate a new array buffer and copy each value
   BitsMap<K, V> copyWithBits(Bits value);
   @override
   BitsMap<K, V> copyWith() => copyWithBits(bits);
 
   @override
-  String toString() => toStringAsMap(); // toString should be mapToString EnumMap
+  String toString() => toStringAsMap();
 
   String toStringAsMap() => MapBase.mapToString(this); // {key: value, key: value}
   String toStringAsBinary() => bits.toRadixString(2); // 0b000
@@ -71,11 +78,8 @@ abstract class ConstBitFieldsWithKeys<T extends Enum, V> extends ConstBitFieldsB
 }
 
 // remove?
-// typedef ConstBitFieldsInit<T extends Enum, V> = ConstEnumMapInit<T, V>;
+// typedef ConstBitFieldsInit<T extends Enum, V> = ConstBitsMapInit<T, V>;
 // class ConstBitsMapInit<T extends Enum, V> extends ConstEnumMapInit<T, V> with BitsMap<T, V> implements BitsMap<T, V>
-
-
- 
 
 // mixin UnmodifiableBitsMixin<K extends Enum, V> on BitsMap<K, V> {
 //   // @override

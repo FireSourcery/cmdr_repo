@@ -5,51 +5,51 @@ import '../word/word_struct.dart';
 /// 4 fields [optional, major, minor, fix] by default, 1 or 2 bytes each
 /// parameterize T to constrain functions of T key to types the Version is defined with
 // alternatively `class Version extends WordFieldsBase<WordField<NativeType>>` allows for access with any WordField key
-abstract class Version<T extends WordField> extends WordStructBase<T> with EnumMapAsSubtype<Version<T>, T, int> {
+abstract class Version<T extends WordField> extends WordStructBase<T> with BitStructAsSubtype<Version<T>, T> {
   // uses VersionFieldStandard keys when no keys AND type parameter is specified
   factory Version(int optional, int major, int minor, int fix, {String? name}) => VersionStandard(optional, major, minor, fix, name: name) as Version<T>;
   // factory Version(int optional, int major, int minor, int fix, {String? name}) = VersionStandard  ;
-  const factory Version.withKeys(List<T> keys, int value, {String? name}) = _VersionWithKeys<T>;
+
+  // prototype object that can be copied
+  const factory Version.withType(List<T> keys, {int value, String? name}) = _VersionWithKeys<T>;
 
   // user must manually ensure keys match the width of the constructor. this is the only way to define as compile time const
-  const Version.word(super.value, {this.name}) : super(); // e.g. a stored value
-  const Version.char8(int optional, int major, int minor, int fix, {this.name}) : super.of8s(fix, minor, major, optional);
-  const Version.char16(int optional, int major, int minor, int fix, {this.name}) : super.of16s(fix, minor, major, optional);
+  const Version.word(super.value) : super(); // e.g. a stored value
+  const Version.char8(int optional, int major, int minor, int fix) : super.of8s(fix, minor, major, optional);
+  const Version.char16(int optional, int major, int minor, int fix) : super.of16s(fix, minor, major, optional);
 
   // Version.values(List<T> keys, Iterable<int> values, {String? name}) : this.word(Bits.ofIterables(keys.bitmasks, values), name: name);
 
-  // Version.cast(super.state, {this.name}) : super.cast();
-  Version.castBase(super.state, {this.name}) : super.castBase();
+  Version.castBase(super.state) : super.castBase();
 
-  // @override
-  // Version<T> copyWith({Bits? bits, String? name}) {
-  //   return _VersionWithKeys.word(bits ?? this.bits, name: name ?? this.name, keys: keys);
-  // }
+  //   VersionClass<T> = ({List<T>, String});
+
   @override
   List<T> get keys;
   // @override
-  final String? name; //move this to typedef VersionClassObject<T> = ({Version, String});?
+  String? get name;
 
-  // @override
-  // Version<T> copyWithBits(Bits value, {String? name}) => _VersionWithKeys(keys, bits, name: name ?? this.name);
+  @override
+  Version<T> copyWith() => _VersionWithKeys(this.keys, name: this.name, value: bits);
 
-  // @override
-  // Version<T> copyWith( );
+  // provide default copyWithBits to inherit withX methods
+  @override
+  Version<T> copyWithBits(Bits value) => _VersionWithKeys(this.keys, name: this.name, value: value);
 
   // defaults to 4 fields. alternatively leave undefined
   // @override
   Version<T> copyWithStandard({int? optional, int? major, int? minor, int? fix, String? name}) {
     return _VersionWithKeys(
       keys,
-      Bits.ofMap({
+      name: name ?? this.name,
+      // T size is not known without keys
+      value: Bits.ofMap({
         keys[0].bitmask: fix ?? this.fix,
         keys[1].bitmask: minor ?? this.minor,
         keys[2].bitmask: major ?? this.major,
         keys[3].bitmask: optional ?? this.optional,
       }),
-      name: name ?? this.name,
     );
-    // T size is not known until defined child class
   }
 
   @override
@@ -66,16 +66,6 @@ abstract class Version<T extends WordField> extends WordStructBase<T> with EnumM
   int get minor => this[keys[1]];
   int get major => this[keys[2]];
   int get optional => this[keys[3]];
-
-  Version<T> withNumber(T key, int value) => withField(key, value);
-
-  // todo automatic type conversion
-  // @override
-  // Version<T> withAll(Map<T, int> map) => super.withAll(map) as Version<T>;
-  // @override
-  // Version<T> withEntries(Iterable<MapEntry<T, int>> entries) => super.withEntries(entries) as Version<T>;
-  // @override
-  // Version<T> withField(T key, int value) => super.withField(key, value) as Version<T>;
 
   /// msb first with dot separator `optional.major.minor.fix`
   String toStringAsVersion([String left = '', String right = '', String separator = '.']) {
@@ -145,35 +135,20 @@ abstract class Version<T extends WordField> extends WordStructBase<T> with EnumM
 
 // ignore: missing_override_of_must_be_overridden
 class _VersionWithKeys<T extends WordField> extends Version<T> {
-  const _VersionWithKeys(this.keys, super.value, {super.name}) : super.word();
-  _VersionWithKeys.castBase(this.keys, super.state, {super.name}) : super.castBase();
-
-  _VersionWithKeys.fromValues(List<T> keys, Iterable<int> values, {String? name}) : this(keys, Bits.ofIterables(keys.bitmasks, values), name: name);
-
+  const _VersionWithKeys(this.keys, {this.name, int value = 0}) : super.word(value);
+  // _VersionWithKeys.castBase(this.keys, super.state, {super.name}) : super.castBase();
+  // _VersionWithKeys.fromValues(List<T> keys, Iterable<int> values, {String? name}) : this(keys, value: Bits.ofIterables(keys.bitmasks, values), name: name);
   // _VersionWithKeys.fromFields(this.keys, int optional, int major, int minor, int fix, {super.name}) : super.castBase();
-
-  // @override
-  // Version<T> copyWith({Iterable<int> values}) {
-  //   return _VersionWithKeys(
-  //     keys,
-  //     Bits.ofMap({
-  //       keys[0].bitmask: fix ?? this.fix,
-  //       keys[1].bitmask: minor ?? this.minor,
-  //       keys[2].bitmask: major ?? this.major,
-  //       keys[3].bitmask: optional ?? this.optional,
-  //     }),
-  //     name: name ?? this.name,
-  //   );
-  //   // T size is not known until defined child class
-  // }
 
   @override
   final List<T> keys;
+  @override
+  final String? name;
 }
 
 class VersionStandard extends Version<VersionFieldStandard> {
-  const VersionStandard(super.optional, super.major, super.minor, super.fix, {super.name}) : super.char8();
-  const VersionStandard.word(super.value, {super.name}) : super.word();
+  const VersionStandard(super.optional, super.major, super.minor, super.fix, {this.name = 'Version'}) : super.char8();
+  const VersionStandard.word(super.value, {this.name = 'Version'}) : super.word();
 
   // VersionStandard.cast(super.state) : super.cast();
 
@@ -181,7 +156,7 @@ class VersionStandard extends Version<VersionFieldStandard> {
   List<VersionFieldStandard> get keys => VersionFieldStandard.values;
 
   @override
-  String get name => super.name ?? 'Version';
+  final String? name;
 
   @override
   int get fix => this[VersionFieldStandard.fix];
