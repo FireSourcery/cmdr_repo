@@ -150,7 +150,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // num clamp(num value) => value.clamp(viewMin!, viewMax!);
 
   Enum enumOf(int value) => enumRange?.elementAtOrNull(value) ?? VarValueEnum.unknown;
-  BitStruct<BitFieldKey> bitFieldsOf(int value) => BitStruct.constant(bitsKeys ?? const <BitFieldKey>[], value as Bits);
+  BitStruct<BitFieldKey> bitFieldsOf(int value) => BitStruct.withType(bitsKeys ?? const <BitFieldKey>[], value as Bits);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// User defined subtypes
