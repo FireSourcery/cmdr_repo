@@ -28,3 +28,10 @@ migrate_working_dir/
 .dart_tool/
 build/
 
+packages/binary_data/pubspec.lock
+packages/cmdr/.flutter-plugins
+packages/cmdr/.flutter-plugins-dependencies
+.flutter-plugins-dependencies
+.flutter-plugins
+packages/cmdr/pubspec.lock
+packages/cmdr_common/pubspec.lock
