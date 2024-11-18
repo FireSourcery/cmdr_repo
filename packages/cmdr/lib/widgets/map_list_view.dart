@@ -1,57 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Read Only views
-/// possibly change to String,V
-class MapRowTiles<K, V> extends StatelessWidget {
-  const MapRowTiles({required this.fields, this.title, super.key});
-  final Iterable<(K title, V contents)> fields;
-  final String? title;
-  // Widget Function(K)? keyBuilder;
-  // Widget Function(V)? valueBuilder;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (title != null) Text(title!, style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.left),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            for (final (title, contents) in fields)
-              IntrinsicWidth(
-                child: ListTile(
-                  // titleAlignment: ListTileTitleAlignment.bottom,
-                  subtitle: Text(title.toString()),
-                  title: Text(contents.toString()),
-                ),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-// class MapListView extends StatelessWidget {
-//   const MapListView({required this.namedFields, this.label = 'Map', super.key});
-//   final List<Map> namedFields;
-//   final String? label;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return InputDecorator(
-//       decoration: InputDecoration(labelText: label),
-//       child: ListView(
-//         padding: EdgeInsets.zero,
-//         children: [for (final namedFields in namedFields) MapTile(namedFields: namedFields)],
-//       ),
-//     );
-//   }
-// }
-
-/// A FormField partitioned corresponding to the map input. Each Map entry is an separate entity
+/// A singular FormField partitioned corresponding to the Map input.
+/// Displays a TextField for each Map entry, with initial values from the map.
 /// Editable views
 /// Value should be String or num
 class MapFormFields<K, V> extends StatefulWidget {
@@ -67,9 +18,15 @@ class MapFormFields<K, V> extends StatefulWidget {
     this.leading,
   });
 
-  // todo at min max
-  MapFormFields.digits({super.key, required this.entries, this.isReadOnly = false, required this.onSaved, this.keyStringifier, this.numLimits, this.leading})
-      : valueParser = switch (V) {
+  MapFormFields.digits({
+    super.key,
+    required this.entries,
+    required this.onSaved,
+    this.isReadOnly = false,
+    this.keyStringifier,
+    this.numLimits,
+    this.leading,
+  })  : valueParser = switch (V) {
           const (int) => int.tryParse,
           const (double) => double.tryParse,
           const (num) => num.tryParse,
@@ -77,9 +34,9 @@ class MapFormFields<K, V> extends StatefulWidget {
         } as V? Function(String),
         inputFormatters = [FilteringTextInputFormatter.digitsOnly];
 
-  final Iterable<(K key, V value)> entries; // MapEntry<K, V>
+  final Iterable<MapEntry<K, V>> entries; // MapEntry<K, V>
   final bool isReadOnly;
-  final ValueSetter<Map<K, V>> onSaved;
+  final ValueSetter<Map<K, V>> onSaved; // returns a new Map that is a HashMap, user may cast to original type
 
   final String Function(K key)? keyStringifier;
   final V? Function(String textValue) valueParser;
@@ -97,13 +54,9 @@ class MapFormFields<K, V> extends StatefulWidget {
 }
 
 class _MapFormFieldsState<K, V> extends State<MapFormFields<K, V>> {
-  late final Map<K, V> results;
+  late final Map<K, V> results = {for (final MapEntry(:key, :value) in widget.entries) key: value};
   late final Map<K, TextEditingController> _textEditingControllers;
   late final Map<K, FocusNode> _focusNodes;
-
-  // static Map<K, TextEditingController> _newTextEditingControllers<K, V>(Iterable<(K key, V value)> entries) {
-  //   return {for (final (key, value) in entries) key: TextEditingController(text: value.toString())};
-  // }
 
   String labelOf(K key) => widget.keyStringifier?.call(key) ?? key.toString();
 
@@ -119,9 +72,8 @@ class _MapFormFieldsState<K, V> extends State<MapFormFields<K, V>> {
   @override
   void initState() {
     super.initState();
-    results = {for (final (key, value) in widget.entries) key: value};
-    _textEditingControllers = {for (final (key, value) in widget.entries) key: TextEditingController(text: value.toString())};
-    _focusNodes = {for (final (key, _) in widget.entries) key: FocusNode()..addListener(() => updateOnFocusLoss(key))};
+    _textEditingControllers = {for (final MapEntry(:key, :value) in widget.entries) key: TextEditingController(text: value.toString())};
+    _focusNodes = {for (final MapEntry(:key) in widget.entries) key: FocusNode()..addListener(() => updateOnFocusLoss(key))};
   }
 
   @override
@@ -160,7 +112,7 @@ class _MapFormFieldsState<K, V> extends State<MapFormFields<K, V>> {
         return Row(
           children: [
             if (widget.leading != null) Expanded(child: widget.leading!),
-            for (final (index, (key, _)) in widget.entries.indexed) ...[
+            for (final (index, MapEntry(:key, :value)) in widget.entries.indexed) ...[
               Expanded(
                 child: TextField(
                   decoration: InputDecoration(labelText: labelOf(key), isDense: true, counterText: '', errorText: field.errorText),
@@ -192,6 +144,41 @@ class _MapFormFieldsState<K, V> extends State<MapFormFields<K, V>> {
           ],
         );
       },
+    );
+  }
+}
+
+/// Read Only views
+/// possibly change to String,V
+class TextPairs extends StatelessWidget {
+  const TextPairs({required this.fields, this.title, this.direction = Axis.horizontal, super.key});
+  final Iterable<(String label, String contents)> fields;
+  final String? title;
+  final Axis direction;
+  // Widget Function(K)? keyBuilder;
+  // Widget Function(V)? valueBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (title != null) Text(title!, style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.left),
+        Flex(
+          direction: direction,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final (label, contents) in fields)
+              IntrinsicWidth(
+                child: ListTile(
+                  // titleAlignment: ListTileTitleAlignment.bottom,
+                  subtitle: Text(label),
+                  title: Text(contents),
+                ),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

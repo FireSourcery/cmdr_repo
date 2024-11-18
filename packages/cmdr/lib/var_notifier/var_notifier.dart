@@ -6,12 +6,12 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' hide BitField;
 import 'package:meta/meta.dart';
 
-import 'package:cmdr_common/basic_types.dart';
-import 'package:cmdr_common/service_io.dart';
+import 'package:type_ext/basic_types.dart';
+import 'package:type_ext/service_io.dart';
 import 'package:binary_data/binary_data.dart';
 
-export 'package:cmdr_common/basic_types.dart';
-export 'package:cmdr_common/service_io.dart';
+export 'package:type_ext/basic_types.dart';
+export 'package:type_ext/service_io.dart';
 export 'package:binary_data/binary_data.dart';
 
 part 'var_cache.dart';

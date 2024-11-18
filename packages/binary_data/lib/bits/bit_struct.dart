@@ -1,5 +1,7 @@
-import 'package:cmdr_common/enum_map.dart';
-import 'package:cmdr_common/struct.dart';
+import 'package:meta/meta.dart';
+
+import 'package:type_ext/enum_map.dart';
+import 'package:type_ext/struct.dart';
 
 import 'bits_map_base.dart';
 export 'bits_map_base.dart';
@@ -15,7 +17,7 @@ export 'bits_map_base.dart';
 ///   Can be constructed without Keys to be cast later
 ///   Although this could be implemented as a extension on BitsBase,
 ///     as a class is reusable as an interface,
-///     extesnsion type on bitsBase, or reuse as map implementation
+///     extension type on bitsBase, or reuse as map implementation
 ///
 /// [BitsMap] - a version of Map with [Bits] as source, should not be extended
 ////////////////////////////////////////////////////////////////////////////////
@@ -75,7 +77,7 @@ abstract mixin class BitStruct<T extends BitField> implements BitsMapBase<T, int
   @override
   Iterable<({T key, bool value})> get fieldsAsBool => keys.map((e) => (key: e, value: (this[e] != 0)));
   @override
-  Iterable<({T key, int value})> get fieldsAsBits => fields;
+  Iterable<({T key, int value})> get fieldsAsBits => keys.map((e) => (key: e, value: this[e]));
 
   @override
   BitStruct<T> copyWithBits(Bits value) => ConstBitStructMap<T>(keys, value);
@@ -94,6 +96,8 @@ abstract mixin class BitStruct<T extends BitField> implements BitsMapBase<T, int
   // Map<T, int> asMap() => ConstBitStructMap(keys, bits);
 }
 
+// extension type BitStructView<T extends BitField>(BitsBase bits) implements StructView<T, int>, BitsBase {}
+
 ////////////////////////////////////////////////////////////////////////////////
 /// Keyed/Field Access
 ////////////////////////////////////////////////////////////////////////////////
@@ -101,16 +105,33 @@ abstract mixin class BitStruct<T extends BitField> implements BitsMapBase<T, int
 /// [BitField] - key to BitFields
 /// A List of [BitField], can be cast to either struct subtype
 // alternatively BitsKey implements Bitmask, build with Bitmask constructor
-abstract mixin class BitField implements Enum {
+abstract mixin class BitField implements Enum /* , Field<int>  */ {
   Bitmask get bitmask;
+
+  // @override
+  // int getIn(BitsBase struct) => struct.getBits(bitmask);
+  // @override
+  // void setIn(BitsBase struct, int value) => struct.setBits(bitmask, value);
+  // @override
+  // bool testBoundsOf(BitsBase struct) => bitmask.shift + bitmask.width <= struct.width;
+
+  // @override
+  // int? getInOrNull(BitsBase struct) => (this as Field<int>).getInOrNull(struct);
+  // @override
+  // bool setInOrNot(BitsBase struct, int value) => (this as Field<int>).setInOrNot(struct, value);
+
+  // @override
+  // int get defaultValue => 0;
 }
 
-abstract mixin class BitIndexField implements BitField, Enum {
+abstract mixin class BitIndexField implements BitField {
   int get index;
   Bitmask get bitmask => Bitmask.index(index);
+
+  // int get defaultValue => 0;
 }
 
-typedef BitFieldEntry<K extends BitField, V> = FieldEntry<K, V>;
+// typedef BitFieldEntry<K extends BitField, V> = FieldEntry<K, V>;
 // typedef BitFieldEntries = Iterable<({BitField fieldKey, int fieldValue})>;
 
 // alternatively BitsKey implements Bitmask

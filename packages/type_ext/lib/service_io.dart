@@ -95,7 +95,7 @@ abstract mixin class ServiceIO<K, V, S> {
 
 // IdKey, EntityKey, DataKey, FieldKey, VarKey,
 // ServiceKey for retrieving data of dynamic type from external source and casting
-abstract mixin class ServiceKey<K, V> implements UnionTypeKey<V> {
+abstract mixin class ServiceKey<K, V> implements UnionValueKey<V> {
   // VarKey
   K get key;
   String get label;
@@ -105,7 +105,7 @@ abstract mixin class ServiceKey<K, V> implements UnionTypeKey<V> {
   // ServiceIO? get service;
   // V? get value => service?.get(keyValue);
   V? get value;
-  set value(V? value);
+  set value(V? newValue);
   Future<bool> updateValue(V value);
   Future<V?> loadValue();
   String get valueString;

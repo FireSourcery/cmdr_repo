@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:cmdr_common/basic_types.dart';
+import 'package:type_ext/basic_types.dart';
 import 'package:cmdr/var_notifier/widgets/var_menu.dart';
 
 import '../../widgets/flyweight_menu/flyweight_menu.dart';

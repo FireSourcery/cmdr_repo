@@ -34,4 +34,4 @@ packages/cmdr/.flutter-plugins-dependencies
 .flutter-plugins-dependencies
 .flutter-plugins
 packages/cmdr/pubspec.lock
-packages/cmdr_common/pubspec.lock
+packages/type_ext/pubspec.lock

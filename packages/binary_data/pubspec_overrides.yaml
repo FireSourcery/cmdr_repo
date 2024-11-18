@@ -1,4 +1,4 @@
-# melos_managed_dependency_overrides: cmdr_common
+# melos_managed_dependency_overrides: type_ext
 dependency_overrides:
-  cmdr_common:
-    path: ..\\cmdr_common
+  type_ext:
+    path: ..\\type_ext

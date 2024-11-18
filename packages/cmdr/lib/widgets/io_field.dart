@@ -1,4 +1,4 @@
-import 'package:cmdr_common/basic_types.dart';
+import 'package:type_ext/basic_types.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

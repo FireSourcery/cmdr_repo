@@ -9,12 +9,12 @@ class VarRealTimeController extends VarCacheController {
   // ensure call dispose
 
   // @protected
-  // Future<bool> begin() async {
-  //   if (!protocolService.isConnected) return false;
-  //   beginRead();
-  //   beginWrite();
-  //   return true;
-  // }
+  Future<bool> beginPeriodic() async {
+    if (!protocolService.isConnected) return false;
+    beginRead();
+    beginWrite();
+    return true;
+  }
 
   Future<void> endPeriodic() async {
     await readStreamProcessor.end();

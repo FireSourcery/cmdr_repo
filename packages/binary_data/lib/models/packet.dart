@@ -1,7 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
-import 'package:cmdr_common/basic_ext.dart';
+import 'package:type_ext/basic_ext.dart';
 
 import '../bytes/byte_struct.dart';
 export '../bytes/byte_struct.dart';
@@ -10,7 +10,7 @@ export '../bytes/byte_struct.dart';
 // Abstract factory pattern
 // effectively Packet subtype encapsulated
 //  values available without a Packet instance, over prototype object
-// abstract mixin class PacketClass<T extends Packet> implements ByteStructClass<T, TypedField>  {
+// abstract mixin class PacketClass<T extends Packet> implements ByteStructClass<T, ByteField>  {
 abstract mixin class PacketClass<T extends Packet> {
   // const for each packet instance
   // can implement in PacketId for per packet behavior
@@ -29,17 +29,17 @@ abstract mixin class PacketClass<T extends Packet> {
 
   PacketId? idOf(int intId);
 
-  List<TypedField> get keys => [startFieldPart, idFieldPart, lengthFieldPart, checksumFieldPart];
+  List<ByteField> get keys => [startFieldPart, idFieldPart, lengthFieldPart, checksumFieldPart];
 
   /// HeaderCommon
   /// defined position, relative to `packet`.
   /// header fields for buildHeader/parseHeader
   /// required for HeaderParser.
   /// can be derived from header Struct when get offset is available
-  TypedField get startFieldPart;
-  TypedField get idFieldPart;
-  TypedField get lengthFieldPart;
-  TypedField get checksumFieldPart;
+  ByteField get startFieldPart;
+  ByteField get idFieldPart;
+  ByteField get lengthFieldPart;
+  ByteField get checksumFieldPart;
 
   // at least one header type must be implemented, with fields able to determine completion
   // TypedDataCaster<PacketHeader> get headerCaster;

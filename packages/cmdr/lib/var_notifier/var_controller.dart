@@ -17,7 +17,7 @@ class VarCacheController {
   // VarStatus? writeStatus;
 
   ////////////////////////////////////////////////////////////////////////////////
-  /// Collective Read Vars
+  /// Collective Read Vars `Load`
   ////////////////////////////////////////////////////////////////////////////////
   /// cache.updateByDataSlice
   VarStatus? _onReadSlice(({Iterable<int> keys, Iterable<int>? values}) slice) {
@@ -39,7 +39,7 @@ class VarCacheController {
   }
 
   ////////////////////////////////////////////////////////////////////////////////
-  /// Collective Write Vars
+  /// Collective Write Vars `Update`
   ////////////////////////////////////////////////////////////////////////////////
   VarStatus? _onWriteSlice(({Iterable<(int, int)> pairs, Iterable<int>? statuses}) slice) {
     if (slice.statuses == null) return null; // no response error

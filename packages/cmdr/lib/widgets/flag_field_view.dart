@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:recase/recase.dart';
 
-import 'package:cmdr_common/basic_types.dart';
+import 'package:type_ext/basic_types.dart';
 
 // interface, a field with value that reduces to bool
 typedef FlagField = ({Enum key, bool value});

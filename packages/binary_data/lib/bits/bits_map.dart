@@ -1,4 +1,4 @@
-import 'package:cmdr_common/enum_map.dart';
+import 'package:type_ext/enum_map.dart';
 
 import "bit_struct.dart";
 import "bool_struct.dart";

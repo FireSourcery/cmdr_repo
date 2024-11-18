@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class ChartStyle {
+class ChartStyle extends ThemeExtension<ChartStyle> {
   const ChartStyle({
     this.backgroundColor,
     this.legendColors,
@@ -28,6 +28,11 @@ class ChartStyle {
       lineTextStyle: lineTextStyle ?? this.lineTextStyle,
       legendTextStyle: legendTextStyle ?? this.legendTextStyle,
     );
+  }
+
+  @override
+  ThemeExtension<ChartStyle> lerp(covariant ThemeExtension<ChartStyle>? other, double t) {
+    throw UnimplementedError();
   }
 }
 

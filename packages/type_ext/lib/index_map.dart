@@ -1,8 +1,10 @@
 import 'dart:collection';
+export 'dart:collection';
 
-/// [TypedMap] - interface for Map constraints
-abstract mixin class TypedMap<K, V> implements Map<K, V> {
-  const TypedMap();
+/// [FixedMap] - interface for Map constraints
+/// FixedMap - fixed set of keys
+abstract mixin class FixedMap<K, V> implements Map<K, V> {
+  const FixedMap();
 
   @override
   List<K> get keys;
@@ -14,13 +16,26 @@ abstract mixin class TypedMap<K, V> implements Map<K, V> {
   void clear();
   @override
   V remove(covariant K key);
+
+  //   List<V>? get defaultValues;
+
+  /// Convenience methods
+  // Iterable<(K, V)> get pairs => keys.map((e) => (e, this[e]));
+  // Iterable<({K key, V value})> get fields => keys.map((e) => (key: e, value: this[e]));
+
+  // analogous to operator []=, but returns a new instance
+  // FixedMap<K, V> withField(K key, V value) => (ProxyIndexMap<K, V>(this)..[key] = value);
+  // //
+  // FixedMap<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => ProxyIndexMap<K, V>(this)..addEntries(newEntries);
+  // // A general values map representing external input, may be a partial map
+  // FixedMap<K, V> withAll(Map<K, V> map) => ProxyIndexMap<K, V>(this)..addAll(map);
 }
 
 /// [IndexMap]
 /// Default implementation using parallel arrays
 /// Mutable
 /// K must have .index property
-class IndexMap<K extends dynamic, V> with MapBase<K, V> implements TypedMap<K, V> {
+class IndexMap<K extends dynamic, V> with MapBase<K, V> implements FixedMap<K, V> {
   // default by assignment, initialize const using list literal
   const IndexMap._(this._keysReference, this._valuesBuffer) : assert(_keysReference.length == _valuesBuffer.length);
 
@@ -93,21 +108,21 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V> implements TypedMap<K, V
 ///
 /// does not need to wrap general maps, general maps are must be converted first to guarantee all keys are present
 ///
-class ProxyIndexMap<K extends dynamic, V> with MapBase<K, V> implements TypedMap<K, V> {
+class ProxyIndexMap<K extends dynamic, V> with MapBase<K, V> implements FixedMap<K, V> {
   const ProxyIndexMap._(this._source, this._modified);
-  ProxyIndexMap(TypedMap<K, V> source) : this._(source, IndexMap<K, V?>.filled(source.keys, null));
+  ProxyIndexMap(FixedMap<K, V> source) : this._(source, IndexMap<K, V?>.filled(source.keys, null));
 
   // ProxyIndexMap.field(IndexMap<K, V> source, K key, V value) : this(source, [MapEntry(key, value)]);
   // ProxyIndexMap.entry(IndexMap<K, V> source, MapEntry<K, V> modified) : this(source, [modified]);
   // ProxyIndexMap.entries(IndexMap<K, V> source, Iterable<MapEntry<K, V>> modified) : this(source, [...modified]);
 
-  final TypedMap<K, V> _source;
+  final FixedMap<K, V> _source;
 
   // a new IndexMap is optimized over a searchable List<MapEntry<K, V>>
   //   equal to preemptively allocating a fixed size _modified list
   //   if a non growable list is used, IndexMap allocates the same size buffer
   //   a growable list either allocates a larger buffer or invoke performance penalties
-  final TypedMap<K, V?> _modified;
+  final FixedMap<K, V?> _modified;
 
   @override
   List<K> get keys => _source.keys;

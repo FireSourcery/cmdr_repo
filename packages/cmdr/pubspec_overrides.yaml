@@ -1,6 +1,6 @@
-# melos_managed_dependency_overrides: binary_data,cmdr_common
+# melos_managed_dependency_overrides: binary_data,type_ext
 dependency_overrides:
   binary_data:
     path: ..\\binary_data
-  cmdr_common:
-    path: ..\\cmdr_common
+  type_ext:
+    path: ..\\type_ext

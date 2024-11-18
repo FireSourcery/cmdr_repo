@@ -1,5 +1,5 @@
-import 'package:cmdr_common/enum_map.dart';
-import 'package:cmdr_common/struct.dart';
+import 'package:type_ext/enum_map.dart';
+import 'package:type_ext/struct.dart';
 import 'package:meta/meta.dart';
 
 import 'typed_array.dart';
@@ -21,7 +21,7 @@ export 'typed_data_buffer.dart';
 /// extension type on ByteData cannot contain abstract methods. subclasses may contain additional abstract methods
 ///  or implement class interfaces
 // cannot directly implement ByteData due to final class
-extension type ByteStruct<K extends TypedField<NativeType>>(ByteData byteData) implements StructView<K, int>, ByteData {
+extension type ByteStruct<K extends ByteField<NativeType>>(ByteData byteData) implements StructView<K, int>, ByteData {
   int get lengthMax => length; // in the immutable case
   int get length => byteData.lengthInBytes;
 
@@ -34,7 +34,7 @@ extension type ByteStruct<K extends TypedField<NativeType>>(ByteData byteData) i
   List<int> intArrayOrEmptyAt<T extends TypedData>(int byteOffset) => byteData.asIntListOrEmpty<T>(byteOffset);
 }
 
-// abstract mixin class ByteStruct<K extends TypedField> {
+// abstract mixin class ByteStruct<K extends ByteField> {
 //   const ByteStruct();
 
 //   @protected
@@ -45,13 +45,13 @@ extension type ByteStruct<K extends TypedField<NativeType>>(ByteData byteData) i
 
 //   // Unconstrained type keys
 //   @protected
-//   int get(TypedField key) => key.getIn(byteData);
+//   int get(ByteField key) => key.getIn(byteData);
 //   @protected
-//   void set(TypedField key, int value) => key.setIn(byteData, value);
+//   void set(ByteField key, int value) => key.setIn(byteData, value);
 //   @protected
-//   int? getOrNull(TypedField key) => key.getInOrNull(byteData);
+//   int? getOrNull(ByteField key) => key.getInOrNull(byteData);
 //   @protected
-//   bool setOrNot(TypedField key, int value) => key.setInOrNot(byteData, value);
+//   bool setOrNot(ByteField key, int value) => key.setInOrNot(byteData, value);
 
 //   // Keyed Field access
 //   int operator [](K key) => key.getIn(byteData);
@@ -89,7 +89,34 @@ extension type ByteStruct<K extends TypedField<NativeType>>(ByteData byteData) i
 //   // ByteStruct copyWith(TypedData typedData) => caster(typedData);
 // }
 
-// typedef TypedFieldEntry<K extends TypedField, V> = FieldEntry<K, V>;
+abstract mixin class ByteField<V extends NativeType> implements TypedField<V>, Field<int> {
+  const factory ByteField(int offset) = _ByteField<V>;
+
+  // replaced by ffi.Struct
+  // applyGet
+  @override
+  int getIn(ByteData byteData) => byteData.wordAt<V>(offset);
+  @override
+  void setIn(ByteData byteData, int value) => byteData.setWordAt<V>(offset, value);
+  // not yet replaceable
+  @override
+  int? getInOrNull(ByteData byteData) => byteData.wordOrNullAt<V>(offset);
+  @override
+  bool setInOrNot(ByteData byteData, int value) => byteData.setWordOrNotAt<V>(offset, value);
+
+  @override
+  bool testBoundsOf(ByteData byteData) => end <= byteData.lengthInBytes;
+}
+
+class _ByteField<V extends NativeType> with TypedField<V>, ByteField<V> {
+  const _ByteField(this.offset);
+
+  @override
+  final int offset;
+
+  @override
+  int get index => throw UnimplementedError();
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ///
@@ -102,7 +129,7 @@ extension type ByteStruct<K extends TypedField<NativeType>>(ByteData byteData) i
 // meta info of(ByteStruct) operators
 // T does not directly extend ByteStruct to allow for composed types; with abstract methods, additional properties
 //  the only requirement is T is the result of TypedData
-class ByteStructClass<T, K extends TypedField<NativeType>> {
+class ByteStructClass<T, K extends ByteField<NativeType>> {
   ByteStructClass({required this.lengthMax, required this.endian, required this.keys, required this.caster});
 
   final int lengthMax;
@@ -121,14 +148,14 @@ class ByteStructClass<T, K extends TypedField<NativeType>> {
 }
 
 // ignore: missing_override_of_must_be_overridden
-abstract class ByteStructHandler<T> {
-  const ByteStructHandler._(this.structData);
-  ByteStructHandler.origin(ByteBuffer bytesBuffer, [int offset = 0, int? length]) : structData = ByteStruct(bytesBuffer.asByteData(offset, length));
-  ByteStructHandler(TypedData typedData, [int offset = 0, int? length]) : structData = ByteStruct(ByteData.sublistView(typedData, offset, offset + (length ?? 0)));
+abstract class ByteConstruct<T> {
+  const ByteConstruct._(this.structData);
+  ByteConstruct.origin(ByteBuffer bytesBuffer, [int offset = 0, int? length]) : structData = ByteStruct(bytesBuffer.asByteData(offset, length));
+  ByteConstruct(TypedData typedData, [int offset = 0, int? length]) : structData = ByteStruct(ByteData.sublistView(typedData, offset, offset + (length ?? 0)));
 
   final ByteStruct structData;
 
-  ByteStructClass<T, TypedField<NativeType>> get structClass; // includes keys
+  ByteStructClass<T, ByteField<NativeType>> get structClass; // includes keys
 
   // @override
   // void clear() => throw UnimplementedError();
@@ -154,15 +181,14 @@ class ByteStructBuffer<T> extends TypedDataBuffer {
   // caster for persistent view
   ByteStructBuffer.caster(TypedDataCaster<T> structCaster, int size) : this._(Uint8List(size), structCaster);
 
-  // ByteStructBuffer(ByteStructClass<T, TypedField> structClass, [int? size]) : this.caster(structClass.caster, size ?? structClass.lengthMax);
+  // ByteStructBuffer(ByteStructClass<T, ByteField> structClass, [int? size]) : this.caster(structClass.caster, size ?? structClass.lengthMax);
 
   // final ByteStructClass<T> structClass;
   @protected
   final TypedDataCaster<T> structCaster; // need to retain this?
+  /// `full Struct view` using a main struct type, max length buffer, with keyed fields, build functions unconstrained.
   @protected
   final T bufferAsStruct;
-
-  /// `full Struct view` with a main struct type, max length buffer, with keyed fields. build functions unconstrained, then sets length
 
   /// `view as ByteStruct`
   /// view as `length available` in buffer, maybe a partial or incomplete view
@@ -185,5 +211,3 @@ class ByteStructBuffer<T> extends TypedDataBuffer {
   // check bounds with struct class
   T get viewAsStruct => structCaster(viewAsBytes); // try partial view
 }
-
-abstract mixin class ByteStructMap<T extends Enum> implements EnumMap<T, int> {}

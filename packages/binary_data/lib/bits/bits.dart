@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
+export 'package:meta/meta.dart';
 
 /// Bits - Bitwise operations on [int]
 extension type const Bits(int _bits) implements int {
@@ -124,10 +125,6 @@ extension BitmasksMethods on Iterable<Bitmask> {
   int get totalWidth => map((e) => e.width).sum;
 }
 
-// extension BitsMapMethods on Map<Bitmask, int> {
-//   Bits asBits() => Bits.ofEntries(entries);
-// }
-
 /// [BitsBase]/[BitData]/ - base for classes backed by Bits
 ///   contain bits for setters - Cannot be extension type
 ///   gives Bits a type for matching, distinguish from int
@@ -148,7 +145,7 @@ abstract mixin class BitsBase {
   // @override
   // void operator []=(dynamic key, int value) => bits = bits.withBits(key.bitmask, value);
 
-  // int get(Bitmask mask) => bits.getBits(mask);
+  int getBits(Bitmask mask) => bits.getBits(mask);
   // void set(Bitmask mask, int value) => bits = bits.withBits(mask, value);
 
   void setBits(Bitmask mask, int value) => bits = bits.withBits(mask, value);
@@ -181,9 +178,6 @@ class MutableBits with BitsBase {
   Bits bits;
   @override
   int get width => 64;
-
-  // @override
-  // MutableBitsBase copyWithBits(Bits value) => MutableBitsBase(value);
 }
 
 // although only MutableBits must wrap Bits, this way they both implement and derive the same interfaces
@@ -198,7 +192,4 @@ class ConstBits with BitsBase {
   set bits(Bits value) => throw UnsupportedError('Cannot modify unmodifiable');
   @override
   int get width => bits.bitLength;
-
-  // @override
-  // ConstBitsBase copyWithBits(Bits value) => ConstBitsBase(value);
 }

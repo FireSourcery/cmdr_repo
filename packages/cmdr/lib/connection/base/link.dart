@@ -3,9 +3,14 @@ import 'dart:typed_data';
 abstract interface class Link {
   Link();
 
-  LinkException? lastException;
+  LinkStatus? lastStatus;
+  Exception? lastException;
+
   String? get portActiveName;
   Stream<Uint8List> get streamIn;
+
+  // bool connect();
+  // void disconnect();
 
   /// Protocol Interface
   bool get isConnected;
@@ -15,13 +20,13 @@ abstract interface class Link {
   void flushOutput();
 }
 
-class LinkException implements Exception {
-  const LinkException(this.message, [this.linkType = Link, this.subset = '', this.driverException]);
-  const LinkException.connect(this.message, [this.linkType = Link, this.driverException]) : subset = "Connect";
+class LinkStatus implements Exception {
+  const LinkStatus(this.message, [this.linkType = Link, this.subset = '', this.driverException]);
+  const LinkStatus.connect(this.message, [this.linkType = Link, this.driverException]) : subset = "Connect";
   final String message;
   final String subset;
   final Type linkType;
   final Exception? driverException;
 
-  static const LinkException ok = LinkException('Ok');
+  static const LinkStatus ok = LinkStatus('Ok');
 }

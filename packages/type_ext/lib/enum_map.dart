@@ -1,15 +1,13 @@
-import 'dart:collection';
-export 'dart:collection';
 import 'package:meta/meta.dart';
-export 'package:meta/meta.dart';
 
 import 'basic_types.dart';
 export 'basic_types.dart';
 import 'index_map.dart';
+export 'index_map.dart';
 
 /// [EnumMap]
 ///   A [Map] with the additional constraint that Keys are a `fixed set`, via [Enum].
-///   implements [TypedMap]/[IndexMap] constraints
+///   implements [FixedMap]/[IndexMap] constraints
 ///   optimized for small fixed set of keys
 ///     guarantees all keys are present
 ///     can guarantee non null return - if V is defined as non nullable
@@ -21,7 +19,7 @@ import 'index_map.dart';
 ///     String name via Enum.name -> directly use for serialization
 ///
 /// `abstract mixin class` combines interface and implemented methods
-abstract mixin class EnumMap<K extends Enum, V> implements TypedMap<K, V> {
+abstract mixin class EnumMap<K extends Enum, V> implements FixedMap<K, V> {
   const EnumMap();
 
   factory EnumMap.of(List<K> keys, Iterable<V> values) = EnumIndexMap.of;
@@ -36,14 +34,6 @@ abstract mixin class EnumMap<K extends Enum, V> implements TypedMap<K, V> {
   void clear();
   V remove(covariant K key);
 
-  // @override
-  // String toString() => MapBase.mapToString(this);
-  ////////////////////////////////////////////////////////////////////////////////
-  /// Convenience methods
-  ////////////////////////////////////////////////////////////////////////////////
-  Iterable<(K, V)> get pairs => keys.map((e) => (e, this[e]));
-  Iterable<({K key, V value})> get fields => keys.map((e) => (key: e, value: this[e]));
-
   ///  move to construct
   dynamic copyWith() => this;
 
@@ -57,7 +47,7 @@ abstract mixin class EnumMap<K extends Enum, V> implements TypedMap<K, V> {
 
 /// Apply to [EnumMap<K, V>] as well as [Map<Enum, V>]
 // Enum.name base methods are applicable regardless of EnumMap constraints
-extension EnumMapMethods<K extends Enum, V> on Map<K, V> {
+extension EnumMapByName<K extends Enum, V> on Map<K, V> {
   ////////////////////////////////////////////////////////////////////////////////
   /// Named Values
   ////////////////////////////////////////////////////////////////////////////////

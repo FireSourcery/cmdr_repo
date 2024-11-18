@@ -1,4 +1,5 @@
-import 'package:cmdr_common/enum_map.dart';
+import 'package:meta/meta.dart';
+import 'package:type_ext/enum_map.dart';
 
 /// EnumMap mixed values types + immutable
 // alternatively allow V to to define restriction Object or Object?

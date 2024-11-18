@@ -1,6 +1,6 @@
 import 'dart:ffi';
 
-import 'package:cmdr_common/basic_types.dart';
+import 'package:type_ext/basic_types.dart';
 
 import 'bits_map_base.dart';
 

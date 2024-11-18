@@ -1,5 +1,5 @@
-import 'package:cmdr_common/enum_map.dart';
-export 'package:cmdr_common/enum_map.dart';
+import 'package:type_ext/enum_map.dart';
+export 'package:type_ext/enum_map.dart';
 
 import '../word/word_struct.dart';
 
@@ -188,7 +188,7 @@ class VersionStandard extends Version<VersionFieldStandard> {
   // Version<VersionFieldStandard> copyWithBits(Bits value, {String? name}) => VersionStandard.word(bits, name: name ?? this.name);
 }
 
-enum VersionFieldStandard with TypedField<Uint8>, WordField<Uint8> implements WordField<Uint8> {
+enum VersionFieldStandard with BitField, TypedField<Uint8>, WordField<Uint8> {
   fix(0),
   minor(1),
   major(2),

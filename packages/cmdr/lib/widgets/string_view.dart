@@ -4,11 +4,14 @@ import 'package:flutter/services.dart';
 import 'package:binary_data/binary_data.dart';
 // applies to Word type. todo generalize or rename
 
+/// A text 'word' that is also a 64-bit integer 'word'.
+///
+
 /// Editable views
 // todo input as string literal
 class StringFormField extends StatelessWidget {
   const StringFormField({required this.word, this.label, super.key, this.isReadOnly = false, this.onSaved, this.maxLength = 8});
-  final Word word;
+  final Word word; // change this to use map interface?
   final String? label;
   final bool isReadOnly;
   final ValueSetter<Word>? onSaved;
@@ -41,8 +44,8 @@ class StringTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      contentPadding: EdgeInsets.zero,
-      dense: null,
+      // contentPadding: EdgeInsets.zero,
+      // dense: null,
       titleAlignment: ListTileTitleAlignment.bottom,
       title: Text(nameId.asString()),
       subtitle: ((label != null) ? Text(label!) : null),

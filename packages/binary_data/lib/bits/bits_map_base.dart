@@ -1,4 +1,5 @@
-import 'package:cmdr_common/enum_map.dart';
+import 'package:meta/meta.dart';
+import 'package:type_ext/enum_map.dart';
 
 import 'bits.dart';
 // import 'bits_map.dart';

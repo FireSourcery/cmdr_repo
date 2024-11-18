@@ -22,10 +22,20 @@ abstract mixin class WordStruct<T extends WordField> implements BitStruct<T> {
 /// a field within a [WordStruct]
 /// interface for including [TypedField<T>], [Enum]
 /// type ensures bitmask is power of 2
-abstract mixin class WordField<V extends NativeType> implements TypedField<V>, BitField, Enum {
+abstract mixin class WordField<V extends NativeType> implements BitField, TypedField<V>, Enum {
   // alternatively store the bitmask
   @override
   Bitmask get bitmask => Bitmask.bytes(offset, size);
+
+  // @override
+  // int getIn(BitsBase struct) => struct.getBits(bitmask);
+  // @override
+  // void setIn(BitsBase struct, int value) => struct.setBits(bitmask, value);
+  // @override
+  // bool testBoundsOf(BitsBase struct) => bitmask.shift + bitmask.width <= struct.width;
+
+  // @override
+  // int get defaultValue => 0;
 }
 
 // BitField with Word constructors

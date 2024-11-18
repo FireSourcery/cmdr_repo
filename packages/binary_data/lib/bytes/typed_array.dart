@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:cmdr_common/basic_types.dart';
+import 'package:type_ext/basic_types.dart';
 
 import 'typed_data_ext.dart';
 export 'dart:typed_data';

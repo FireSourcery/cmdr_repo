@@ -19,13 +19,13 @@ mixin class MotPacketInterface implements PacketClass<MotPacket> {
   Endian get endian => Endian.little;
 
   @override
-  TypedField<Uint8> get startFieldPart => const TypedField<Uint8>(0);
+  ByteField<Uint8> get startFieldPart => const ByteField<Uint8>(0);
   @override
-  TypedField<Uint8> get idFieldPart => const TypedField<Uint8>(1);
+  ByteField<Uint8> get idFieldPart => const ByteField<Uint8>(1);
   @override
-  TypedField<Uint16> get checksumFieldPart => const TypedField<Uint16>(2);
+  ByteField<Uint16> get checksumFieldPart => const ByteField<Uint16>(2);
   @override
-  TypedField<Uint8> get lengthFieldPart => const TypedField<Uint8>(4);
+  ByteField<Uint8> get lengthFieldPart => const ByteField<Uint8>(4);
 
   @override
   PacketIdSync get ack => MotPacketSyncId.MOT_PACKET_SYNC_ACK;
@@ -49,7 +49,7 @@ mixin class MotPacketInterface implements PacketClass<MotPacket> {
   TypedDataCaster<MotPacket> get caster => MotPacket.cast;
 
   @override
-  List<TypedField<NativeType>> get keys => throw UnimplementedError();
+  List<ByteField<NativeType>> get keys => throw UnimplementedError();
 
   // @override
   // // TODO: implement keys

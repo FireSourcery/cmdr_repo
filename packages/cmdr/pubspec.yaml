@@ -12,7 +12,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cmdr_common: ^0.0.1
+  type_ext: ^0.0.1
   binary_data: ^0.0.1
 
   collection: ^1.18.0

@@ -6,6 +6,13 @@ import 'package:fl_chart/fl_chart.dart';
 import 'chart_controller.dart';
 import 'chart_style.dart';
 
+export 'chart_controller.dart';
+export 'chart_data.dart';
+export 'chart_file.dart';
+export 'chart_legend.dart';
+export 'chart_style.dart';
+export 'chart_widgets.dart';
+
 // todo widget for y min and y max
 class TimeChart extends StatelessWidget {
   const TimeChart({required this.chartController, this.style = const ChartStyleDefault(), super.key});

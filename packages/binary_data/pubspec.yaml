@@ -1,19 +1,19 @@
 name: binary_data
 description: "Bitwise operations and binary data manipulation utilities."
 version: 0.0.1
-homepage:
+homepage: https://github.com/FireSourcery/cmdr/tree/main/packages/binary_data
 
-publish_to: 'none'
+publish_to: "none"
 
 environment:
-  sdk: ^3.4.0 
+  sdk: ^3.4.0
 
-dependencies: 
-  collection: ^1.18.0 
-  meta: ^1.11.0 
-  cmdr_common: ^0.0.1 
+dependencies:
+  collection: ^1.18.0
+  meta: ^1.11.0
+  type_ext: ^0.0.1
 
-dev_dependencies:  
+dev_dependencies:
   lints: ^4.0.0
   flutter_lints: ^4.0.0
   test: ^1.25.8

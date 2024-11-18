@@ -69,7 +69,7 @@ abstract mixin class BoolStruct<T extends Enum> implements BitsMapBase<T, bool> 
   @override
   Iterable<({T key, int value})> get fieldsAsBits => keys.map((e) => (key: e, value: this[e] ? 1 : 0));
   @override
-  Iterable<({T key, bool value})> get fieldsAsBool => fields;
+  Iterable<({T key, bool value})> get fieldsAsBool => keys.map((e) => (key: e, value: this[e]));
 
   Iterable<int> get valuesAsBits => values.map((e) => e ? 1 : 0);
   Iterable<MapEntry<T, int>> get entriesAsBits => keys.map((key) => MapEntry(key, this[key] ? 1 : 0));

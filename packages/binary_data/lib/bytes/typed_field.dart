@@ -1,7 +1,7 @@
 import 'dart:ffi';
 import 'dart:typed_data';
 
-import 'package:cmdr_common/struct.dart';
+import 'package:type_ext/struct.dart';
 
 export 'dart:ffi';
 export 'dart:typed_data';
@@ -15,9 +15,9 @@ export 'dart:typed_data';
 ///   [WordStruct] - backed by [Bits/int]
 ///
 /// mixin can be applied to enum
-abstract mixin class TypedField<T extends NativeType> implements Field<int> {
+abstract mixin class TypedField<T extends NativeType> {
   const TypedField._();
-  const factory TypedField(int offset) = _TypedField<T>;
+  // const factory TypedField(int offset) = _TypedField<T>;
 
   int get offset; // index of the first byte
 
@@ -25,43 +25,39 @@ abstract mixin class TypedField<T extends NativeType> implements Field<int> {
   int get end => offset + size; // index of the last byte + 1
   // int get valueMax => (1 << width) - 1);
 
-  // for BitStruct
-  // static Bitmask bitmaskOf<T extends NativeType>(int offset) => Bitmask.bytes(offset, sizeOf<T>());
+  /// [BitStruct]
   // Bitmask asBitmask() => Bitmask.bytes(offset, size);
 
   /// [ByteStruct]
   // call passing T
   // Although handling of keyed access is preferable in the data source class.
   // T must handled in it's local scope. No type inference when passing `Field` to ByteData
-
-  // replaced by ffi.Struct
-  // applyGet
-  @override
-  int getIn(ByteData byteData) => byteData.wordAt<T>(offset);
-  @override
-  void setIn(ByteData byteData, int value) => byteData.setWordAt<T>(offset, value);
-  // not yet replaceable
-  @override
-  int? getInOrNull(ByteData byteData) => byteData.wordOrNullAt<T>(offset);
-  @override
-  bool setInOrNot(ByteData byteData, int value) => byteData.setWordOrNotAt<T>(offset, value);
+  int getWord(ByteData byteData) => byteData.wordAt<T>(offset);
+  void setWord(ByteData byteData, int value) => byteData.setWordAt<T>(offset, value);
+  int? getWordOrNull(ByteData byteData) => byteData.wordOrNullAt<T>(offset);
+  bool setWordOrNot(ByteData byteData, int value) => byteData.setWordOrNotAt<T>(offset, value);
+  bool testWordBoundsOf(ByteData byteData) => end <= byteData.lengthInBytes;
 
   @override
-  int? get defaultValue => 0;
-
-  @override
-  bool testBounds(ByteData byteData) => end <= byteData.lengthInBytes;
+  int get defaultValue => 0;
 }
 
-class _TypedField<T extends NativeType> with TypedField<T> {
-  const _TypedField(this.offset);
+// abstract mixin class TypedOffset<T extends NativeType> implements Field<int> {
+//   int get offset; // index of the first byte
+//   int get size => sizeOf<T>();
+//   int get end => offset + size; // index of the last byte + 1
+//   // int get valueMax => (1 << width) - 1);
+// }
 
-  @override
-  final int offset;
+// class _TypedField<T extends NativeType> with TypedField<T> {
+//   const _TypedField(this.offset);
 
-  @override
-  int get index => throw UnimplementedError();
-}
+//   @override
+//   final int offset;
+
+//   @override
+//   int get index => throw UnimplementedError();
+// }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Word value
@@ -77,6 +73,8 @@ int sizeOf<T extends NativeType>() {
     _ => throw UnimplementedError(),
   };
 }
+
+// Bitmask bitmaskOf<T extends NativeType>(int offset) => Bitmask.bytes(offset, sizeOf<T>());
 
 extension GenericTypedWord on ByteData {
   /// valueAt by type, alternatively specify sign and size

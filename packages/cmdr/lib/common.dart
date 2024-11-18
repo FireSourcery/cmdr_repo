@@ -1,1 +1,1 @@
-export 'package:cmdr_common/cmdr_common.dart';
+export 'package:type_ext/type_ext.dart';

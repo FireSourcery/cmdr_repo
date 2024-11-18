@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'package:meta/meta.dart';
 
 import 'package:libserialport/libserialport.dart';
-import 'package:meta/meta.dart';
-import '../base/link.dart';
-
 export 'package:libserialport/libserialport.dart';
+
+import '../base/link.dart';
+export '../base/link.dart';
 
 ////////////////////////////////////////////////////////////////////////////////
 /// libserialport Serial Link
@@ -37,12 +38,12 @@ class SerialLink implements Link {
     portConfig.baudRate = baudRate ?? portConfig.baudRate;
 
     if (isConnected) {
-      lastException = LinkException.connect('Already Connected $portActiveName', SerialLink);
+      lastStatus = LinkStatus.connect('Already Connected $portActiveName', SerialLink);
       return false;
     }
 
     if (portConfigName == null) {
-      lastException = const LinkException.connect('No Port Selected', SerialLink);
+      lastStatus = const LinkStatus.connect('No Port Selected', SerialLink);
       return false;
     }
 
@@ -52,13 +53,14 @@ class SerialLink implements Link {
         _serialPort!.config = portConfig;
         _serialPortReader = SerialPortReader(_serialPort!);
         streamIn = _serialPortReader!.stream.asBroadcastStream().handleError(onStreamError);
+        lastStatus = LinkStatus.connect('$portActiveName', SerialLink);
         return true;
       } else {
-        lastException = LinkException.connect('Cannot Open $portConfigName', SerialLink);
+        lastStatus = LinkStatus.connect('Cannot Open $portConfigName', SerialLink);
         return false;
       }
     } on SerialPortError catch (e) {
-      lastException = LinkException.connect('Driver $e', SerialLink, e);
+      lastStatus = LinkStatus.connect('Driver $e', SerialLink, e);
       return false;
     }
   }
@@ -69,22 +71,11 @@ class SerialLink implements Link {
         _serialPort!.close();
         _serialPort!.dispose();
       } on SerialPortError catch (e) {
-        lastException = LinkException.connect('Driver $e', SerialLink, e);
+        lastStatus = LinkStatus.connect('Driver $e', SerialLink, e);
         print(e);
       }
     }
   }
-
-  @protected
-  void onStreamError(Object object, StackTrace stackTrace) {
-    lastException = LinkException('Link Rx Stream Error: $object', SerialLink);
-    flushInput();
-  }
-
-  // void dispose() {
-  //   serialPort?.dispose();
-  //   serialPortConfig.dispose();
-  // }
 
   @override
   String? get portActiveName => _serialPort?.name;
@@ -94,10 +85,22 @@ class SerialLink implements Link {
   Stream<Uint8List> streamIn = const Stream.empty();
 
   @override
-  LinkException? lastException;
+  LinkStatus? lastStatus;
+  @override
+  Exception? lastException;
 
   @override
   bool get isConnected => (_serialPort?.isOpen ?? false); // ensures null values are initialized
+
+  @protected
+  void onStreamError(Object object, StackTrace stackTrace) {
+    lastStatus = LinkStatus('Link Rx Stream Error: $object', SerialLink);
+    flushInput();
+  }
+
+  void dispose() {
+    _serialPort?.dispose();
+  }
 
   @override
   Future<Uint8List> recv([int? byteCount]) async {
@@ -105,11 +108,11 @@ class SerialLink implements Link {
       return await streamIn.first.timeout(const Duration(milliseconds: 1000));
     } on TimeoutException {
       flushInput();
-      lastException = const LinkException('Link Rx Timeout', SerialLink);
+      lastStatus = const LinkStatus('Link Rx Timeout', SerialLink);
       rethrow;
     } catch (e) {
       flushInput();
-      lastException = LinkException('Link Rx: $e', SerialLink);
+      lastStatus = LinkStatus('Link Rx: $e', SerialLink);
       rethrow;
     } finally {}
   }
@@ -124,10 +127,10 @@ class SerialLink implements Link {
       // if (await Future(() => serialPort!.write(bytes, timeout: 500)).timeout(const Duration(milliseconds: 1000)) < bytes.length) throw TimeoutException('SerialPort Tx Timeout');
     } on TimeoutException {
       flushOutput();
-      lastException = const LinkException('Link Tx Timeout', SerialLink);
+      lastStatus = const LinkStatus('Link Tx Timeout', SerialLink);
       rethrow;
     } catch (e) {
-      lastException = LinkException('Link Tx: $e', SerialLink);
+      lastStatus = LinkStatus('Link Tx: $e', SerialLink);
       flushOutput();
       rethrow;
     } finally {}

@@ -314,7 +314,7 @@ class ProtocolSocket implements Sink<Packet> {
       //should be handled by protocol
       print("Unhandled ProtocolException on Socket");
       print(e.message);
-    } on LinkException catch (e) {
+    } on LinkStatus catch (e) {
       print(e.message);
     } on Exception catch (e) {
       print("Protocol Unnamed Exception");
