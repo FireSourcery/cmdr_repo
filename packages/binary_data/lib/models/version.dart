@@ -1,4 +1,5 @@
 import 'package:cmdr_common/enum_map.dart';
+export 'package:cmdr_common/enum_map.dart';
 
 import '../word/word_struct.dart';
 

@@ -13,11 +13,9 @@ void handleProtocolException(Object e) {
 const MotPacketInterface packetInterface = MotPacketInterface();
 // final PacketBuffer packetBufferIn = PacketBuffer(packetInterface, 320);
 // final PacketBuffer packetBufferOut = PacketBuffer(packetInterface, 320);
-final HeaderParser headerHandler = HeaderParser(MotPacket.cast, 320);
+final HeaderParser headerHandler = HeaderParser(packetInterface, 320);
 
 List<Uint8List> rxList = [];
-
-// Packet packet = MotPacket.cast(Uint8List(40));
 
 Uint8List packetIn0 = Uint8List.fromList([165, 180, 210, 2, /**/ 20, 0, 6, 0, /**/ 1, 0, 100, 0, 2, 0, 200, 0, 3, 0, 44, 1]); //1
 Uint8List packetIn1 = Uint8List.fromList([165, 180, 114, 1, /**/ 16, 0, 3, 0, /**/ 1, 0, 1, 0, 2, 0, 2, 0]); //7  13
@@ -39,6 +37,7 @@ Uint8List packetInRepeatStart2 = Uint8List.fromList([165, 165]);
 final StreamController<Uint8List> inputController = StreamController.broadcast();
 final Stream<Packet> packetStream =
     inputController.stream.transform(PacketTransformer(parserBuffer: headerHandler)).handleError(handleProtocolException, test: (error) => (error is ProtocolException));
+
 void main() {
   test('test', () async {
     print(headerHandler.length);
@@ -47,15 +46,15 @@ void main() {
         print('=> packet stream: ${event.bytes}');
         rxList.add(event.bytes.sublist(0));
       },
-      onError: (Object e) => print('listen onError packetStream Error $e'),
+      onError: (Object e) => print('packetStream.listen onError Error $e'),
       onDone: () => rxList.forEach((element) => print(element)),
     );
 
     print('begin');
-    motPacket.buildRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, [0, 1, 2, 3]);
-    print(motPacket.packet.checksumTest);
+    // motPacket.buildRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, [0, 1, 2, 3]);
+    // print(motPacket.checksumTest);
+    // inputController.sink.add(motPacket.bytes);
 
-    inputController.sink.add(motPacket.bytes);
     inputController.sink.add(packetIn0);
     inputController.sink.add(packetIn1);
     inputController.sink.add(packetInExcess);

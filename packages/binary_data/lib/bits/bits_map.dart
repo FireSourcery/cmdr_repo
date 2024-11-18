@@ -1,22 +1,58 @@
 import 'package:cmdr_common/enum_map.dart';
 
-import 'bits.dart';
-export 'bits.dart';
+import "bit_struct.dart";
+import "bool_struct.dart";
+
 // export 'package:flutter/foundation.dart' hide BitField;
 
-/// [BitsMap]
-/// `Bits Struct Base` base. BitsBase constrained with [EnumMap] - typed, fixed set, keys.
-/// Common interface for [BitStruct], [BoolStruct]. cast before use, analogous to num -> int, double
-/// A special case of [EnumMap], all values retrieve from a [Bits] object
-/// implementations assign V type, [] operators, whether accessor use bitmask; derived or defined etc.
-/// T is Enum / Bitmask
-/// V is bool / int
-/// Cast with any sub type of the same K Key type
-abstract mixin class BitsMap<K extends Enum, V> implements EnumMap<K, V>, BitsBase {
+// EnumMapFactory<S extends EnumMap<K, V>, K extends EnumKey, V>
+
+// union of BitStruct and BoolStruct
+// extension type const BitFieldClass<S extends BitsMapMixin<K, V>, K extends BitField, V>(List<K> keys) implements EnumMapFactory<S, K, V> {
+//   // BitFieldClass.union(List<Enum> keys) : this(keys);
+
+//   // S castBase(EnumMap<K, V> state) => state as S;
+
+//   BitsMapMixin resolve(BitsBase bitsBase) {
+//     return switch (keys) {
+//       List<BitsIndexKey>() => ConstBoolStructWithKeys<K>(keys, bitsBase.bits),
+//       List<BitsKey>() => ConstBitStructMap<K>(keys, bitsBase.bits),
+//     };
+//   }
+// }
+
+// or put bitsmap ext with  bool and bits suport
+
+// selection
+// class BitStructMap<T extends BitField> = MutableBitsMap<T, int> with BitStruct<T>;
+// class ConstBitStructMap<T extends BitField> = ConstBitsMap<T, int> with BitStruct<T>;
+// class MutableBoolStructWithKeys<T extends Enum> = MutableBitsMap<T, bool> with BoolStruct<T>;
+// class ConstBoolStructWithKeys<T extends Enum> = ConstBitsMap<T, bool> with BoolStruct<T>;
+
+abstract interface class BitsMap<K extends Enum, V> implements EnumMap<K, V> {
   const BitsMap();
+  // BitsMap.of(List<K> keys, [int bits = 0, bool mutable = true])
+  // {
+  //    switch(keys)
+  //    {
+  //        List<BitsIndexKey> : return MutableBoolStructWithKeys<K>(keys, Bits(bits));
+  //        List<BitsKey> : return MutableBitStructMap<K>(keys, Bits(bits));
+  //    }
+  //   return switch (mutable) {
+  //     true => MutableBoolStructWithKeys<K>(keys, Bits(bits)),
+  //     false => ConstBoolStructWithKeys<K>(keys, Bits(bits)),
+  //   };
+  // }
+
+  // const factory BitsMap.constant(int width, Bits bits);
+  // const factory BitsMap.constInit(Map<K, V> initializer)
+  // {
+  //   return BitsMapInitalizer<K>(initializer);
+  // }
 
   Bits get bits;
   set bits(Bits value); // only dependency for unmodifiable
+
   int get width;
 
   // Map operators implemented by subclass depending on V type
@@ -42,50 +78,8 @@ abstract mixin class BitsMap<K extends Enum, V> implements EnumMap<K, V>, BitsBa
   String toString() => toStringAsMap();
 
   String toStringAsMap() => MapBase.mapToString(this); // {key: value, key: value}
-  String toStringAsBinary() => bits.toRadixString(2); // 0b000
+  String toStringAsBinary() => bits.toStringAsBinary(); // 0b000
   String toStringAsValues() => values.toString(); // (0, 0, 0)
 
   String toStringAs(String Function(MapEntry<K, V> entry) stringifier) => entries.fold('', (previousValue, element) => previousValue + stringifier(element));
 }
-
-/// combined mixins
-/// inheritable abstract constructors
-
-// abstract class BitFieldsBase<K extends Enum, V> = EnumMapBase<K, V> with BitsBase, BitFields<K, V>;
-
-abstract class MutableBitFieldsBase<T extends Enum, V> = MutableBitsBase with MapBase<T, V>, EnumMap<T, V>, BitsMap<T, V>;
-abstract class ConstBitFieldsBase<T extends Enum, V> = ConstBitsBase with MapBase<T, V>, EnumMap<T, V>, BitsMap<T, V>;
-
-abstract class MutableBitFieldsWithKeys<T extends Enum, V> extends MutableBitFieldsBase<T, V> {
-  MutableBitFieldsWithKeys(this.keys, [super.bits]);
-  MutableBitFieldsWithKeys.castBase(BitsMap<T, V> super.state)
-      : keys = state.keys,
-        super.castBase();
-
-  @override
-  final List<T> keys;
-}
-
-@immutable
-abstract class ConstBitFieldsWithKeys<T extends Enum, V> extends ConstBitFieldsBase<T, V> {
-  const ConstBitFieldsWithKeys(this.keys, [super.bits]);
-  ConstBitFieldsWithKeys.castBase(BitsMap<T, V> super.state)
-      : keys = state.keys,
-        super.castBase();
-
-  @override
-  final List<T> keys;
-}
-
-// remove?
-// typedef ConstBitFieldsInit<T extends Enum, V> = ConstBitsMapInit<T, V>;
-// class ConstBitsMapInit<T extends Enum, V> extends ConstEnumMapInit<T, V> with BitsMap<T, V> implements BitsMap<T, V>
-
-// mixin UnmodifiableBitsMixin<K extends Enum, V> on BitsMap<K, V> {
-//   // @override
-//   // set bits(Bits value) => throw UnsupportedError("Cannot modify unmodifiable");
-//   // @override
-//   // void operator []=(K key, V value) => throw UnsupportedError("Cannot modify unmodifiable");
-//   // @override
-//   // void reset([bool value = false]) => throw UnsupportedError("Cannot modify unmodifiable");
-// }

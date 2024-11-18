@@ -1,9 +1,6 @@
-// typedef KeyValuePair<K, V> = (K key, V value);
-// typedef KeyValueEntry<K, V> = ({K key, V value});
-
 typedef Stringifier<T> = String Function(T input);
 typedef GenericStringifier = String Function<T>(T input);
-typedef NullableStringifier<T> = String Function(T? input); // defining non-nullable type allows null input
+typedef NullableStringifier<T> = String Function(T? input); // defining non-nullable type allows null input, cases where T is used for selection
 
 // abstract mixin class StringifierMixin<T>  {
 //   ValueGetter<T?> get valueGetter;
@@ -27,13 +24,13 @@ typedef NullableStringifier<T> = String Function(T? input); // defining non-null
 
 //   ValueGetter<String> get _effectiveValueStringGetter => valueStringGetter ?? _stringifyValue;
 
-//   // String? get fieldLabel => inputDecoration?.labelText;
 // }
 
 typedef ValueTest<T> = bool Function(T input);
 
 // encapsulated for selection
 // implements Enum for List
+// PropertyOf<T>
 abstract mixin class PropertyFilter<T> {
   const PropertyFilter();
 
@@ -44,7 +41,9 @@ abstract mixin class PropertyFilter<T> {
 }
 
 extension WhereFilter<T> on Iterable<T> {
+  // havingProperty
   Iterable<T> whereFilter(PropertyFilter<T>? filter) => filter?.call(this) ?? this;
+  // whereFilter
   Iterable<T> filter(Iterable<T> Function(Iterable<T> input)? filter) => filter?.call(this) ?? this;
 }
 

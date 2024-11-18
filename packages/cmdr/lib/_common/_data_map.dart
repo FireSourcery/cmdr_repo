@@ -50,7 +50,7 @@ abstract class DataMapBase<K extends DataField<Object?>> = MapBase<K, Object?> w
 
 // default DataMap without named accessors.
 // ignore: missing_override_of_must_be_overridden
-class _DataMapDefault<K extends DataField<Object?>> = EnumMapDefault<K, Object?> with DataMap<K>;
+class _DataMapDefault<K extends DataField<Object?>> = EnumIndexMap<K, Object?> with DataMap<K>;
 
 // abstract class DataClass<T extends DataClass<dynamic>> extends DataMapBase<DataField<Object?>> {
 //   const DataClass();

@@ -8,7 +8,7 @@ import 'link.dart';
 import 'packet_transformer.dart';
 
 class Protocol {
-  Protocol(this.link, this.packetInterface) : headerParser = HeaderParser(packetInterface.cast, packetInterface.lengthMax * 4);
+  Protocol(this.link, this.packetInterface) : headerParser = HeaderParser(packetInterface, packetInterface.lengthMax * 4);
 
   final Link link;
   final PacketClass packetInterface;
@@ -63,7 +63,7 @@ class Protocol {
   // couple map then send?
   Future<void> requestResponse(PacketIdRequest requestId, ProtocolSocket socket) {
     mapResponse(requestId.responseId ?? requestId, socket);
-    return trySend(socket.packetBufferOut.packet);
+    return trySend(socket.packetBufferOut.viewAsPacket);
   }
 
   void mapResponse(PacketId responseId, ProtocolSocket socket) {
@@ -266,7 +266,7 @@ class ProtocolSocket implements Sink<Packet> {
     timer.reset();
     timer.start();
     // protocol.mapRequestResponse(packetId, this);
-    await protocol.trySend(packetBufferOut.packet);
+    await protocol.trySend(packetBufferOut.viewAsPacket);
     return requestMeta;
   }
 
@@ -281,7 +281,7 @@ class ProtocolSocket implements Sink<Packet> {
   @protected
   Future<void> sendSync(PacketIdSync syncId) {
     packetBufferOut.buildSync(syncId);
-    return protocol.trySend(packetBufferOut.packet);
+    return protocol.trySend(packetBufferOut.viewAsPacket);
   }
 
   @protected
@@ -320,7 +320,7 @@ class ProtocolSocket implements Sink<Packet> {
       print("Protocol Unnamed Exception");
       print(e);
     } on RangeError catch (e) {
-      print(packetBufferIn.bytes);
+      print(packetBufferIn.viewAsBytes);
       print("Protocol Parser Failed");
       print(e);
       return parse();
@@ -341,7 +341,7 @@ class ProtocolSocket implements Sink<Packet> {
   void add(Packet event) {
     timer.stop();
 
-    packetBufferIn.copyBytes(event.bytes); // sets buffer in length, exceeding length max handled by PacketReceiver
+    packetBufferIn.copy(event.bytes); // sets buffer in length, exceeding length max handled by PacketReceiver
     // socket table does not unmap. might receive packets following completion
     if (!_recved.isCompleted) {
       _recved.complete();

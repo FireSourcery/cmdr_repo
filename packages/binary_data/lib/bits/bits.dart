@@ -1,27 +1,28 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
+/// Bits - Bitwise operations on [int]
 extension type const Bits(int _bits) implements int {
   const Bits.allOnes() : _bits = -1;
   const Bits.allZeros() : _bits = 0;
 
   // general Bits case
-  Bits.ofFields(Iterable<(Bitmask, int)> pairs, [Bits initial = const Bits.allZeros()]) : _bits = const Bits.allZeros().withEach(pairs);
+  Bits.ofPairs(Iterable<(Bitmask, int)> pairs, [Bits initial = const Bits.allZeros()]) : _bits = const Bits.allZeros().withEach(pairs);
 
   // Iterable.generate assert(keys.length == values.length),
-  Bits.ofIterables(Iterable<Bitmask> keys, Iterable<int> values) : this.ofFields(Iterable.generate(keys.length, (index) => (keys.elementAt(index), values.elementAt(index))));
-  Bits.ofEntries(Iterable<MapEntry<Bitmask, int>> entries) : this.ofFields(entries.map((e) => (e.key, e.value)));
+  Bits.ofIterables(Iterable<Bitmask> keys, Iterable<int> values) : this.ofPairs(Iterable.generate(keys.length, (index) => (keys.elementAt(index), values.elementAt(index))));
+  Bits.ofEntries(Iterable<MapEntry<Bitmask, int>> entries) : this.ofPairs(entries.map((e) => (e.key, e.value)));
   Bits.ofMap(Map<Bitmask, int> map) : this.ofEntries(map.entries);
 
   // width value pairs
-  // Bits.fromWidth(Iterable<(int width, int value)> pairs) : _bits = Bitmasks.fromWidths(pairs.keys).apply(map.values) as Bits;
-  Bits.ofBitsMap(Map<BitsKey, int> map) : this.ofEntries(map.bitsEntries);
+  Bits.ofWidthPairs(Iterable<(int width, int value)> pairs) : this.ofIterables(Bitmasks.fromWidths(pairs.map((e) => e.$1)), pairs.map((e) => e.$2));
+  // Bits.ofBitsMap(Map<BitsKey, int> map) : this.ofEntries(map.bitsEntries);
 
   // general bool case
-  Bits.ofIndexValues(Iterable<(int index, bool value)> flags) : _bits = const Bits.allZeros().withEachBool(flags);
+  Bits.ofIndexPairs(Iterable<(int index, bool value)> pairs) : _bits = const Bits.allZeros().withEachBool(pairs);
   // using enum index, name is discarded
-  Bits.ofIndexMap(Map<Enum, bool> map) : _bits = map.entries.fold<int>(0, (previous, entry) => previous.withBoolAt(entry.key.index, entry.value));
-  Bits.ofIndexed(Iterable<bool> flags) : _bits = flags.foldIndexed<int>(0, (index, previous, element) => previous.withBoolAt(index, element)); // first element is index 0
+  Bits.ofIndexMap(Map<Enum, bool> map) : this.ofIndexPairs(map.entries.map((e) => (e.key.index, e.value)));
+  Bits.ofIndexed(Iterable<bool> values) : _bits = values.foldIndexed<int>(0, (index, previous, element) => previous.withBoolAt(index, element)); // first element is index 0
 
   bool get isNotZero => (_bits != 0);
   bool get isZero => (_bits == 0);
@@ -50,12 +51,10 @@ extension type const Bits(int _bits) implements int {
 
   // int operator [](int index) => bitAt(index);
   // void operator []=(int index, int value) => setBitAt(index, value);
-
-  String toStringAsBits() => '0b${_bits.toRadixString(2)}';
 }
 
 // function of a single number, object methods over top level math functions
-extension BinaryOfInt on int {
+extension BitFieldOfInt on int {
   int get byteLength => ((bitLength - 1) ~/ 8) + 1; // (bitLength / 8).ceil();
 
   // int clear(Bitmask mask) => this & ~mask._bitmask;
@@ -83,16 +82,18 @@ extension BinaryOfInt on int {
   bool boolAt(int index) => (this & (1 << index)) != 0;
   int withBoolAt(int index, bool value) => value ? (this | (1 << index)) : (this & ~(1 << index));
 
-  /// pow2 only
-  int alignDown(int align) => (this & (-align));
-  int alignUp(int align) => (-(-this & (-align)));
+  /// Pow2 only
+  int alignDown(int align) => (this & -align);
+  int alignUp(int align) => (-(-this & -align));
   bool isAligned(int align) => ((this & (align - 1)) == 0);
+
+  String toStringAsBinary() => '0b${toRadixString(2)}';
 }
 
-/// Bitmask
-// int bitmask(int shift, int width) => ((1 << width) - 1) << shift;
+/// Bitmask, change to record?
 // as storable object to use as key
 class Bitmask {
+// int bitmask(int shift, int width) => ((1 << width) - 1) << shift;
   const Bitmask._(this._bitmask, this.shift, this.width);
   const Bitmask(this.shift, this.width) : _bitmask = ((1 << width) - 1) << shift;
   const Bitmask.bits(int shift, int width) : this(shift, width);
@@ -103,7 +104,7 @@ class Bitmask {
 
   final int _bitmask;
   final int shift;
-  final int width; // (_bitmask >> shift).bitLength;
+  final int width; // (_bitmask >>> shift).bitLength;
 
   // move to Bits?
   int apply(int value) => (value << shift) & _bitmask; // get as masked
@@ -127,24 +128,30 @@ extension BitmasksMethods on Iterable<Bitmask> {
 //   Bits asBits() => Bits.ofEntries(entries);
 // }
 
-/// [BitsBase]
-/// Contain bits for setters
-/// for classes backed by Bits
-/// gives Bits a type for matching, distinguish from int
-/// cast with any sub type
+/// [BitsBase]/[BitData]/ - base for classes backed by Bits
+///   contain bits for setters - Cannot be extension type
+///   gives Bits a type for matching, distinguish from int
+///   cast with any sub type
+///
 abstract mixin class BitsBase {
   // const BitsBase();
-
   // create a general bitsMap that can be cast later.
-  const factory BitsBase([Bits bits]) = ConstBitsBase;
+  // const factory BitsBase(Bits bits) = ConstBits;
 
   Bits get bits;
   set bits(Bits value); // only dependency for unmodifiable
+
   int get width;
 
-  int get(Bitmask mask) => bits.getBits(mask);
-  void set(Bitmask mask, int value) => bits = bits.withBits(mask, value);
+  // @override
+  // int operator [](dynamic key) => bits.getBits(key.bitmask);
+  // @override
+  // void operator []=(dynamic key, int value) => bits = bits.withBits(key.bitmask, value);
 
+  // int get(Bitmask mask) => bits.getBits(mask);
+  // void set(Bitmask mask, int value) => bits = bits.withBits(mask, value);
+
+  void setBits(Bitmask mask, int value) => bits = bits.withBits(mask, value);
   void setBitsAt(int offset, int width, int value) => bits = bits.withBitsAt(offset, width, value);
   void setBitAt(int index, int value) => bits = bits.withBitAt(index, value);
   void setBoolAt(int index, bool value) => bits = bits.withBoolAt(index, value);
@@ -153,6 +160,8 @@ abstract mixin class BitsBase {
   void setEach(Iterable<(Bitmask mask, int value)> entries) => bits = bits.withEach(entries);
 
   void reset([bool fill = false]) => bits = fill ? const Bits.allOnes() : const Bits.allZeros();
+
+  String toStringAsBinary() => bits.toStringAsBinary(); // 0b000
 
   @override
   bool operator ==(covariant BitsBase other) {
@@ -164,9 +173,9 @@ abstract mixin class BitsBase {
   int get hashCode => bits.hashCode;
 }
 
-class MutableBitsBase with BitsBase {
-  MutableBitsBase([this.bits = const Bits.allZeros()]);
-  MutableBitsBase.castBase(BitsBase state) : this(state.bits);
+class MutableBits with BitsBase {
+  MutableBits([this.bits = const Bits.allZeros()]);
+  MutableBits.castBase(BitsBase state) : this(state.bits);
 
   @override
   Bits bits;
@@ -177,10 +186,11 @@ class MutableBitsBase with BitsBase {
   // MutableBitsBase copyWithBits(Bits value) => MutableBitsBase(value);
 }
 
+// although only MutableBits must wrap Bits, this way they both implement and derive the same interfaces
 @immutable
-class ConstBitsBase with BitsBase {
-  const ConstBitsBase([this.bits = const Bits.allZeros()]);
-  ConstBitsBase.castBase(BitsBase state) : this(state.bits);
+class ConstBits with BitsBase {
+  const ConstBits(this.bits);
+  ConstBits.castBase(BitsBase state) : this(state.bits);
 
   @override
   final Bits bits;
@@ -191,51 +201,4 @@ class ConstBitsBase with BitsBase {
 
   // @override
   // ConstBitsBase copyWithBits(Bits value) => ConstBitsBase(value);
-}
-
-/// for cast of compile time const definition using map literal
-/// BitField<EnumType> example = ConstBitsInit({
-///   EnumType.name1: 2,
-///   EnumType.name2: 3,
-/// });
-/// mixin so user can extend its own class first
-abstract mixin class ConstBitsBaseInit implements BitsBase {
-// abstract mixin class ConstBitsBaseInit<T extends BitsBase> implements BitsBase {
-  @protected
-  Map<Bitmask, int> get source;
-
-  @override
-  Bits get bits => Bits.ofEntries(source.entries); //  by wrapping Map, this must be computed at run time
-
-  @override
-  int get width => source.keys.totalWidth;
-
-  // @override
-  // ConstBitsBase copyWithBits(Bits value) => ConstBitsBase(bits);
-}
-
-/// Keys
-///
-// this allows BitMap to be use independently
-abstract mixin class BitsKey {
-  Bitmask get bitmask;
-
-  // maskRead
-  // int valueOf(BitsBase bitsBase) => bitsBase.get(bitmask);
-  // void setValueOf(BitsBase bitsBase, int value) => bitsBase.set(bitmask, value);
-  // int? valueOrNullOf(BitsBase bitsBase) => bitsBase.get(bitmask); //compare shift to width
-}
-
-abstract mixin class BitsIndexKey implements BitsKey {
-  int get index;
-  Bitmask get bitmask => Bitmask.index(index);
-}
-
-/// alternatively BitsKey implements Bitmask
-extension BitsKeysMethods on Iterable<BitsKey> {
-  Bitmasks get bitmasks => map((e) => e.bitmask) as Bitmasks;
-}
-
-extension BitsEntryMethods on Map<BitsKey, int> {
-  Iterable<MapEntry<Bitmask, int>> get bitsEntries => entries.map((e) => MapEntry(e.key.bitmask, e.value));
 }

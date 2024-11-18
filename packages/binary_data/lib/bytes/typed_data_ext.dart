@@ -1,18 +1,56 @@
-import 'dart:math';
 import 'dart:typed_data';
 
-void memoryCopy(TypedData destination, TypedData source, [int? lengthInBytes]) {
-  int effectiveLength = min(destination.lengthInBytes, lengthInBytes ?? source.lengthInBytes);
-  Uint8List.sublistView(destination).setAll(0, Uint8List.sublistView(source, 0, effectiveLength));
+void memCpy(TypedData destination, TypedData source, int lengthInBytes) {
+  Uint8List.sublistView(destination).setAll(0, Uint8List.sublistView(source, 0, lengthInBytes));
+}
+
+// void copyMemory(TypedData destination, TypedData source, [int? lengthInBytes]) {
+//   final effectiveLength = (lengthInBytes ?? source.lengthInBytes).clamp(0, destination.lengthInBytes);
+//   memCopy(destination, source, effectiveLength);
+// }
+
+void copyMemoryRange(TypedData destination, TypedData source, [int destOffset = 0, int? lengthInBytes]) {
+  final effectiveLength = (lengthInBytes ?? source.lengthInBytes).clamp(0, destination.lengthInBytes - destOffset);
+  Uint8List.sublistView(destination).setAll(destOffset, Uint8List.sublistView(source, 0, effectiveLength));
+}
+
+extension Uint8ListCopy on Uint8List {
+  // cast one side only
+  void copy(TypedData source, [int? length]) {
+    final effectiveLength = (length ?? source.lengthInBytes).clamp(0, lengthInBytes);
+    setAll(0, Uint8List.sublistView(source, 0, effectiveLength));
+  }
+
+  void copyRange(TypedData source, [int index = 0, int? length]) {
+    final effectiveLength = (length ?? source.lengthInBytes).clamp(0, lengthInBytes - index);
+    setAll(index, Uint8List.sublistView(source, 0, effectiveLength));
+  }
 }
 
 extension TypedDataExt on TypedData {
-  // this method uses length, not end, unlike setRange
-  // is it more optimal to cast one side only?
-  void copyFrom(TypedData source, [int? lengthInBytes]) => memoryCopy(this, source, lengthInBytes);
+  /// this method uses length, not end, unlike setAll/setRange
+  void copy(TypedData source, [int? lengthInBytes]) => Uint8List.sublistView(this).copy(source, lengthInBytes);
+  void copyRange(TypedData source, [int index = 0, int? lengthInBytes]) => Uint8List.sublistView(this).copyRange(source, index, lengthInBytes);
+
+  Uint8List asUint8List([int offsetInBytes = 0, int? length]) => Uint8List.sublistView(this, offsetInBytes, length);
+  // Int8List asInt8List([int offsetInBytes = 0, int? length]);
+  // Uint8ClampedList asUint8ClampedList([int offsetInBytes = 0, int? length]);
+  // Uint16List asUint16List([int offsetInBytes = 0, int? length]);
+  // Int16List asInt16List([int offsetInBytes = 0, int? length]);
+  // Uint32List asUint32List([int offsetInBytes = 0, int? length]);
+  // Int32List asInt32List([int offsetInBytes = 0, int? length]);
+  // Uint64List asUint64List([int offsetInBytes = 0, int? length]);
+  // Int64List asInt64List([int offsetInBytes = 0, int? length]);
+  ByteData asByteData([int offsetInBytes = 0, int? length]) => ByteData.sublistView(this, offsetInBytes, length);
 }
 
 
+
+// void doSomething(TypedData data) {
+//   data.buffer.asByteData(data.offsetInBytes).getInt64(5);
+//   ByteData.sublistView(data).getInt64(5);
+//   Int64List.sublistView(data)[5];
+// }
 
 // class EndianCastList<R extends TypedData> extends ListBase<num> {
 //   EndianCastList(this._source, this._endian);

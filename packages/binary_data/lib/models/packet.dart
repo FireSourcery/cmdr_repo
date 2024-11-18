@@ -8,35 +8,55 @@ export '../bytes/byte_struct.dart';
 
 /// Collective def of Packet format specs. 'Class variables'
 // Abstract factory pattern
-// effectively the child packet type encapsulated
+// effectively Packet subtype encapsulated
 //  values available without a Packet instance, over prototype object
-abstract mixin class PacketClass {
+// abstract mixin class PacketClass<T extends Packet> implements ByteStructClass<T, TypedField>  {
+abstract mixin class PacketClass<T extends Packet> {
   // const for each packet instance
   // can implement in PacketId for per packet behavior
-  int get startId; // alternatively Uint8List
   int get lengthMax; // length in bytes
-  int get headerLength; // defined as length only as they start at offset 0
-  int get idHeaderLength; // minimal header
+  int get lengthMin; // same as idHeaderLength, min before cast check id on parse
   Endian get endian;
-  PacketId? idOf(int intId);
-  PacketHeader headerOf(TypedData typedData);
-  PacketHeaderSync syncHeaderOf(TypedData typedData);
 
-  /// defined position, relative to `packet`.
-  /// header fields for buildHeader/parseHeader
-  /// required for HeaderParser.
-  /// can be derived from header Struct when get offset is available
-  TypedOffset get startFieldPart;
-  TypedOffset get idFieldPart;
-  TypedOffset get lengthFieldPart;
-  TypedOffset get checksumFieldPart;
+  int get headerLength; // defined as length only as header start at offset 0
+  int get syncHeaderLength;
+  // int get fixedHeaderLength; // an alternate header for fixed size payload as determined by id
+  int get startId; // alternatively Uint8List
 
   PacketIdSync get ack;
   PacketIdSync get nack;
   PacketIdSync get abort;
 
+  PacketId? idOf(int intId);
+
+  List<TypedField> get keys => [startFieldPart, idFieldPart, lengthFieldPart, checksumFieldPart];
+
+  /// HeaderCommon
+  /// defined position, relative to `packet`.
+  /// header fields for buildHeader/parseHeader
+  /// required for HeaderParser.
+  /// can be derived from header Struct when get offset is available
+  TypedField get startFieldPart;
+  TypedField get idFieldPart;
+  TypedField get lengthFieldPart;
+  TypedField get checksumFieldPart;
+
+  // at least one header type must be implemented, with fields able to determine completion
+  // TypedDataCaster<PacketHeader> get headerCaster;
+  // TypedDataCaster<PacketHeader> get idHeaderCaster; // minimal header to determine id, consistent for all types
   // child class constructor
-  Packet cast(TypedData typedData);
+  @override
+  TypedDataCaster<T> get caster;
+
+  @override
+  T cast(TypedData typedData);
+
+  // not all types must be implemented
+  PacketHeader headerOf(TypedData typedData);
+  PacketSyncHeader syncHeaderOf(TypedData typedData);
+  // PacketIdHeader idHeaderOf(TypedData typedData);
+  // PacketFixedHeader fixedHeaderOf(TypedData typedData);
+  // PacketVariableHeader variableHeaderOf(TypedData typedData);
 
   // pass to build idOf internally
   // PacketIdCaster get idCaster;
@@ -48,51 +68,44 @@ abstract mixin class PacketClass {
 ///
 /// ffi.Struct current does not allow length < full struct length, or mixin
 /// alternatively, use extension type on TypedData
-///
-/// Class variables as mixin
-abstract mixin class Packet implements PacketClass {
-  const Packet();
-  // factory Packet.view(PacketCaster packetCaster, Packet packet, int offset, [int? length]) => packetCaster(packet.range(offset, length));
+abstract class Packet {
+  Packet(TypedData typedData) : packetData = ByteStruct(ByteData.sublistView(typedData));
 
-  // alternatively
-  // PacketClass get packetClass;
+  /// Class variables per subtype class, or should this be mixin
+  PacketClass get packetClass;
 
-  /// derive from either header or packetInterface
-  int get payloadIndex => headerLength;
-  int get payloadLengthMax => lengthMax - payloadIndex;
-  int get checksumIndex => checksumFieldPart.offset;
-  int get checksumSize => checksumFieldPart.size;
-
-  ////////////////////////////////////////////////////////////////////////////////
-  ///
-  ////////////////////////////////////////////////////////////////////////////////
   // per instance
-  // pointer to a buffer, immutable.
+  // pointer to a buffer, immutable view/length
   // mutable view use PacketBuffer
   // Holds offset, not directly retain ByteBuffer, to allow packets parts to be defined relatively
+  final ByteStruct packetData;
 
-  ByteData get byteData;
-  Uint8List get bytes => Uint8List.sublistView(byteData);
+  Uint8List get bytes => Uint8List.sublistView(packetData);
+
+  /// derive from either header or packetInterface
+  /// alternatively, define as SizeField key
+  int get payloadIndex => packetClass.headerLength;
+  int get payloadLengthMax => packetClass.lengthMax - payloadIndex;
 
   /// immutable, of varying length, by default
   /// mutable with mixin, or PacketBuffer
   /// immutable, always lengthMax, in case of mixin on struct
-  int get length => bytes.lengthInBytes;
+  int get length => packetData.lengthInBytes;
   int get payloadLength => length - payloadIndex; // only if casting does not throw
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Header/Payload Pointers using defined boundaries
   ////////////////////////////////////////////////////////////////////////////////
-  Uint8List get idHeader => Uint8List.sublistView(bytes, 0, idHeaderLength);
-  Uint8List get header => Uint8List.sublistView(bytes, 0, headerLength);
-  Uint8List get payload => Uint8List.sublistView(bytes, payloadIndex);
+  Uint8List get idHeader => Uint8List.sublistView(packetData, 0, packetClass.syncHeaderLength);
+  Uint8List get header => Uint8List.sublistView(packetData, 0, packetClass.headerLength);
+  Uint8List get payload => Uint8List.sublistView(packetData, payloadIndex);
 
-  @visibleForTesting
-  Uint8List get headerAvailable => Uint8List.sublistView(bytes, 0, headerLength.clamp(0, length));
   ////////////////////////////////////////////////////////////////////////////////
   ///
   ////////////////////////////////////////////////////////////////////////////////
-  ByteData get headerWords => ByteData.sublistView(header, 0, idHeaderLength);
+  ByteData get headerWords => ByteData.sublistView(header, 0, packetClass.headerLength);
+  @visibleForTesting
+  Uint8List get headerAvailable => Uint8List.sublistView(packetData, 0, packetClass.headerLength.clamp(0, length));
 
   /// for building/parsing payload 'as' packet,
   /// not needed when payload is a struct with named fields,
@@ -100,19 +113,22 @@ abstract mixin class Packet implements PacketClass {
 
   /// payload as TypedIntList, for list operations
   /// truncated views, end set by packet.length. uses packet element size
-  Uint8List get payloadAsList8 => Uint8List.sublistView(bytes, payloadIndex);
-  Uint16List get payloadAsList16 => Uint16List.sublistView(bytes, payloadIndex);
-  Uint32List get payloadAsList32 => Uint32List.sublistView(bytes, payloadIndex);
+  Uint8List get payloadAsList8 => Uint8List.sublistView(packetData, payloadIndex);
+  Uint16List get payloadAsList16 => Uint16List.sublistView(packetData, payloadIndex);
+  Uint32List get payloadAsList32 => Uint32List.sublistView(packetData, payloadIndex);
 
   /// payload as "words" of select length, for individual entry operations
   /// payload.buffer == packet.buffer, starts at 0 of back buffer
-  ByteData get payloadWords => ByteData.sublistView(bytes, payloadIndex);
+  ByteData get payloadWords => ByteData.sublistView(packetData, payloadIndex);
 
   /// using ffi NativeType for signature types only
   /// with range check
   List<int> payloadAt<R extends TypedData>(int byteOffset, [int? end]) => payload.asIntListOrEmpty<R>(byteOffset, end);
-  int payloadWordAt<R extends NativeType>(int byteOffset) => payloadWords.wordAt<R>(byteOffset, endian); // throws if header parser fails, length reports lesser value, while checksum passes
-  int? payloadWordAtOrNull<R extends NativeType>(int byteOffset) => payloadWords.wordAtOrNull<R>(byteOffset, endian);
+  // List<int> payloadAt<R extends TypedData>(int byteOffset, [int? end]) => packetData.intArrayAt<R>(byteOffset + payloadIndex);
+
+  int payloadWordAt<R extends NativeType>(int byteOffset) => payloadWords.wordAt<R>(byteOffset, packetClass.endian);
+  // throws if header parser fails, length reports lesser value, while checksum passes
+  int? payloadWordAtOrNull<R extends NativeType>(int byteOffset) => payloadWords.wordOrNullAt<R>(byteOffset, packetClass.endian);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// [Checksum]
@@ -141,17 +157,20 @@ abstract mixin class Packet implements PacketClass {
   // static int sum(int previousValue, int element) => previousValue + element;
   // int Function(int previousValue, int element) get checksumAlgorithm => sum;
 
+  int get checksumIndex => packetClass.checksumFieldPart.offset;
+  int get checksumSize => packetClass.checksumFieldPart.size;
+
   /// all bytes excluding checksumField
   /// using length contained in [bytes] view, or length param length
   int checksum([int? length]) {
-    assert((() => (length == null) ? this.length == headerAsPayloadType.lengthFieldValue : true).call());
+    assert((() => (length == null) ? this.length == asHeader.lengthFieldValue : true).call());
     final checksumMask = ((1 << (checksumSize * 8)) - 1);
     final checksumEnd = checksumIndex + checksumSize;
     // final afterChecksumSize = (headerLength - checksumEnd) + (payloadLength);
 
     var checkSum = 0;
-    checkSum += checksumAlgorithm(Uint8List.sublistView(bytes, 0, checksumIndex));
-    checkSum += checksumAlgorithm(Uint8List.sublistView(bytes, checksumEnd, length ?? this.length));
+    checkSum += checksumAlgorithm(Uint8List.sublistView(packetData, 0, checksumIndex));
+    checkSum += checksumAlgorithm(Uint8List.sublistView(packetData, checksumEnd, length ?? this.length));
     return checkSum & checksumMask;
   }
 
@@ -161,50 +180,50 @@ abstract mixin class Packet implements PacketClass {
   ////////////////////////////////////////////////////////////////////////////////
   /// [Header]
   ///   header context included in 'this'
-  ///   cannot be implemented in packet header, struct cannot mixin,
+  ///   cannot be implemented in packet header, ffi.Struct cannot mixin,
   /// alternatively extension?
   ////////////////////////////////////////////////////////////////////////////////
-  // header must be complete
+  // header must be complete in ffi.Struct case
   // can resolve as field in class if compiler does not optimize
-  PacketHeader get headerAsPayloadType => headerOf(bytes);
-  PacketHeaderSync get headerAsSyncType => syncHeaderOf(bytes);
+  PacketHeader get asHeader => packetClass.headerOf(packetData);
+  PacketSyncHeader get asSync => packetClass.syncHeaderOf(packetData);
 
-  void buildHeaderAs(PacketHeaderCaster caster, PacketId packetId) => caster(header).build(packetId, this);
-
-  void fillStartField() => headerAsSyncType.startFieldValue = startId;
+  void fillStartField() => asSync.startFieldValue = packetClass.startId;
 
   void buildHeaderAsSync(PacketId packetId) {
     fillStartField();
-    headerAsSyncType.idFieldValue = packetId.intId;
+    asSync.idFieldValue = packetId.intId;
   }
 
-  void buildHeaderAsPayload(PacketId requestId, int payloadLength) {
+  void buildHeaderAsRequest(PacketId requestId, int payloadLength) {
     fillStartField();
-    headerAsPayloadType.idFieldValue = requestId.intId;
-    headerAsPayloadType.lengthFieldValue = payloadLength + headerLength;
-    headerAsPayloadType.checksumFieldValue = checksum(payloadLength + headerLength);
+    asHeader.idFieldValue = requestId.intId;
+    asHeader.lengthFieldValue = payloadLength + packetClass.headerLength;
+    asHeader.checksumFieldValue = checksum(payloadLength + packetClass.headerLength);
   }
 
   void buildHeader(PacketId packetId, int payloadLength) {
     return switch (packetId) {
       PacketIdSync() => buildHeaderAsSync(packetId),
-      PacketIdRequest() => buildHeaderAsPayload(packetId, payloadLength),
+      PacketIdRequest() => buildHeaderAsRequest(packetId, payloadLength),
       PacketId() => throw UnimplementedError(),
     };
   }
+
+  void buildHeaderAs(PacketHeaderCaster caster, PacketId packetId) => caster(header).build(packetId, this);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// parse header
   ////////////////////////////////////////////////////////////////////////////////
   // use shorter type, casting as longer header on smaller bytes will throw. optionally use field offset
-  PacketId? get packetId => idOf(headerAsSyncType.idFieldValue); // idOf(idFieldPart.fieldValue(headerWords));
+  PacketId? get packetId => packetClass.idOf(asSync.idFieldValue); // idOf(idFieldPart.fieldValue(headerWords));
   PacketIdSync? parseSyncId() => switch (packetId) { PacketIdSync syncId => syncId, _ => null };
-  int get parsePayloadLength => headerAsPayloadType.lengthFieldValue - headerLength; // until casting is available
+  int get parsePayloadLength => asHeader.lengthFieldValue - packetClass.headerLength; // until casting is available
 
   /// for valueOrNull from header status
-  bool isValidStart(int value) => (value == startId);
-  bool isValidId(int value) => (idOf(value) != null);
-  bool isValidLength(int value) => (value == value.clamp(headerLength, lengthMax));
+  bool isValidStart(int value) => (value == packetClass.startId);
+  bool isValidId(int value) => (packetClass.idOf(value) != null);
+  bool isValidLength(int value) => (value == value.clamp(packetClass.headerLength, packetClass.lengthMax));
   bool isValidChecksum(int value) => (value == checksum());
 
   // bool get isStartValid => isValidStart(headerAsSyncType.startFieldValue);
@@ -217,23 +236,21 @@ abstract mixin class Packet implements PacketClass {
   /// defined using TypedOffset
   ////////////////////////////////////////////////////////////////////////////////
   // header struct cannot cast less than full length
-  int? get startFieldOrNull => startFieldPart.valueOrNullOf(byteData);
-  int? get idFieldOrNull => idFieldPart.valueOrNullOf(byteData);
-  int? get lengthFieldOrNull => lengthFieldPart.valueOrNullOf(byteData);
-  int? get checksumFieldOrNull => checksumFieldPart.valueOrNullOf(byteData);
+  int? get startFieldOrNull => packetClass.startFieldPart.getInOrNull(packetData);
+  int? get idFieldOrNull => packetClass.idFieldPart.getInOrNull(packetData);
+  int? get lengthFieldOrNull => packetClass.lengthFieldPart.getInOrNull(packetData);
+  int? get checksumFieldOrNull => packetClass.checksumFieldPart.getInOrNull(packetData);
 
   // null if not yet received
-  bool? get isStartFieldValid => startFieldOrNull.isThen(isValidStart);
-  bool? get isIdFieldValid => idFieldOrNull.isThen(isValidId);
+  bool? get isStartFieldValid => startFieldOrNull.ifNonNull(isValidStart);
+  bool? get isIdFieldValid => idFieldOrNull.ifNonNull(isValidId);
   // non-sync only
-  bool? get isLengthFieldValid => lengthFieldOrNull.isThen(isValidLength);
-  bool? get isChecksumFieldValid => checksumFieldOrNull.isThen(isValidChecksum); // assert(length == lengthFieldOrNull), isPacketComplete == true
+  bool? get isLengthFieldValid => lengthFieldOrNull.ifNonNull(isValidLength);
+  bool? get isChecksumFieldValid => checksumFieldOrNull.ifNonNull(isValidChecksum); // assert(length == lengthFieldOrNull), isPacketComplete == true
 
   /// derived values using field offset + size
-  PacketId? get packetIdOrNull => switch (idFieldOrNull) { int value => idOf(value), null => null }; // null if not found or invalid..
-  int? get packetLengthOrNull => switch (packetIdOrNull) { PacketIdSync() => idHeaderLength, PacketId() => lengthFieldOrNull, null => null };
-  // bool? get isLengthValid => switch (packetIdOrNull) { PacketIdSync() => idHeaderLength, PacketId() => lengthFieldOrNull, null => null };
-  // bool? get isChecksumValid => switch (packetIdOrNull) { PacketIdSync() => idHeaderLength, PacketId() => lengthFieldOrNull, null => null };
+  PacketId? get packetIdOrNull => switch (idFieldOrNull) { int value => packetClass.idOf(value), null => null }; // null if not found or invalid..
+  int? get packetLengthOrNull => switch (packetIdOrNull) { PacketIdSync() => packetClass.syncHeaderLength, PacketId() => lengthFieldOrNull, null => null };
 
   bool get isPacketComplete => switch (packetLengthOrNull) { int value => (length >= value), null => false };
 
@@ -249,7 +266,7 @@ abstract mixin class Packet implements PacketClass {
   PayloadMeta buildRequest<V>(PacketIdRequest<V, dynamic> packetId, V requestArgs) {
     PayloadMeta meta = buildPayloadAs(packetId.requestCaster!, requestArgs);
     if (meta.length > payloadLengthMax) return const PayloadMeta(0); // should this be assert/error?
-    buildHeaderAsPayload(packetId, meta.length); // unconstrained view on build, or implement in buffer after set length
+    buildHeaderAsRequest(packetId, meta.length); // unconstrained view on build, or implement in buffer after set length
     return meta;
   }
 
@@ -265,26 +282,18 @@ typedef PacketCaster<P extends Packet> = P Function(TypedData typedData);
 
 // non-Struct backed packets, parent constructor, enforce that a sublistView is used
 // optionally resolve getters to fields
-abstract class PacketBase extends ByteStructBase with Packet {
-  PacketBase(super.bytes, [super.offset = 0, super.length]);
-  // PacketBase.origin(super.bytesBuffer, [super.offset = 0, super.length]) : super.origin();
-}
-
-// abstract mixin class PacketCreator {
-//   int get lengthMax; // length in bytes
-//   Packet cast(TypedData typedData);
-//   Packet alloc() => cast(Uint8List(lengthMax));
-//   Packet create([Uint8List? typedData, int offset = 0, int? length]) => cast(Uint8List.sublistView((typedData ?? Uint8List(lengthMax)), offset, length));
-//   Packet call([Uint8List? typedData, int offset = 0, int? length]) => create(typedData, offset, length);
+// abstract class PacketBase extends ByteStructBase with Packet {
+//   PacketBase(super.bytes, [super.offset = 0, super.length]);
+//   // PacketBase.origin(super.bytesBuffer, [super.offset = 0, super.length]) : super.origin();
 // }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Struct Components Header/Payload
 ////////////////////////////////////////////////////////////////////////////////
 /// [Header] Constructor
-// typedef PacketHeaderCaster<P extends PacketHeader> = P Function(TypedData typedData);
 typedef PacketHeaderCaster = PacketHeader Function(TypedData typedData);
 // typedef PacketHeaderSyncCaster = PacketHeaderSync Function(TypedData typedData);
+// typedef PacketHeaderCaster<P extends PacketHeader> = P Function(TypedData typedData);
 
 /// effectively the Packet control block
 /// a basic opinionated implementation, union with sync header
@@ -303,7 +312,6 @@ abstract interface class PacketHeader {
   set lengthFieldValue(int value);
   set checksumFieldValue(int value);
 
-  // /// no type inference when passing `Field` to ByteData
   // /// only valid on completion.
   // int get startFieldValue => startField.fieldValue(_byteData);
   // int get idFieldValue => idField.fieldValue(_byteData);
@@ -317,8 +325,18 @@ abstract interface class PacketHeader {
   void build(PacketId packetId, Packet? packet); // can be overridden for additional types
 }
 
+abstract interface class PacketFixedHeader {
+  int get startFieldValue; // > 1 byte user handle using Word module
+  int get idFieldValue;
+  int get checksumFieldValue;
+
+  set startFieldValue(int value);
+  set idFieldValue(int value);
+  set checksumFieldValue(int value);
+}
+
 /// Minimal header
-abstract interface class PacketHeaderSync {
+abstract interface class PacketSyncHeader {
   int get startFieldValue;
   int get idFieldValue;
   set startFieldValue(int value);
@@ -329,14 +347,7 @@ abstract interface class PacketHeaderSync {
   // set checksumFieldValue(int value) => throw UnsupportedError('checksumFieldValue not available');
 }
 
-/// [Payload] Constructor - handler per id
-/// Struct.create<T>
-typedef PayloadCaster<V> = Payload<V> Function(TypedData typedData);
-// typedef PayloadSubTypeCaster<P extends Payload<V>, V> = P Function(TypedData typedData);
-// abstract interface class PayloadFactory<T extends Payload> {
-//   T call(TypedData typedData);
-//   T allocate();
-// }
+extension PacketHeaderMethods on PacketHeader {}
 
 /// extends Struct and Payload
 /// Payload need to contain a static cast function
@@ -364,7 +375,13 @@ abstract interface class PayloadFixed<V> {
   set values(V values);
 }
 
-// length state maintained by caller, cannot be included as struct field
+/// [Payload] Constructor - handler per id
+/// Struct.create<T>
+typedef PayloadCaster<V> = Payload<V> Function(TypedData typedData);
+// typedef PayloadSubTypeCaster<P extends Payload<V>, V> = P Function(TypedData typedData);
+
+/// any additional state not included in the header
+// length state maintained by caller. cannot be included as struct field, that would be a part of the payload data
 class PayloadMeta {
   const PayloadMeta(this.length, [this.other]);
   final int length;
@@ -374,79 +391,46 @@ class PayloadMeta {
 ////////////////////////////////////////////////////////////////////////////
 ///
 ////////////////////////////////////////////////////////////////////////////
-/// Packet with `mutable length` , copyBytes, + casters
+/// Packet with `mutable length`, copyBytes + cast view
 ///
-/// pass [PacketCaster] or [PacketClass], this way user does not have to extend PacketBuffer with child type methods
-/// alternatively implements Packet require proxy or user create separate class mixin ChildType
-/// ideally this could implement packet and uin8list
-class PacketBuffer {
-  PacketBuffer._(this.packetCaster, this._packetBuffer, this._byteBuffer)
-      : _packetView = packetCaster(_byteBuffer.asUint8List(0, 0)),
-        _bytesView = _byteBuffer.asUint8List(0, 0);
+/// pass [PacketCaster] or [PacketClass]
+class PacketBuffer<T extends Packet> extends ByteStructBuffer<T> {
+  PacketBuffer(this.packetClass, [int? size]) : super.caster(packetClass.caster, size ?? packetClass.lengthMax);
 
-  PacketBuffer.buffer(PacketCaster packetCaster, Uint8List bytes) : this._(packetCaster, packetCaster(bytes), bytes.buffer);
-  PacketBuffer.size(PacketCaster packetCaster, int size) : this.buffer(packetCaster, Uint8List(size));
+  final PacketClass<T> packetClass;
 
-  // todo user packet interface for accessors
-  PacketBuffer(PacketClass packetInterface, [int? size]) : this.buffer(packetInterface.cast, Uint8List(size ?? packetInterface.lengthMax));
+  Packet get _packetBuffer => bufferAsStruct;
+  Packet get viewAsPacket => viewAsStruct;
 
-  final ByteBuffer _byteBuffer; // PacketBuffer can directly retain byteBuffer, its own buffer starts at offset 0, methods are provided as relative via Packet,
-  final Packet _packetBuffer; // holds full view, max length buffer, with named fields. build functions uncontrained, then sets length
+  int get headerLength => packetClass.headerLength;
+  int get syncHeaderLength => packetClass.syncHeaderLength;
+  int get payloadIndex => packetClass.headerLength;
 
-  Uint8List _bytesView; // holds truncated view, mutable length.
-  Packet _packetView; // final if casting is not implemented, or packet extends struct
+  // @protected
+  // final PacketCaster packetCaster; // inherited class may use for addition buffers
+  // final ByteBuffer _byteBuffer; // PacketBuffer can directly retain byteBuffer, its own buffer starts at offset 0, methods are provided as relative via Packet,
+  // final Packet _packetBuffer; // holds full view, max length buffer, with named fields. build functions unconstrained, then sets length
+  // Uint8List _bytesView; // holds truncated view, mutable length.
+  // Packet _packetView; // final if casting is not implemented, or packet extends struct
 
-  Uint8List get bytes => _bytesView;
-  Packet get packet => _packetView;
+  int get payloadLength => viewLength - payloadIndex;
+  set payloadLength(int value) => viewLength = payloadIndex + value;
 
-  @protected
-  final PacketCaster packetCaster; // inherited class may use for addition buffers
-
-  // resolve views on length update. resolve views with length on get?
-  // disallow changing pointers directly, caller use length
-  int get length => _bytesView.length;
-  set length(int value) {
-    // runtime assertion is handled by parser
-    assert(value <= bytes.buffer.lengthInBytes - bytes.offsetInBytes); // minus offset if view does not start at buffer 0, case of inheritance
-
-    _bytesView = _byteBuffer.asUint8List(0, value); // need Uint8List.view. sublistView will not exceed current length
-    _packetView = packetCaster(_bytesView);
-
-    assert(_bytesView.length == _packetView.length);
-  }
-
-  void clear() => length = 0;
-
-  /// receiving for parse, or socket
-  void copyBytes(Uint8List dataIn, [int offset = 0]) {
-    length = dataIn.length;
-    bytes.setAll(offset, dataIn);
-  }
-
-  void addBytes(Uint8List dataIn) {
-    final initialLength = length;
-    length = initialLength + dataIn.length;
-    bytes.setAll(initialLength, dataIn);
-  }
-
-  // int get payloadLength => length - packet.payloadIndex;
-  // set payloadLength(int value) => (length = packet.payloadHeaderLength + value);
-
-  /// build functions mutate length
+  /// build functions mutate viewLength
   PayloadMeta buildRequest<V>(PacketIdRequest<V, dynamic> packetId, V requestArgs) {
-    PayloadMeta meta = _packetBuffer.buildRequest(packetId, requestArgs);
-    length = _packetBuffer.headerLength + meta.length; // payloadLength = meta.length;
-    return meta;
-  }
-
-  void buildSync(PacketId packetId) {
-    _packetBuffer.buildHeaderAsSync(packetId);
-    length = _packetBuffer.idHeaderLength;
+    PayloadMeta payloadMeta = _packetBuffer.buildRequest(packetId, requestArgs);
+    viewLength = headerLength + payloadMeta.length;
+    return payloadMeta;
   }
 
   /// parse functions redirect, socket call packet directly
   V parseResponse<V>(PacketIdRequest<dynamic, V> packetId, [PayloadMeta? reqStateMeta]) {
     return _packetBuffer.parseResponse(packetId, reqStateMeta);
+  }
+
+  void buildSync(PacketId packetId) {
+    _packetBuffer.buildHeaderAsSync(packetId);
+    viewLength = syncHeaderLength;
   }
 
   PacketIdSync? parseSyncId() => _packetBuffer.parseSyncId();
@@ -474,28 +458,22 @@ class PacketIdCaster {
   PacketId? call(int intId) => _lookUpMap[intId];
 }
 
+// separate type label allow pattern matching
 abstract interface class PacketId implements Enum {
   int get intId;
 }
 
-// separate type label allow pattern matching
-abstract interface class PacketIdSync implements PacketId {
-  // int get intId;
-  // PacketIdSyncInteranl get asInternal;
+abstract interface class PacketIdSync implements PacketId {}
+
+abstract interface class PacketIdFixed implements PacketId {
+  int get length;
+  // PayloadCaster<V> get caster;
 }
 
 // Id hold a constructor to create a handler instance to process as packet
 abstract interface class PacketIdPayload<V> implements PacketId {
   PayloadCaster<V> get caster;
 }
-
-// class PacketIdPayload<V> {
-//   const PacketIdPayload(this.intId, this.caster);
-//   @override
-//   final int intId;
-//   @override
-//   final PayloadCaster<V> caster;
-// }
 
 /// Id as payload factory
 /// A `Request` matched with a `Response`
@@ -506,12 +484,15 @@ abstract interface class PacketIdRequest<T, R> implements PacketId {
   PacketId? get responseId; // null for 1-way or matching response, override for non matching
   PayloadCaster<T>? get requestCaster;
   PayloadCaster<R>? get responseCaster;
-  // PacketIdPayload<T>? get requestId;
-  // PacketIdPayload<R>? get responseId;
 }
 
+// abstract interface class ProtocolRequest<T, R> {
+//   PacketIdPayload<T>? get requestId;
+//   PacketIdPayload<R>? get responseId;
+// }
+
 ////////////////////////////////////////////////////////////////////////////
-///
+/// Example
 ////////////////////////////////////////////////////////////////////////////
 // enum PacketIdInternal implements PacketId {
 //   undefined;

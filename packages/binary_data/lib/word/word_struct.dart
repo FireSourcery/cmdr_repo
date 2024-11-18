@@ -19,19 +19,17 @@ abstract mixin class WordStruct<T extends WordField> implements BitStruct<T> {
   int get byteLength => bits.byteLength;
 }
 
-// /// a field within a Word, unlike BitField
-// for user to define map operator and name
+/// a field within a [WordStruct]
 /// interface for including [TypedField<T>], [Enum]
-
-/// type ensure bitmask is power of 2
-abstract mixin class WordField<V extends NativeType> implements TypedField<V>, BitFieldKey, Enum {
+/// type ensures bitmask is power of 2
+abstract mixin class WordField<V extends NativeType> implements TypedField<V>, BitField, Enum {
   // alternatively store the bitmask
   @override
   Bitmask get bitmask => Bitmask.bytes(offset, size);
 }
 
 // BitField with Word constructors
-abstract class WordStructBase<T extends WordField> extends ConstBitStructBase<T> with WordStruct<T> {
+abstract class WordStructBase<T extends WordField> extends ConstBitStruct<T> with WordStruct<T> {
   // const WordFieldsBase.bits(super.bits) : super();
 
   // re-implementation of Word constructors for const
@@ -65,8 +63,9 @@ abstract class WordStructBase<T extends WordField> extends ConstBitStructBase<T>
   // }
 }
 
+// applicable if user class is defined as mixin
 // constructors passed through
-class WordStructBaseWithKeys<T extends WordField> = ConstBitStructWithKeys<T> with WordStruct<T>;
+class WordStructBaseWithKeys<T extends WordField> = ConstBitStructMap<T> with WordStruct<T>;
 
 /// alternatively
 /// Must extend Word for const constructor, until const expressions are supported

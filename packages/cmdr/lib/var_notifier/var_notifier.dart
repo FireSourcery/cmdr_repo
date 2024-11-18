@@ -78,7 +78,7 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
 
   // for bit conversion only.
   @override
-  final List<BitFieldKey>? bitsKeys;
+  final List<BitField>? bitsKeys;
 
   // @override
   // final int? stringDigits;
@@ -138,7 +138,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   List<Enum>? get enumRange; // + defualt must be provided for non null return
 
   // for bits conversion only.
-  List<BitFieldKey>? get bitsKeys;
+  List<BitField>? get bitsKeys;
 
   ///
   int dataOfBinary(int binary) => signExtension?.call(binary) ?? binary;
@@ -150,7 +150,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // num clamp(num value) => value.clamp(viewMin!, viewMax!);
 
   Enum enumOf(int value) => enumRange?.elementAtOrNull(value) ?? VarValueEnum.unknown;
-  BitStruct<BitFieldKey> bitFieldsOf(int value) => BitStruct.withType(bitsKeys ?? const <BitFieldKey>[], value as Bits);
+  BitStruct<BitField> bitFieldsOf(int value) => ConstBitStructMap(bitsKeys ?? const <BitField>[], value as Bits);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// User defined subtypes
@@ -247,7 +247,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   @protected
   Enum get valueAsEnum => enumOf(valueAsInt);
   @protected
-  BitStruct<BitFieldKey> get valueAsBitFields => bitFieldsOf(valueAsInt);
+  BitStruct<BitField> get valueAsBitFields => bitFieldsOf(valueAsInt);
   @protected
   Uint8List get valueAsBytes => Uint8List(8)..buffer.asByteData().setUint64(0, valueAsInt, Endian.big);
   @protected
@@ -264,7 +264,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
       const (num) => valueAsNum,
       const (bool) => valueAsBool,
       const (Enum) => valueAsEnum,
-      const (BitsMap) => valueAsBitFields,
+      const (BitsMapBase) => valueAsBitFields,
       const (BitStruct) => valueAsBitFields,
       const (String) => valueAsString,
       _ => valueAsSubtype<R>(),

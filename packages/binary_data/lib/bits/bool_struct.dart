@@ -1,10 +1,11 @@
 // import 'package:flutter/foundation.dart' as foundation show BitField;
 
-import 'bits_map.dart';
-export 'bits_map.dart';
+import 'bits_map_base.dart';
+export 'bits_map_base.dart';
 
 ////////////////////////////////////////////////////////////////////////////////
 /// [Bits] + [] Map operators returning [bool]
+///   `Bit Index Map`
 ///
 /// A Bit-field is a class data `member` with explicit size, in bits.
 /// https://en.cppreference.com/w/cpp/language/bit_field
@@ -18,7 +19,7 @@ export 'bits_map.dart';
 ///
 ////////////////////////////////////////////////////////////////////////////////
 // implements foundation.BitField<T>,
-abstract mixin class BoolStruct<T extends Enum> implements BitsMap<T, bool> {
+abstract mixin class BoolStruct<T extends Enum> implements BitsMapBase<T, bool> {
   const BoolStruct();
 
   // factory BoolStruct(List<T> keys, [int bits = 0, bool mutable = true]) {
@@ -59,6 +60,13 @@ abstract mixin class BoolStruct<T extends Enum> implements BitsMap<T, bool> {
   }
 
   @override
+  bool remove(T key) {
+    final value = this[key];
+    this[key] = false;
+    return value;
+  }
+
+  @override
   Iterable<({T key, int value})> get fieldsAsBits => keys.map((e) => (key: e, value: this[e] ? 1 : 0));
   @override
   Iterable<({T key, bool value})> get fieldsAsBool => fields;
@@ -67,7 +75,7 @@ abstract mixin class BoolStruct<T extends Enum> implements BitsMap<T, bool> {
   Iterable<MapEntry<T, int>> get entriesAsBits => keys.map((key) => MapEntry(key, this[key] ? 1 : 0));
 
   @override
-  BoolStruct<T> copyWithBits(Bits bits) => ConstBoolStructWithKeys<T>(keys, bits);
+  BoolStruct<T> copyWithBits(Bits bits) => ConstBoolMap<T>(keys, bits);
   @override
   BoolStruct<T> copyWith() => copyWithBits(bits);
 
@@ -80,17 +88,21 @@ abstract mixin class BoolStruct<T extends Enum> implements BitsMap<T, bool> {
 }
 
 // typedef BoolKey = BitsIndexKey;
+// abstract mixin class IndexField implements BitField {
+//   int get index;
+//   Bitmask get bitmask => Bitmask.index(index);
+// }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// extendable
 ////////////////////////////////////////////////////////////////////////////////
-abstract class MutableBoolStructBase<T extends Enum> = MutableBitFieldsBase<T, bool> with BoolStruct<T>;
-abstract class ConstBoolStructBase<T extends Enum> = ConstBitFieldsBase<T, bool> with BoolStruct<T>;
+abstract class MutableBoolStruct<T extends Enum> = MutableBitsStructBase<T, bool> with BoolStruct<T>;
+abstract class ConstBoolStruct<T extends Enum> = ConstBitsStructBase<T, bool> with BoolStruct<T>;
 
 // ignore: missing_override_of_must_be_overridden
-class MutableBoolStructWithKeys<T extends Enum> = MutableBitFieldsWithKeys<T, bool> with BoolStruct<T>;
+class MutableBoolMap<T extends Enum> = MutableBitsMap<T, bool> with BoolStruct<T>;
 // ignore: missing_override_of_must_be_overridden
-class ConstBoolStructWithKeys<T extends Enum> = ConstBitFieldsWithKeys<T, bool> with BoolStruct<T>;
+class ConstBoolMap<T extends Enum> = ConstBitsMap<T, bool> with BoolStruct<T>;
 
 // abstract class ConstBoolStructInit<T extends Enum> extends ConstBitFieldsInit<T, bool> with BoolStruct<T> {
 //   const ConstBoolStructInit(super.source);

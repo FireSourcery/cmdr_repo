@@ -6,36 +6,42 @@ import 'package:meta/meta.dart';
 import 'protocol.dart'; // or move status
 
 /// Packet Rx Meta Parser
+/// Rx Packet Buffer and the state of the PacketTransformer
 class HeaderParser extends PacketBuffer {
-  HeaderParser(super.packetCaster, super.size) : super.size();
-  HeaderParser.interface(super.packetInterface, super.size) : super();
+  // HeaderParser(super.packetCaster, super.size) : super.size();
+  HeaderParser(super.packetInterface, super.size) : super();
 
-  Uint8List trailing = Uint8List(0);
-  HeaderStatus get status => HeaderStatus(this);
+  late Uint8List trailing = Uint8List.sublistView(viewAsBytes);
+
+  int get startId => packetClass.startId;
+
+  HeaderStatus get status => HeaderStatus(viewAsPacket);
 
   /// todo track length before parsing: RangeError (typedData.lengthInBytes): The typed list is not large enough: Not greater than or equal to 8: 3
 
   // cannot cast struct without full length
-  // always copy, double buffers, but does not need to handle remainder
+  // always copies remainder, double buffers.
+  // but does not need additional logic to handle remainder, simpler logic than switching pointers
   // sets view length to bound validity checks
-  void recvBytes(Uint8List bytesIn) {
-    if (length == 0) {
-      if (bytesIn.seekViewOfChar(packet.startId) case Uint8List result) copyBytes(result);
+  void receive(Uint8List bytes) {
+    // handle trailing here
+    if (isEmpty) {
+      if (bytes.seekChar(startId) case Uint8List result) copy(result);
     } else {
-      addBytes(bytesIn);
+      add(bytes);
     }
   }
 
-  void seekStart() => switch (bytes.seekViewOfChar(packet.startId)) { Uint8List view => copyBytes(view), null => clear() };
-  void seekTrailing() => copyBytes(trailing);
+  void seekStart() => switch (viewAsBytes.seekChar(startId)) { Uint8List view => copy(view), null => clear() };
+  void seekTrailing() => copy(trailing);
 
   // trim trailing before checking checksum
   // effectively sets pointers to (packetStart, packetEnd/trailingStart, trailingEnd)
   void completePacket() {
     assert(status.isPacketComplete == true);
-    final completePacketLength = packet.packetLengthOrNull!; // only valid when status.isPacketComplete
-    trailing = Uint8List.sublistView(bytes, completePacketLength);
-    length = completePacketLength;
+    final completeLength = viewAsPacket.packetLengthOrNull!; // only valid when status.isPacketComplete
+    trailing = Uint8List.sublistView(viewAsBytes, completeLength);
+    viewLength = completeLength;
   }
 
   // alternatively as caster
@@ -44,24 +50,24 @@ class HeaderParser extends PacketBuffer {
 
 /// determine complete, error, or wait for more data
 class HeaderStatus {
-  HeaderStatus(this.buffer);
+  HeaderStatus(this.packet);
   @protected
-  final HeaderParser buffer;
+  final Packet packet;
 
   /// is full length packet or greater, caller `ensure field are valid` before calling
   bool get isPacketComplete {
     assert(isStartValid == true);
     assert(isIdValid != false);
     // assert(isLengthValid != false); buffer.packet.isLengthValid
-    return buffer.packet.isPacketComplete;
+    return packet.isPacketComplete;
   }
 
-  bool? get isStartValid => buffer.packet.isStartFieldValid; // nullable when StartField is multiple bytes
-  bool? get isIdValid => buffer.packet.isIdFieldValid;
+  bool? get isStartValid => packet.isStartFieldValid; // nullable when StartField is multiple bytes
+  bool? get isIdValid => packet.isIdFieldValid;
   // non-sync only
-  bool? get isLengthValid => buffer.packet.isLengthFieldValid;
+  bool? get isLengthValid => packet.isLengthFieldValid;
   // packet must be complete and length set
-  bool? get isChecksumValid => buffer.packet.isChecksumFieldValid; // (isPacketComplete == true), buffer.length == buffer.lengthFieldOrNull
+  bool? get isChecksumValid => packet.isChecksumFieldValid; // (isPacketComplete == true), buffer.length == buffer.lengthFieldOrNull
 }
 
 /// combine partial/fragmented packets
@@ -82,11 +88,11 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
     //   return true;
     // }());
 
-    parserBuffer.recvBytes(bytesIn);
+    parserBuffer.receive(bytesIn);
 
     try {
       // while - potentially 1+ packets queued, do while HeaderStatus(isPacketComplete: false)
-      while (parserBuffer.bytes.isNotEmpty) {
+      while (parserBuffer.viewAsBytes.isNotEmpty) {
         // print('- parseHeader Loop Start: ${parserBuffer.bytes}');
 
         switch (parserBuffer.status) {
@@ -103,7 +109,7 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
             switch (parserBuffer.status.isChecksumValid) {
               case true || null: // null when no checksum implemented
                 /// pass on the packet, full buffer including
-                _outputSink.add(parserBuffer.packet); // data pointer is either from Link, or remainderBuffer
+                _outputSink.add(parserBuffer.viewAsPacket); // data pointer is either from Link, or remainderBuffer
                 /// transformed stream handles using same headerView before continuing
                 parserBuffer.seekTrailing(); // if excess packets queued, this loops recursively.. todo
 
@@ -118,7 +124,7 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
 
           /// no recognizable id, or recognized as incomplete
           case HeaderStatus(isPacketComplete: false):
-            assert(parserBuffer.length < parserBuffer.packet.lengthMax); // should be caught by isLengthValid
+            assert(parserBuffer.viewLength < parserBuffer.packetClass.lengthMax); // should be caught by isLengthValid
             return;
         }
       }

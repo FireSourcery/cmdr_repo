@@ -9,11 +9,6 @@ export '../bytes/typed_array.dart';
 /// Effectively [ByteData] with a length of 8 bytes.
 /// Can be compile time constant, use as enum entry
 extension type const Word(int _value) implements Bits, int {
-  /// must be standard class for constructors to be passed to child as const, and derived classes can be used as compile time constants
-  /// alternatively, defer until instance creation
-  // class Word {
-  // const Word(int value) : bits = value as Bits;
-
   const Word.of32s(int ls32, [int ms32 = 0]) : this((ms32 << 32) | (ls32 & _mask32));
 
   const Word.of16s(int ls16, [int upperLs16 = 0, int lowerMs16 = 0, int ms16 = 0])
@@ -74,31 +69,25 @@ extension type const Word(int _value) implements Bits, int {
   // void operator []=(int index, int value) => setByteAt(index, value);
 }
 
+/// alternatively, as standard class for constructors to be inherited as const, and sub classes can be used as compile time constants
+/// alternatively, defer until instance creation
+// abstract class WordBase {
+// const Word(int value) : bits = value as Bits;
+//   const WordBase.of32s(int ls32, [int ms32 = 0]) : _value = Word.of32s(ls32, ms32);
+//   const WordBase.of16s(int ls16, [int upperLs16 = 0, int lowerMs16 = 0, int ms16 = 0]);
+//   const WordBase.of8s(int lsb, [int lsb1 = 0, int lsb2 = 0, int lsb3 = 0, int msb3 = 0, int msb2 = 0, int msb1 = 0, int msb = 0]);
+
+//   final Word _value;
+// }
+
 ////////////////////////////////////////////////////////////////////////////////
 /// Word value for intervals not of pow2
 ////////////////////////////////////////////////////////////////////////////////
-// IntOfBytes
-extension SizedWord on TypedData {
-  // allows non pow2 intervals. use case [2][3][3] stored in a int64
-  // truncates if size > lengthInBytes, i.e. lengthInBytes the comparable ByteData.get[Int]
-  // creates a new buffer
-  // does not sign extend
-  // move this to constructor?
-  int valueAt(int byteOffset, int size, [Endian endian = Endian.little]) {
-    assert(size <= 8);
-    final endianOffset = switch (endian) { Endian.big => 8 - size, Endian.little => 0, Endian() => throw StateError('Endian') };
-    // todo check size as end
-    return (Uint8List(8)..setAll(endianOffset, Uint8List.sublistView(this, byteOffset, byteOffset + size))).toInt64(endian);
-    // or copy without offset and mask
-  }
-
-  // lengthInBytes >= 8
-  int toInt64([Endian endian = Endian.little]) => buffer.asByteData().getInt64(offsetInBytes, endian); // ByteData.sublistView(this).wordAt<Int64>(0, endian)
-
+extension IntOfBytes on TypedData {
   // valueAt max size is 8, when lengthInBytes >= 8, toInt64 avoids copying buffer
-  int toInt([Endian endian = Endian.little]) => (lengthInBytes >= 8) ? toInt64(endian) : valueAt(0, lengthInBytes, endian);
+  int toInt([Endian endian = Endian.little]) => (lengthInBytes >= 8) ? ByteData.sublistView(this).getInt64(0, endian) : ByteData.sublistView(this).valueAt(0, lengthInBytes, endian);
 
-  Word toWord([Endian endian = Endian.little]) => toInt(endian) as Word;
+  // Word toWord([Endian endian = Endian.little]) => toInt(endian) as Word;
 }
 
 // converts singular register into bytes
@@ -125,14 +114,26 @@ extension BytesOfInt on int {
   String charOfLiteral(int index, [bool isSigned = false]) => byteAt(index).toString(); // 1 => '1'
   int withCharAsLiteral(int index, String char) => withByteAt(index, int.parse(char)); // '1' => 1
 
-  // toCharAsCode
   String toCharAsCode() => String.fromCharCode(this);
-  // toStringAsCode
+
+  // char size 1 for now
   String toStringAsCode([Endian endian = Endian.little, int charSize = 1]) => String.fromCharCodes(toBytes(endian), 0, byteLength);
 }
 
-// on ByteData as it is the designated type for int conversion
-extension TrimByteData on ByteData {
+extension SizedWord on ByteData {
+  // allows non pow2 intervals. use case [2][3][3] stored in a int64
+  // truncates if size > lengthInBytes, i.e. lengthInBytes the comparable ByteData.get[Int]
+  // creates a new buffer
+  // does not sign extend
+  // move this to constructor? Word
+  int valueAt(int byteOffset, int size, [Endian endian = Endian.little]) {
+    assert(size <= 8);
+    final endianOffset = switch (endian) { Endian.big => 8 - size, Endian.little => 0, Endian() => throw StateError('Endian') };
+    return (Uint8List(8)..setAll(endianOffset, Uint8List.sublistView(this, byteOffset, byteOffset + size))).buffer.asByteData().getInt64(0, endian);
+    // or iterate bytemask on this
+  }
+
+  // on ByteData as it is the designated type for int conversion
   // big endian trim leading. little endian trim trailing
   // asTrimmed, asTrimmedView
   ByteData trimWord(int wordLength, Endian endian) => switch (endian) { Endian.big => trimLeading(wordLength), Endian.little => trimTrailing(wordLength), Endian() => throw StateError('Endian') };

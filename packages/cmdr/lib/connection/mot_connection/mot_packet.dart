@@ -2,35 +2,30 @@
 import 'package:binary_data/models/packet.dart';
 export 'package:binary_data/models/packet.dart';
 
-mixin class MotPacketInterface implements PacketClass {
+mixin class MotPacketInterface implements PacketClass<MotPacket> {
   const MotPacketInterface();
 
   @override
   int get lengthMax => 40;
   @override
-  int get idHeaderLength => 2;
+  int get lengthMin => 2;
+  @override
+  int get syncHeaderLength => 2;
   @override
   int get headerLength => 8;
   @override
   int get startId => 0xA5;
   @override
   Endian get endian => Endian.little;
-  @override
-  MotPacketId? idOf(int intId) => MotPacketId.of(intId);
-  @override
-  // MotPacketHeader castHeader(TypedData typedData) => MotPacketHeader.cast(typedData);
-  MotPacketHeader headerOf(TypedData typedData) => MotPacketHeader.cast(typedData);
-  @override
-  MotPacketHeaderSync syncHeaderOf(TypedData typedData) => MotPacketHeaderSync.cast(typedData);
 
   @override
-  TypedOffset<Uint8> get startFieldPart => const TypedOffset<Uint8>(0);
+  TypedField<Uint8> get startFieldPart => const TypedField<Uint8>(0);
   @override
-  TypedOffset<Uint8> get idFieldPart => const TypedOffset<Uint8>(1);
+  TypedField<Uint8> get idFieldPart => const TypedField<Uint8>(1);
   @override
-  TypedOffset<Uint16> get checksumFieldPart => const TypedOffset<Uint16>(2);
+  TypedField<Uint16> get checksumFieldPart => const TypedField<Uint16>(2);
   @override
-  TypedOffset<Uint8> get lengthFieldPart => const TypedOffset<Uint8>(4);
+  TypedField<Uint8> get lengthFieldPart => const TypedField<Uint8>(4);
 
   @override
   PacketIdSync get ack => MotPacketSyncId.MOT_PACKET_SYNC_ACK;
@@ -40,11 +35,45 @@ mixin class MotPacketInterface implements PacketClass {
   PacketIdSync get abort => MotPacketSyncId.MOT_PACKET_SYNC_ABORT;
 
   @override
+  MotPacketId? idOf(int intId) => MotPacketId.of(intId);
+
+  @override
+  MotPacketHeader headerOf(TypedData typedData) => MotPacketHeader.cast(typedData);
+  @override
+  MotPacketHeaderSync syncHeaderOf(TypedData typedData) => MotPacketHeaderSync.cast(typedData);
+
+  @override
   MotPacket cast(TypedData typedData) => MotPacket.cast(typedData);
+
+  @override
+  TypedDataCaster<MotPacket> get caster => MotPacket.cast;
+
+  @override
+  List<TypedField<NativeType>> get keys => throw UnimplementedError();
+
+  // @override
+  // // TODO: implement keys
+  // List<NativeKey<NativeType>> get keys => throw UnimplementedError();
+
+  // @override
+  // ByteStruct<ByteField<NativeType>> call(TypedData typedData) {
+  //   // TODO: implement call
+  //   throw UnimplementedError();
+  // }
+
+  // @override
+  // ByteStructCaster<Packet> get caster => throw UnimplementedError();
+
+  // @override
+  // List<NativeKey<NativeType>> get keys => throw UnimplementedError();
 }
 
-class MotPacket extends PacketBase with MotPacketInterface {
+class MotPacket extends Packet {
   MotPacket.cast(super.bytes);
+
+  @override
+  PacketClass<Packet> get packetClass => const MotPacketInterface();
+
   // @override
   // MotPacketHeader get packetHeader => super.packetHeader as MotPacketHeader;
 }
@@ -112,11 +141,12 @@ base class MotPacketHeader extends Struct implements PacketHeader {
 /// `[Start, Id]`
 ////////////////////////////////////////////////////////////////////////////////
 @Packed(1)
-base class MotPacketHeaderSync extends Struct implements PacketHeaderSync {
+base class MotPacketHeaderSync extends Struct implements PacketSyncHeader {
   factory MotPacketHeaderSync.cast(TypedData typedData) => Struct.create<MotPacketHeaderSync>(typedData);
 
   @Uint8()
   external int startField;
+
   @Uint8()
   external int idField;
 
@@ -132,6 +162,9 @@ base class MotPacketHeaderSync extends Struct implements PacketHeaderSync {
 
 sealed class MotPacketId implements PacketId {
   static MotPacketId? of(int intId) => _lookUpMap[intId];
+
+  // @override
+  // ByteStructCaster<Packet> get caster => MotPacket.cast;
 
   static final Map<int, MotPacketId> _lookUpMap = Map<int, MotPacketId>.unmodifiable({
     for (final id in MotPacketSyncId.values) id.intId: id,

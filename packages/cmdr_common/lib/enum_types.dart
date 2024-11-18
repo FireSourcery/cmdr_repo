@@ -55,6 +55,7 @@ extension type const EnumTypeUnion<T extends Enum>(Set<List<T>> valuesUnion) {
 //   final Enum? value;
 // }
 
+// extension type const EnumPrototype<T extends Enum>({List<T> enumValues, T defaultValue}) implements List<Enum> {}
 
 // extension type const EnumResolver<T extends Enum>._(T enumValue) implements Enum {
 //   EnumResolver(List<T> enumValues, int index) : this._(enumValues[index]);

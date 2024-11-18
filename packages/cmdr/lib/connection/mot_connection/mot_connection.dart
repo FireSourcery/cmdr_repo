@@ -1,9 +1,14 @@
 import '../base/link.dart';
-
 import '../base/protocol.dart';
 import '../links/serial_link.dart';
 import 'mot_packet.dart';
 import 'mot_protocol.dart';
+
+export '../base/link.dart';
+export '../base/protocol.dart';
+export '../links/serial_link.dart';
+export 'mot_packet.dart';
+export 'mot_protocol.dart';
 
 // Baud Rate | Byte Time | 24 byte time | 40 byte time
 // 19200 bauds | 520.833 µs | 12.499992 ms | 20.83332 ms

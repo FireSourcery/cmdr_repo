@@ -1,55 +1,66 @@
 import 'dart:ffi';
 import 'dart:typed_data';
+
+import 'package:cmdr_common/struct.dart';
+
 export 'dart:ffi';
 export 'dart:typed_data';
 
-/// [StructField]/[TypedField]/[StructKey], Typed 0,1,2,4,8 bytes
+/// [StructField]/[NativeKey]/[StructKey], Typed 0,1,2,4,8 bytes
 ///
 /// Using [NativeType] as type marker
 ///
 /// Field for
 ///   [ByteStruct] - backed by [TypedData]
-///   [WordStruct] - backed by [int]
+///   [WordStruct] - backed by [Bits/int]
 ///
 /// mixin can be applied to enum
-abstract mixin class TypedField<T extends NativeType> {
+abstract mixin class TypedField<T extends NativeType> implements Field<int> {
   const TypedField._();
-  const factory TypedField(int offset) = TypedOffset<T>;
+  const factory TypedField(int offset) = _TypedField<T>;
 
-  int get offset;
+  int get offset; // index of the first byte
 
   int get size => sizeOf<T>();
-  int get end => offset + size; // index of last byte + 1
+  int get end => offset + size; // index of the last byte + 1
   // int get valueMax => (1 << width) - 1);
 
+  // for BitStruct
   // static Bitmask bitmaskOf<T extends NativeType>(int offset) => Bitmask.bytes(offset, sizeOf<T>());
   // Bitmask asBitmask() => Bitmask.bytes(offset, size);
 
   /// [ByteStruct]
   // call passing T
-  // Although handling of keyed access is preferable in the data source class. It is clearer here.
+  // Although handling of keyed access is preferable in the data source class.
+  // T must handled in it's local scope. No type inference when passing `Field` to ByteData
 
   // replaced by ffi.Struct
-  int valueOf(ByteData byteData) => byteData.wordAt<T>(offset);
-  void setValueOf(ByteData byteData, int value) => byteData.setWordAt<T>(offset, value);
+  // applyGet
+  @override
+  int getIn(ByteData byteData) => byteData.wordAt<T>(offset);
+  @override
+  void setIn(ByteData byteData, int value) => byteData.setWordAt<T>(offset, value);
   // not yet replaceable
-  int? valueOrNullOf(ByteData byteData) => byteData.wordAtOrNull<T>(offset);
-  bool updateValueOf(ByteData byteData, int value) => byteData.updateWordAt<T>(offset, value);
+  @override
+  int? getInOrNull(ByteData byteData) => byteData.wordOrNullAt<T>(offset);
+  @override
+  bool setInOrNot(ByteData byteData, int value) => byteData.setWordOrNotAt<T>(offset, value);
+
+  @override
+  int? get defaultValue => 0;
+
+  @override
+  bool testBounds(ByteData byteData) => end <= byteData.lengthInBytes;
 }
 
-// class _TypedField<T extends NativeType> extends TypedField<T> {
-//   const _TypedField(this.offset) : super._();
-//   @override
-//   final int offset;
-// }
-
-// extension type TypedOffset1<T extends NativeType>(int offset) {}
-
-class TypedOffset<T extends NativeType> with TypedField<T> {
-  const TypedOffset(this.offset);
+class _TypedField<T extends NativeType> with TypedField<T> {
+  const _TypedField(this.offset);
 
   @override
   final int offset;
+
+  @override
+  int get index => throw UnimplementedError();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -82,7 +93,7 @@ extension GenericTypedWord on ByteData {
     };
   }
 
-  int? wordAtOrNull<R extends NativeType>(int byteOffset, [Endian endian = Endian.little]) {
+  int? wordOrNullAt<R extends NativeType>(int byteOffset, [Endian endian = Endian.little]) {
     return (byteOffset + sizeOf<R>() <= lengthInBytes) ? wordAt<R>(byteOffset, endian) : null;
   }
 
@@ -98,7 +109,7 @@ extension GenericTypedWord on ByteData {
     };
   }
 
-  bool updateWordAt<R extends NativeType>(int byteOffset, int value, [Endian endian = Endian.little]) {
+  bool setWordOrNotAt<R extends NativeType>(int byteOffset, int value, [Endian endian = Endian.little]) {
     if (byteOffset + sizeOf<R>() <= lengthInBytes) {
       setWordAt(byteOffset, value, endian);
       return true;
@@ -109,15 +120,15 @@ extension GenericTypedWord on ByteData {
 
 // /// General case, without NativeType
 // /// `Partition`
-// abstract mixin class Part {
-//   // const Part._();
-//   const factory Part(int offset, int size) = _Part;
+// abstract mixin class SizedField {
+//   // const SizedField._();
+//   // const factory SizedField(int offset, int size) = _SizedField;
+
 //   int get offset;
 //   int get size;
-
 //   int get end => offset + size;
 
-//   List<int> arrayOf<R extends TypedData>(TypedData typedList) => typedList.sublistViewOrEmpty<R>(offset, size);
+//   List<int> arrayOf<R extends TypedData>(TypedData typedList) => typedList.asIntListOrEmpty<R>(offset, size);
 // }
 
 // class _Part with Part {
