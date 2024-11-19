@@ -104,6 +104,7 @@ abstract mixin class ServiceKey<K, V> implements UnionValueKey<V> {
   // a serviceKey can directly access the value with a provided reference to service
   // ServiceIO? get service;
   // V? get value => service?.get(keyValue);
+  // alternatively as V always return a cached value
   V? get value;
   set value(V? newValue);
   Future<bool> updateValue(V value);

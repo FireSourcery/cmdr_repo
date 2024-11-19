@@ -34,9 +34,6 @@ abstract mixin class EnumMap<K extends Enum, V> implements FixedMap<K, V> {
   void clear();
   V remove(covariant K key);
 
-  ///  move to construct
-  dynamic copyWith() => this;
-
   // analogous to operator []=, but returns a new instance
   EnumMap<K, V> withField(K key, V value) => (ProxyEnumMap<K, V>(this)..[key] = value);
   //
@@ -73,10 +70,11 @@ extension EnumMapByName<K extends Enum, V> on Map<K, V> {
 
   Map<String, V> validateJson(Map<String, Object?> json) {
     if (json is Map<String, V>) {
-      // handle mixed types case, V is Object
-      if (keys is List<TypedEnumKey>) {
-        for (final TypedEnumKey key in keys as List<TypedEnumKey>) {
-          if (!key.compareType(json[key.name])) throw FormatException('$runtimeType: ${key.name} is not of type ${key.type}');
+      // handle mixed types case, V is defined as Object?
+      if (keys case List<TypeKey> typedKeys) {
+        // can types be implemented separately?
+        for (final key in typedKeys) {
+          if (!key.compareType(json[(key as Enum).name])) throw FormatException('$runtimeType: ${(key as Enum).name} is not of type ${key.type}');
         }
       }
       return json;
@@ -90,118 +88,7 @@ extension EnumNamedValues<K extends Enum, V> on Iterable<MapEntry<K, V>> {
 }
 
 // only necessary for mixed V type keys
-abstract interface class TypedEnumKey<V> implements Enum, TypeKey<V> {}
+// abstract interface class TypedEnumKey<V> implements Enum, TypeKey<V> {}
 
 class EnumIndexMap<K extends Enum, V> = IndexMap<K, V> with EnumMap<K, V>;
 class ProxyEnumMap<K extends Enum, V> = ProxyIndexMap<K, V> with EnumMap<K, V>;
-
-// cast of general map - must have all keys
-// compile time const definition using map literal
-// EnumMap<EnumType> example = EnumMapCastMap(
-//   EnumType.values,
-//   {
-//     EnumType.name1: 2,
-//     EnumType.name2: 3,
-//   },
-// );
-// ignore: missing_override_of_must_be_overridden
-// may need to be mixin
-// class ConstEnumMapInit<K extends Enum, V> extends EnumMapBase<K, V> implements EnumMap<K, V> {
-//   const ConstEnumMapInit(this.source);
-
-//   @protected
-//   final Map<K, V> source;
-
-//   @override
-//   V operator [](covariant K key) => source[key]!;
-
-//   @override
-//   void operator []=(K key, V value) => throw UnsupportedError("Cannot modify unmodifiable");
-//   @override
-//   void clear() => throw UnsupportedError("Cannot modify unmodifiable");
-//   @override
-//   V remove(covariant K key) => throw UnsupportedError("Cannot modify unmodifiable");
-
-//   @override
-//   List<K> get keys {
-//     if (source is EnumMap<K, V>) return (source as EnumMap<K, V>).keys; // only step to generalize for EnumMap as source
-//     return UnmodifiableListView(source.keys);
-//   }
-// }
-
-/// move to Construct
-
-/// default implementation of immutable copy as subtype
-/// auto typing return as Subtype class.
-/// copy references to a new buffer, then pass to child constructor
-///    Subtype class can override to optimize
-mixin EnumMapAsSubtype<S extends EnumMap<K, V>, K extends Enum, V> on EnumMap<K, V> {
-  // Overridden the in child class
-  //  calls the child class constructor
-  //  return an instance of the child class type
-  //  passing empty parameters always copies all values
-  @override
-  @mustBeOverridden
-  S copyWith();
-
-  @override
-  S withField(K key, V value) => (super.withField(key, value)).copyWith();
-  @override
-  S withEntries(Iterable<MapEntry<K, V>> entries) => (super.withEntries(entries)).copyWith();
-  @override
-  S withAll(Map<K, V> map) => (super.withAll(map)).copyWith();
-}
-
-/// Class/Type/Factory
-/// Keys list effectively define EnumMap type and act as factory
-/// inheritable constructors
-/// this way all factory constructors are related by a single point of interface.
-///   otherwise each factory in the child must wrap the parent factory.
-///   e.g. Child factory fromJson(Map<String, Object?> json) => Child.castBase(Super.fromJson(json));
-/// additionally
-/// no passing keys as parameter
-/// partial/nullable return
-// extension type const EnumMapFactory<S extends EnumMap<K, V>, K extends Enum, V>(List<K> keys) {
-//   // only this needs to be redefined in child class
-//   // or castFrom
-//   S castBase(EnumMap<K, V> state) => state as S;
-
-//   // alternatively use copyWith.
-//   // or allow user end to maintain 2 separate routines?
-//   // also separates cast as subtype from EnumMap class
-
-//   // EnumMap<K, V?> create({EnumMap<K, V>? state, V? fill}) {
-//   //   if (state == null) {
-//   //     return EnumMapDefault<K, V?>.filled(keys, null);
-//   //   } else {
-//   //     return castBase(state);
-//   //   }
-//   // }
-
-//   // EnumMap<K, V?> filled(V? fill) => EnumMapDefault<K, V?>.filled(keys, null);
-//   // EnumMap<K, V?> fromValues([List<V>? values, V? fill]) => EnumMapDefault<K, V?>._fromValues(keys, values);
-
-//   EnumMap<K, V> _fromEntries(Iterable<MapEntry<K, V>> entries) => EnumIndexMap<K, V>.fromEntries(keys, entries);
-
-//   // assert all keys are present
-//   S fromEntries(Iterable<MapEntry<K, V>> entries) => castBase(_fromEntries(entries));
-//   S fromMap(Map<K, V> map) => castBase(_fromEntries(map.entries));
-
-//   // parseJson()
-//   // by default allocate new list buffer
-//   EnumMap<K, V> _fromJson(Map<String, Object?> json) {
-//     if (json is Map<String, V>) {
-//       // field of mixed types case, check type
-//       if (keys is List<TypedEnumKey>) {
-//         for (final key in keys as List<TypedEnumKey>) {
-//           if (!key.compareType(json[key.name])) throw FormatException('EnumMap.fromJson: ${key.name} is not of type ${key.type}');
-//         }
-//       }
-//       return _fromEntries(json.entries.map((e) => MapEntry(keys.byName(e.key), e.value)));
-//     } else {
-//       throw FormatException('EnumMap.fromJson: $json is not of type Map<String, V>');
-//     }
-//   }
-
-//   S fromJson(Map<String, Object?> json) => castBase(_fromJson(json));
-// }

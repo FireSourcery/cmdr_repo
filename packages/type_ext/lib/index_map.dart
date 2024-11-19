@@ -23,6 +23,8 @@ abstract mixin class FixedMap<K, V> implements Map<K, V> {
   // Iterable<(K, V)> get pairs => keys.map((e) => (e, this[e]));
   // Iterable<({K key, V value})> get fields => keys.map((e) => (key: e, value: this[e]));
 
+  // FixedMap<K, V> proxy() => ProxyIndexMap<K, V>(this);
+
   // analogous to operator []=, but returns a new instance
   // FixedMap<K, V> withField(K key, V value) => (ProxyIndexMap<K, V>(this)..[key] = value);
   // //

@@ -35,8 +35,10 @@ extension type ByteStruct<K extends ByteField<NativeType>>(ByteData byteData) im
 }
 
 // abstract mixin class ByteStruct<K extends ByteField> {
-//   const ByteStruct();
-
+// //   const ByteStruct();
+//   const ByteConstruct._(this.structData);
+//   ByteConstruct.origin(ByteBuffer bytesBuffer, [int offset = 0, int? length]) : structData = ByteStruct(bytesBuffer.asByteData(offset, length));
+//   ByteConstruct(TypedData typedData, [int offset = 0, int? length]) : structData = ByteStruct(ByteData.sublistView(typedData, offset, offset + (length ?? 0)));
 //   @protected
 //   ByteData get byteData; // ByteData as base type of TypedData for immediate keyed access
 
@@ -138,7 +140,7 @@ class ByteStructClass<T, K extends ByteField<NativeType>> {
   final TypedDataCaster<T> caster;
 
   T? cast(TypedData typedData) {
-    if (typedData.lengthInBytes < lengthMax) return null;
+    // if (typedData.lengthInBytes < lengthMax) return null;
     return caster(typedData);
   }
 
@@ -190,6 +192,9 @@ class ByteStructBuffer<T> extends TypedDataBuffer {
   @protected
   final T bufferAsStruct;
 
+  // check bounds with struct class
+  T get viewAsStruct => structCaster(viewAsBytes); // try partial view
+
   /// `view as ByteStruct`
   /// view as `length available` in buffer, maybe a partial or incomplete view
   /// nullable accessors in effect, length is set in contents
@@ -207,7 +212,4 @@ class ByteStructBuffer<T> extends TypedDataBuffer {
 
   // build(dynamic values) => throw UnimplementedError();
   // parse(dynamic values) => throw UnimplementedError();
-
-  // check bounds with struct class
-  T get viewAsStruct => structCaster(viewAsBytes); // try partial view
 }

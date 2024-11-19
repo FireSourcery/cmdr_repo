@@ -19,19 +19,6 @@ class TypedDataBuffer implements BytesBuilder {
 
   int get lengthMax => bufferAsBytes.lengthInBytes;
 
-  // alternative implementation for fragmented starts
-  // @protected
-  // Uint8List dataView; // used to hold length, probably change to int
-  // disallow changing dataView as pointer directly, caller use length
-  // int get viewLength => dataView.lengthInBytes;
-  // @protected
-  // set viewLength(int value) {
-  //   // runtime assertion is handled by parser
-  //   assert(value <= lengthMax); // minus offset if view does not start at buffer 0, case of inheritance
-  //   dataView = _byteBuffer.asUint8List(0, value);
-  //   // _bytesView = _byteBuffer.asUint8List(0, value); // need Uint8List.view. sublistView will not exceed current length
-  // }
-
   Uint8List get viewAsBytes => bufferAsBytes.buffer.asUint8List(0, viewLength); // holds truncated view, mutable length.
 
   @protected
@@ -76,9 +63,19 @@ class TypedDataBuffer implements BytesBuilder {
 
   @override
   Uint8List toBytes() => bufferAsBytes.sublist(0);
-
-  // void copy(TypedData dataIn, [int lengthInBytes = 0]) {}
-  // void add(TypedData dataIn) {}
 }
+
+// alternative implementation for fragmented trailing buffer
+// @protected
+// Uint8List dataView; // used to hold length, probably change to int
+// disallow changing dataView as pointer directly, caller use length
+// int get viewLength => dataView.lengthInBytes;
+// @protected
+// set viewLength(int value) {
+//   // runtime assertion is handled by parser
+//   assert(value <= lengthMax); // minus offset if view does not start at buffer 0, case of inheritance
+//   dataView = _byteBuffer.asUint8List(0, value);
+//   // _bytesView = _byteBuffer.asUint8List(0, value); // need Uint8List.view. sublistView will not exceed current length
+// }
 
 typedef TypedDataCaster<T> = T Function(TypedData typedData);

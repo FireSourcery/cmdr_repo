@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:binary_data/bits/bits.dart';
+import 'package:collection/collection.dart';
 import 'package:type_ext/basic_types.dart';
 
 import 'typed_data_ext.dart';
@@ -14,8 +16,8 @@ extension type const TypedArray<T extends TypedData>._(T _this) implements Typed
   static T typedArrayOf<T extends TypedData>(TypedData data, [int typedOffset = 0, int? end]) {
     return switch (T) {
       const (TypedData) || const (dynamic) => data.typeRestrictedKey.callWithRestrictedType(<G extends TypedData>() => sublistView<G>(data, typedOffset, end) as T),
-      const (ByteData) => throw UnsupportedError('ByteData is not a typed list'),
       _ => sublistView<T>(data, typedOffset, end),
+      // const (ByteData) => throw UnsupportedError('ByteData is not a typed list'),
     };
   }
 
@@ -156,6 +158,7 @@ extension GenericSublistView on TypedData {
   // bool testBounds(int offset, int length) => (offset >= 0 && length >= 0 && offset + length <= lengthInBytes);
   bool testBounds(int offset, int? end) => ((offset * elementSizeInBytes) <= (end ?? this.end));
 
+  // handles R as dynamic as `this` type, while sublistView throws error
   // offset uses type of 'this', not R type.
   R asTypedArray<R extends TypedData>([int typedOffset = 0, int? end]) => TypedArray<R>.cast(this, typedOffset, end).asThis; // return empty list if offset > length by default?
   R? asTypedArrayOrNull<R extends TypedData>([int typedOffset = 0, int? end]) => testBounds(typedOffset, end) ? asTypedArray<R>(typedOffset, end) : null;
@@ -209,10 +212,10 @@ extension TypedDataSlices on TypedData {
   Iterable<T> typedSlices<T extends TypedData>(int length) sync* {
     if (length < 1) throw RangeError.range(length, 1, null, 'length');
     for (var offset = 0; offset < lengthInBytes; offset += length) {
-      yield TypedArray<T>.cast(this, offset, min(offset + length, lengthInBytes)).asThis;
-      // todo range of bytes being viewed must be multiples.
+      yield sublistView<T>(this, offset, min(offset + length, lengthInBytes));
     }
   }
+  // todo range of bytes being viewed must be multiples.
 }
 
 ////////////////////////////////////////////////////////////////////////////////

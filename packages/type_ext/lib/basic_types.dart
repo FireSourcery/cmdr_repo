@@ -30,6 +30,7 @@ mixin class TypeRestrictedKey<T extends S, S> {
 /// Union of generic types
 // A primitive union type key
 // boundary depending on type
+// DataKey
 abstract mixin class UnionValueKey<V> implements TypeKey<V> {
   const UnionValueKey();
 
@@ -103,7 +104,30 @@ typedef NullableStringifier<T> = String Function(T? input); // defining non-null
 
 // }
 
-extension MapExt<K, V> on Map<K, V> {} 
+abstract mixin class Sliceable<T extends Sliceable<dynamic>> {
+  // int get start => 0;
+  int get totalLength;
+  T slice(int start, int end);
+
+  Iterable<T> slices(int sliceLength) sync* {
+    for (var index = 0; index < totalLength; index += sliceLength) {
+      yield slice(index, (totalLength - index).clamp(0, totalLength));
+    }
+  }
+}
+
+class Slicer<T> {
+  const Slicer(this.slicer, this.length);
+  final T Function(int start, int end) slicer;
+  final int length;
+  // final int start;
+
+  Iterable<T> slices(int sliceLength) sync* {
+    for (var index = 0; index < length; index += sliceLength) {
+      yield slicer(index, (length - index).clamp(0, length));
+    }
+  }
+}
 
 // naming convention notes
 // For classes and types -

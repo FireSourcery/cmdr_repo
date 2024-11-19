@@ -131,9 +131,7 @@ extension BitmasksMethods on Iterable<Bitmask> {
 ///   cast with any sub type
 ///
 abstract mixin class BitsBase {
-  // const BitsBase();
-  // create a general bitsMap that can be cast later.
-  // const factory BitsBase(Bits bits) = ConstBits;
+  const BitsBase();
 
   Bits get bits;
   set bits(Bits value); // only dependency for unmodifiable
@@ -146,7 +144,6 @@ abstract mixin class BitsBase {
   // void operator []=(dynamic key, int value) => bits = bits.withBits(key.bitmask, value);
 
   int getBits(Bitmask mask) => bits.getBits(mask);
-  // void set(Bitmask mask, int value) => bits = bits.withBits(mask, value);
 
   void setBits(Bitmask mask, int value) => bits = bits.withBits(mask, value);
   void setBitsAt(int offset, int width, int value) => bits = bits.withBitsAt(offset, width, value);
@@ -159,6 +156,7 @@ abstract mixin class BitsBase {
   void reset([bool fill = false]) => bits = fill ? const Bits.allOnes() : const Bits.allZeros();
 
   String toStringAsBinary() => bits.toStringAsBinary(); // 0b000
+  String toStringAsBits() => bits.toRadixString(2); // 000
 
   @override
   bool operator ==(covariant BitsBase other) {

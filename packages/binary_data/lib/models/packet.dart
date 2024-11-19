@@ -11,7 +11,7 @@ export '../bytes/byte_struct.dart';
 // effectively Packet subtype encapsulated
 //  values available without a Packet instance, over prototype object
 // abstract mixin class PacketClass<T extends Packet> implements ByteStructClass<T, ByteField>  {
-abstract mixin class PacketClass<T extends Packet> {
+abstract interface class PacketClass<T extends Packet> {
   // const for each packet instance
   // can implement in PacketId for per packet behavior
   int get lengthMax; // length in bytes
@@ -23,9 +23,9 @@ abstract mixin class PacketClass<T extends Packet> {
   // int get fixedHeaderLength; // an alternate header for fixed size payload as determined by id
   int get startId; // alternatively Uint8List
 
-  PacketIdSync get ack;
-  PacketIdSync get nack;
-  PacketIdSync get abort;
+  PacketSyncId get ack;
+  PacketSyncId get nack;
+  PacketSyncId get abort;
 
   PacketId? idOf(int intId);
 
@@ -96,7 +96,7 @@ abstract class Packet {
   ////////////////////////////////////////////////////////////////////////////////
   /// Header/Payload Pointers using defined boundaries
   ////////////////////////////////////////////////////////////////////////////////
-  Uint8List get idHeader => Uint8List.sublistView(packetData, 0, packetClass.syncHeaderLength);
+  Uint8List get idHeader => Uint8List.sublistView(packetData, 0, packetClass.lengthMin);
   Uint8List get header => Uint8List.sublistView(packetData, 0, packetClass.headerLength);
   Uint8List get payload => Uint8List.sublistView(packetData, payloadIndex);
 
@@ -204,7 +204,7 @@ abstract class Packet {
 
   void buildHeader(PacketId packetId, int payloadLength) {
     return switch (packetId) {
-      PacketIdSync() => buildHeaderAsSync(packetId),
+      PacketSyncId() => buildHeaderAsSync(packetId),
       PacketIdRequest() => buildHeaderAsRequest(packetId, payloadLength),
       PacketId() => throw UnimplementedError(),
     };
@@ -217,7 +217,7 @@ abstract class Packet {
   ////////////////////////////////////////////////////////////////////////////////
   // use shorter type, casting as longer header on smaller bytes will throw. optionally use field offset
   PacketId? get packetId => packetClass.idOf(asSync.idField); // idOf(idFieldPart.fieldValue(headerWords));
-  PacketIdSync? parseSyncId() => switch (packetId) { PacketIdSync syncId => syncId, _ => null };
+  PacketSyncId? parseSyncId() => switch (packetId) { PacketSyncId syncId => syncId, _ => null };
   int get parsePayloadLength => asHeader.lengthField - packetClass.headerLength; // until casting is available
 
   /// for valueOrNull from header status
@@ -233,7 +233,7 @@ abstract class Packet {
 
   ////////////////////////////////////////////////////////////////////////////////
   /// On partial header, truncated view, header status during parsing
-  /// defined using TypedOffset
+  /// using cast length
   ////////////////////////////////////////////////////////////////////////////////
   // header struct cannot cast less than full length
   int? get startFieldOrNull => packetClass.startFieldDef.getInOrNull(packetData);
@@ -250,7 +250,7 @@ abstract class Packet {
 
   /// derived values using field offset + size
   PacketId? get packetIdOrNull => switch (idFieldOrNull) { int value => packetClass.idOf(value), null => null }; // null if not found or invalid..
-  int? get packetLengthOrNull => switch (packetIdOrNull) { PacketIdSync() => packetClass.syncHeaderLength, PacketId() => lengthFieldOrNull, null => null };
+  int? get packetLengthOrNull => switch (packetIdOrNull) { PacketSyncId() => packetClass.syncHeaderLength, PacketId() => lengthFieldOrNull, null => null };
 
   bool get isPacketComplete => switch (packetLengthOrNull) { int value => (length >= value), null => false };
 
@@ -307,6 +307,7 @@ abstract interface class PacketIdHeader {
 /// a basic opinionated implementation, union with sync header
 /// can be defined on a Struct, fixed length
 /// interface only, ffi.Struct cannot mixin
+/// handle length before cast
 abstract interface class PacketHeader implements PacketIdHeader {
   int get startField; // > 1 byte user handle using Word module
   int get idField;
@@ -424,7 +425,7 @@ class PacketBuffer<T extends Packet> extends ByteStructBuffer<T> {
     viewLength = syncHeaderLength;
   }
 
-  PacketIdSync? parseSyncId() => _packetBuffer.parseSyncId();
+  PacketSyncId? parseSyncId() => _packetBuffer.parseSyncId();
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -433,7 +434,7 @@ class PacketBuffer<T extends Packet> extends ByteStructBuffer<T> {
 /// build idOf from lists internally
 /// PacketIdFactory
 class PacketIdCaster {
-  PacketIdCaster({required Iterable<List<PacketId>> idLists, required List<PacketIdSync> syncIds})
+  PacketIdCaster({required Iterable<List<PacketId>> idLists, required List<PacketSyncId> syncIds})
       : _lookUpMap = Map<int, PacketId>.unmodifiable({
           for (final idList in idLists)
             for (final id in idList) id.intId: id,
@@ -450,37 +451,37 @@ class PacketIdCaster {
 }
 
 // separate type label allow pattern matching
+// the base type can be sealed
 abstract interface class PacketId implements Enum {
   int get intId;
 }
 
-abstract interface class PacketIdSync implements PacketId {}
-
-abstract interface class PacketIdFixed implements PacketId {
-  int get length;
-  // PayloadCaster<V> get caster;
-}
+abstract interface class PacketSyncId implements PacketId {}
 
 // Id hold a constructor to create a handler instance to process as packet
-abstract interface class PacketIdPayload<V> implements PacketId {
-  PayloadCaster<V> get caster;
+abstract interface class PacketPayloadId<V> implements PacketId {
+  PayloadCaster<V> get payloadCaster;
+}
+
+abstract interface class PacketFixedId<V> implements PacketPayloadId<V> {
+  int get length;
+}
+
+abstract interface class PacketVariableId<V> implements PacketPayloadId<V> {
+  // int get lengthMax;
+  // int lengthOf(V values);
 }
 
 /// Id as payload factory
 /// A `Request` matched with a `Response`
 /// paired request response id for simplicity in case of shared id by request and response
-/// under define responseId for 1-way
+/// can under define responseId for 1-way
 /// handlers as constructors, const for enum
 abstract interface class PacketIdRequest<T, R> implements PacketId {
   PacketId? get responseId; // null for 1-way or matching response, override for non matching
   PayloadCaster<T>? get requestCaster;
   PayloadCaster<R>? get responseCaster;
 }
-
-// abstract interface class ProtocolRequest<T, R> {
-//   PacketIdPayload<T>? get requestId;
-//   PacketIdPayload<R>? get responseId;
-// }
 
 ////////////////////////////////////////////////////////////////////////////
 /// Example

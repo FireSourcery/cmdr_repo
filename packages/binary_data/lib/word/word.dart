@@ -71,8 +71,7 @@ extension type const Word(int _value) implements Bits, int {
 
 /// alternatively, as standard class for constructors to be inherited as const, and sub classes can be used as compile time constants
 /// alternatively, defer until instance creation
-// abstract class WordBase {
-// const Word(int value) : bits = value as Bits;
+// abstract class WordBase extends BitsBase {
 //   const WordBase.of32s(int ls32, [int ms32 = 0]) : _value = Word.of32s(ls32, ms32);
 //   const WordBase.of16s(int ls16, [int upperLs16 = 0, int lowerMs16 = 0, int ms16 = 0]);
 //   const WordBase.of8s(int lsb, [int lsb1 = 0, int lsb2 = 0, int lsb3 = 0, int msb3 = 0, int msb2 = 0, int msb1 = 0, int msb = 0]);

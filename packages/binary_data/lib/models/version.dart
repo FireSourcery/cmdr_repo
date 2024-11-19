@@ -6,7 +6,7 @@ import '../word/word_struct.dart';
 /// 4 fields [optional, major, minor, fix] by default, 1 or 2 bytes each
 /// parameterize T to constrain functions of T key to types the Version is defined with
 // alternatively `class Version extends WordFieldsBase<WordField<NativeType>>` allows for access with any WordField key
-abstract class Version<T extends WordField> extends WordStructBase<T> with BitStructAsSubtype<Version<T>, T> {
+abstract class Version<T extends WordField> extends WordStruct<T> with BitStructAsSubtype<Version<T>, T> {
   // uses VersionFieldStandard keys when no keys AND type parameter is specified
   factory Version(int optional, int major, int minor, int fix, {String? name}) => VersionStandard(optional, major, minor, fix, name: name) as Version<T>;
   // factory Version(int optional, int major, int minor, int fix, {String? name}) = VersionStandard  ;
@@ -23,17 +23,13 @@ abstract class Version<T extends WordField> extends WordStructBase<T> with BitSt
 
   Version.castBase(super.state) : super.castBase();
 
-  //   VersionClass<T> = ({List<T>, String});
-
   @override
   List<T> get keys;
-  // @override
   String? get name;
 
   @override
   Version<T> copyWith() => _VersionWithKeys(this.keys, name: this.name, value: bits);
 
-  // provide default copyWithBits to inherit withX methods
   @override
   Version<T> copyWithBits(Bits value) => _VersionWithKeys(this.keys, name: this.name, value: value);
 

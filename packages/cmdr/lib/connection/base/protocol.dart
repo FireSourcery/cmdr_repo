@@ -249,7 +249,7 @@ class ProtocolSocket implements Sink<Packet> {
   //   }
   // }
 
-  Future<PacketIdSync?> ping(covariant PacketIdSync id, [covariant PacketIdSync? respId, Duration timeout = timeoutDefault]) async {
+  Future<PacketSyncId?> ping(covariant PacketSyncId id, [covariant PacketSyncId? respId, Duration timeout = timeoutDefault]) async {
     protocol.mapResponse(respId ?? id, this);
     return sendSync(id).then((_) async => await recvSync(timeout));
   }
@@ -279,14 +279,14 @@ class ProtocolSocket implements Sink<Packet> {
 
   /// respondSync
   @protected
-  Future<void> sendSync(PacketIdSync syncId) {
+  Future<void> sendSync(PacketSyncId syncId) {
     packetBufferOut.buildSync(syncId);
     return protocol.trySend(packetBufferOut.viewAsPacket);
   }
 
   @protected
-  Future<PacketIdSync?> recvSync([Duration timeout = timeoutDefault]) {
-    return tryRecv<PacketIdSync>(() => packetBufferIn.parseSyncId(), timeout);
+  Future<PacketSyncId?> recvSync([Duration timeout = timeoutDefault]) {
+    return tryRecv<PacketSyncId>(() => packetBufferIn.parseSyncId(), timeout);
   }
 
   // host side initiated wait
@@ -379,3 +379,11 @@ class ProtocolException implements Exception {
   static const ProtocolException ok = ProtocolException('Ok');
   static const ProtocolException link = ProtocolException(' ');
 }
+
+
+// request formats, match in this layer, provides more than one pairing than packet id
+// alternatively
+// abstract interface class ProtocolRequest<T, R> {
+//   PacketIdPayload<T>? get requestId;
+//   PacketIdPayload<R>? get responseId;
+// }

@@ -27,13 +27,19 @@ extension NumTo on num {
   R to<R extends num>() => switch (R) { const (int) => toInt(), const (double) => toDouble(), const (num) => this, _ => throw StateError(' ') } as R;
 }
 
-extension IterableIntExtensions on Iterable<int> {
-  /// Match a sequence of integers in the iterable
-  int indexOfSequence(Iterable<int> match) => String.fromCharCodes(this).indexOf(String.fromCharCodes(match));
-}
-
 extension TrimString on String {
   String trimNulls() => replaceAll(RegExp(r'^\u0000+|\u0000+$'), '');
   String keepNonNulls() => replaceAll(String.fromCharCode(0), '');
   String keepAlphaNumeric() => replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
 }
+
+extension IterableIntExtensions on Iterable<int> {
+  /// Match a sequence of integers in the iterable
+  int indexOfSequence(Iterable<int> match) => String.fromCharCodes(this).indexOf(String.fromCharCodes(match));
+}
+
+extension RecordSlices<T extends Record> on T {
+  Iterable<T> slices(T Function(int start, int end) slicer, int totalLength, int sliceLength) => Slicer(slicer, totalLength).slices(sliceLength);
+}
+
+extension MapExt<K, V> on Map<K, V> {}

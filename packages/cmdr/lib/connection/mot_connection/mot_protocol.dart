@@ -15,7 +15,7 @@ class MotProtocolSocket extends ProtocolSocket {
   /// Base wrappers
   ////////////////////////////////////////////////////////////////////////////////
   @override
-  Future<PacketIdSync?> ping([MotPacketSyncId id = MotPacketSyncId.MOT_PACKET_PING, MotPacketSyncId? respId, Duration timeout = ProtocolSocket.timeoutDefault]) async => super.ping(id, respId);
+  Future<PacketSyncId?> ping([MotPacketSyncId id = MotPacketSyncId.MOT_PACKET_PING, MotPacketSyncId? respId, Duration timeout = ProtocolSocket.timeoutDefault]) async => super.ping(id, respId);
 
   Future<int?> stopMotors() async => requestResponse(MotPacketRequestId.MOT_PACKET_STOP_ALL, null);
   Future<VersionResponseValues?> version() async => await requestResponse(MotPacketRequestId.MOT_PACKET_VERSION, null);
@@ -71,7 +71,7 @@ class MotProtocolSocket extends ProtocolSocket {
   }
 
   Future<MemWriteResponseValues?> writeMemSlicesRecursive(int address, int size, int config, Uint8List data, [int successCode = 0]) async {
-    if (size < 0) return successCode;
+    if (size <= 0 || data.lengthInBytes <= 0) return successCode;
     final sliceSize = min(MemReadRequest.sizeMax, data.lengthInBytes);
     if (await writeMem(address, sliceSize, config, data) case int statusCode when statusCode != successCode) return statusCode;
     return await writeMemSlicesRecursive(address + sliceSize, size - sliceSize, config, Uint8List.sublistView(data, sliceSize), successCode);

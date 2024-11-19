@@ -16,7 +16,7 @@ void copyMemoryRange(TypedData destination, TypedData source, [int destOffset = 
 
 extension Uint8ListCopy on Uint8List {
   // cast one side only
-  void copy(TypedData source, [int? length]) {
+  void copyMax(TypedData source, [int? length]) {
     final effectiveLength = (length ?? source.lengthInBytes).clamp(0, lengthInBytes);
     setAll(0, Uint8List.sublistView(source, 0, effectiveLength));
   }
@@ -29,7 +29,7 @@ extension Uint8ListCopy on Uint8List {
 
 extension TypedDataExt on TypedData {
   /// this method uses length, not end, unlike setAll/setRange
-  void copy(TypedData source, [int? lengthInBytes]) => Uint8List.sublistView(this).copy(source, lengthInBytes);
+  void copyMax(TypedData source, [int? lengthInBytes]) => Uint8List.sublistView(this).copyMax(source, lengthInBytes);
   void copyRange(TypedData source, [int index = 0, int? lengthInBytes]) => Uint8List.sublistView(this).copyRange(source, index, lengthInBytes);
 
   Uint8List asUint8List([int offsetInBytes = 0, int? length]) => Uint8List.sublistView(this, offsetInBytes, length);

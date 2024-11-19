@@ -2,9 +2,9 @@ library binary_data;
 
 // export 'bits.dart';
 export "bits/bits.dart";
-export "bits/bits_map_base.dart";
+export "bits/_bits_map_base.dart";
 export "bits/bit_struct.dart";
-export "bits/bool_struct.dart";
+export "bits/_bool_struct.dart";
 export "bits/binary_format.dart";
 
 // export 'bytes.dart';

@@ -2,6 +2,8 @@
 import 'package:binary_data/models/packet.dart';
 export 'package:binary_data/models/packet.dart';
 
+import 'package:type_ext/basic_types.dart';
+
 import 'dart:ffi' as ffi;
 
 mixin class MotPacketInterface implements PacketClass<MotPacket> {
@@ -29,14 +31,14 @@ mixin class MotPacketInterface implements PacketClass<MotPacket> {
   @override
   ByteField<Uint8> get lengthFieldDef => const ByteField<Uint8>(4);
 
-  // ByteField<Uint8> get test =>   ByteField<Uint8>(ffi.offsetOf<MotPacketHeader>(#startField););
+  // ByteField<Uint8> get test => ByteField<Uint8>(ffi.offsetOf<MotPacketHeader>(#startField););
 
   @override
-  PacketIdSync get ack => MotPacketSyncId.MOT_PACKET_SYNC_ACK;
+  PacketSyncId get ack => MotPacketSyncId.MOT_PACKET_SYNC_ACK;
   @override
-  PacketIdSync get nack => MotPacketSyncId.MOT_PACKET_SYNC_NACK;
+  PacketSyncId get nack => MotPacketSyncId.MOT_PACKET_SYNC_NACK;
   @override
-  PacketIdSync get abort => MotPacketSyncId.MOT_PACKET_SYNC_ABORT;
+  PacketSyncId get abort => MotPacketSyncId.MOT_PACKET_SYNC_ABORT;
 
   @override
   MotPacketId? idOf(int intId) => MotPacketId.of(intId);
@@ -114,7 +116,6 @@ base class MotPacketHeaderSync extends Struct implements PacketSyncHeader {
 
   @Uint8()
   external int startField;
-
   @Uint8()
   external int idField;
 }
@@ -131,7 +132,7 @@ sealed class MotPacketId implements PacketId {
   });
 }
 
-enum MotPacketSyncId implements PacketIdSync, MotPacketId {
+enum MotPacketSyncId implements PacketSyncId, MotPacketId {
   MOT_PACKET_PING(0xA0),
   // MOT_PACKET_PING_RESP(0xA1),
   MOT_PACKET_SYNC_ACK(0xA2),
@@ -433,21 +434,10 @@ base class CallResponse extends Struct implements Payload<CallResponseValues> {
 typedef MemReadRequestValues = (int address, int size, int config); // should probably user named parameters for extension
 
 extension MemReadRequestMethods on MemReadRequestValues {
-  // Iterable<MemReadRequestValues> _readMemSlices(int address, int size, int config) sync* {
-  //   // for (var i = 0; i < size; i += MemReadRequest.sizeMax) {
-  //   //   yield (address + i, min(MemReadRequest.sizeMax, size - i), config);
-  //   // }
-  //   // for (var offset = 0; offset < size; offset += MemReadRequest.sizeMax) {
-  //   //   yield (address + offset, (size - offset).clamp(0, MemReadRequest.sizeMax), config);
-  //   // }
-  // }
-  // Iterable<MemReadRequestValues> slices = Iterable.generate(
-  //   (size ~/ MemReadRequest.sizeMax) + 1,
-  //   (index) => (address + (index * MemReadRequest.sizeMax), min(MemReadRequest.sizeMax, size - (index * MemReadRequest.sizeMax)), config),
-  // );
-
   // List should be relatively small, so a new list is likely more efficient than a generator
   Iterable<MemReadRequestValues> get slices {
+    // slices(MemReadRequest.sizeMax, (start, length) => (start, length, config), address, size);
+
     return [for (var offset = 0; offset < size; offset += MemReadRequest.sizeMax) (address + offset, (size - offset).clamp(0, MemReadRequest.sizeMax), config)];
   }
 
