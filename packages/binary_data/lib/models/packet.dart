@@ -29,17 +29,17 @@ abstract mixin class PacketClass<T extends Packet> {
 
   PacketId? idOf(int intId);
 
-  List<ByteField> get keys => [startFieldPart, idFieldPart, lengthFieldPart, checksumFieldPart];
+  List<ByteField> get keys => [startFieldDef, idFieldDef, lengthFieldDef, checksumFieldDef];
 
-  /// HeaderCommon
+  /// Header Definition
   /// defined position, relative to `packet`.
   /// header fields for buildHeader/parseHeader
   /// required for HeaderParser.
   /// can be derived from header Struct when get offset is available
-  ByteField get startFieldPart;
-  ByteField get idFieldPart;
-  ByteField get lengthFieldPart;
-  ByteField get checksumFieldPart;
+  ByteField get startFieldDef;
+  ByteField get idFieldDef;
+  ByteField get lengthFieldDef;
+  ByteField get checksumFieldDef;
 
   // at least one header type must be implemented, with fields able to determine completion
   // TypedDataCaster<PacketHeader> get headerCaster;
@@ -157,13 +157,13 @@ abstract class Packet {
   // static int sum(int previousValue, int element) => previousValue + element;
   // int Function(int previousValue, int element) get checksumAlgorithm => sum;
 
-  int get checksumIndex => packetClass.checksumFieldPart.offset;
-  int get checksumSize => packetClass.checksumFieldPart.size;
+  int get checksumIndex => packetClass.checksumFieldDef.offset;
+  int get checksumSize => packetClass.checksumFieldDef.size;
 
   /// all bytes excluding checksumField
   /// using length contained in [bytes] view, or length param length
   int checksum([int? length]) {
-    assert((() => (length == null) ? this.length == asHeader.lengthFieldValue : true).call());
+    assert((() => (length == null) ? this.length == asHeader.lengthField : true).call());
     final checksumMask = ((1 << (checksumSize * 8)) - 1);
     final checksumEnd = checksumIndex + checksumSize;
     // final afterChecksumSize = (headerLength - checksumEnd) + (payloadLength);
@@ -188,18 +188,18 @@ abstract class Packet {
   PacketHeader get asHeader => packetClass.headerOf(packetData);
   PacketSyncHeader get asSync => packetClass.syncHeaderOf(packetData);
 
-  void fillStartField() => asSync.startFieldValue = packetClass.startId;
+  void fillStartField() => asSync.startField = packetClass.startId;
 
   void buildHeaderAsSync(PacketId packetId) {
     fillStartField();
-    asSync.idFieldValue = packetId.intId;
+    asSync.idField = packetId.intId;
   }
 
   void buildHeaderAsRequest(PacketId requestId, int payloadLength) {
     fillStartField();
-    asHeader.idFieldValue = requestId.intId;
-    asHeader.lengthFieldValue = payloadLength + packetClass.headerLength;
-    asHeader.checksumFieldValue = checksum(payloadLength + packetClass.headerLength);
+    asHeader.idField = requestId.intId;
+    asHeader.lengthField = payloadLength + packetClass.headerLength;
+    asHeader.checksumField = checksum(payloadLength + packetClass.headerLength);
   }
 
   void buildHeader(PacketId packetId, int payloadLength) {
@@ -216,9 +216,9 @@ abstract class Packet {
   /// parse header
   ////////////////////////////////////////////////////////////////////////////////
   // use shorter type, casting as longer header on smaller bytes will throw. optionally use field offset
-  PacketId? get packetId => packetClass.idOf(asSync.idFieldValue); // idOf(idFieldPart.fieldValue(headerWords));
+  PacketId? get packetId => packetClass.idOf(asSync.idField); // idOf(idFieldPart.fieldValue(headerWords));
   PacketIdSync? parseSyncId() => switch (packetId) { PacketIdSync syncId => syncId, _ => null };
-  int get parsePayloadLength => asHeader.lengthFieldValue - packetClass.headerLength; // until casting is available
+  int get parsePayloadLength => asHeader.lengthField - packetClass.headerLength; // until casting is available
 
   /// for valueOrNull from header status
   bool isValidStart(int value) => (value == packetClass.startId);
@@ -236,10 +236,10 @@ abstract class Packet {
   /// defined using TypedOffset
   ////////////////////////////////////////////////////////////////////////////////
   // header struct cannot cast less than full length
-  int? get startFieldOrNull => packetClass.startFieldPart.getInOrNull(packetData);
-  int? get idFieldOrNull => packetClass.idFieldPart.getInOrNull(packetData);
-  int? get lengthFieldOrNull => packetClass.lengthFieldPart.getInOrNull(packetData);
-  int? get checksumFieldOrNull => packetClass.checksumFieldPart.getInOrNull(packetData);
+  int? get startFieldOrNull => packetClass.startFieldDef.getInOrNull(packetData);
+  int? get idFieldOrNull => packetClass.idFieldDef.getInOrNull(packetData);
+  int? get lengthFieldOrNull => packetClass.lengthFieldDef.getInOrNull(packetData);
+  int? get checksumFieldOrNull => packetClass.checksumFieldDef.getInOrNull(packetData);
 
   // null if not yet received
   bool? get isStartFieldValid => startFieldOrNull.ifNonNull(isValidStart);
@@ -295,56 +295,47 @@ typedef PacketHeaderCaster = PacketHeader Function(TypedData typedData);
 // typedef PacketHeaderSyncCaster = PacketHeaderSync Function(TypedData typedData);
 // typedef PacketHeaderCaster<P extends PacketHeader> = P Function(TypedData typedData);
 
+/// Minimal header
+abstract interface class PacketIdHeader {
+  int get startField;
+  int get idField;
+  set startField(int value);
+  set idField(int value);
+}
+
 /// effectively the Packet control block
 /// a basic opinionated implementation, union with sync header
 /// can be defined on a Struct, fixed length
 /// interface only, ffi.Struct cannot mixin
-abstract interface class PacketHeader {
-  /// each field can be upto 8 bytes
-  /// override in struct should optimize, over get via TypedOffset
-  int get startFieldValue; // > 1 byte user handle using Word module
-  int get idFieldValue;
-  int get lengthFieldValue;
-  int get checksumFieldValue;
+abstract interface class PacketHeader implements PacketIdHeader {
+  int get startField; // > 1 byte user handle using Word module
+  int get idField;
+  int get lengthField;
+  int get checksumField;
 
-  set startFieldValue(int value);
-  set idFieldValue(int value);
-  set lengthFieldValue(int value);
-  set checksumFieldValue(int value);
-
-  // /// only valid on completion.
-  // int get startFieldValue => startField.fieldValue(_byteData);
-  // int get idFieldValue => idField.fieldValue(_byteData);
-  // int get lengthFieldValue => lengthField.fieldValue(_byteData);
-  // int get checksumFieldValue => checksumField.fieldValue(_byteData);
-  // set startFieldValue(int value) => startField.setFieldValue(_byteData, value);
-  // set idFieldValue(int value) => idField.setFieldValue(_byteData, value);
-  // set lengthFieldValue(int value) => lengthField.setFieldValue(_byteData, value);
-  // set checksumFieldValue(int value) => checksumField.setFieldValue(_byteData, value);
+  set startField(int value);
+  set idField(int value);
+  set lengthField(int value);
+  set checksumField(int value);
 
   void build(PacketId packetId, Packet? packet); // can be overridden for additional types
 }
 
-abstract interface class PacketFixedHeader {
-  int get startFieldValue; // > 1 byte user handle using Word module
-  int get idFieldValue;
-  int get checksumFieldValue;
+abstract interface class PacketFixedHeader implements PacketIdHeader {
+  int get startField;
+  int get idField;
+  int get checksumField;
 
-  set startFieldValue(int value);
-  set idFieldValue(int value);
-  set checksumFieldValue(int value);
+  set startField(int value);
+  set idField(int value);
+  set checksumField(int value);
 }
 
-/// Minimal header
-abstract interface class PacketSyncHeader {
-  int get startFieldValue;
-  int get idFieldValue;
-  set startFieldValue(int value);
-  set idFieldValue(int value);
-  // int get lengthFieldValue(int value) => throw UnsupportedError('lengthFieldValue not available');
-  // int get checksumFieldValue(int value) => throw UnsupportedError('checksumFieldValue not available');
-  // set lengthFieldValue(int value) => throw UnsupportedError('lengthFieldValue not available');
-  // set checksumFieldValue(int value) => throw UnsupportedError('checksumFieldValue not available');
+abstract interface class PacketSyncHeader implements PacketIdHeader {
+  int get startField;
+  int get idField;
+  set startField(int value);
+  set idField(int value);
 }
 
 extension PacketHeaderMethods on PacketHeader {}

@@ -2,6 +2,8 @@
 import 'package:binary_data/models/packet.dart';
 export 'package:binary_data/models/packet.dart';
 
+import 'dart:ffi' as ffi;
+
 mixin class MotPacketInterface implements PacketClass<MotPacket> {
   const MotPacketInterface();
 
@@ -19,13 +21,15 @@ mixin class MotPacketInterface implements PacketClass<MotPacket> {
   Endian get endian => Endian.little;
 
   @override
-  ByteField<Uint8> get startFieldPart => const ByteField<Uint8>(0);
+  ByteField<Uint8> get startFieldDef => const ByteField<Uint8>(0);
   @override
-  ByteField<Uint8> get idFieldPart => const ByteField<Uint8>(1);
+  ByteField<Uint8> get idFieldDef => const ByteField<Uint8>(1);
   @override
-  ByteField<Uint16> get checksumFieldPart => const ByteField<Uint16>(2);
+  ByteField<Uint16> get checksumFieldDef => const ByteField<Uint16>(2);
   @override
-  ByteField<Uint8> get lengthFieldPart => const ByteField<Uint8>(4);
+  ByteField<Uint8> get lengthFieldDef => const ByteField<Uint8>(4);
+
+  // ByteField<Uint8> get test =>   ByteField<Uint8>(ffi.offsetOf<MotPacketHeader>(#startField););
 
   @override
   PacketIdSync get ack => MotPacketSyncId.MOT_PACKET_SYNC_ACK;
@@ -50,22 +54,6 @@ mixin class MotPacketInterface implements PacketClass<MotPacket> {
 
   @override
   List<ByteField<NativeType>> get keys => throw UnimplementedError();
-
-  // @override
-  // // TODO: implement keys
-  // List<NativeKey<NativeType>> get keys => throw UnimplementedError();
-
-  // @override
-  // ByteStruct<ByteField<NativeType>> call(TypedData typedData) {
-  //   // TODO: implement call
-  //   throw UnimplementedError();
-  // }
-
-  // @override
-  // ByteStructCaster<Packet> get caster => throw UnimplementedError();
-
-  // @override
-  // List<NativeKey<NativeType>> get keys => throw UnimplementedError();
 }
 
 class MotPacket extends Packet {
@@ -87,13 +75,18 @@ class MotPacket extends Packet {
 base class MotPacketHeader extends Struct implements PacketHeader {
   factory MotPacketHeader.cast(TypedData typedData) => Struct.create<MotPacketHeader>(typedData);
 
+  @override
   @Uint8()
   external int startField;
+  @override
   @Uint8()
   external int idField;
+  @override
   @Uint16()
   external int checksumField;
+
   @Uint8()
+  @override
   external int lengthField;
   @Uint8()
   external int flex0Field;
@@ -102,35 +95,10 @@ base class MotPacketHeader extends Struct implements PacketHeader {
   @Uint8()
   external int flex2Field;
 
-  @override
-  int get startFieldValue => startField;
-  @override
-  int get idFieldValue => idField;
-  @override
-  int get checksumFieldValue => checksumField;
-  @override
-  int get lengthFieldValue => lengthField;
-  @override
-  set startFieldValue(int value) => startField = value;
-  @override
-  set idFieldValue(int value) => idField = value;
-  @override
-  set checksumFieldValue(int value) => checksumField = value;
-  @override
-  set lengthFieldValue(int value) => lengthField = value;
-
-  int get flex0FieldValue => flex0Field;
-  int get flex1FieldValue => flex1Field;
-  int get flex2FieldValue => flex2Field;
-
-  set flex0FieldValue(int value) => flex0Field = value;
-  set flex1FieldValue(int value) => flex1Field = value;
-  set flex2FieldValue(int value) => flex2Field = value;
-
-  int get flexUpper16FieldValue => (flex2FieldValue << 8) | flex1FieldValue;
-  set flexUpper16FieldValue(int value) => this
-    ..flex2FieldValue = (value >> 8)
-    ..flex1FieldValue = (value & 0xFF);
+  int get flexUpper16Field => (flex2Field << 8) | flex1Field;
+  set flexUpper16Field(int value) => this
+    ..flex2Field = (value >> 8)
+    ..flex1Field = (value & 0xFF);
 
   @override
   void build(PacketId packetId, Packet? packet) => UnimplementedError();
@@ -149,15 +117,6 @@ base class MotPacketHeaderSync extends Struct implements PacketSyncHeader {
 
   @Uint8()
   external int idField;
-
-  @override
-  int get startFieldValue => startField;
-  @override
-  int get idFieldValue => idField;
-  @override
-  set startFieldValue(int value) => startField = value;
-  @override
-  set idFieldValue(int value) => idField = value;
 }
 
 sealed class MotPacketId implements PacketId {

@@ -10,6 +10,7 @@ export 'index_map.dart';
 ///   fixed set of keys
 ///   getOrNull/setOrNot
 ///
+/// implements the same Key interface as StructBase, on final classes
 ///
 /// interface and implementation
 ///
@@ -50,14 +51,13 @@ extension type StructView<K extends Field, V>(Object _this) {
   Iterable<FieldEntry<K, V>> fieldEntries(Iterable<K> keys) => keys.map((key) => fieldEntry(key));
 
   // Construct< K, V> withKeys(List<K> keys) => Construct< K, V>(struct: this, keys: keys);
-  Construct<K, V> asConstruct(List<K> keys, {dynamic meta}) => Construct<K, V>(structData: this, keys: keys);
+  // Construct<K, V> asConstruct(List<K> keys, {dynamic meta}) => Construct<MapStruct,K, V>(structData: this, keys: keys);
 
   //  copy operations need context of keys
   // @protected
   // StructView<T, V> newWith(  Field key, V value);
 }
 
-//
 extension type MapStruct<K extends Field, V>(FixedMap<K, V> _this) implements StructView<K, V> {
   MapStruct.cast(List<K> keys, StructView<K, V> struct) : _this = IndexMap.of(keys, struct.fieldValues(keys));
   // MapStruct.of(List<K> keys, Iterable<V> values) : _this = IndexMap.of(keys, values);
@@ -79,7 +79,63 @@ extension type MapStruct<K extends Field, V>(FixedMap<K, V> _this) implements St
   StructView<K, V> withAll(Map<K, V> map) => (ProxyIndexMap<K, V>(_this)..addAll(map)) as StructView<K, V>;
 }
 
-// abstract mixin class StructView<K extends Field<V>, V> {}
+/// interface for inheritance
+///
+abstract mixin class StructBase<K extends Field, V> implements FixedMap<K, V> {
+  const StructBase();
+
+  @override
+  List<K> get keys;
+  @override
+  void clear();
+  @override
+  V remove(covariant K key);
+
+  @protected
+  V get(Field key) => key.getIn(this); // valueOf(Field key);
+  @protected
+  void set(Field key, V value) => key.setIn(this, value);
+
+  @protected
+  bool testBounds(Field key) => key.testBoundsOf(this);
+
+  @protected
+  V? getOrNull(Field key) => testBounds(key) ? get(key) : null;
+  @protected
+  bool setOrNot(Field key, V value) {
+    if (testBounds(key)) {
+      set(key, value);
+      return true;
+    }
+    return false;
+  }
+
+  V operator [](K key) => get(key);
+  void operator []=(K key, V value) => set(key, value);
+
+  // `field` referring to the field value
+  V field(K key) => get(key);
+  void setField(K key, V value) => set(key, value);
+  V? fieldOrNull(K key) => getOrNull(key);
+  bool setFieldOrNot(K key, V value) => setOrNot(key, value);
+
+  FieldEntry<K, V> fieldEntry(K key) => (key: key, value: field(key));
+
+  StructBase<K, V> copyWithBase(FixedMap<K, V> base);
+
+  // // immutable `with` copy operations, via IndexMap
+  // // analogous to operator []=, but returns a new instance
+  StructBase<K, V> withField(K key, V value) => copyWithBase(ProxyIndexMap<K, V>(this)..[key] = value);
+  //
+  StructBase<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => copyWithBase(ProxyIndexMap<K, V>(this)..addEntries(newEntries));
+  // A general values map representing external input, may be a partial map
+  StructBase<K, V> withAll(Map<K, V> map) => copyWithBase(ProxyIndexMap<K, V>(this)..addAll(map));
+
+  // Iterable<V> fieldValues(Iterable<K> keys) => keys.map((key) => field(key));
+  // Iterable<FieldEntry<K, V>> fieldEntries(Iterable<K> keys) => keys.map((key) => fieldEntry(key));
+
+  // Construct<K, V> asConstruct(List<K> keys, {dynamic meta}) => Construct<K, V>(structData: this, keys: keys);
+}
 
 /// [Field] - key to a value in a [StructView], with type
 /// define accessors on the struct within key, to keep type withing local scope
@@ -123,18 +179,24 @@ typedef FieldEntry<K, V> = ({K key, V value});
 
 abstract interface class EnumField<V> implements Enum, Field<V> {}
 
+// BaseStruct<K extends Field, V> {
+// }
+
 /// [Construct]
 // handler with class variables,
-// struct view with Map and handler
+// wrapper around struct with Map and handler
+// can be created without extending
 //
 // potentially implement the map interface directly
 //  - Map interface
 //    - Enum keys auto implement EnumMap and
+//  - StructBase interface
 //  - Factory
 //  - StructView interface
 //  - withX copy methods
-// class Construct<T extends StructView<K, V>, K extends Field<V>, V> with MapBase<K, V>, TypedMap<K, V> {
-class Construct<K extends Field, V> with MapBase<K, V>, FixedMap<K, V> {
+class Construct<T extends FixedMap<K, V>, K extends Field, V> with MapBase<K, V>, FixedMap<K, V> {
+// // T as StrutBase or StructView
+// class Construct<K extends Field, V> with MapBase<K, V>, FixedMap<K, V> {
   Construct({
     required this.structData,
     required this.keys,
@@ -146,7 +208,7 @@ class Construct<K extends Field, V> with MapBase<K, V>, FixedMap<K, V> {
 
   Construct.castBase(FixedMap<K, V> base)
       : this(
-          structData: MapStruct(base),
+          structData: MapStruct(base) as T,
           keys: base.keys,
         );
 
@@ -163,18 +225,22 @@ class Construct<K extends Field, V> with MapBase<K, V>, FixedMap<K, V> {
   // Construct.fromEntries
 
   final List<K> keys;
-  final StructView<K, V> structData; // or object
+  final T structData; // or object
   // final T Function(StructView) caster;
-  // final T Function( ) constructor;
+  // final T Function( ) constructor => IndexMap<K, V>. of(keys, values);
   // final int lengthMax;
+
+  Type get structType => T;
 
   @override
   String toString() => MapBase.mapToString(this);
 
   @override
-  void operator []=(K key, V value) => structData[key] = value;
+  // V operator [](K key) => structData[key];
+  V operator [](K key) => key.getIn(structData as Object);
   @override
-  V operator [](K key) => structData[key];
+  // void operator []=(K key, V value) => structData[] = value;
+  void operator []=(K key, V value) => key.setIn(structData as Object, value);
 
   @override
   void clear() {
@@ -188,12 +254,14 @@ class Construct<K extends Field, V> with MapBase<K, V>, FixedMap<K, V> {
 
   Iterable<FieldEntry<K, V>> get fieldEntries => keys.map((e) => (key: e, value: this[e]));
 
+  Construct<T, K, V> copyWithBase(base) => Construct<T, K, V>.castBase(base);
+
   // analogous to operator []=, but returns a new instance
-  Construct<K, V> withField(K key, V value) => Construct<K, V>.castBase(ProxyIndexMap<K, V>(this)..[key] = value);
+  Construct<T, K, V> withField(K key, V value) => Construct<T, K, V>.castBase(ProxyIndexMap<K, V>(this)..[key] = value);
   //
-  Construct<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => Construct<K, V>.castBase(ProxyIndexMap<K, V>(this)..addEntries(newEntries));
+  Construct<T, K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => Construct<T, K, V>.castBase(ProxyIndexMap<K, V>(this)..addEntries(newEntries));
   // A general values map representing external input, may be a partial map
-  Construct<K, V> withAll(Map<K, V> map) => Construct<K, V>.castBase(ProxyIndexMap<K, V>(this)..addAll(map));
+  Construct<T, K, V> withAll(Map<K, V> map) => Construct<T, K, V>.castBase(ProxyIndexMap<K, V>(this)..addAll(map));
 
   // Map<K, V> toMap() {
   //   assert(keys.first.index == keys.first.index); // ensure if index does not throw
@@ -201,19 +269,19 @@ class Construct<K extends Field, V> with MapBase<K, V>, FixedMap<K, V> {
   // }
 }
 
-mixin ConstructAsSubtype<S extends Construct<K, V>, K extends Field<V>, V> on Construct<K, V> {
-  // Overridden the in child class
-  //  calls the child class constructor
-  //  return an instance of the child class type
-  //  passing empty parameters always copies all values
-  @override
-  @mustBeOverridden
-  S copyWith();
+// mixin ConstructAsSubtype<S extends Construct<K, V>, K extends Field<V>, V> on Construct<K, V> {
+//   // Overridden the in child class
+//   //  calls the child class constructor
+//   //  return an instance of the child class type
+//   //  passing empty parameters always copies all values
+//   @override
+//   @mustBeOverridden
+//   S copyWith();
 
-  @override
-  S withField(K key, V value) => (super.withField(key, value) as ConstructAsSubtype<S, K, V>).copyWith();
-  @override
-  S withEntries(Iterable<MapEntry<K, V>> entries) => (super.withEntries(entries) as ConstructAsSubtype<S, K, V>).copyWith();
-  @override
-  S withAll(Map<K, V> map) => (super.withAll(map) as ConstructAsSubtype<S, K, V>).copyWith();
-}
+//   @override
+//   S withField(K key, V value) => (super.withField(key, value) as ConstructAsSubtype<S, K, V>).copyWith();
+//   @override
+//   S withEntries(Iterable<MapEntry<K, V>> entries) => (super.withEntries(entries) as ConstructAsSubtype<S, K, V>).copyWith();
+//   @override
+//   S withAll(Map<K, V> map) => (super.withAll(map) as ConstructAsSubtype<S, K, V>).copyWith();
+// }
