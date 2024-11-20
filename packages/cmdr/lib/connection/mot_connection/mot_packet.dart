@@ -242,6 +242,8 @@ final class VarReadResponse extends Struct implements Payload<VarReadResponseVal
   VarReadResponseValues parse(MotPacket header, PayloadMeta? stateMeta) {
     // under length packet will be reject at parser
     // return (0, values.asTypedList(16));
+    //  values.address.asTypedList(header.parsePayloadLength);
+
     return (0, header.payloadAt<Uint16List>(0, header.parsePayloadLength)); //todo resp code
   }
 

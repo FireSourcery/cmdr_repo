@@ -1,3 +1,4 @@
+import 'package:type_ext/basic_ext.dart';
 import 'package:type_ext/enum_map.dart';
 import 'package:type_ext/struct.dart';
 import 'package:meta/meta.dart';
@@ -25,13 +26,15 @@ extension type ByteStruct<K extends ByteField<NativeType>>(ByteData byteData) im
   int get lengthMax => length; // in the immutable case
   int get length => byteData.lengthInBytes;
 
-  ByteData dataAt(int offset, [int? length]) => ByteData.sublistView(byteData, offset, length);
+  int? endOf(int offset, int? length) => (length != null) ? length + offset : null;
 
-  T arrayAt<T extends TypedData>(int offset, [int? length]) => byteData.asTypedArray<T>(offset, length);
-  T? arrayOrNullAt<T extends TypedData>(int offset, [int? length]) => byteData.asTypedArrayOrNull<T>(offset, length);
+  ByteData dataAt(int offset, [int? length]) => ByteData.sublistView(byteData, offset, endOf(offset, length));
 
-  List<int> intArrayAt<T extends TypedData>(int byteOffset) => byteData.asIntList<T>(byteOffset);
-  List<int> intArrayOrEmptyAt<T extends TypedData>(int byteOffset) => byteData.asIntListOrEmpty<T>(byteOffset);
+  T arrayAt<T extends TypedData>(int offset, [int? length]) => byteData.asTypedArray<T>(offset, endOf(offset, length));
+  T? arrayOrNullAt<T extends TypedData>(int offset, [int? length]) => byteData.asTypedArrayOrNull<T>(offset, endOf(offset, length));
+
+  List<int> intArrayAt<T extends TypedData>(int offset, [int? length]) => byteData.asIntList<T>(offset, endOf(offset, length));
+  List<int> intArrayOrEmptyAt<T extends TypedData>(int offset, [int? length]) => byteData.asIntListOrEmpty<T>(offset, endOf(offset, length));
 }
 
 // abstract mixin class ByteStruct<K extends ByteField> {
@@ -198,7 +201,7 @@ class ByteStructBuffer<T> extends TypedDataBuffer {
   /// `view as ByteStruct`
   /// view as `length available` in buffer, maybe a partial or incomplete view
   /// nullable accessors in effect, length is set in contents
-  S viewAs<S>(TypedDataCaster<S> caster, [int? offset, int? length]) {
+  S viewAs<S>(TypedDataCaster<S> caster) {
     return caster(viewAsBytes);
   }
 
@@ -206,7 +209,7 @@ class ByteStructBuffer<T> extends TypedDataBuffer {
   /// view as `full length`, including invalid data.
   /// a buffer backing larger than all potential calls is expected to be allocated at initialization
   ///
-  S? viewBufferAsStruct<S extends Struct>(TypedDataCaster<S> caster, [int? offset]) {
+  S? viewBufferAsStruct<S extends Struct>(TypedDataCaster<S> caster) {
     return caster(bufferAsBytes);
   }
 

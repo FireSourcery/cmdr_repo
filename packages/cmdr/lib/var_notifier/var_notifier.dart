@@ -169,7 +169,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   T valueAsSubtype<T>() => throw UnsupportedError('valueAsSubtype: $T');
 
   @override
-  String toString() => '${describeIdentity(this)}($value)($numValue)';
+  String toString() => '${describeIdentity(this)}(${varKey.label})($value)($numValue)';
 
   /// runtime variables
   // same as ChangeNotifier._count

@@ -1,3 +1,6 @@
+import 'package:cmdr/binary_data.dart';
+import 'package:flutter/services.dart';
+
 class VDivider {
   const VDivider(this.r1, this.r2);
   final int r1;
@@ -8,11 +11,11 @@ class VDivider {
 
   double get voltsPerAdcu => (vAdcRef * (r1 + r2) / (adcMax * r2));
 
-  num voltsOf(int adcu) => adcu * voltsPerAdcu;
-  int adcuOf(num volts) => volts ~/ voltsPerAdcu;
+  // num voltsOf(int adcu) => adcu * voltsPerAdcu;
+  // int adcuOf(num volts) => volts ~/ voltsPerAdcu;
 
   // does this guarantee the variable is cached?
-  // Linear get voltsOfAdcu => LinearConversionFactory(voltsPerAdcu).of;
+  BinaryConversion get conversion => BinaryConversion(voltsPerAdcu);
 
   @override
   bool operator ==(covariant VDivider other) {

@@ -106,11 +106,11 @@ class VarCache {
   /// Collective App View
   ////////////////////////////////////////////////////////////////////////////////
   // by results of the keys' generative constructor stored in VarNotifier, will not create new keys
-  Iterable<VarKey> get keys => _cache.values.map((e) => e.varKey);
+  Iterable<VarKey> get varKeys => _cache.values.map((e) => e.varKey);
   Iterable<VarNotifier> get entries => _cache.values;
 
   /// for filter on keys, alternatively caller filter on entries
-  Iterable<VarNotifier> entriesOf(Iterable<VarKey> keys) => keys.map<VarNotifier?>((e) => this[e]).whereNotNull();
+  Iterable<VarNotifier> entriesOf(Iterable<VarKey> keys) => keys.map<VarNotifier?>((e) => this[e]).nonNulls;
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Collective Data Read
@@ -213,32 +213,32 @@ mixin VarDependents on VarCache {
 //   void updateDependents();
 // }
 
-mixin VarCacheAsSubtype<K extends VarKey, V extends VarNotifier> on VarCache {
-  // @override
-  // Map<int, V> get _cache => super._cache as Map<int, V>;
+// mixin VarCacheAsSubtype<K extends VarKey, V extends VarNotifier> on VarCache {
+//   // @override
+//   // Map<int, V> get _cache => super._cache as Map<int, V>;
 
-  @override
-  @mustBeOverridden
-  V constructor(covariant K varKey);
+//   @override
+//   @mustBeOverridden
+//   V constructor(covariant K varKey);
 
-  @override
-  Iterable<K> get keys => super.keys.cast<K>();
+//   @override
+//   Iterable<K> get keys => super.keys.cast<K>();
 
-  @override
-  V allocate(covariant K varKey) => super.allocate(varKey) as V;
+//   @override
+//   V allocate(covariant K varKey) => super.allocate(varKey) as V;
 
-  @override
-  V reallocate(covariant K varKey) => super.reallocate(varKey) as V;
+//   @override
+//   V reallocate(covariant K varKey) => super.reallocate(varKey) as V;
 
-  @override
-  V? operator [](covariant K varKey) => super[varKey] as V?;
+//   @override
+//   V? operator [](covariant K varKey) => super[varKey] as V?;
 
-  @override
-  Iterable<V> get entries => super.entries.cast<V>();
+//   @override
+//   Iterable<V> get entries => super.entries.cast<V>();
 
-  @override
-  Iterable<V> entriesOf(covariant Iterable<K> keys) => super.entriesOf(keys).cast<V>();
-}
+//   @override
+//   Iterable<V> entriesOf(covariant Iterable<K> keys) => super.entriesOf(keys).cast<V>();
+// }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// VarHandler, VarViewer

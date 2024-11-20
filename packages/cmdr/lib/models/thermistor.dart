@@ -28,7 +28,7 @@ double rPullUpOf(num rPullDown, double vIn, double adcVRef, int adcMax, int adcu
 
 /* Resistance [Ohm] to ADCU */
 int adcuOfR(int adcMax, double adcVRef, double vIn, num rPullUp, num rPullDown) {
-  if ((rPullUp + rPullDown) case num(isInfinite: true) || num(isNaN: true) || 0) return 0;
+  if ((rPullUp + rPullDown) case num(isFinite: false) || 0) return 0;
   return (vIn * adcMax * rPullDown) ~/ (adcVRef * (rPullUp + rPullDown));
 }
 

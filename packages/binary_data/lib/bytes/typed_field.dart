@@ -115,24 +115,3 @@ extension GenericTypedWord on ByteData {
     return false;
   }
 }
-
-// /// General case, without NativeType
-// /// `Partition`
-// abstract mixin class SizedField {
-//   // const SizedField._();
-//   // const factory SizedField(int offset, int size) = _SizedField;
-
-//   int get offset;
-//   int get size;
-//   int get end => offset + size;
-
-//   List<int> arrayOf<R extends TypedData>(TypedData typedList) => typedList.asIntListOrEmpty<R>(offset, size);
-// }
-
-// class _Part with Part {
-//   const _Part(this.offset, this.size);
-//   @override
-//   final int offset;
-//   @override
-//   final int size;
-// }

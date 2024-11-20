@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ffi';
 
 import 'package:type_ext/basic_types.dart';
@@ -114,6 +115,8 @@ extension type const BinaryConversion(num coefficient) {
   num viewOf(int dataValue) => (dataValue * coefficient);
   int dataOf(num viewValue) => (viewValue ~/ coefficient);
 
-  ViewOfData? get viewOfData => (coefficient.isFinite) ? null : viewOf;
-  DataOfView? get dataOfView => (coefficient.isFinite && coefficient != 0) ? null : dataOf;
+  ViewOfData? get viewOfData => (coefficient.isFinite) ? viewOf : null;
+  DataOfView? get dataOfView => (coefficient.isFinite && coefficient != 0) ? dataOf : null;
 }
+
+// Codec<num, int>

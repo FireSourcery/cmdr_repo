@@ -72,7 +72,7 @@ extension type const IntArray<T extends TypedData>._(T _this) implements TypedDa
           },
           '$T is not an int list',
         ),
-        _this = TypedArray<T>.cast(data) as T;
+        _this = TypedArray<T>.cast(data, typedOffset, end) as T;
 
   // pass this through cast
   factory IntArray(int length) => TypedArray<T>(length) as IntArray<T>;
@@ -120,16 +120,16 @@ T typedList<T extends TypedData>(int length) {
   } as T;
 }
 
-/// offset uses type of 'data' not T type. typedOffset * data.elementSizeInBytes = byteSize
-T sublistView<T extends TypedData>(TypedData data, [int typedOffset = 0, int? end]) {
+/// offset uses type of 'data' not T type.
+T sublistView<T extends TypedData>(TypedData data, [int start = 0, int? end]) {
   return switch (T) {
-    const (Uint8List) => Uint8List.sublistView(data, typedOffset, end),
-    const (Uint16List) => Uint16List.sublistView(data, typedOffset, end),
-    const (Uint32List) => Uint32List.sublistView(data, typedOffset, end),
-    const (Int8List) => Int8List.sublistView(data, typedOffset, end),
-    const (Int16List) => Int16List.sublistView(data, typedOffset, end),
-    const (Int32List) => Int32List.sublistView(data, typedOffset, end),
-    const (ByteData) => ByteData.sublistView(data, typedOffset, end),
+    const (Uint8List) => Uint8List.sublistView(data, start, end),
+    const (Uint16List) => Uint16List.sublistView(data, start, end),
+    const (Uint32List) => Uint32List.sublistView(data, start, end),
+    const (Int8List) => Int8List.sublistView(data, start, end),
+    const (Int16List) => Int16List.sublistView(data, start, end),
+    const (Int32List) => Int32List.sublistView(data, start, end),
+    const (ByteData) => ByteData.sublistView(data, start, end),
     _ => throw UnimplementedError(),
   } as T;
 }
@@ -152,11 +152,14 @@ T _fromList<T extends TypedData>(List<int> elements) {
 ////////////////////////////////////////////////////////////////////////////////
 /// Effectively moving up ByteBuffer layer, to TypedData view segment accounting for offset
 extension GenericSublistView on TypedData {
-  int get end => offsetInBytes + lengthInBytes; // index of last byte + 1
-  // int get length => lengthInBytes ~/ elementSizeInBytes;
+  int get endInBytes => offsetInBytes + lengthInBytes; // index of last byte + 1
+  int get length => lengthInBytes ~/ elementSizeInBytes;
 
-  // bool testBounds(int offset, int length) => (offset >= 0 && length >= 0 && offset + length <= lengthInBytes);
-  bool testBounds(int offset, int? end) => ((offset * elementSizeInBytes) <= (end ?? this.end));
+  bool testBounds(int start, int? end) {
+    if (start > length) return false;
+    if (end != null && (end > length)) return false;
+    return true;
+  }
 
   // handles R as dynamic as `this` type, while sublistView throws error
   // offset uses type of 'this', not R type.

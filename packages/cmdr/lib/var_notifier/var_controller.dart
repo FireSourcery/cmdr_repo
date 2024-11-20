@@ -47,7 +47,7 @@ class VarCacheController {
     return VarStatusDefault.success;
   }
 
-  Iterable<(int, int)> _pairs(Iterable<VarKey>? keys) => cache.dataPairsOf(keys ?? cache.keys);
+  Iterable<(int, int)> _pairs(Iterable<VarKey>? keys) => cache.dataPairsOf(keys ?? cache.varKeys);
 
   // optionally select keys or both keys and values
   Future<VarStatus?> writeEach([Iterable<VarKey>? keys]) async {

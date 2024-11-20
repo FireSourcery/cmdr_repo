@@ -12,7 +12,7 @@ abstract class Version<T extends WordField> extends WordStruct<T> with BitStruct
   // factory Version(int optional, int major, int minor, int fix, {String? name}) = VersionStandard  ;
 
   // prototype object that can be copied
-  const factory Version.withType(List<T> keys, {int value, String? name}) = _VersionWithKeys<T>;
+  const factory Version.withType(List<T> keys, {int value, String? name}) = VersionConstruct<T>;
 
   // user must manually ensure keys match the width of the constructor. this is the only way to define as compile time const
   const Version.word(super.value) : super(); // e.g. a stored value
@@ -28,15 +28,15 @@ abstract class Version<T extends WordField> extends WordStruct<T> with BitStruct
   String? get name;
 
   @override
-  Version<T> copyWith() => _VersionWithKeys(this.keys, name: this.name, value: bits);
+  Version<T> copyWith() => VersionConstruct(this.keys, name: this.name, value: bits);
 
   @override
-  Version<T> copyWithBits(Bits value) => _VersionWithKeys(this.keys, name: this.name, value: value);
+  Version<T> copyWithBits(Bits value) => VersionConstruct(this.keys, name: this.name, value: value);
 
   // defaults to 4 fields. alternatively leave undefined
   // @override
   Version<T> copyWithStandard({int? optional, int? major, int? minor, int? fix, String? name}) {
-    return _VersionWithKeys(
+    return VersionConstruct(
       keys,
       name: name ?? this.name,
       // T size is not known without keys
@@ -131,8 +131,8 @@ abstract class Version<T extends WordField> extends WordStruct<T> with BitStruct
 }
 
 // ignore: missing_override_of_must_be_overridden
-class _VersionWithKeys<T extends WordField> extends Version<T> {
-  const _VersionWithKeys(this.keys, {this.name, int value = 0}) : super.word(value);
+class VersionConstruct<T extends WordField> extends Version<T> {
+  const VersionConstruct(this.keys, {this.name, int value = 0}) : super.word(value);
   // _VersionWithKeys.castBase(this.keys, super.state, {super.name}) : super.castBase();
   // _VersionWithKeys.fromValues(List<T> keys, Iterable<int> values, {String? name}) : this(keys, value: Bits.ofIterables(keys.bitmasks, values), name: name);
   // _VersionWithKeys.fromFields(this.keys, int optional, int major, int minor, int fix, {super.name}) : super.castBase();

@@ -11,12 +11,15 @@ export 'index_map.dart';
 ///   optimized for small fixed set of keys
 ///     guarantees all keys are present
 ///     can guarantee non null return - if V is defined as non nullable
+///
 ///   factory constructors build [IndexMap] by default
 ///
 ///   Adds Serialization using Enum.name to a [Map],
 ///   Keys inherit from Enum -
 ///     index via Enum.index -> create a parallel array map by default
 ///     String name via Enum.name -> directly use for serialization
+///
+/// Implement on [FixedMap] to additionally provide serialization
 ///
 /// `abstract mixin class` combines interface and implemented methods
 abstract mixin class EnumMap<K extends Enum, V> implements FixedMap<K, V> {
@@ -33,13 +36,6 @@ abstract mixin class EnumMap<K extends Enum, V> implements FixedMap<K, V> {
   void operator []=(covariant K key, V value);
   void clear();
   V remove(covariant K key);
-
-  // analogous to operator []=, but returns a new instance
-  EnumMap<K, V> withField(K key, V value) => (ProxyEnumMap<K, V>(this)..[key] = value);
-  //
-  EnumMap<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => (ProxyEnumMap<K, V>(this)..addEntries(newEntries));
-  // A general values map representing external input, may be a partial map
-  EnumMap<K, V> withAll(Map<K, V> map) => (ProxyEnumMap<K, V>(this)..addAll(map));
 }
 
 /// Apply to [EnumMap<K, V>] as well as [Map<Enum, V>]

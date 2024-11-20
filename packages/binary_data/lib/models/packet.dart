@@ -96,6 +96,7 @@ abstract class Packet {
   ////////////////////////////////////////////////////////////////////////////////
   /// Header/Payload Pointers using defined boundaries
   ////////////////////////////////////////////////////////////////////////////////
+  // rename bytes
   Uint8List get idHeader => Uint8List.sublistView(packetData, 0, packetClass.lengthMin);
   Uint8List get header => Uint8List.sublistView(packetData, 0, packetClass.headerLength);
   Uint8List get payload => Uint8List.sublistView(packetData, payloadIndex);
@@ -261,6 +262,7 @@ abstract class Packet {
   ////////////////////////////////////////////////////////////////////////////////
   PayloadMeta buildPayloadAs<V>(PayloadCaster<V> caster, V values) => caster(payload).build(values, this);
 
+  // caster taking boundary can probably make this a bit more efficient
   V parsePayloadAs<V>(PayloadCaster<V> caster, [PayloadMeta? stateMeta]) => caster(payload).parse(this, stateMeta);
 
   PayloadMeta buildRequest<V>(PacketIdRequest<V, dynamic> packetId, V requestArgs) {
@@ -417,7 +419,7 @@ class PacketBuffer<T extends Packet> extends ByteStructBuffer<T> {
 
   /// parse functions redirect, socket call packet directly
   V parseResponse<V>(PacketIdRequest<dynamic, V> packetId, [PayloadMeta? reqStateMeta]) {
-    return _packetBuffer.parseResponse(packetId, reqStateMeta);
+    return _packetBuffer.parseResponse(packetId, reqStateMeta); // ffi Struct must use full buffer range.
   }
 
   void buildSync(PacketId packetId) {

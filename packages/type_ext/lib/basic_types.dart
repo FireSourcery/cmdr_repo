@@ -129,6 +129,30 @@ class Slicer<T> {
   }
 }
 
+
+
+// /// General case, without NativeType
+// /// `Partition`
+// abstract mixin class SizedField {
+//   // const SizedField._();
+//   // const factory SizedField(int offset, int size) = _SizedField;
+
+//   int get offset;
+//   int get size;
+//   int get end => offset + size;
+
+//   List<int> arrayOf<R extends TypedData>(TypedData typedList) => typedList.asIntListOrEmpty<R>(offset, size);
+// }
+
+// class _Part   {
+//   const _Part.length(this.offset, this.size); 
+//   const _Part.end(this.offset, this.size); 
+//   final int offset; 
+//   final int size;
+//   final int end;
+// }
+
+
 // naming convention notes
 // For classes and types -
 // Module/Most descriptive noun first, then adjective descriptions

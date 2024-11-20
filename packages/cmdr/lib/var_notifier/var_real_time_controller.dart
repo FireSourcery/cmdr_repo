@@ -62,7 +62,7 @@ class VarRealTimeController extends VarCacheController {
 
   // using a getter, ids auto update, handle concurrency
   Iterable<int> _readIds() => _readKeys.map((e) => e.value);
-  Stream<({Iterable<int> keys, Iterable<int>? values})> get _readStream => protocolService.pollFlex(_readIds, delay: const Duration(seconds: 1));
+  Stream<({Iterable<int> keys, Iterable<int>? values})> get _readStream => protocolService.pollFlex(_readIds, delay: const Duration(milliseconds: 5));
 
   StreamSubscription? beginRead([Iterable<VarKey>? keys]) {
     if (_readKeys.isEmpty) return null;
@@ -93,7 +93,7 @@ class VarRealTimeController extends VarCacheController {
   Iterable<VarKey> get _writeKeys => cache.entries.where((e) => e.isUpdatedByView || e.varKey.isPushing).map((e) => e.varKey);
 
   Iterable<(int, int)> _writePairs() => cache.dataPairsOf(_writeKeys);
-  Stream<({Iterable<(int, int)> pairs, Iterable<int>? statuses})> get _writeStream => protocolService.push(_writePairs, delay: const Duration(seconds: 1));
+  Stream<({Iterable<(int, int)> pairs, Iterable<int>? statuses})> get _writeStream => protocolService.push(_writePairs, delay: const Duration(milliseconds: 5));
 
   StreamSubscription? beginWrite([Iterable<VarKey>? keys]) {
     if (_writeKeys.isEmpty) return null;
