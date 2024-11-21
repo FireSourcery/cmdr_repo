@@ -7,24 +7,16 @@ abstract mixin class IOField<T> implements Widget {
   /// Select widget using union config
   /// T functions as generic type, as well as selection parameter, unless explicitly defined
   factory IOField(IOFieldConfig<T> config, {Key? key}) {
-    if (config.isReadOnly) return IOFieldReader<T>.config(config);
-
-    // return switch (config) {
-    //   IOFieldConfig<num>() => IOFieldText<T>.config(config),
-    //   IOFieldConfig<Enum>() => IOFieldMenu<T>.config(config),
-    //   _ => IOFieldReader<T>.config(config),
-    // };
-
-    return switch (T) {
-      const (int) || const (double) || const (num) => IOFieldText<T>.config(config),
-      const (String) => IOFieldText<T>.config(config),
-      const (bool) => switch (config.boolStyle) {
+    return switch (config) {
+      IOFieldConfig(isReadOnly: true) => IOFieldReader<T>.config(config),
+      IOFieldConfig<num>() => IOFieldText<T>.config(config),
+      IOFieldConfig<Enum>() => IOFieldMenu<T>.config(config),
+      IOFieldConfig<String>() => IOFieldMenu<T>.config(config),
+      IOFieldConfig<bool>(:final boolStyle) => switch (boolStyle) {
           IOFieldBoolStyle.textMenu => IOFieldMenu<T>.config(config),
           IOFieldBoolStyle.latchingSwitch => IOFieldSwitch(config as IOFieldConfig<bool>) as IOField<T>,
           IOFieldBoolStyle.momentaryButton => IOFieldButton(config as IOFieldConfig<bool>) as IOField<T>,
         },
-      _ when TypeKey<T>().isSubtype<Enum>() => IOFieldMenu<T>.config(config),
-      const (dynamic) => throw UnsupportedError('IOField Type not defined'),
       _ => IOFieldReader<T>.config(config),
     };
   }
@@ -44,29 +36,25 @@ abstract mixin class IOField<T> implements Widget {
   //   return _IOFieldDecoratedSwitch(config) as IOField<T>;
   // }
 
-  static InputDecoration idDecorationFrom({
-    String? labelText,
-    FloatingLabelAlignment? labelAlignment = FloatingLabelAlignment.start,
-    IconData? prefixIcon,
-    String? suffixText,
-    String? hintText,
-
-    // if implement copyWith null as null here
-    // bool showLabel = true,
-    // bool showPrefix = true,
-    // bool showSuffix = true,
-  }) {
-    return InputDecoration(
-      labelText: labelText,
-      // prefix: prefixIcon,
-      prefixIcon: Icon(prefixIcon),
-      prefixText: null,
-      // suffix: suffixText,
-      suffixIcon: null,
-      suffixText: suffixText,
-      hintText: hintText,
-    );
-  }
+  // static InputDecoration idDecorationWithDefaults({
+  //   InputDecoration? decorationBase,
+  //   String? labelText,
+  //   FloatingLabelAlignment? labelAlignment = FloatingLabelAlignment.start,
+  //   IconData? prefixIcon,
+  //   String? suffixText,
+  //   String? hintText,
+  // }) {
+  //   return InputDecoration(
+  //     labelText: labelText,
+  //     // prefix: prefixIcon,
+  //     prefixIcon: Icon(prefixIcon),
+  //     prefixText: null,
+  //     // suffix: suffixText,
+  //     suffixIcon: null,
+  //     suffixText: suffixText,
+  //     hintText: hintText,
+  //   );
+  // }
 
   // @override
   // Widget build(BuildContext context) => Tooltip(message: config.tip, child: _builder(BuildContext context ));
@@ -89,7 +77,7 @@ abstract mixin class _IOFieldStringBox<T> implements IOField<T> {
 
   String _stringifyValue() {
     if (valueGetter() case T value) return _effectiveStringifier(value);
-    return 'Value Error'; // or handle null
+    return 'IOField Value Error'; // or handle null
 
     // _effectiveNullableStringifier(valueGetter());
   }
@@ -263,8 +251,8 @@ class IOFieldReader<T> extends StatelessWidget with _IOFieldStringBox<T> impleme
 }
 
 /// T == num or String
-// textField rebuild based on user input
-// textController update based on valueGetter, and propagates to partial textfield rebuild
+
+// split sub types requires the default constructor to be a sub factory
 class IOFieldText<T> extends StatefulWidget with _IOFieldStringBox<T> implements IOField<T> {
   const IOFieldText({
     super.key,
@@ -277,7 +265,7 @@ class IOFieldText<T> extends StatefulWidget with _IOFieldStringBox<T> implements
     this.errorGetter,
     this.valueStringGetter,
     this.valueStringifier,
-  });
+  }) : assert(!((T == num || T == int || T == double) && (numLimits == null)));
 
   IOFieldText.config(IOFieldConfig<T> config, {super.key})
       : listenable = config.valueListenable,
@@ -300,6 +288,7 @@ class IOFieldText<T> extends StatefulWidget with _IOFieldStringBox<T> implements
   final ValueGetter<bool>? errorGetter;
   final ({num min, num max})? numLimits; // required for num type only
 
+  /// num only
   num get numMin => numLimits!.min;
   num get numMax => numLimits!.max;
 
@@ -307,7 +296,8 @@ class IOFieldText<T> extends StatefulWidget with _IOFieldStringBox<T> implements
     return switch (T) {
       const (int) => [FilteringTextInputFormatter.digitsOnly, FilteringTextInputFormatter.singleLineFormatter],
       const (double) || const (num) => [FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}')), FilteringTextInputFormatter.singleLineFormatter],
-      _ => null,
+      const (String) => null,
+      _ => throw TypeError(),
     };
   }
 
@@ -315,50 +305,14 @@ class IOFieldText<T> extends StatefulWidget with _IOFieldStringBox<T> implements
   State<IOFieldText<T>> createState() => _IOFieldTextState<T>();
 }
 
-// split sub types requires the default constructor to be a sub factory
-
-// class _IOFieldTextString extends IOFieldText<String> {
-//   _IOFieldTextString({required super.listenable, required super.valueGetter});
-
-//   void submitTextString(String string) => valueSetter?.call(string as T);
-// }
-
-// class IOFieldNum<T extends num> extends IOFieldText<T> {
-//   const IOFieldNum({
-//     super.key,
-//     required super.listenable,
-//     required super.valueGetter,
-//     required ({num max, num min}) super.numLimits,
-//     super.valueSetter,
-//     super.decoration,
-//     super.tip = '',
-//     super.errorGetter,
-//     super.valueStringGetter,
-//     super.valueStringifier,
-//   });
-
-//   IOFieldNum.config(super.config, {super.key}) : super.config();
-// List<TextInputFormatter>? get inputFormatters {
-//   return switch (T) {
-//     const (int) => [FilteringTextInputFormatter.digitsOnly, FilteringTextInputFormatter.singleLineFormatter],
-//     const (double) || const (num) => [FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}')), FilteringTextInputFormatter.singleLineFormatter],
-//     _ => null,
-//   };
-// }
-//   num get numMin => super.numLimits!.min;
-//   num get numMax => super.numLimits!.max;
-
-//   num? validNum(String numString) {
-//     if (num.tryParse(numString) case num numValue when numValue.clamp(numMin, numMax) == numValue) return numValue;
-//     return null; // null or out of bounds
-//   }
-// }
-
 class _IOFieldTextState<T> extends State<IOFieldText<T>> {
   final TextEditingController textController = TextEditingController();
   final WidgetStatesController materialStates = WidgetStatesController();
   final FocusNode focusNode = FocusNode();
 
+  late final ValueSetter<String> submitText = switch (T) { const (int) || const (double) || const (num) => submitTextNum, const (String) => submitTextString, _ => throw TypeError() };
+
+  /// num type
   num? validNum(String numString) {
     if (num.tryParse(numString) case num numValue when numValue.clamp(widget.numMin, widget.numMax) == numValue) return numValue;
     return null; // null or out of bounds
@@ -373,14 +327,13 @@ class _IOFieldTextState<T> extends State<IOFieldText<T>> {
 
   // num type must define min and max
   void submitTextNum(String numString) {
-    if (validateNumText(numString) case num verifiedNum) {
-      widget.valueSetter?.call(verifiedNum.to<T>());
+    if (validateNumText(numString) case num validNum) {
+      widget.valueSetter?.call(validNum.to<T>());
     }
   }
 
+  /// String type
   void submitTextString(String string) => widget.valueSetter?.call(string as T);
-
-  ValueSetter<String> get onSubmitted => switch (T) { const (int) || const (double) || const (num) => submitTextNum, const (String) => submitTextString, _ => throw TypeError() };
 
   @override
   void initState() {
@@ -405,12 +358,21 @@ class _IOFieldTextState<T> extends State<IOFieldText<T>> {
     }
   }
 
+  void onSubmitted(value) {
+    submitText(value);
+    // if use notification
+    // context.dispatchNotification(IOFieldNotification(message: value));
+  }
+
+  /// handles updates from getter/listenable
   Widget _builder(BuildContext context, Widget? child) {
     textController.text = widget._effectiveValueStringGetter();
     if (widget.errorGetter != null) materialStates.update(WidgetState.error, widget.errorGetter!());
     return child!;
   }
 
+// TextField update based on user input
+// TextController update based on valueGetter, and propagates to TextField partial rebuild
   @override
   Widget build(BuildContext context) {
     final textField = ListenableBuilder(
@@ -420,12 +382,7 @@ class _IOFieldTextState<T> extends State<IOFieldText<T>> {
         decoration: widget.decoration,
         controller: textController,
         statesController: materialStates,
-        // onSubmitted: onSubmitted,
-        onSubmitted: (value) {
-          onSubmitted(value);
-          // if use notification
-          // context.dispatchNotification(IOFieldNotification(message: value));
-        },
+        onSubmitted: onSubmitted,
         readOnly: false,
         showCursor: true,
         enableInteractiveSelection: true,
@@ -681,7 +638,7 @@ enum IOFieldBoolStyle {
 //   }
 // }
 
-//convenience for attaching the same config
+// convenience for attaching the same config
 class IOFieldWithSlider<T extends num> extends StatelessWidget implements IOField<T> {
   const IOFieldWithSlider(this.config, {this.breakWidth = 400, super.key});
   final int breakWidth;
@@ -698,6 +655,75 @@ class IOFieldWithSlider<T extends num> extends StatelessWidget implements IOFiel
       builder: (context, constraints) {
         return (constraints.maxWidth > breakWidth) ? Row(children: [Expanded(child: ioField), Expanded(flex: 2, child: slider)]) : OverflowBar(children: [ioField, slider]);
       },
+    );
+  }
+}
+
+extension InputDecorationHide on InputDecoration {
+  InputDecoration copyWithHide({
+    bool showLabel = true,
+    bool showPrefix = true,
+    bool showSuffix = true,
+  }) {
+    return InputDecoration(
+      labelText: showLabel ? labelText : null,
+      prefixIcon: showPrefix ? prefixIcon : null,
+      prefixText: showPrefix ? prefixText : null,
+      suffixIcon: showSuffix ? suffixIcon : null,
+      suffixText: showSuffix ? suffixText : null,
+      icon: icon ?? this.icon,
+      iconColor: iconColor ?? this.iconColor,
+      label: label ?? this.label,
+      // labelText: labelText ?? this.labelText,
+      labelStyle: labelStyle ?? this.labelStyle,
+      floatingLabelStyle: floatingLabelStyle ?? this.floatingLabelStyle,
+      helper: helper ?? this.helper,
+      helperText: helperText ?? this.helperText,
+      helperStyle: helperStyle ?? this.helperStyle,
+      helperMaxLines: helperMaxLines ?? this.helperMaxLines,
+      hintText: hintText ?? this.hintText,
+      hintStyle: hintStyle ?? this.hintStyle,
+      hintTextDirection: hintTextDirection ?? this.hintTextDirection,
+      hintMaxLines: hintMaxLines ?? this.hintMaxLines,
+      hintFadeDuration: hintFadeDuration ?? this.hintFadeDuration,
+      error: error ?? this.error,
+      errorText: errorText ?? this.errorText,
+      errorStyle: errorStyle ?? this.errorStyle,
+      errorMaxLines: errorMaxLines ?? this.errorMaxLines,
+      floatingLabelBehavior: floatingLabelBehavior ?? this.floatingLabelBehavior,
+      floatingLabelAlignment: floatingLabelAlignment ?? this.floatingLabelAlignment,
+      isCollapsed: isCollapsed ?? this.isCollapsed,
+      isDense: isDense ?? this.isDense,
+      contentPadding: contentPadding ?? this.contentPadding,
+      // prefixIcon: prefixIcon ?? this.prefixIcon,
+      // prefix: prefix ?? this.prefix,
+      // prefixText: prefixText ?? this.prefixText,
+      prefixStyle: prefixStyle ?? this.prefixStyle,
+      prefixIconColor: prefixIconColor ?? this.prefixIconColor,
+      prefixIconConstraints: prefixIconConstraints ?? this.prefixIconConstraints,
+      // suffixIcon: suffixIcon ?? this.suffixIcon,
+      // suffix: suffix ?? this.suffix,
+      // suffixText: suffixText ?? this.suffixText,
+      suffixStyle: suffixStyle ?? this.suffixStyle,
+      suffixIconColor: suffixIconColor ?? this.suffixIconColor,
+      suffixIconConstraints: suffixIconConstraints ?? this.suffixIconConstraints,
+      counter: counter ?? this.counter,
+      counterText: counterText ?? this.counterText,
+      counterStyle: counterStyle ?? this.counterStyle,
+      filled: filled ?? this.filled,
+      fillColor: fillColor ?? this.fillColor,
+      focusColor: focusColor ?? this.focusColor,
+      hoverColor: hoverColor ?? this.hoverColor,
+      errorBorder: errorBorder ?? this.errorBorder,
+      focusedBorder: focusedBorder ?? this.focusedBorder,
+      focusedErrorBorder: focusedErrorBorder ?? this.focusedErrorBorder,
+      disabledBorder: disabledBorder ?? this.disabledBorder,
+      enabledBorder: enabledBorder ?? this.enabledBorder,
+      border: border ?? this.border,
+      enabled: enabled ?? this.enabled,
+      semanticCounterText: semanticCounterText ?? this.semanticCounterText,
+      alignLabelWithHint: alignLabelWithHint ?? this.alignLabelWithHint,
+      constraints: constraints ?? this.constraints,
     );
   }
 }

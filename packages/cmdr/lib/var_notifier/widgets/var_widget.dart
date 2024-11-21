@@ -34,8 +34,8 @@ abstract mixin class VarNotifierViewer<V> {
   ValueGetter<VarStatus> get statusGetter => () => varNotifier.status;
 
   V get viewValue => varNotifier.valueAs<V>();
-  num? get valueMin => varNotifier.viewMin;
-  num? get valueMax => varNotifier.viewMax;
+  // num? get valueMin => varNotifier.viewMin;
+  // num? get valueMax => varNotifier.viewMax;
   ({num max, num min})? get valueNumLimits => varNotifier.varKey.valueNumLimits;
 
   Stringifier<V> get valueStringifier => varNotifier.varKey.stringify<V>; // can be used to generate value labels for values other than the current value
@@ -111,21 +111,21 @@ class VarKeyContextBuilder extends StatelessWidget {
 
 // combining logic by deferring until build
 // alternatively, use a interface Widget.
-class VarSuperBuilder extends StatelessWidget {
-  const VarSuperBuilder({super.key, required this.varNotifier, required this.builder}) : varKey = null;
-  const VarSuperBuilder.byKey({super.key, required this.varKey, required this.builder}) : varNotifier = null;
+// class VarSuperBuilder extends StatelessWidget {
+//   const VarSuperBuilder({super.key, required this.varNotifier, required this.builder}) : varKey = null;
+//   const VarSuperBuilder.byKey({super.key, required this.varKey, required this.builder}) : varNotifier = null;
 
-  final VarKey? varKey;
-  final VarNotifier<dynamic>? varNotifier;
-  final Widget Function(VarNotifier) builder;
-//   final VarEventController? eventController;
+//   final VarKey? varKey;
+//   final VarNotifier<dynamic>? varNotifier;
+//   final Widget Function(VarNotifier) builder;
+// //   final VarEventController? eventController;
 
-  @override
-  Widget build(BuildContext context) {
-    final effectiveVarNotifier = varNotifier ?? VarContext.ofKey(context, varKey!).cacheController.cache.allocate(varKey!);
-    return VarBaseBuilder(effectiveVarNotifier, builder);
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     final effectiveVarNotifier = varNotifier ?? VarContext.ofKey(context, varKey!).cacheController.cache.allocate(varKey!);
+//     return VarBaseBuilder(effectiveVarNotifier, builder);
+//   }
+// }
 
 // rebuild on event match, if not included in the target widget
 // allocate Var Controller

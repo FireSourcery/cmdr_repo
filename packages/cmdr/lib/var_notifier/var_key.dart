@@ -12,8 +12,19 @@ abstract mixin class VarKey implements ValueKey<int> {
   BinaryFormat? get binaryFormat;
   ViewOfData? get viewOfData;
   DataOfView? get dataOfView;
-  // Units get units;
+
+  /// Union type properties.
+  ({num min, num max})? get valueNumLimits;
+  List<Enum>? get valueEnumRange;
+  List<BitField>? get valueBitsKeys;
+  int? get valueStringDigits;
   // num? get valueDefault;
+
+  bool get isReadOnly; // isPushing == false
+
+  // should not be both, that would incur real-time loopback
+  bool get isPolling; // polling, all readable. Processed by read stream
+  bool get isPushing; // pushing, selected writable, other writable updated on change, processed by write stream
 
   List<VarKey>? get dependents;
 
@@ -22,28 +33,13 @@ abstract mixin class VarKey implements ValueKey<int> {
   String stringify<V>(V value);
   // String stringify<V>(V? value);
 
-  /// Union type properties.
-  ({num min, num max})? get valueNumLimits;
-  List<Enum>? get valueEnumRange;
-  List<BitField>? get valueBitsKeys;
-  int? get valueStringDigits;
-
-  // // replace with cache type
-  // bool get isRealTime;
-  // bool get isConfig;
-
-  bool get isReadOnly; // isPushing == false
-
-  // should not be both, that would incur real-time loopback
-  bool get isPolling; // polling, all readable. Processed by read stream
-  bool get isPushing; // pushing, selected writable, other writable updated on change, processed by write stream
-
   /// Tag properties
   // VarTag? get tag;
   String get label;
-  // primaryCategory, secondaryCategory, tertiaryCategory
   String? get suffix;
   String? get tip;
+  // Units get units;
+  // primaryCategory, secondaryCategory, tertiaryCategory
 
   /// View Widgets properties
   ///

@@ -48,8 +48,8 @@ class VarSlider extends StatelessWidget with VarNotifierViewer<double> {
 
   Widget builder(BuildContext context, Widget? child) {
     // must be num defined if type is numeric
-    final min = varNotifier.viewMin!.toDouble();
-    final max = varNotifier.viewMax!.toDouble();
+    final min = varNotifier.numLimits!.min.toDouble();
+    final max = varNotifier.numLimits!.max.toDouble();
 
     return Slider.adaptive(
       // label: varNotifier.varKey.label,

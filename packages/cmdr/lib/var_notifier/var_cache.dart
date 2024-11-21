@@ -18,44 +18,49 @@ class VarCache {
     Iterable<VarKey> varKeys, {
     VarNotifier Function(VarKey) constructor = VarNotifier.of,
     this.lengthMax,
-  }) : _cache = {for (final varKey in varKeys) varKey.value: constructor(varKey)};
-  // todo preallocate as Map.unmodifiable, VarNotifier need to change some fields to getters
-  // re generating varnotifer parameters will need to create a new cache
+  }) : _cache = Map.unmodifiable({for (final varKey in varKeys) varKey.value: constructor(varKey)});
 
+  /// "It is generally not allowed to modify the map (add or remove keys) while
+  /// an operation is being performed on the map."
+  ///
+  /// Preallocation is preferred. This was streams do not need to stop and restart
+  /// Otherwise, caller block cache map iteration before allocate/deallocate
+  ///
+  /// when a Var is remove its listener will no longer received updates, from stream data updates.
+  /// view updates still occur - should not _need_ to manually remove listeners,
+  ///   although the listeners map is still filled, nothing references the Var itself, will be handled by garbage collection
+  /// if an Var of the same id is reinserted into the map. the disconnected listeners, need be remapped to the new Var
+  /// Wigets using allocate in build will update automatically
+  ///
   final Map<int, VarNotifier> _cache; // <int, VarNotifier> allows direct access by updateBy
   final int? lengthMax;
 
   // final Map<VarKey, VarNotifier> _cache; //  this way keys are retained, access without going through var
   // final Set<VarKey>? preallocatedKeys; // retain if generated,
 
-  // @protected
-  // void allocateAll(Iterable<VarKey> varKeys, VarNotifier Function(VarKey) constructor) {
-  //   _cache.addEntries(varKeys.map((varKey) => MapEntry(varKey.value, constructor(varKey))));
-  // }
-
   // using default status ids unless overridden
   @mustBeOverridden
   VarNotifier<dynamic> constructor(covariant VarKey varKey) => VarNotifier.of(varKey);
 
-  @override
-  String toString() => 'VarCache: $runtimeType ${_cache.length}';
-
   /// Maps VarKey to VarNotifier
   /// `allocate` the same VarNotifier storage if found. `create if not found`
   ///
-  /// Caller block cache map iteration before running allocate/deallocate
-  ///
-  /// when a value is remove its listener will no longer received updates. from stream data updates. view updates still occur
-  /// if an value of the same id is reinserted into the map. the disconnected listener, VarController, need be remapped to the new VarValue
   VarNotifier allocate(VarKey varKey) {
-    if (lengthMax case int max when _cache.length >= max) _cache.remove(_cache.entries.first.key);
-    return _cache.putIfAbsent(varKey.value, () => constructor(varKey))..viewerCount += 1;
+    if (lengthMax case int max when _cache.length >= max) _cache.remove(_cache.entries.first.key)?.dispose();
+    if (_cache is UnmodifiableMapView) return this[varKey]!; // temporary for compatibility
+    return _cache.putIfAbsent(varKey.value, () => constructor(varKey));
   }
 
-  /// re run generator to update VarNotifier reference values
+  /// current listeners would need to reattach to the new VarNotifier
   VarNotifier reallocate(VarKey varKey) {
-    return _cache.update(varKey.value, (_) => constructor(varKey))..viewerCount += 1;
+    return _cache.update(varKey.value, (_) {
+      _cache[varKey.value]?.dispose();
+      return constructor(varKey);
+    });
   }
+
+  /// re run to update VarNotifier reference values
+  void reInitAll() => _cache.forEach((_, varEntry) => varEntry.initReferences());
 
   // in preallocated case, where size is not constrained. deallocate and replace is not necessary
   // remove viewer
@@ -64,38 +69,27 @@ class VarCache {
   //     print('deallocate: ${varKey?.value} ${varEntry.varKey}');
   //     print('deallocate: ${varEntry.viewerCount}');
   //     print('varEntry.hasListeners: ${varEntry.hasListeners}');
-
   //     // caller removes itself as listener first
-  //     // if (!varEntry.hasListeners) {
-  //     //   _cache.remove(varKey?.value)?.dispose();
-  //     //   return true;
-  //     // }
-  //     varEntry.viewerCount--;
-  //     if (varEntry.viewerCount < 1) {
-  //       _cache.remove(varKey?.value)?.dispose();
+  //     if (!varEntry.hasListeners) {
+  //       _cache.remove(varKey?.value);
   //       return true;
   //     }
   //   }
   //   return false;
   // }
 
-  // VarNotifier replace(VarKey add, [VarKey? remove]) => (this..deallocate(remove)).allocate(add);
-
-  // void replaceAll(Iterable<VarKey> varKeys) {
-  //   clear();
-  //   varKeys.forEach(allocate);
-  // }
-
+  bool get isEmpty => _cache.isEmpty;
   bool contains(VarKey varKey) => _cache.containsKey(varKey.value);
   void zero() => _cache.forEach((key, value) => value.numValue = 0);
-  // void clear() => _cache.clear();
-
-  bool get isEmpty => _cache.isEmpty;
 
   void dispose() {
     _cache.forEach((_, value) => value.dispose());
     // _cache.clear();
   }
+
+  // void allocateAll(Iterable<VarKey> varKeys, VarNotifier Function(VarKey) constructor) {
+  //   _cache.addEntries(varKeys.map((varKey) => MapEntry(varKey.value, constructor(varKey))));
+  // }
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Per Instance
@@ -106,8 +100,9 @@ class VarCache {
   /// Collective App View
   ////////////////////////////////////////////////////////////////////////////////
   // by results of the keys' generative constructor stored in VarNotifier, will not create new keys
+  // name as 'keys' creates some conflict on cast<>()
   Iterable<VarKey> get varKeys => _cache.values.map((e) => e.varKey);
-  Iterable<VarNotifier> get entries => _cache.values;
+  Iterable<VarNotifier> get varEntries => _cache.values;
 
   /// for filter on keys, alternatively caller filter on entries
   Iterable<VarNotifier> entriesOf(Iterable<VarKey> keys) => keys.map<VarNotifier?>((e) => this[e]).nonNulls;
@@ -123,6 +118,7 @@ class VarCache {
   ////////////////////////////////////////////////////////////////////////////////
   Iterable<MapEntry<int, int>> get dataEntries => _cache.values.map((e) => e.dataEntry);
   Iterable<(int, int)> get dataPairs => _cache.values.map((e) => e.dataPair);
+  // Iterable<MapEntry<int, int>> get dataEntries => _cache.keys.map((e) =>  MapEntry(e, _cache[e]!.dataValue));
 
   Iterable<MapEntry<int, int>> dataEntriesOf(Iterable<VarKey> keys) => entriesOf(keys).map((e) => e.dataEntry);
   Iterable<(int, int)> dataPairsOf(Iterable<VarKey> keys) => entriesOf(keys).map((e) => e.dataPair);
@@ -185,11 +181,17 @@ class VarCache {
     }
   }
 
-  List<Map<String, Object?>> toJson() => entries.map((e) => e.toJson()).toList();
+  List<Map<String, Object?>> toJson() => varEntries.map((e) => e.toJson()).toList();
+
+  @override
+  String toString() => describeIdentity(this);
+
+  // @override
+  // String toString() => 'VarCache: $runtimeType ${_cache.length}';
 
   @visibleForTesting
   void printCache() {
-    print('VarCache: ${_cache.length}');
+    print(this);
     _cache.forEach((key, value) => print('{ ${value.varKey} : var: $value }'));
   }
 }

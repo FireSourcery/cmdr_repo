@@ -23,79 +23,72 @@ part 'var_real_time_controller.dart';
 class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier {
   VarNotifier({
     required this.varKey,
-    this.viewOfData,
-    this.dataOfView,
-    this.signExtension,
-    this.viewMin,
-    this.viewMax,
-    this.enumRange,
-    this.bitsKeys,
-    // this.stringDigits,
-    // this.statusOfCode = VarStatus.defaultCode,
-  });
+    int Function(int binary)? signExtension,
+    ViewOfData? viewOfData,
+    DataOfView? dataOfView,
+    ({num min, num max})? numLimits,
+    List<Enum>? enumRange,
+    List<BitField>? bitsKeys,
+  }) {
+    dataKey = varKey.value;
+    this.signExtension = signExtension;
+    this.viewOfData = viewOfData;
+    this.dataOfView = dataOfView;
+    this.numLimits = numLimits;
+    this.enumRange = enumRange;
+    this.bitsKeys = bitsKeys;
+  }
 
-  @protected
-  VarNotifier.ofKey(this.varKey)
-      : assert(V != dynamic),
-        viewOfData = varKey.viewOfData,
-        dataOfView = varKey.dataOfView,
-        signExtension = varKey.binaryFormat?.signExtension,
-        viewMin = varKey.valueNumLimits?.min,
-        viewMax = varKey.valueNumLimits?.max,
-        enumRange = varKey.valueEnumRange,
-        bitsKeys = varKey.valueBitsKeys
-  // stringDigits = varKey.valueStringDigits,
-  ;
-  // statusOfCode = varKey.varStatusOf
+  VarNotifier.ofKey(this.varKey) : assert(V != dynamic) {
+    dataKey = varKey.value;
+    initReferences();
+  }
 
   factory VarNotifier.of(VarKey varKey) {
     assert(V == dynamic, 'V must be dynamic');
     return varKey.viewType(<G>() => VarNotifier<G>.ofKey(varKey) as VarNotifier<V>);
   }
 
-  // introduce mutablity here? so cache prealloccate can be immutable?
+  // @override
+  final VarKey varKey;
 
   /// Derived from [VarKey] and cached
-  ///  cached key getters
-  @override
-  final int Function(int binaryValue)? signExtension;
-  @override
-  final ViewOfData? viewOfData; //num conversion only, null for Enum and Bits
-  @override
-  final DataOfView? dataOfView;
-  @override
-  final num? viewMin;
-  @override
-  final num? viewMax;
-
-  // from Key, change either refer to key or remove key dependency
-  @override
-  final VarKey varKey;
-  // for enum conversion only.
-  // although enumerated types can be implemented using other types, it is generally preferred to use enums.
-  @override
-  final List<Enum>? enumRange;
-
-  // for bit conversion only.
-  @override
-  final List<BitField>? bitsKeys;
-
   // @override
-  // final int? stringDigits;
+  // final int Function(int binaryValue)? signExtension;
+  // @override
+  // final ViewOfData? viewOfData; //num conversion only, null for Enum and Bits
+  // @override
+  // final DataOfView? dataOfView;
+  // @override
+  // final List<Enum>? enumRange;
+  // @override
+  // final List<BitField>? bitsKeys;
+
+  void initReferences() {
+    signExtension = varKey.binaryFormat?.signExtension;
+    viewOfData = varKey.viewOfData;
+    dataOfView = varKey.dataOfView;
+    numLimits = varKey.valueNumLimits;
+    enumRange = varKey.valueEnumRange;
+    bitsKeys = varKey.valueBitsKeys;
+  }
 
   /// [VarStatus] type is the same for all vars in most cases.
   /// Compile time const defined in [VarKey]. Does not need to build and cache.
   @override
   VarStatus statusOf(int statusCode) => varKey.varStatusOf(statusCode);
 
-  // String stringifyAs<T>(T value) => varKey.stringify<T>(value);
+  ////////////////////////////////////////////////////////////////////////////////
+  /// Stringify
+  ////////////////////////////////////////////////////////////////////////////////
+  String get valueString => valueStringAs<V>();
 
-  bool pushDataFlag = false; // case where push is not on all viewValue updates
+  // stringifyAs
+  String valueStringAs<T>() => varKey.stringify<T>(valueAs<T>());
 
-  // alternatively change to remove dependency on VarKey
-  // final VarStatus Function(int statusCode) statusOfCode;
-  // VarStatus statusOf(int statusCode) => statusOfCode(statusCode);
-
+  ////////////////////////////////////////////////////////////////////////////////
+  @override
+  String toString() => '${describeIdentity(this)}(`${varKey.label}`)($value = $numValue)';
   // @override
   // String toString() => '$runtimeType { key: ${varKey.label}, value: $numValue, status: $statusCode }';
 
@@ -104,50 +97,42 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   //   super.updateStatusByData(status);
   //   isUpdatedByView = false;
   // }
-
-  // @override
-  // String toString() => '${describeIdentity(this)}($value)';
 }
 
-/// A notifier combining a value and status code on a single listenable.
-///  supports conversion between view and data values.
-/// alternatively move notifier to upper layer
+///
+/// A notifier combining a ValueNotifier with support for conversion between view types and data values.
+/// It be can further combined with a status notifier.
 abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
-  VarKey get varKey; // allow varKey to be assigned as dynamic
-  // alternatively
-  // int get dataKey;
+  // VarKey get varKey; // allow varKey to be assigned as dynamic. can be removed
   // int get dataMin;
   // int get dataMax;
 
+  /// caching results for performance. these do not have to be immutable.
+  /// values are already nullable, immutability offers no benefit.
+  /// additionally all mutability is contained in a single layer. cache preallocate can be immutable
+
+  late final int dataKey;
+
   /// by default get from varKey.
   /// resolve in constructor to cached values derived from varKey
-  int Function(int binary)? get signExtension;
-  ViewOfData? get viewOfData; //num conversion only, null for Enum and Bits
-  DataOfView? get dataOfView;
+  int Function(int binary)? signExtension;
+  ViewOfData? viewOfData; // num conversion only, null for Enum and Bits
+  DataOfView? dataOfView;
+  // S Function<S>(num value)?  valueOfSubtype;
+  ({num min, num max})? numLimits; //  view base limits, still effective for non-num V, if set
+  List<Enum>? enumRange; // for enum conversion only. other range bound types, e.g String, provide by enum.
+  List<BitField>? bitsKeys; // for bits conversion only.
 
-  // S Function<S>(num value)? get valueOfSubtype;
-
-  /// view base limits, still effective for non-num V, if set
-  // num? get viewMin => varKey.valueNumLimits?.min;
-  // num? get viewMax => varKey.valueNumLimits?.max;
-  num? get viewMin;
-  num? get viewMax;
-
-  // for enum conversion only.
-  // other range bound types, e.g String, provide by enum.
-  List<Enum>? get enumRange; // + defualt must be provided for non null return
-
-  // for bits conversion only.
-  List<BitField>? get bitsKeys;
+  @override
+  String toString() => '${describeIdentity(this)}($value)';
 
   ///
   int dataOfBinary(int binary) => signExtension?.call(binary) ?? binary;
   num viewOf(int data) => viewOfData?.call(data) ?? data; // 'view base'
   int dataOf(num view) => dataOfView?.call(view) ?? view.toInt();
 
-  num clamp(num value) => switch ((viewMin, viewMax)) { (num min, num max) => value.clamp(min, max), _ => value };
-  // alternatively required for num types
-  // num clamp(num value) => value.clamp(viewMin!, viewMax!);
+  num clamp(num value) => switch (numLimits) { (:num min, :num max) => value.clamp(min, max), _ => value };
+  // num clamp(num value) => numLimits != null ? value.clamp(numLimits.min, viewMax!) : value;
 
   Enum enumOf(int value) => enumRange?.elementAtOrNull(value) ?? VarValueEnum.unknown;
   BitStruct<BitField> bitFieldsOf(int value) => BitConstruct<BitStruct, BitField>(bitsKeys ?? const <BitField>[], value as Bits);
@@ -160,22 +145,17 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   //    a default value is provided
   //    a prototype object is provided
 
-  // V? get enumPrototype; // include a default
-  // V? get bitsPrototype;
-
   // if a default is not provided, the return must be R?, returning common Meta will be type error
   // V? enumSubtypeOf(int value) => enumRange?.elementAtOrNull(value) as V?; // returns null if varName is not associated with enum value type
   // V? bitsSubtypeOf(int value) => (bitsKeys != null) ? BitStructClass(bitsKeys!).castBits(value) as V? : null;
-  T valueAsSubtype<T>() => throw UnsupportedError('valueAsSubtype: $T');
+  // S subtypeValueOf<S>(int value) ; //pass this via pointer?
 
-  @override
-  String toString() => '${describeIdentity(this)}(${varKey.label})($value)($numValue)';
+  T valueAsSubtype<T>() => throw UnsupportedError('valueAsSubtype: $T'); //pass this via pointer?
+  // T Function<T>(num value) valueAsSubtype; //pass this via pointer?
 
   /// runtime variables
-  // same as ChangeNotifier._count
-  // alternatively cache need parallel list to track duplicates.
-  int viewerCount = 0;
   bool isUpdatedByView = false; // pushUpdateFlag
+  // bool get pushDataFlag => hasListeners;
 
   // if separating internal and external status
   // bool outOfRange; // value from client out of range
@@ -186,9 +166,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   @override // check new == previous?
   set value(V newValue) => updateByViewAs<V>(newValue);
 
-  // Var as Entry including key
-  // outbound data
-  int get dataKey => varKey.value;
+  /// as outbound data
   MapEntry<int, int> get dataEntry => MapEntry(dataKey, dataValue);
   (int key, int value) get dataPair => (dataKey, dataValue);
 
@@ -297,8 +275,8 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
     // assert(!((typedValue is num) && (_clamp(typedValue) != numValue)));
 
     // viewValue bound should keep motValue within format bounds after conversion
-    assert((varKey.binaryFormat?.max != null) ? (dataValue <= varKey.binaryFormat!.max) : true);
-    assert((varKey.binaryFormat?.min != null) ? (dataValue >= varKey.binaryFormat!.min) : true);
+    // assert((varKey.binaryFormat?.max != null) ? (dataValue <= varKey.binaryFormat!.max) : true);
+    // assert((varKey.binaryFormat?.min != null) ? (dataValue >= varKey.binaryFormat!.min) : true);
   }
 
   void updateAsDynamic(dynamic typedValue) {
@@ -314,22 +292,14 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   void updateByView(V typedValue) => updateByViewAs<V>(typedValue);
 
   ////////////////////////////////////////////////////////////////////////////////
-  /// Stringify
-  ////////////////////////////////////////////////////////////////////////////////
-  String get valueString => valueStringAs<V>();
-
-  // stringifyAs
-  String valueStringAs<T>() => varKey.stringify<T>(valueAs<T>());
-
-  ////////////////////////////////////////////////////////////////////////////////
   /// Json param config
   ////////////////////////////////////////////////////////////////////////////////
   Map<String, Object?> toJson() {
     return {
-      'varId': varKey.value,
+      'varId': dataKey,
       'varValue': numValue,
       'dataValue': dataValue,
-      'description': varKey.toString(),
+      // 'description': varKey.toString(),
     };
   }
 
@@ -340,7 +310,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
           'varId': int _,
           'varValue': num viewValue,
           'dataValue': int _,
-          'description': String _,
+          // 'description': String _,
         }) {
       updateByViewAs<num>(viewValue);
     } else {
