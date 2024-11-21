@@ -253,11 +253,12 @@ mixin VarDependents on VarCache {
 ////////////////////////////////////////////////////////////////////////////////
 class VarEventController with ChangeNotifier implements ValueNotifier<VarViewEvent> {
   VarEventController({required this.varCache, this.varNotifier});
-  VarEventController.byKey({required this.varCache, required VarKey varKey}) : varNotifier = varCache.allocate(varKey);
+  // VarEventController.byKey({required this.varCache, required VarKey varKey}) : varNotifier = varCache.allocate(varKey);
 
   // VarCacheController if combining with service
   final VarCache varCache; // a reference to the cache containing this varNotifier, use controller to include service
 
+// this is not needed if context of cache is provided
   /// Type assigned by VarKey/VarCache
   // use null for default. If a 'empty' VarNotifier is attached, it may register excess callbacks, and dispatch meaningless notifications.
   VarNotifier<dynamic>? varNotifier; // always typed by Key returning as dynamic.

@@ -68,6 +68,8 @@ class VarCacheController {
 /// call service immediately
 ///
 /// This could be in its own context, without selectable VarNotifier
+///
+/// combine with event controller
 ////////////////////////////////////////////////////////////////////////////////
 abstract mixin class VarSingleController {
   VarNotifier<dynamic> get varNotifier;
