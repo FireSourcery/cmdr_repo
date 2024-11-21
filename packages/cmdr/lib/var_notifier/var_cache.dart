@@ -129,6 +129,7 @@ class VarCache {
   // calling function checks packet length, data
   void updateByData(Iterable<int> ids, Iterable<int> bytesValuesIn, [Iterable<int>? statusesIn]) {
     assert(bytesValuesIn.length == ids.length);
+    // returned values should be lists
     for (final (id, value) in Iterable.generate(ids.length, (i) => (ids.elementAt(i), bytesValuesIn.elementAt(i)))) {
       _cache[id]?.updateByData(value);
     }
