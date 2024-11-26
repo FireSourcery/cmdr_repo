@@ -34,8 +34,6 @@ abstract mixin class VarNotifierViewer<V> {
   ValueGetter<VarStatus> get statusGetter => () => varNotifier.status;
 
   V get viewValue => varNotifier.valueAs<V>();
-  // num? get valueMin => varNotifier.viewMin;
-  // num? get valueMax => varNotifier.viewMax;
   ({num max, num min})? get valueNumLimits => varNotifier.varKey.valueNumLimits;
 
   Stringifier<V> get valueStringifier => varNotifier.varKey.stringify<V>; // can be used to generate value labels for values other than the current value

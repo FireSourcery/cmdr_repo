@@ -66,10 +66,6 @@ class VarCacheController {
 ////////////////////////////////////////////////////////////////////////////////
 /// if a single var update is required. Batch updates via VarCacheController handles most cases.
 /// call service immediately
-///
-/// This could be in its own context, without selectable VarNotifier
-///
-/// combine with event controller
 ////////////////////////////////////////////////////////////////////////////////
 abstract mixin class VarSingleController {
   VarNotifier<dynamic> get varNotifier;

@@ -27,7 +27,7 @@ abstract class Structure<K extends Field, V> with MapBase<K, V>, FixedMap<K, V> 
   @override
   List<K> get keys;
 
-  //Map
+  // Map
   // void clear();
   // V remove(covariant K key);
   // V operator [](K key) => get(key);
@@ -60,11 +60,10 @@ abstract class Structure<K extends Field, V> with MapBase<K, V>, FixedMap<K, V> 
   FieldEntry<K, V> fieldEntry(K key) => (key: key, value: field(key));
 
   /// with context of keys
-  // FixedMap<K, V> asIdentityMap() => IndexMap<K, V>.of(keys, keys.map((key) => field(key))); //if map interface not directly implemented
-
   Iterable<V> fieldValues(Iterable<K> keys) => keys.map((key) => field(key));
   Iterable<FieldEntry<K, V>> fieldEntries(Iterable<K> keys) => keys.map((key) => fieldEntry(key));
 
+  Structure<K, V> copyWith() => Construct<Structure<K, V>, K, V>.castBase(this);
   // Structure<K, V> copyWithBase(FixedMap<K, V> base) => Construct<FixedMap<K, V>, K, V>.castBase(base);
   // // immutable `with` copy operations, via IndexMap
   // // analogous to operator []=, but returns a new instance
@@ -106,6 +105,8 @@ abstract class Structure<K extends Field, V> with MapBase<K, V>, FixedMap<K, V> 
 //   void set(Field key, V value) => key.setIn(this, value);
 //   @protected
 //   bool testBounds(Field key) => key.testBoundsOf(this);
+/// with context of keys
+// FixedMap<K, V> asIdentityMap() => IndexMap<K, V>.of(keys, keys.map((key) => field(key))); // if map interface not directly implemented
 // }
 
 /// default implementation of immutable copy as subtype
@@ -243,6 +244,12 @@ class Construct<T extends Structure<K, V>, K extends Field, V> extends Structure
 
   @override
   V remove(K key) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Structure<K, V> copyWith() {
+    // TODO: implement copyWith
     throw UnimplementedError();
   }
 

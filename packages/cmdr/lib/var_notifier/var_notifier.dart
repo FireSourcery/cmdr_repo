@@ -119,6 +119,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   ViewOfData? viewOfData; // num conversion only, null for Enum and Bits
   DataOfView? dataOfView;
   // S Function<S>(num value)?  valueOfSubtype;
+  // V Function(num value)?  valueOfSubtype;
   ({num min, num max})? numLimits; //  view base limits, still effective for non-num V, if set
   List<Enum>? enumRange; // for enum conversion only. other range bound types, e.g String, provide by enum.
   List<BitField>? bitsKeys; // for bits conversion only.

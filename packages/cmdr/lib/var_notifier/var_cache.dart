@@ -46,8 +46,8 @@ class VarCache {
   /// `allocate` the same VarNotifier storage if found. `create if not found`
   ///
   VarNotifier allocate(VarKey varKey) {
-    if (lengthMax case int max when _cache.length >= max) _cache.remove(_cache.entries.first.key)?.dispose();
     if (_cache is UnmodifiableMapView) return this[varKey]!; // temporary for compatibility
+    if (lengthMax case int max when _cache.length >= max) _cache.remove(_cache.entries.first.key)?.dispose();
     return _cache.putIfAbsent(varKey.value, () => constructor(varKey));
   }
 

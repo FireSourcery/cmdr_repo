@@ -82,8 +82,7 @@ class VarRealTimeController extends VarCacheController {
   // final Set<VarKey> selectedWrite  = {};
   // Iterable<VarKey> get periodicWriteKeys => cache.entries.map((e) => e.varKey).where((e) => e.isPeriodicWrite);
   // Iterable<VarKey> get writeOnUpdateKeys => cache.entries.where((e) => e.isUpdatedByView).map((e) => e.varKey);
-  // Iterable<VarKey> get writeKeys => periodicWriteKeys.followedBy(writeOnUpdateKeys);
-  // List<int> get _writeIds => writeKeys.map((e) => e.value).toList();
+
   Iterable<VarKey> get _writeKeys => cache.varEntries.where((e) => e.isUpdatedByView || e.varKey.isPushing).map((e) => e.varKey);
   Iterable<(int, int)> _writePairs() => cache.dataPairsOf(_writeKeys);
   Stream<({Iterable<(int, int)> pairs, Iterable<int>? statuses})> get _writeStream => protocolService.push(_writePairs, delay: const Duration(milliseconds: 5));
@@ -128,47 +127,3 @@ class VarPeriodicHandler {
   Future<void> end() async => streamSubscription?.cancel().whenComplete(() => streamSubscription = null);
   Future<void> restart<T>(Stream<T> stream, void Function(T)? onData) async => end().whenComplete(() => listenWith<T>(stream, onData));
 }
-
-// if fixed polling
-
-// Future<VarNotifier<dynamic, VarStatus>> open(VarKey varKey) async {
-//   // acquire lock or
-//   switch (varKey) {
-//     case VarKey(isPolling: true):
-//       await readStreamProcessor.end();
-//     // readStreamProcessor.selectedKeys.add(varKey);
-
-//     case VarKey(isPushing: true):
-//     // writeStreamProcessor.selectedKeys.add(varKey);
-//   }
-
-//   try {
-//     return cache.allocate(varKey);
-//   } finally {
-//     beginRead();
-//   }
-// }
-
-// // closeView
-// // case of deallocating a var that is actively used by a stream - req/resp mismatch will be handled by null aware operator in cache update
-// // however
-// Future<void> close(VarKey varKey) async {
-//   // await readStreamProcessor.end();
-//   if (cache.deallocate(varKey)) {
-//     // void nil = switch (varKey) {
-//     //   VarKey(isPeriodicRead: true) => readStreamProcessor.selectedKeys.remove(varKey),
-//     //   VarKey(isPeriodicWrite: true) => writeStreamProcessor.selectedKeys.remove(varKey),
-//     //   VarKey(isPeriodicRead: false, isPeriodicWrite: false) => null,
-//     // };
-//   }
-// }
-
-// VarNotifier replace(VarKey add, VarKey remove) => (this..close(remove)).open(add);
-// await restartReadStream();
-
-// void replaceAll(Iterable<VarKey> varKeys) async {
-//   cache.clear();
-//   varKeys.forEach(open);
-//   // await readStreamProcessor.restart();
-//   // await writeStreamProcessor.restart();
-// }

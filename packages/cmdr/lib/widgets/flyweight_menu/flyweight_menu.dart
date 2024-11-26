@@ -187,25 +187,27 @@ class FlyweightMenuTheme extends ThemeExtension<FlyweightMenuTheme> {
   }
 }
 
+typedef MenuWidgetBuilder<T> = Widget Function(BuildContext context, FlyweightMenu<T> menu, Widget keyWidget);
+
 // resolves source to instance notifier
+/// wraps user provided menu around user provided key widget
 class MenuAnchorBuilder<T> extends StatefulWidget {
   const MenuAnchorBuilder({
     super.key,
     required this.menuSource,
     // required this.menuInstance,
     this.initialItem,
-    required this.menuWidgetBuilder,
-    required this.menuKeyBuilder,
+    required this.menuAnchorBuilder,
+    required this.keyBuilder,
     this.child,
   });
 
   final FlyweightMenuSource<T> menuSource;
   // final FlyweightMenu<T> menuInstance;  // provide one of either
   final T? initialItem;
-
-  final Widget Function(BuildContext context, List<FlyweightMenuItem<T>> menuItems, Widget keyWidget) menuWidgetBuilder;
-  final ValueWidgetBuilder<T> menuKeyBuilder; // passed to menuWidgetBuilder
-  final Widget? child; // passed to menuKeyBuilder
+  final MenuWidgetBuilder<T> menuAnchorBuilder;
+  final ValueWidgetBuilder<T> keyBuilder; // passed to menuAnchorBuilder
+  final Widget? child; // passed to keyBuilder
 
   @override
   State<MenuAnchorBuilder<T>> createState() => _MenuAnchorBuilderState<T>();
@@ -214,13 +216,13 @@ class MenuAnchorBuilder<T> extends StatefulWidget {
 class _MenuAnchorBuilderState<T> extends State<MenuAnchorBuilder<T>> {
   // late final FlyweightMenuSource<T> menuSource = widget.menuSource ?? FlyweightMenuSourceContext<T>.of(context).menuSource; // if including find by context
   late final FlyweightMenu<T> menu = widget.menuSource.create(initialValue: widget.initialItem /*  onPressed: widget.onPressed */);
-  late final Widget keyListener = ValueListenableBuilder<T>(valueListenable: menu, builder: widget.menuKeyBuilder, child: widget.child);
+  late final Widget keyListener = ValueListenableBuilder<T>(valueListenable: menu, builder: widget.keyBuilder, child: widget.child);
 
   @override
   Widget build(BuildContext context) {
     return FlyweightMenuContext<T>(
       notifier: menu,
-      child: widget.menuWidgetBuilder(context, menu.menuItems, keyListener),
+      child: widget.menuAnchorBuilder(context, menu, keyListener),
     );
   }
 }

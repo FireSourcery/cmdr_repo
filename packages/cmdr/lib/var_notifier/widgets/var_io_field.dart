@@ -68,7 +68,7 @@ class _VarIOField<V> extends StatelessWidget implements VarIOField {
 /// SelectableIOField
 ///
 ///
-class VarIOFieldWithMenu<T extends VarKey> extends StatefulWidget {
+class VarIOFieldWithMenu<T extends VarKey> extends StatelessWidget {
   const VarIOFieldWithMenu({this.initialVarKey, this.eventController, super.key, required this.menuSource});
 
   final FlyweightMenuSource<T> menuSource;
@@ -79,31 +79,32 @@ class VarIOFieldWithMenu<T extends VarKey> extends StatefulWidget {
     return VarIOField(varNotifier, eventController: eventController, showLabel: true, isDense: false, showPrefix: true, showSuffix: true);
   }
 
-  @override
-  State<VarIOFieldWithMenu<T>> createState() => _VarIOFieldWithMenuState<T>();
-}
-
-class _VarIOFieldWithMenuState<T extends VarKey> extends State<VarIOFieldWithMenu<T>> {
-  // late final FlyweightMenuSource<T> menuSource = widget.menuSource ?? FlyweightMenuSourceContext<T>.of(context).menuSource; // if including find by context
-  late final FlyweightMenu<T> menu = widget.menuSource.create(initialValue: widget.initialVarKey /*  onPressed: widget.onPressed */);
-  late final ValueWidgetBuilder<T> effectiveBuilder = VarKeyWidgetBuilder(builder: widget.buildVar, eventController: widget.eventController).asValueWidgetBuilder;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget menuAnchorBuilder(context, menu, keyWidget) {
     return Row(
       children: [
         FlyweightMenuButton<T>(menu: menu),
         const VerticalDivider(thickness: 0, color: Colors.transparent),
         // config rebuilds on varNotifier select update
-        Expanded(child: MenuListenableBuilder<T>(menu: menu, builder: effectiveBuilder)),
+        Expanded(child: keyWidget),
       ],
     );
-
     // return ListTile(
     //   // dense: true,
     //   leading: VarMenuButton<T>(menu: menu),
     //   title: FlyweightMenuListenableBuilder<T>(menu: menu, builder: effectiveBuilder),
     // );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ValueWidgetBuilder<T> keyWidgetBuilder = VarKeyWidgetBuilder(builder: buildVar, varCache: eventController?.varCache).asValueWidgetBuilder;
+
+    return MenuAnchorBuilder(
+      menuSource: menuSource,
+      initialItem: initialVarKey,
+      menuAnchorBuilder: menuAnchorBuilder,
+      keyBuilder: keyWidgetBuilder,
+    );
   }
 }
 
@@ -150,26 +151,6 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   final bool showPrefix;
   final bool showSuffix;
   final bool? isDense;
-
-  // for simplicity assign type then copyWith options, this way options do not have to be included in every typed constructor
-  // applying options needs VarIOFieldConfig with constructor and fields, or use parent class copyWith
-  // IOFieldConfig<T> buildWith({
-  //   FloatingLabelAlignment? labelAlignment = FloatingLabelAlignment.start,
-  //   bool showLabel = true,
-  //   bool showPrefix = true,
-  //   bool showSuffix = true,
-  //   bool? isDense = false,
-  // }) {
-  //   return copyWith(
-  //     idDecoration: InputDecoration(
-  //       labelText: (showLabel) ? idDecoration.labelText : null,
-  //       prefixIcon: (showPrefix) ? idDecoration.prefixIcon : null,
-  //       suffixText: (showSuffix) ? idDecoration.suffixText : null,
-  //       floatingLabelAlignment: labelAlignment,
-  //       isDense: isDense,
-  //     ),
-  //   );
-  // }
 
   // control over whether the parameters from VarNotifier are passed
   @override

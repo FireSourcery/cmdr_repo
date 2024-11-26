@@ -61,6 +61,8 @@ class SettingsService {
   Future<bool> update<T>(String key, T value) async => _setAsync<T>(key, value);
 }
 
+// abstract interface class Setting<T>  = ServiceKey<T>
+
 // SettingBase using SharedPreferences
 // can be inherited by enums
 abstract mixin class SharedPrefSetting<T> implements Setting<T> {

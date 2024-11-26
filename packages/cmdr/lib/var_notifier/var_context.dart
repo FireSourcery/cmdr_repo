@@ -24,7 +24,6 @@ final class VarKeyContext extends InheritedWidget {
 
   /// User provides function - using control type properties to determine the [VarContext] and [VarCacheController] type
   // effectively provides varKey.contextType, without directly including type in VarKey, as that results in dependency of view layer
-  // final TypeKey<VarContext> Function(VarKey) contextTypeOfVarKey;
 
   /// slight workaround for `T extends VarContext`
   final TypeRestrictedKey<VarContext, VarContext> Function(VarKey) contextTypeOfVarKey;
@@ -62,12 +61,6 @@ abstract class VarContext extends InheritedWidget {
     assert(result != null, 'No $T found in context');
     return result!;
   }
-
-  // static T _of<T>(BuildContext context) {
-  //   final T? result = maybeOf<T>(context);
-  //   assert(result != null, 'No $T found in context');
-  //   return result!;
-  // }
 
   /// this method requires [VarKeyContext] to be provided
   static VarContext ofKey(BuildContext context, VarKey varKey) {
