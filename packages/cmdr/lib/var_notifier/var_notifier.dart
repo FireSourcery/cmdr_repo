@@ -110,19 +110,18 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   /// caching results for performance. these do not have to be immutable.
   /// values are already nullable, immutability offers no benefit.
   /// additionally all mutability is contained in a single layer. cache preallocate can be immutable
-
-  late final int dataKey;
-
   /// by default get from varKey.
   /// resolve in constructor to cached values derived from varKey
+
+  late final int dataKey;
   int Function(int binary)? signExtension;
   ViewOfData? viewOfData; // num conversion only, null for Enum and Bits
   DataOfView? dataOfView;
-  // S Function<S>(num value)?  valueOfSubtype;
-  // V Function(num value)?  valueOfSubtype;
   ({num min, num max})? numLimits; //  view base limits, still effective for non-num V, if set
   List<Enum>? enumRange; // for enum conversion only. other range bound types, e.g String, provide by enum.
   List<BitField>? bitsKeys; // for bits conversion only.
+  // S Function<S>(num value)?  subtypeOfView;
+  // V Function(num value)?  subtypeOfView;
 
   @override
   String toString() => '${describeIdentity(this)}($value)';
@@ -155,7 +154,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // T Function<T>(num value) valueAsSubtype; //pass this via pointer?
 
   /// runtime variables
-  bool isUpdatedByView = false; // pushUpdateFlag
+  bool isPushPending = false; // pushUpdateFlag
   // bool get pushDataFlag => hasListeners;
 
   // if separating internal and external status
@@ -205,7 +204,9 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // }
 
   // before sign extension
-  void updateByData(int bytesValue) => _updateByData(dataOfBinary(bytesValue));
+  void updateByData(int bytesValue) {
+    if (!isPushPending) _updateByData(dataOfBinary(bytesValue)); // updatedByView wait for push
+  }
 
   ////////////////////////////////////////////////////////////////////////////////
   /// [viewValue] from widgets
@@ -269,7 +270,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
       _ => throw UnsupportedError('valueAs: $T'),
     };
 
-    isUpdatedByView = true;
+    isPushPending = true;
     // if (typedValue case num input when input != numValue) statusCode = 1;
 
     // asserts view is set with proper bounds

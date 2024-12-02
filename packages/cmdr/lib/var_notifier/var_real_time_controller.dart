@@ -43,11 +43,9 @@ class VarRealTimeController extends VarCacheController {
   ////////////////////////////////////////////////////////////////////////////////
   VarPeriodicHandler readStreamProcessor = VarPeriodicHandler();
 
-  // final Set<VarKey> selectedRead = {}; // maintain list on allocate may be better performance and iterate keys on begin
-
   // stream will call slices creating a new list.
   // while this iterator is accessed, view must not add or remove keys
-  // hasListeners check is regularly updated. warning is ok.
+  // hasListeners check is regularly updated. protected warning is ok.
   Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListeners).map((e) => e.varKey);
 
   // using a getter, ids auto update, handle concurrency
@@ -62,28 +60,22 @@ class VarRealTimeController extends VarCacheController {
     return readStreamProcessor.listenWith(_readStream, _onReadSlice);
   }
 
-  // if fixed, create a new list. stream will iterate a new list, while original list can be modified
-  // Iterable<int> get _readIds => _readKeys.map((e) => e.value);
-  // Stream<({Iterable<int> keys, Iterable<int>? values})> get _readStream => protocolService.pollFixed(_readIds, delay: const Duration(seconds: 1));
   ////////////////////////////////////////////////////////////////////////////////
   ///
   ////////////////////////////////////////////////////////////////////////////////
   // for an user initiated write to resolve
   Future<void> writeBatchCompleted(VarKey varKey) async {
-    // Stopwatch timer = Stopwatch()..start();
+    Stopwatch timer = Stopwatch()..start();
     await Future.doWhile(() async {
       await Future.delayed(const Duration(milliseconds: 10)); // this should wait some duration before every check
-      return (cache[varKey]!.isUpdatedByView);
+      return (cache[varKey]!.isPushPending);
     });
-    // print(timer.elapsedMilliseconds);
+    print(timer.elapsedMilliseconds);
   }
 
   VarPeriodicHandler writeStreamProcessor = VarPeriodicHandler();
-  // final Set<VarKey> selectedWrite  = {};
-  // Iterable<VarKey> get periodicWriteKeys => cache.entries.map((e) => e.varKey).where((e) => e.isPeriodicWrite);
-  // Iterable<VarKey> get writeOnUpdateKeys => cache.entries.where((e) => e.isUpdatedByView).map((e) => e.varKey);
 
-  Iterable<VarKey> get _writeKeys => cache.varEntries.where((e) => e.isUpdatedByView || e.varKey.isPushing).map((e) => e.varKey);
+  Iterable<VarKey> get _writeKeys => cache.varEntries.where((e) => e.isPushPending || e.varKey.isPushing).map((e) => e.varKey);
   Iterable<(int, int)> _writePairs() => cache.dataPairsOf(_writeKeys);
   Stream<({Iterable<(int, int)> pairs, Iterable<int>? statuses})> get _writeStream => protocolService.push(_writePairs, delay: const Duration(milliseconds: 5));
 
@@ -108,9 +100,9 @@ class VarRealTimeController extends VarCacheController {
   }
 }
 
-extension on StreamSubscription {
-  Future<StreamSubscription<T>> restart<T>(Stream<T> stream, void Function(T)? onData) async => cancel().then((_) => stream.listen(onData));
-}
+// extension on StreamSubscription {
+//   Future<StreamSubscription<T>> restart<T>(Stream<T> stream, void Function(T)? onData) async => cancel().then((_) => stream.listen(onData));
+// }
 
 ///todo move
 class VarPeriodicHandler {

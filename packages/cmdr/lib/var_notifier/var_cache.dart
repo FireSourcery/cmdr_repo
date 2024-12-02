@@ -142,7 +142,7 @@ class VarCache {
     for (final (id, status) in Iterable.generate(ids.length, (i) => (ids.elementAt(i), statusesIn.elementAt(i)))) {
       _cache[id]
         ?..updateStatusByData(status)
-        ..isUpdatedByView = false;
+        ..isPushPending = false;
     }
   }
 
