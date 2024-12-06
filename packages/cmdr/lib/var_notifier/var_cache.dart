@@ -60,7 +60,7 @@ class VarCache {
   }
 
   /// re run to update VarNotifier reference values
-  void reInitAll() => _cache.forEach((_, varEntry) => varEntry.initReferences());
+  void reinitAll() => _cache.forEach((_, varEntry) => varEntry.initReferences());
 
   // in preallocated case, where size is not constrained. deallocate and replace is not necessary
   // remove viewer

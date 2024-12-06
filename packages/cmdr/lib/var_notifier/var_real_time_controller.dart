@@ -83,7 +83,7 @@ class VarRealTimeController extends VarCacheController {
   // bool get isWriteStopped => writeStreamSubscription == null;
 
   StreamSubscription? beginWrite([Iterable<VarKey>? keys]) {
-    if (_writeKeys.isEmpty) return null;
+    // if (_writeKeys.isEmpty) return null;
     // if (keys != null) selectedWrite .addAll(keys!);
     // return _writeStream.listen(_onWriteSlice);
     return writeStreamProcessor.listenWith(_writeStream, _onWriteSlice);

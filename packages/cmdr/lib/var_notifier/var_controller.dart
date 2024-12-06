@@ -28,10 +28,10 @@ class VarCacheController {
 
   Iterable<int> _ids(Iterable<VarKey>? keys) => keys?.map((e) => e.value) ?? cache.dataIds;
 
-  /// Read as slices. Each slice is 1 packet transaction.
+  /// Read iteratively, batch operation per slice. Each slice is 1 packet transaction.
   /// Returns first meta status error, e.g. not received. A Var error status may indicate some UI visualization.
   /// alternatively selectable return on error
-  Future<VarStatus?> readEach([Iterable<VarKey>? keys]) async {
+  Future<VarStatus?> readAll([Iterable<VarKey>? keys]) async {
     await for (final event in protocolService.getAll(_ids(keys))) {
       if (_onReadSlice(event) == null) return null;
     }
@@ -50,7 +50,7 @@ class VarCacheController {
   Iterable<(int, int)> _pairs(Iterable<VarKey>? keys) => cache.dataPairsOf(keys ?? cache.varKeys);
 
   // optionally select keys or both keys and values
-  Future<VarStatus?> writeEach([Iterable<VarKey>? keys]) async {
+  Future<VarStatus?> writeAll([Iterable<VarKey>? keys]) async {
     await for (final event in protocolService.setAll(_pairs(keys))) {
       if (_onWriteSlice(event) == null) return null;
     }
