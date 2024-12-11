@@ -5,25 +5,37 @@ typedef MultiWidgetBuilder = Widget Function(BuildContext context, List<Widget> 
 
 /// ChipSelection - allows user's `_selection_` from a `_selection_` of chips
 
-// single select
-// Generic parameter to ensure getter and setter are of the exact same type as List<Enum>
-class SingleSelectChips<T extends Enum> extends StatelessWidget {
-  const SingleSelectChips({super.key, required this.categories, required this.onSelected, required this.selectedCategory, this.spacing = 10, this.builder});
+/// Caller holds the state of the selected items
 
-  final List<T> categories;
+// single select
+// Generic parameter to ensure getter and setter are of the exact same type as List<T>
+class SingleSelectChips<T> extends StatelessWidget {
+  const SingleSelectChips({
+    super.key,
+    required this.selectable,
+    required this.onSelected,
+    required this.selected,
+    this.spacing = 10,
+    this.builder,
+    this.labelBuilder,
+  });
+
+  final List<T> selectable;
   final ValueSetter<T?> onSelected;
-  final ValueGetter<T?> selectedCategory;
+  final ValueGetter<T?> selected; // change to Listenable for use with getter
   final double spacing;
   final MultiWidgetBuilder? builder;
+  final ValueWidgetBuilder<T>? labelBuilder;
+  // final Listenable? listenable;
 
   @override
   Widget build(BuildContext context) {
     final children = [
-      for (final category in categories)
+      for (final key in selectable)
         ChoiceChip(
-          label: Text(category.name.pascalCase),
-          selected: selectedCategory() == category,
-          onSelected: (bool value) => onSelected(value ? category : null),
+          label: _Label<T>(chipKey: key, labelBuilder: labelBuilder),
+          selected: selected() == key,
+          onSelected: (bool value) => onSelected(value ? key : null),
         ),
     ];
 
@@ -33,45 +45,66 @@ class SingleSelectChips<T extends Enum> extends StatelessWidget {
   }
 }
 
-class MultiSelectChips<T extends Enum> extends StatelessWidget {
-  const MultiSelectChips({super.key, required this.properties, required this.onSelected, required this.selectedProperties});
+// Caller provide buffer and setState
+class MultiSelectChips<T> extends StatelessWidget {
+  const MultiSelectChips({
+    super.key,
+    required this.selectable,
+    required this.onSelected,
+    required this.selectionState,
+    this.selectMax,
+    // this.initialSelected,
+    this.labelBuilder,
+    this.spacing = 10,
+  });
 
-  final List<T> properties;
-  final ValueSetter<({T property, bool isSelected})> onSelected;
-  final ValueGetter<Set<T>> selectedProperties; // alternatively change to widget holds state
+  final List<T> selectable;
+  // final ValueSetter<({T property, bool isSelected})> onSelected;
+  // final ValueGetter<Set<T>> selectedProperties; // alternatively change to widget holds state
+  final ValueSetter<T?> onSelected;
+  final Set<T> selectionState;
+  final int? selectMax;
+  // final Iterable<T>? initialSelected;
+  final ValueWidgetBuilder<T>? labelBuilder;
+  final double spacing;
 
   @override
   Widget build(BuildContext context) {
     return Wrap(
+      runSpacing: spacing,
+      spacing: spacing,
+      // runAlignment: WrapAlignment.spaceEvenly,
+      // crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        for (final property in properties)
+        for (final key in selectable)
           FilterChip(
-            label: Text(property.name.pascalCase),
-            selected: selectedProperties().contains(property),
-            onSelected: (bool value) => onSelected((property: property, isSelected: value)),
+            label: _Label<T>(chipKey: key, labelBuilder: labelBuilder),
+            selected: selectionState.contains(key),
+            onSelected: (bool value) {
+              if (value) {
+                if (selectMax case int max when selectionState.length < max) selectionState.add(key);
+              } else {
+                selectionState.remove(key);
+              }
+              onSelected(value ? key : null);
+              // onSelected((property: property, isSelected: value));
+            },
           ),
       ],
     );
+  }
+}
 
-    //   content: Wrap(
-    //   runSpacing: 5,
-    //   spacing: 5,
-    //   children: [
-    //     for (final element in widget.selectable)
-    //       FilterChip(
-    //         label: widget.labelBuilder(element, selected.contains(element)),
-    //         onSelected: (bool value) => setState(() {
-    //           if (value) {
-    //             if (widget.selectedMax != null && selected.length >= widget.selectedMax!) return;
-    //             selected.add(element);
-    //           } else {
-    //             selected.remove(element);
-    //           }
-    //           // value ? selected.add(element) : selected.remove(element);
-    //         }),
-    //         selected: selected.contains(element),
-    //       ),
-    //   ],
-    // ),
+class _Label<T> extends StatelessWidget {
+  const _Label({super.key, required this.labelBuilder, required this.chipKey});
+
+  final ValueWidgetBuilder<T>? labelBuilder;
+  final T chipKey;
+
+  @override
+  Widget build(BuildContext context) {
+    if (labelBuilder != null) return labelBuilder!(context, chipKey, null);
+    if (chipKey case Enum(:final name)) return Text(name.pascalCase);
+    return Text(chipKey.toString().pascalCase);
   }
 }

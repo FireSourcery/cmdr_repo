@@ -1,9 +1,10 @@
 import 'dart:collection';
+import 'dart:math';
 
 import 'package:async/async.dart';
 
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 import 'chart_data.dart';
 
@@ -13,22 +14,19 @@ class ChartController with TimerNotifier, ChangeNotifier {
     List<ChartEntry>? chartEntries,
     this.updateInterval = const Duration(milliseconds: 50),
     int samplesMax = 200, // e.g 100 samples at 10ms => 1s display
-    // int? entriesMax = 16,
-    int selectionCountMax = kSelectionCountMax,
+    // int? entriesMax = kSelectionCountMax,
+    int entriesMax = kSelectionCountMax,
     double? yMin,
     double? yMax,
   })  : chartEntries = chartEntries ?? [],
         _yMax = yMax,
         _yMin = yMin,
-        assert(selectionCountMax <= kSelectionCountMax),
+        assert(entriesMax <= kSelectionCountMax),
         _chartData = ChartData.zero(
           samplesMax: samplesMax,
-          linesMax: selectionCountMax,
+          linesMax: entriesMax,
           lineNames: chartEntries?.map((e) => e.name) ?? [],
-        ) {
-    // start(); // ensure late timer is initialized
-    // stop();
-  }
+        );
 
   static const int kSelectionCountMax = 8; // fixed 16 selections max
 
@@ -40,18 +38,27 @@ class ChartController with TimerNotifier, ChangeNotifier {
 
   Duration updateInterval;
 
+  // TimerNotifier timerNotifier = TimerNotifier();
+
   ChartData _chartData; // line data models, derive from entry, file storage
   ChartData get chartData => _chartData;
   set chartData(ChartData value) {
     stop();
     _chartData = value;
     // match chart entries, values getters disabled
-    updateEntries(_chartData.lineEntries.map((e) => ChartEntry(name: e.name, valueGetter: () => 0)));
+    replaceEntries(_chartData.lineEntries.map((e) => ChartEntry(name: e.name, valueGetter: () => 0)));
     notifyListeners();
   }
 
   int get chartDataLength => chartData.lineEntries.length;
 
+  // attempt to retrieve Entries
+  void loadWithMeta(ChartData data, List<String> keyNames) {
+    chartData = data;
+    // replaceEntries(_chartData.lineEntries.map((e) => ChartEntry(name: e.name, valueGetter: () => 0)));
+  }
+
+// todo view change
   double? _yMin;
   double? get yMin => _yMin;
   set yMin(double? value) {
@@ -67,13 +74,13 @@ class ChartController with TimerNotifier, ChangeNotifier {
   }
 
   double get tValue => stopwatch.elapsedMilliseconds / 1000;
-  double get tMin => chartData.times.first;
-  double get tMax => chartData.times.last;
+  double get tMin => chartData.timeData.first;
+  double get tMax => chartData.timeData.last;
   // double get tViewRange => ;
   // double get tSamplesRange => updateInterval.inSeconds * chartData.samplesMax * 1.0;
 
   bool get isActive => _timer?.isActive ?? false;
-  bool get isStopped => !isActive; //todo view change
+  bool get isStopped => !isActive;
 
   void _updateData() {
     final remove = chartData.excessLength;
@@ -88,20 +95,21 @@ class ChartController with TimerNotifier, ChangeNotifier {
 
   final List<ChartEntry> chartEntries; // line config
 
-  void updateEntries(Iterable<ChartEntry> entries) {
+  // stop iteration before modifying
+  void addEntry(ChartEntry entry) {
+    stop();
+    chartEntries.add(entry);
+    chartData.addEntry(LineData(entry.name));
+    notifyListeners();
+    // start();
+  }
+
+  void replaceEntries(Iterable<ChartEntry> entries) {
     stop();
     chartEntries.clear();
     chartEntries.addAll(entries);
     chartData.updateEntries(entries.map((e) => LineData(e.name)));
     notifyListeners();
-  }
-
-  void addEntry(ChartEntry entry) {
-    stop(); // todo check concurrent modification error
-    chartEntries.add(entry);
-    chartData.addEntry(LineData(entry.name));
-    notifyListeners();
-    // start();
   }
 
   void replaceEntryAt(int index, ChartEntry entry) {
@@ -111,18 +119,6 @@ class ChartController with TimerNotifier, ChangeNotifier {
     notifyListeners();
     // start();
   }
-
-  // void removeEntry(ChartEntry entry) {
-  //   final index = chartEntries.indexOf(entry);
-  //   if (index != -1) removeEntryAt(index);
-  // }
-
-  // void removeEntryAt(int index) {
-  //   stop();
-  //   chartEntries.removeAt(index);
-  //   chartData.lines.removeAt(index);
-  //   // start();
-  // }
 
   // List<FlSpot> flSpotsViewOf(int index) => UnmodifiableListView(chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y)));
   List<FlSpot> flSpotsViewOf(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y))];
@@ -136,14 +132,26 @@ class ChartController with TimerNotifier, ChangeNotifier {
     configDotData = FlDotData(checkToShowDot: configDotData.checkToShowDot, show: true);
     notifyListeners();
   }
+
+  // Debug
+  void addTestData() {
+    final fnTimer = Stopwatch();
+    addEntry(ChartEntry(valueGetter: () => sin(fnTimer.elapsedMilliseconds / 1000), name: 'sine'));
+    addEntry(ChartEntry(valueGetter: () => cos(fnTimer.elapsedMilliseconds / 1000), name: 'cosine'));
+    yMax ??= 1.2;
+    yMin ??= -1.2;
+    fnTimer.start();
+    // start();
+  }
 }
 
-// entry view model
+// ChartEntry Config
 class ChartEntry {
   const ChartEntry({required this.name, required this.valueGetter, this.color, this.onSelect, this.preferredPrecision});
   final String name;
   final ValueGetter<num> valueGetter;
-  // final List<LineData> dataBuffer = [];
+  //final T key;
+
   // yRange
   final Color? color; //override default
   final VoidCallback? onSelect;
@@ -153,15 +161,19 @@ class ChartEntry {
 mixin TimerNotifier implements ChangeNotifier {
   Stopwatch stopwatch = Stopwatch();
   RestartableTimer? _timer;
+  VoidCallback _callback = () {};
+
+  void _timerCallback() {
+    _callback();
+    notifyListeners();
+    _timer!.reset();
+  }
 
   @protected
   void startPeriodic(Duration updateInterval, VoidCallback callback) {
     stopwatch.start();
-    _timer = RestartableTimer(updateInterval, () {
-      callback();
-      notifyListeners();
-      _timer!.reset();
-    });
+    _callback = callback;
+    _timer = RestartableTimer(updateInterval, _timerCallback);
   }
 
   @protected

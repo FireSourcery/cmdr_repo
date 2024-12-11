@@ -17,6 +17,11 @@ export 'chart_widgets.dart';
 class TimeChart extends StatelessWidget {
   const TimeChart({required this.chartController, this.style = const ChartStyleDefault(), super.key});
 
+  TimeChart.test({this.style, required this.chartController, super.key}) {
+    chartController.addTestData();
+    chartController.start();
+  }
+
   final ChartController chartController;
   final ChartStyle? style;
 
@@ -72,15 +77,5 @@ class TimeChart extends StatelessWidget {
     }
 
     return ListenableBuilder(listenable: chartController, builder: builder);
-  }
-
-  TimeChart.test({this.style, required this.chartController, super.key}) {
-    Stopwatch fnTimer = Stopwatch();
-    chartController.addEntry(ChartEntry(valueGetter: () => sin(fnTimer.elapsedMilliseconds / 1000), name: 'sine'));
-    chartController.addEntry(ChartEntry(valueGetter: () => cos(fnTimer.elapsedMilliseconds / 1000), name: 'cosine'));
-    chartController.yMax ??= 1.2;
-    chartController.yMin ??= -1.2;
-    fnTimer.start();
-    chartController.start();
   }
 }

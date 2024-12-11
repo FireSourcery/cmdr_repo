@@ -9,28 +9,28 @@ class ChartLegend extends StatelessWidget {
         listenable = controller;
 
   final List<ChartEntry> entries;
-  final Listenable listenable; // values
+  final Listenable listenable; // notifier for Entries
   final Widget Function(BuildContext context, ChartEntry entry, Widget entryWidget)? builder; // optional wrapper for legend entry
   final ChartStyle? style;
 
+  Widget legendEntryWidget(BuildContext context, ChartEntry entry, int styleIndex) {
+    final effectiveColor = entry.color ?? style?.legendColor(styleIndex) ?? const ChartStyleDefault().legendColor(styleIndex) ?? Colors.white;
+    final effectiveTextStyle = style?.legendTextStyle ?? const ChartStyleDefault().legendTextStyle.copyWith(color: effectiveColor);
+
+    final listTile = _LegendListTile(
+      listenable: listenable,
+      name: entry.name,
+      valueGetter: entry.valueGetter,
+      color: effectiveColor,
+      textStyle: effectiveTextStyle,
+      onSelect: entry.onSelect,
+      // isSelected: valuesSelected?[index] ?? false,
+    );
+    return builder?.call(context, entry, listTile) ?? listTile;
+  }
+
   @override
   Widget build(BuildContext context) {
-    Widget legendEntryWidget(ChartEntry entry, int index) {
-      final effectiveColor = entry.color ?? style?.legendColor(index) ?? const ChartStyleDefault().legendColor(index) ?? Colors.white;
-      final effectiveTextStyle = style?.legendTextStyle ?? const ChartStyleDefault().legendTextStyle.copyWith(color: effectiveColor);
-
-      final listTile = _LegendListTile(
-        listenable: listenable,
-        name: entry.name,
-        valueGetter: entry.valueGetter,
-        color: effectiveColor,
-        textStyle: effectiveTextStyle,
-        onSelect: entry.onSelect,
-        // isSelected: valuesSelected?[index] ?? false,
-      );
-      return builder?.call(context, entry, listTile) ?? listTile;
-    }
-
     // return IntrinsicHeight(
     //   child: ListView(
     //     padding: EdgeInsets.zero,
@@ -40,7 +40,7 @@ class ChartLegend extends StatelessWidget {
     //   ),
     // );
     return Column(
-      children: [for (final (index, entry) in entries.indexed) legendEntryWidget(entry, index)],
+      children: [for (final (index, entry) in entries.indexed) legendEntryWidget(context, entry, index)],
     );
   }
 }

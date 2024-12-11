@@ -4,6 +4,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../enum_chips.dart';
+
 class ConfirmationDialog<T> extends StatelessWidget {
   const ConfirmationDialog({super.key, this.onCancel, this.onConfirm, this.title, this.icon, this.iconColor, this.content});
   final ValueGetter<T>? onCancel;
@@ -127,23 +129,42 @@ class _AsyncConfirmationDialogState<T> extends State<AsyncConfirmationDialog<T>>
 ////////////////////////////////////////////////////////////////////////////////
 // state to maintain selected items
 class SelectionDialog<E> extends StatefulWidget {
-  const SelectionDialog({super.key, this.title, this.icon, this.selectedMax, this.iconColor, required this.selectable, required this.labelBuilder, this.initialSelected});
+  const SelectionDialog({
+    super.key,
+    this.title,
+    this.icon,
+    this.selectMax,
+    this.iconColor,
+    required this.selectable,
+    this.onSelected,
+    this.labelBuilder,
+    this.selectionState,
+    this.initialSelected,
+  });
   final Widget? title;
   final Widget? icon;
   final Color? iconColor;
-  final List<E> selectable; // must be a new list, iterable non-primatives do not add to set properly
+  // MultiSelectChips
+  final List<E> selectable; // must be a new list, iterable non-primitives do not add to set properly
+  final Set<E>? selectionState;
+  final ValueSetter<E?>? onSelected;
   final Iterable<E>? initialSelected;
-  final int? selectedMax;
-  final Widget Function(E value, bool isSelected) labelBuilder;
+  final int? selectMax;
+  final ValueWidgetBuilder<E>? labelBuilder;
 
   @override
   State<SelectionDialog<E>> createState() => _SelectionDialogState<E>();
 }
 
 class _SelectionDialogState<E> extends State<SelectionDialog<E>> {
-  late final Set<E> selected = {...?widget.initialSelected};
+  late final Set<E> selected = widget.selectionState ?? {...?widget.initialSelected};
 
   Set<E> onConfirm() => selected;
+
+  void onSelected(E? value) {
+    setState(() {});
+    widget.onSelected?.call(value);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -152,27 +173,13 @@ class _SelectionDialogState<E> extends State<SelectionDialog<E>> {
       title: widget.title,
       icon: widget.icon,
       iconColor: widget.iconColor,
-      // change this to multiselectwdiget
-      content: Wrap(
-        runSpacing: 5,
-        spacing: 5,
-        children: [
-          //todo move this to selection chips? MultiSelectChips
-          for (final element in widget.selectable)
-            FilterChip(
-              label: widget.labelBuilder(element, selected.contains(element)),
-              onSelected: (bool value) => setState(() {
-                if (value) {
-                  if (widget.selectedMax != null && selected.length >= widget.selectedMax!) return;
-                  selected.add(element);
-                } else {
-                  selected.remove(element);
-                }
-                // value ? selected.add(element) : selected.remove(element);
-              }),
-              selected: selected.contains(element),
-            ),
-        ],
+      content: MultiSelectChips<E>(
+        selectable: widget.selectable,
+        onSelected: onSelected,
+        selectionState: selected,
+        selectMax: widget.selectMax,
+        // initialSelected: widget.initialSelected,
+        labelBuilder: widget.labelBuilder,
       ),
     );
   }

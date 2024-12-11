@@ -63,7 +63,7 @@ extension BitFieldOfInt on int {
   // int modify(Bitmask mask, int value) => clear(mask) | mask.apply(value);
 
   /// Bit operations
-  int getBits(Bitmask mask) => mask.read(this);
+  int getBits(Bitmask mask) => mask.applyOff(this);
   int withBits(Bitmask mask, int value) => mask.modify(this, value);
 
   int bitsAt(int offset, int width) => getBits(Bitmask.bits(offset, width));
@@ -108,13 +108,14 @@ class Bitmask {
   final int width; // (_bitmask >>> shift).bitLength;
 
   // move to Bits?
-  int apply(int value) => (value << shift) & _bitmask; // get as masked
   int clear(int source) => source & ~_bitmask; // clear bits
-  int read(int source) => (source & _bitmask) >>> shift; // get as shifted back
-  int modify(int source, int value) => clear(source) | apply(value); // ready for write back
+  int fill(int source) => source | _bitmask; // fill bits
+  int applyOn(int value) => (value << shift) & _bitmask; // get as masked
+  int applyOff(int source) => (source & _bitmask) >>> shift; // get as shifted back
+  int modify(int source, int value) => clear(source) | applyOn(value); // ready for write back
 
   // int operator *(int value) => ((value << shift) & _bitmask); // apply as compile time const??
-  // int call(int value) => ((value << shift) & bits);
+  // int call(int value) => (value & _bitmask);
 }
 
 extension type const Bitmasks(Iterable<Bitmask> bitmasks) implements Iterable<Bitmask> {

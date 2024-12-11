@@ -6,8 +6,9 @@ import 'package:collection/collection.dart';
 
 class LineData {
   const LineData._(this.name, this.values);
-  LineData(this.name, [List<double>? values, int? capacity]) : values = QueueList.from(values ?? [0.0]);
+  LineData(this.name, [Iterable<double>? values, int? capacity]) : values = QueueList(capacity)..addAll(values ?? []);
   LineData.capacity(this.name, int capacity) : values = QueueList(capacity);
+
   final String name;
   final QueueList<double> values;
 
@@ -22,10 +23,8 @@ class LineData {
     values.clear();
   }
 
-  // LineData updateValues(List<double> newValues) => LineData(name, newValues);
-
   // lazy generate view, a buffered FlSpot may be dynamically allocated, or passthrough values as references
-  Iterable<Point<double>> mapAsPoints(List<double> times) => values.mapIndexed((index, element) => Point(times[index], element));
+  Iterable<Point<double>> mapAsPoints(List<double> timeData) => values.mapIndexed((index, element) => Point(timeData[index], element));
 
   factory LineData.fromJson(Map<String, Object?> json) {
     if (json
@@ -63,24 +62,24 @@ class LineData {
 }
 
 class ChartData {
-  ChartData._({required this.linesMax, required this.samplesMax, required this.lineEntries, required this.times}) : assert(lineEntries.length <= linesMax);
+  ChartData._({required this.linesMax, required this.samplesMax, required this.lineEntries, required this.timeData}) : assert(lineEntries.length <= linesMax);
   // ChartData._filled({required this.linesMax, required this.samplesMax, List<LineData>? lineEntries, required this.times}) ;
   ChartData.zero({required this.linesMax, required this.samplesMax, required Iterable<String> lineNames})
-      : times = QueueList(samplesMax)..add(0.0),
+      : timeData = QueueList(samplesMax)..add(0.0),
         lineEntries = [for (final entry in lineNames) LineData.capacity(entry, samplesMax)],
         assert(lineNames.length <= linesMax);
 
   final List<LineData> lineEntries; // indexed parallel with colors list, alternatively use Map<String, List<double>>
-  final QueueList<double> times;
+  final QueueList<double> timeData;
   final int linesMax; // alternatively use not growable entries count.
   final int samplesMax; // common entry length max
 
   // calculate once per update
-  int get excessLength => max(0, (times.length - samplesMax));
+  int get excessLength => max(0, (timeData.length - samplesMax));
 
   void updateTime(double time, int excess) {
-    times.removeRange(0, excess);
-    times.add(time);
+    timeData.removeRange(0, excess);
+    timeData.add(time);
   }
 
   void updateLine(int index, double value, int excess) {
@@ -88,7 +87,7 @@ class ChartData {
   }
 
   void clear() {
-    times
+    timeData
       ..clear()
       ..add(0);
     for (final line in lineEntries) {
@@ -107,21 +106,21 @@ class ChartData {
     lineEntries.addAll(entries.take(linesMax));
   }
 
-  Iterable<Point<double>> lineDataPoints(int index) => lineEntries[index].mapAsPoints(times);
+  Iterable<Point<double>> lineDataPoints(int index) => lineEntries[index].mapAsPoints(timeData);
 
   Iterable<Point<double>> operator [](int index) => lineDataPoints(index);
 
   // csv map
-  Map<String, List<dynamic>> toMap() => {'times': times}..addEntries(lineEntries.map((e) => e.toMapEntry()));
+  Map<String, List<dynamic>> toMap() => {'time': timeData}..addEntries(lineEntries.map((e) => e.toMapEntry()));
 
-  // factory ChartData.fromMap(Map<String, List<double?>> map) {
+  // factory ChartData.ofMap(Map<String, List<double?>> map) {
   factory ChartData.fromMap(Map<String, List<dynamic>> map) {
-    if (map case {'times': List timeList}) {
+    if (map case {'time': List timeList}) {
       if (timeList case List<double?>()) {
         if (map.entries.skip(1) case Iterable<MapEntry<String, List>> lines) {
           return ChartData._(
             lineEntries: [for (final line in lines) LineData.fromMapEntry(line)],
-            times: QueueList<double>.from(timeList.map((e) => e ?? 0.0)),
+            timeData: QueueList<double>.from(timeList.map((e) => e ?? 0.0)),
             linesMax: lines.length,
             samplesMax: timeList.length,
           );
@@ -134,7 +133,7 @@ class ChartData {
 // json map
   Map<String, Object?> toJson() {
     return {
-      'times': times.toString(),
+      'time': timeData.toString(),
       'entires': [for (final entry in lineEntries) entry.toJson()],
       'entriesMax': linesMax,
       'samplesMax': samplesMax,
@@ -144,17 +143,17 @@ class ChartData {
   factory ChartData.fromJson(Map<String, Object?> json) {
     if (json
         case {
-          'times': String timesJson,
+          'time': String timeJson,
           'entires': List entriesJson, // List<Map<String,Object>>
           'entriesMax': int entriesMax,
           'samplesMax': int samplesMax,
         }) {
-      if (jsonDecode(timesJson) case List timeList) {
+      if (jsonDecode(timeJson) case List timeList) {
         if (entriesJson case List<Map<String, Object?>>()) {
           if (timeList case List<double>()) {
             return ChartData._(
               lineEntries: [for (final entry in entriesJson) LineData.fromJson(entry)],
-              times: QueueList<double>.from(timeList),
+              timeData: QueueList<double>.from(timeList),
               linesMax: entriesMax,
               samplesMax: samplesMax,
             );
@@ -167,13 +166,13 @@ class ChartData {
 
   // ChartData copyWith({
   //   List<LineData>? lines,
-  //   List<double>? times,
+  //   List<double>? time,
   //   int? linesMax,
   //   int? samplesMax,
   // }) {
   //   return ChartData(
   //     lines: lines ?? this.lineEntries,
-  //     times: times ?? this.times,
+  //     time: time ?? this.time,
   //     linesMax: linesMax ?? this.linesMax,
   //     samplesMax: samplesMax ?? this.samplesMax,
   //   );
