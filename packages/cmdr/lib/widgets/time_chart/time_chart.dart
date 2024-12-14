@@ -17,18 +17,18 @@ export 'chart_widgets.dart';
 class TimeChart extends StatelessWidget {
   const TimeChart({required this.chartController, this.style = const ChartStyleDefault(), super.key});
 
-  TimeChart.test({this.style, required this.chartController, super.key}) {
+  TimeChart.test({this.style = const ChartStyleDefault(), required this.chartController, super.key}) {
     chartController.addTestData();
     chartController.start();
   }
 
   final ChartController chartController;
-  final ChartStyle? style;
+  final ChartStyle style;
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor = style?.backgroundColor ?? const ChartStyleDefault().backgroundColor;
-    final colors = style?.legendColors ?? const ChartStyleDefault().legendColors;
+    final backgroundColor = style.backgroundColor ?? const ChartStyleDefault().backgroundColor;
+    final colors = style.legendColors ?? const ChartStyleDefault().legendColors;
     final gradients = [for (final color in colors) ChartColors.gradient(color)];
 
     Widget builder(BuildContext context, Widget? child) {
@@ -49,7 +49,7 @@ class TimeChart extends StatelessWidget {
               ),
           ],
           backgroundColor: backgroundColor,
-          lineTouchData: const LineTouchData(enabled: false),
+          lineTouchData: chartController.touchData,
           // clipData: const FlClipData.all(),
           gridData: const FlGridData(show: true, drawVerticalLine: true, drawHorizontalLine: true),
           titlesData: FlTitlesData(

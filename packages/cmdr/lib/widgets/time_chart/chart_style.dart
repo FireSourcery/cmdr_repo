@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class ChartStyle extends ThemeExtension<ChartStyle> {
   const ChartStyle({
+    this.tooltipColor,
     this.backgroundColor,
     this.legendColors,
     this.lineTextStyle,
@@ -9,9 +10,12 @@ class ChartStyle extends ThemeExtension<ChartStyle> {
   });
 
   final Color? backgroundColor;
+  final Color? tooltipColor;
   final List<Color>? legendColors;
   final TextStyle? lineTextStyle;
   final TextStyle? legendTextStyle;
+
+  // List<LinearGradient>? get gradients => (legendColors != null) ? legendColors!.map((color) => ChartColors.gradient(color)).toList() : null;
 
   LinearGradient? gradient(int index) => (legendColors != null) ? ChartColors.gradient(legendColors![index]) : null;
   Color? legendColor(int index) => legendColors?[index % legendColors!.length];
@@ -38,6 +42,9 @@ class ChartStyle extends ThemeExtension<ChartStyle> {
 
 class ChartStyleDefault extends ChartStyle {
   const ChartStyleDefault();
+
+  // @override
+  // Color get tooltipColor => Colors.grey;
 
   @override
   TextStyle get lineTextStyle => const TextStyle(fontSize: 10);
