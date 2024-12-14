@@ -4,17 +4,18 @@ void memCpy(TypedData destination, TypedData source, int lengthInBytes) {
   Uint8List.sublistView(destination).setAll(0, Uint8List.sublistView(source, 0, lengthInBytes));
 }
 
-// void copyMemory(TypedData destination, TypedData source, [int? lengthInBytes]) {
-//   final effectiveLength = (lengthInBytes ?? source.lengthInBytes).clamp(0, destination.lengthInBytes);
-//   memCopy(destination, source, effectiveLength);
-// }
+void copyMemory(TypedData destination, TypedData source, [int? lengthInBytes]) {
+  final effectiveLength = (lengthInBytes ?? source.lengthInBytes).clamp(0, destination.lengthInBytes);
+  memCpy(destination, source, effectiveLength);
+}
 
 void copyMemoryRange(TypedData destination, TypedData source, [int destOffset = 0, int? lengthInBytes]) {
   final effectiveLength = (lengthInBytes ?? source.lengthInBytes).clamp(0, destination.lengthInBytes - destOffset);
   Uint8List.sublistView(destination).setAll(destOffset, Uint8List.sublistView(source, 0, effectiveLength));
 }
 
-extension Uint8ListCopy on Uint8List {
+/// More efficiently without new view
+extension Uint8ListExt on Uint8List {
   void copyMax(TypedData source, [int? length]) {
     final effectiveLength = (length ?? source.lengthInBytes).clamp(0, lengthInBytes);
     setAll(0, Uint8List.sublistView(source, 0, effectiveLength));
@@ -24,6 +25,11 @@ extension Uint8ListCopy on Uint8List {
     final effectiveLength = (length ?? source.lengthInBytes).clamp(0, lengthInBytes - index);
     setAll(index, Uint8List.sublistView(source, 0, effectiveLength));
   }
+
+  // skip() returning a list
+  Uint8List? seekIndex(int index) => (index > -1) ? Uint8List.sublistView(this, index) : null;
+  Uint8List? seekChar(int match) => seekIndex(indexOf(match));
+  Uint8List? seekSequence(Iterable<int> match) => seekIndex(String.fromCharCodes(this).indexOf(String.fromCharCodes(match)));
 }
 
 extension TypedDataExt on TypedData {
@@ -42,14 +48,6 @@ extension TypedDataExt on TypedData {
   // Int64List asInt64List([int offsetInBytes = 0, int? length]);
   ByteData asByteData([int offsetInBytes = 0, int? length]) => ByteData.sublistView(this, offsetInBytes, length);
 }
-
-
-
-// void doSomething(TypedData data) {
-//   data.buffer.asByteData(data.offsetInBytes).getInt64(5);
-//   ByteData.sublistView(data).getInt64(5);
-//   Int64List.sublistView(data)[5];
-// }
 
 // class EndianCastList<R extends TypedData> extends ListBase<num> {
 //   EndianCastList(this._source, this._endian);

@@ -42,6 +42,8 @@ abstract mixin class UnionValueKey<V> implements TypeKey<V> {
   // move check limits here
 }
 
+/// a type of status where non-zero is an error
+/// todo with enum factory
 // does not implement Enum, as it can be a union of Enums
 abstract mixin class Status implements Exception {
   int get code;
@@ -80,30 +82,6 @@ typedef Stringifier<T> = String Function(T input);
 typedef GenericStringifier = String Function<T>(T input);
 typedef NullableStringifier<T> = String Function(T? input); // defining non-nullable type allows null input, cases where T is used for selection
 
-// abstract mixin class StringifierMixin<T>  {
-//   ValueGetter<T?> get valueGetter;
-//   ValueGetter<String>? get valueStringGetter;
-//   Stringifier<T>? get valueStringifier;
-
-//   static String _stringifyDefault(Object? value) => value.toString(); // unhandled null value string
-//   Stringifier<T> get _effectiveStringifier => valueStringifier ?? _stringifyDefault;
-
-//   Stringifier<T?> get _effectiveNullableStringifier {
-//     if (valueStringifier case Stringifier<T?> stringifier) stringifier;
-//     return _stringifyDefault;
-//   }
-
-//   String _stringifyValue() {
-//     if (valueGetter() case T value) return _effectiveStringifier(value);
-//     return 'Value Error'; // or handle null
-
-//     // _effectiveNullableStringifier(valueGetter());
-//   }
-
-//   ValueGetter<String> get _effectiveValueStringGetter => valueStringGetter ?? _stringifyValue;
-
-// }
-
 abstract mixin class Sliceable<T extends Sliceable<dynamic>> {
   // int get start => 0;
   int get totalLength;
@@ -129,28 +107,6 @@ class Slicer<T> {
   }
 }
 
-
-
-// /// General case, without NativeType
-// /// `Partition`
-// abstract mixin class SizedField {
-//   // const SizedField._();
-//   // const factory SizedField(int offset, int size) = _SizedField;
-
-//   int get offset;
-//   int get size;
-//   int get end => offset + size;
-
-//   List<int> arrayOf<R extends TypedData>(TypedData typedList) => typedList.asIntListOrEmpty<R>(offset, size);
-// }
-
-// class _Part   {
-//   const _Part.length(this.offset, this.size); 
-//   const _Part.end(this.offset, this.size); 
-//   final int offset; 
-//   final int size;
-//   final int end;
-// }
 
 
 // naming convention notes

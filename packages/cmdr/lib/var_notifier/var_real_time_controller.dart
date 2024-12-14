@@ -1,5 +1,6 @@
 part of 'var_notifier.dart';
 
+///todo move handler to service, move to var controller
 /// Poll/Push Periodic Stream Controller
 class VarRealTimeController extends VarCacheController {
   VarRealTimeController({required super.cache, required super.protocolService});

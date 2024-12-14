@@ -146,6 +146,8 @@ T _fromList<T extends TypedData>(List<int> elements) {
   } as T;
 }
 
+int? endOf(int offset, int? length) => (length != null) ? length + offset : null;
+
 ////////////////////////////////////////////////////////////////////////////////
 /// List values
 /// TypedData Cat Conversion

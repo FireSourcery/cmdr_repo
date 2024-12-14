@@ -104,7 +104,7 @@ class ServiceStreamHandler {
   // ServiceStreamHandler();
   ServiceStreamHandler.polling(
     this.inputGetter,
-    this.stream, // or pass service
+    Stream<ServiceGetSlice> this.stream, // or pass service
     this.onDataSlice,
   );
 
@@ -113,7 +113,7 @@ class ServiceStreamHandler {
   void Function(dynamic event) onDataSlice;
 
   // Iterable<(int, int)> _writePairs()
-  // Stream<({Iterable<(int, int)> pairs, Iterable<int>? statuses})> get _asPushStream => protocolService.push(keysGetter, delay: const Duration(milliseconds: 5));
+  // Stream<ServiceSetSlice<K, V, S>> get _asPushStream => protocolService.push(keysGetter, delay: const Duration(milliseconds: 5));
 
   StreamSubscription? streamSubscription;
   bool get isStopped => streamSubscription == null;

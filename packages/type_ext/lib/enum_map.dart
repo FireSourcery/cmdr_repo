@@ -27,6 +27,7 @@ abstract mixin class EnumMap<K extends Enum, V> implements FixedMap<K, V> {
 
   factory EnumMap.of(List<K> keys, Iterable<V> values) = EnumIndexMap.of;
 
+  /// keys => Enum.values which implement byName(String name)
   factory EnumMap.fromJson(List<K> keys, Map<String, Object?> json) {
     return EnumIndexMap<K, V>.castBase(EnumIndexMap<K, V?>.filled(keys, null)..addJson(json));
   }
@@ -38,16 +39,16 @@ abstract mixin class EnumMap<K extends Enum, V> implements FixedMap<K, V> {
   V remove(covariant K key);
 }
 
+// extension type EnumMapFactory implements FixedMapFactory
+
 /// Apply to [EnumMap<K, V>] as well as [Map<Enum, V>]
-// Enum.name base methods are applicable regardless of EnumMap constraints
+/// Enum.name base methods are applicable regardless of EnumMap FixedMap constraints
 extension EnumMapByName<K extends Enum, V> on Map<K, V> {
   ////////////////////////////////////////////////////////////////////////////////
   /// Named Values
   ////////////////////////////////////////////////////////////////////////////////
   // String name, value pairs
-  Iterable<(String name, V value)> get namedPairs => keys.map((e) => (e.name, this[e] as V));
-  Iterable<({String name, V value})> get entriesByName => keys.map((e) => (name: e.name, value: this[e] as V));
-  // Iterable<({String name, K key, V value})> get triplets => keys.map((e) => (name: e.name, key: e, value: this[e] as V));
+  // Iterable<(String name, V value)> get namedValues => keys.map((e) => (e.name, this[e] as V));
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Buffer Case -

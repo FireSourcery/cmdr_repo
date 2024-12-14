@@ -15,9 +15,10 @@ export 'dart:typed_data';
 ///   [WordStruct] - backed by [Bits/int]
 ///
 /// mixin can be applied to enum
+/// implements Field<int>
 abstract mixin class TypedField<T extends NativeType> {
   const TypedField._();
-  // const factory TypedField(int offset) = _TypedField<T>;
+  // const factory TypedField(int offset) = TypedOffset<T>;
 
   int get offset; // index of the first byte
 
@@ -42,21 +43,10 @@ abstract mixin class TypedField<T extends NativeType> {
   int get defaultValue => 0;
 }
 
-// abstract mixin class TypedOffset<T extends NativeType> implements Field<int> {
-//   int get offset; // index of the first byte
-//   int get size => sizeOf<T>();
-//   int get end => offset + size; // index of the last byte + 1
-//   // int get valueMax => (1 << width) - 1);
-// }
-
-// class _TypedField<T extends NativeType> with TypedField<T> {
-//   const _TypedField(this.offset);
-
+// class TypedOffset<T extends NativeType> with TypedField<T> {
+//   const TypedOffset(this.offset);
 //   @override
 //   final int offset;
-
-//   @override
-//   int get index => throw UnimplementedError();
 // }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -115,3 +105,25 @@ extension GenericTypedWord on ByteData {
     return false;
   }
 }
+
+/// General case, without NativeType
+/// `Partition`
+// abstract mixin class SizedField {
+//   // const SizedField._();
+//   // const factory SizedField(int offset, int size) = _SizedField;
+
+//   int get offset;
+//   int get size;
+//   int get end => offset + size;
+
+//   // List<int> arrayOf<R extends TypedData>(TypedData typedList) => typedList.asIntListOrEmpty<R>(offset, size);
+// }
+
+// class Part {
+//   const Part(this.offset, this.size);
+//   // const Part.length(this.offset, this.size);
+//   // const Part.end(this.offset, this.size);
+//   final int offset;
+//   final int size;
+//   // final int end;
+// }

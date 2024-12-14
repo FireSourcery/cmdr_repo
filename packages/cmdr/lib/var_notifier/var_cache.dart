@@ -105,6 +105,7 @@ class VarCache {
   Iterable<VarNotifier> get varEntries => _cache.values;
 
   /// for filter on keys, alternatively caller filter on entries
+  /// varsOf()
   Iterable<VarNotifier> entriesOf(Iterable<VarKey> keys) => keys.map<VarNotifier?>((e) => this[e]).nonNulls;
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -116,12 +117,12 @@ class VarCache {
   /// Collective Data Write
   ///   Individual write use VarController/VarValue Instance
   ////////////////////////////////////////////////////////////////////////////////
-  Iterable<MapEntry<int, int>> get dataEntries => _cache.values.map((e) => e.dataEntry);
-  Iterable<(int, int)> get dataPairs => _cache.values.map((e) => e.dataPair);
-  // Iterable<MapEntry<int, int>> get dataEntries => _cache.keys.map((e) =>  MapEntry(e, _cache[e]!.dataValue));
-
-  Iterable<MapEntry<int, int>> dataEntriesOf(Iterable<VarKey> keys) => entriesOf(keys).map((e) => e.dataEntry);
   Iterable<(int, int)> dataPairsOf(Iterable<VarKey> keys) => entriesOf(keys).map((e) => e.dataPair);
+  // Iterable<MapEntry<int, int>> get dataEntries => _cache.values.map((e) => e.dataEntry);
+  // Iterable<MapEntry<int, int>> get dataEntries => _cache.keys.map((e) =>  MapEntry(e, _cache[e]!.dataValue)); // if entry does not store key, also move json out
+
+  Iterable<(int, int)> get dataPairs => _cache.values.map((e) => e.dataPair);
+  // Iterable<MapEntry<int, int>> dataEntriesOf(Iterable<VarKey> keys) => entriesOf(keys).map((e) => e.dataEntry);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Collective Data Read Response - Update by Packet
@@ -265,6 +266,10 @@ class VarEventController with ChangeNotifier implements ValueNotifier<VarViewEve
   VarNotifier<dynamic>? varNotifier; // always typed by Key returning as dynamic.
   // set varNotifier(VarNotifier notifier) => varNotifier = notifier;
 
+  // VarNotifier open(VarKey varKey);
+  // void close(VarKey varKey);
+  // VarNotifier replace(VarKey add, VarKey remove);
+
 // single listener table, notfiy with id. this way invokes extra notifications
 // or use separate changeNotifier?
 //    separate tables for different types of events
@@ -283,6 +288,7 @@ class VarEventController with ChangeNotifier implements ValueNotifier<VarViewEve
   ////////////////////////////////////////////////////////////////////////////////
   // update Var by VarKey, notify with parent class
   // caller update Stream when using realtime
+
   // Future<void> select(VarKey key) async {
   //   // varNotifier = varCache.replace(key, varNotifier?.varKey);
   //   value = VarViewEvent.select;
@@ -316,6 +322,8 @@ class VarEventController with ChangeNotifier implements ValueNotifier<VarViewEve
     }
     value = VarViewEvent.submit;
   }
+
+//  void submitEntryByViewAs<T>(VarKey key, T varValue)
 }
 
 enum VarViewEvent {

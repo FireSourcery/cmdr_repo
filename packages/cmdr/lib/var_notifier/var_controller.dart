@@ -3,21 +3,17 @@ part of 'var_notifier.dart';
 /// Map Service to VarCache
 // base type and interface
 class VarCacheController {
-  VarCacheController({required this.cache, required this.protocolService});
+  const VarCacheController({required this.cache, required this.protocolService});
   // initCache and dispose handle here?
 
   final VarCache cache;
   final ServiceIO<int, int, int> protocolService;
 
-  // VarNotifier open(VarKey varKey);
-  // void close(VarKey varKey);
-  // VarNotifier replace(VarKey add, VarKey remove);
-
   // VarStatus? readStatus; // optionally store previous response code
   // VarStatus? writeStatus;
 
   ////////////////////////////////////////////////////////////////////////////////
-  /// Collective Read Vars `Load`
+  /// Collective Read Vars `Fetch/Load`
   ////////////////////////////////////////////////////////////////////////////////
   /// cache.updateByDataSlice
   VarStatus? _onReadSlice(({Iterable<int> keys, Iterable<int>? values}) slice) {
@@ -62,6 +58,7 @@ class VarCacheController {
   //   return writeEach(pairs.map((e) => e.$1));
   // }
 }
+// todo move var_realtime_controller.dart
 
 ////////////////////////////////////////////////////////////////////////////////
 /// if a single var update is required. Batch updates via VarCacheController handles most cases.

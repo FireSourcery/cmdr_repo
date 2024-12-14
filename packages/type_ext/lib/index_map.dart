@@ -17,18 +17,17 @@ abstract mixin class FixedMap<K, V> implements Map<K, V> {
   @override
   V remove(covariant K key);
 
-  //   List<V>? get defaultValues;
+  // List<V>? get defaultValues;
 
   /// Convenience methods
   // Iterable<(K, V)> get pairs => keys.map((e) => (e, this[e]));
   // Iterable<({K key, V value})> get fields => keys.map((e) => (key: e, value: this[e]));
-
-  // FixedMap<K, V> proxy() => ProxyIndexMap<K, V>(this);
+  // FixedMap<K, V> clone() => ProxyIndexMap<K, V>(this);
 
   // analogous to operator []=, but returns a new instance
   // FixedMap<K, V> withField(K key, V value) => (ProxyIndexMap<K, V>(this)..[key] = value);
   // //
-  // FixedMap<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => ProxyIndexMap<K, V>(this)..addEntries(newEntries);
+  // FixedMap<K, V> withEach(Iterable<MapEntry<K, V>> newEntries) => ProxyIndexMap<K, V>(this)..addEntries(newEntries);
   // // A general values map representing external input, may be a partial map
   // FixedMap<K, V> withAll(Map<K, V> map) => ProxyIndexMap<K, V>(this)..addAll(map);
 }
@@ -47,6 +46,8 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V> implements FixedMap<K, V
   IndexMap.of(List<K> keys, Iterable<V> values) : this._(keys, List<V>.of(values, growable: false));
 
   IndexMap.filled(List<K> keys, V fill) : this._(keys, List<V>.filled(keys.length, fill, growable: false));
+
+  // static IndexMap<K1, V1?> _nullFilled<K1, V1>(List<K1> keys) => IndexMap<K1, V1?>.filled(keys, null);
 
   // possibly with nullable entries value V checking key for default value first
   IndexMap.fromEntries(List<K> keys, Iterable<MapEntry<K, V>> entries)
@@ -114,9 +115,9 @@ class ProxyIndexMap<K extends dynamic, V> with MapBase<K, V> implements FixedMap
   const ProxyIndexMap._(this._source, this._modified);
   ProxyIndexMap(FixedMap<K, V> source) : this._(source, IndexMap<K, V?>.filled(source.keys, null));
 
-  // ProxyIndexMap.field(IndexMap<K, V> source, K key, V value) : this(source, [MapEntry(key, value)]);
-  // ProxyIndexMap.entry(IndexMap<K, V> source, MapEntry<K, V> modified) : this(source, [modified]);
-  // ProxyIndexMap.entries(IndexMap<K, V> source, Iterable<MapEntry<K, V>> modified) : this(source, [...modified]);
+  ProxyIndexMap.field(FixedMap<K, V> source, K key, V value) : this._(source, IndexMap<K, V?>.filled(source.keys, null)..[key] = value);
+  ProxyIndexMap.entry(FixedMap<K, V> source, MapEntry<K, V> modified) : this._(source, IndexMap<K, V?>.filled(source.keys, null)..addEntries([modified]));
+  ProxyIndexMap.entries(FixedMap<K, V> source, Iterable<MapEntry<K, V>> modified) : this._(source, IndexMap<K, V?>.filled(source.keys, null)..addEntries(modified));
 
   final FixedMap<K, V> _source;
 

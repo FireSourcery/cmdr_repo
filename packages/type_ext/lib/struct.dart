@@ -25,7 +25,7 @@ abstract class Structure<K extends Field, V> with MapBase<K, V>, FixedMap<K, V> 
   // final Object data; // effectively a void pointer.
 
   @override
-  List<K> get keys;
+  List<K> get keys; // a method that is the meta contents
 
   // Map
   // void clear();
@@ -60,8 +60,8 @@ abstract class Structure<K extends Field, V> with MapBase<K, V>, FixedMap<K, V> 
   FieldEntry<K, V> fieldEntry(K key) => (key: key, value: field(key));
 
   /// with context of keys
-  Iterable<V> fieldValues(Iterable<K> keys) => keys.map((key) => field(key));
-  Iterable<FieldEntry<K, V>> fieldEntries(Iterable<K> keys) => keys.map((key) => fieldEntry(key));
+  Iterable<V> valuesOf(Iterable<K> keys) => keys.map((key) => field(key));
+  Iterable<FieldEntry<K, V>> entriesOf(Iterable<K> keys) => keys.map((key) => fieldEntry(key));
 
   Structure<K, V> copyWith() => Construct<Structure<K, V>, K, V>.castBase(this);
   // Structure<K, V> copyWithBase(FixedMap<K, V> base) => Construct<FixedMap<K, V>, K, V>.castBase(base);
@@ -167,9 +167,21 @@ abstract mixin class Field<V> {
   V? get defaultValue => null; // allows additional handling of Map<K, V?>
 }
 
+// typedef StructField<K, V> = ({K key, V value});
 typedef FieldEntry<K, V> = ({K key, V value});
-
 // abstract interface class EnumField<V> implements Enum, Field<V> {}
+
+// abstract interface class CopyWith<T, K, V> {
+abstract interface class Atomic<T, K, V> {
+  const Atomic();
+  // analogous to operator []=, but returns a new instance
+  T withField(K key, V value);
+  //
+  // T withEach(Iterable<{K, V}> newEntries);
+  T withEach(Iterable<MapEntry<K, V>> newEntries);
+  // A general values map representing external input, may be a partial map
+  T withAll(Map<K, V> map);
+}
 
 /// [Construct]
 // handler with class variables,
@@ -193,6 +205,10 @@ class Construct<T extends Structure<K, V>, K extends Field, V> extends Structure
     required this.keys,
     // required this.lengthMax,
   });
+
+  // Construct.fromKeys({
+  //   required this.keys,
+  // }) structData = StructMap<K, V>(keys );
 
   // a signature for user override
   // Construct.castBase(StructBase<K, V> base) : this(struct: base, keys: const []);
