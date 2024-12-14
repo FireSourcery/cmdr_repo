@@ -47,7 +47,7 @@ class VarRealTimeController extends VarCacheController {
   // stream will call slices creating a new list.
   // while this iterator is accessed, view must not add or remove keys
   // hasListeners check is regularly updated. protected warning is ok.
-  Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListeners).map((e) => e.varKey);
+  Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && (e.hasListeners || e.isPollingMarked)).map((e) => e.varKey);
 
   // using a getter, ids auto update, handle concurrency
   Iterable<int> _readIds() => _readKeys.map((e) => e.value);
@@ -76,7 +76,7 @@ class VarRealTimeController extends VarCacheController {
 
   VarPeriodicHandler writeStreamProcessor = VarPeriodicHandler();
 
-  Iterable<VarKey> get _writeKeys => cache.varEntries.where((e) => e.isPushPending || e.varKey.isPushing).map((e) => e.varKey);
+  Iterable<VarKey> get _writeKeys => cache.varEntries.where((e) => e.varKey.isPushing || e.isPushPending).map((e) => e.varKey);
   Iterable<(int, int)> _writePairs() => cache.dataPairsOf(_writeKeys);
   Stream<({Iterable<(int, int)> pairs, Iterable<int>? statuses})> get _writeStream => protocolService.push(_writePairs, delay: const Duration(milliseconds: 5));
 

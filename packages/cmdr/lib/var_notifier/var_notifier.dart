@@ -157,6 +157,9 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   bool isPushPending = false; // pushUpdateFlag
   // bool get pushDataFlag => hasListeners;
 
+  bool isPollingMarked = false;
+  // bool get isPollingMarked => isPollingMarked || hasListeners;
+
   // if separating internal and external status
   // bool outOfRange; // value from client out of range
 

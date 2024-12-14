@@ -48,13 +48,23 @@ class ChartController with TimerNotifier, ChangeNotifier {
     // start();
   }
 
+  // void updateSelection(Iterable<ChartEntry> entries) {
   void replaceEntries(Iterable<ChartEntry> entries) {
+    // _yMin = value;
+    // _yMax = value;
     stop();
     chartEntries.clear();
     chartEntries.addAll(entries);
     chartData.replaceEntries(entries.map((e) => e.name));
     notifyListeners();
   }
+
+  // void updateViewRange() {
+  //   chartEntries.
+
+  //   //scale to 1
+
+  // }
 
   // void replaceEntryAt(int index, ChartEntry entry) {
   //   stop();
@@ -131,6 +141,7 @@ class ChartController with TimerNotifier, ChangeNotifier {
 
   // List<FlSpot> flSpotsViewOf(int index) => UnmodifiableListView(chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y)));
   List<FlSpot> flSpotsViewOf(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y))];
+  List<FlSpot> flSpotsViewOfAsScalar(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y))];
 
   /// todo visual options with notify
   FlDotData configDotData = const FlDotData(show: true);
@@ -187,6 +198,10 @@ class ChartEntry {
   const ChartEntry({required this.name, required this.valueGetter, this.color, this.onSelect, this.preferredPrecision});
   final String name;
   final ValueGetter<num> valueGetter;
+
+  final double max;
+
+  // int scaledGetter() => valueGetter() / max;
   //final T key;
 
   // yRange

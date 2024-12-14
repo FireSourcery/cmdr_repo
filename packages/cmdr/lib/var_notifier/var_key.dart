@@ -56,8 +56,8 @@ extension VarMinMaxs on Iterable<VarKey> {
   /// Collective view min max
   ////////////////////////////////////////////////////////////////////////////////
   Iterable<({num min, num max})?> get viewMinMaxs => map((e) => e.valueNumLimits);
-  Iterable<num> get viewMaxs => viewMinMaxs.map((e) => e?.max).whereNotNull();
-  Iterable<num> get viewMins => viewMinMaxs.map((e) => e?.min).whereNotNull();
+  Iterable<num> get viewMaxs => viewMinMaxs.map((e) => e?.max).nonNulls;
+  Iterable<num> get viewMins => viewMinMaxs.map((e) => e?.min).nonNulls;
   num get viewMax => viewMaxs.max;
   num get viewMin => viewMins.min;
 }

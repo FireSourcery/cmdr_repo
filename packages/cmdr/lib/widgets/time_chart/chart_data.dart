@@ -110,7 +110,8 @@ class ChartData {
   }
 
   void replaceEntries(Iterable<String> entries) {
-    lineEntries.clear();
+    clear();
+    // lineEntries.clear();
     entries.forEach(addEntry);
   }
 

@@ -34,10 +34,6 @@ class TimeChart extends StatelessWidget {
     Widget builder(BuildContext context, Widget? child) {
       return LineChart(
         LineChartData(
-          minY: chartController.yMin,
-          maxY: chartController.yMax,
-          minX: chartController.tMin,
-          maxX: chartController.tMax,
           lineBarsData: [
             for (var index = 0; index < chartController.chartDataLength; index++)
               LineChartBarData(
@@ -48,9 +44,13 @@ class TimeChart extends StatelessWidget {
                 isCurved: true,
               ),
           ],
+          minY: chartController.yMin,
+          maxY: chartController.yMax,
+          minX: chartController.tMin,
+          maxX: chartController.tMax,
+          clipData: const FlClipData.all(),
           backgroundColor: backgroundColor,
           lineTouchData: chartController.touchData,
-          // clipData: const FlClipData.all(),
           gridData: const FlGridData(show: true, drawVerticalLine: true, drawHorizontalLine: true),
           titlesData: FlTitlesData(
             rightTitles: AxisTitles(

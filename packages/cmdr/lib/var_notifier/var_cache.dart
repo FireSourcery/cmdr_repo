@@ -108,6 +108,9 @@ class VarCache {
   /// varsOf()
   Iterable<VarNotifier> entriesOf(Iterable<VarKey> keys) => keys.map<VarNotifier?>((e) => this[e]).nonNulls;
 
+  void addPolling(Iterable<VarKey> keys) => entriesOf(keys).forEach((element) => element.isPollingMarked = true);
+  void removePollingAll() => _cache.forEach((_, element) => element.isPollingMarked = false);
+
   ////////////////////////////////////////////////////////////////////////////////
   /// Collective Data Read
   ////////////////////////////////////////////////////////////////////////////////
