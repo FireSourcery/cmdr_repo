@@ -2,7 +2,9 @@ import 'dart:collection';
 import 'dart:math';
 
 import 'package:async/async.dart';
+import 'package:cmdr/connection/base/_socket_io.dart';
 import 'package:cmdr/widgets/time_chart/chart_style.dart';
+import 'package:collection/collection.dart';
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -120,14 +122,16 @@ class ChartController with TimerNotifier, ChangeNotifier {
   /// view config
   // todo view change
   double? _yMin;
-  double? get yMin => _yMin;
+  // double? get yMin => _yMin;
+  double? get yMin => (useScalarView) ? -1.1 : _yMin;
   set yMin(double? value) {
     _yMin = value;
     notifyListeners();
   }
 
   double? _yMax;
-  double? get yMax => _yMax;
+  // double? get yMax => _yMax;
+  double? get yMax => (useScalarView) ? 1.1 : _yMax;
   set yMax(double? value) {
     _yMax = value;
     notifyListeners();
@@ -139,9 +143,22 @@ class ChartController with TimerNotifier, ChangeNotifier {
   // double get tViewRange => ;
   // double get tSamplesRange => updateInterval.inSeconds * chartData.samplesMax * 1.0;
 
+  // smallest max and largest max over 100
+  bool get useScalarView {
+    double min = double.infinity;
+    double max = double.negativeInfinity;
+    for (final entry in chartEntries) {
+      var value = entry.normalRef;
+      if (value < min) min = value;
+      if (value > max) max = value;
+    }
+    return max.abs() / min.abs() > 100;
+  }
+
   // List<FlSpot> flSpotsViewOf(int index) => UnmodifiableListView(chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y)));
-  List<FlSpot> flSpotsViewOf(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y))];
-  List<FlSpot> flSpotsViewOfAsScalar(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y))];
+  List<FlSpot> _flSpotsViewOf(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y))];
+  List<FlSpot> _flSpotsViewOfAsScalar(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y / chartEntries[index].normalRef))];
+  List<FlSpot> flSpotsViewOf(int index) => (useScalarView) ? _flSpotsViewOfAsScalar(index) : _flSpotsViewOf(index);
 
   /// todo visual options with notify
   FlDotData configDotData = const FlDotData(show: true);
@@ -160,7 +177,9 @@ class ChartController with TimerNotifier, ChangeNotifier {
             return [
               // alternatively make the first time time
               ...touchedSpots.map((e) => LineTooltipItem(
-                    '${chartEntries[e.barIndex].name}: ${e.y.toStringAsFixed(3)}',
+                    // chartEntries[e.barIndex].name, may point to removed entries
+                    // '${chartEntries[e.barIndex].name}: ${e.y.toStringAsFixed(3)}',
+                    '${chartEntries[e.barIndex].name}: ${chartData.lineEntries[e.barIndex].values[e.spotIndex].toStringAsFixed(3)}',
                     TextStyle(color: style.legendColors?[e.barIndex] ?? Colors.white),
                     textAlign: TextAlign.left,
                   )),
@@ -193,18 +212,24 @@ class ChartController with TimerNotifier, ChangeNotifier {
   }
 }
 
-// ChartEntry Config
+// ChartEntry
+// Chart Data Generator
 class ChartEntry {
-  const ChartEntry({required this.name, required this.valueGetter, this.color, this.onSelect, this.preferredPrecision});
+  const ChartEntry({
+    required this.name,
+    required this.valueGetter,
+    this.color,
+    this.onSelect,
+    this.preferredPrecision,
+    this.normalRef = 1,
+  });
+
   final String name;
   final ValueGetter<num> valueGetter;
 
-  final double max;
+  final double normalRef; // yRange
+  // final T key;
 
-  // int scaledGetter() => valueGetter() / max;
-  //final T key;
-
-  // yRange
   final Color? color; //override default
   final VoidCallback? onSelect;
   final int? preferredPrecision;
