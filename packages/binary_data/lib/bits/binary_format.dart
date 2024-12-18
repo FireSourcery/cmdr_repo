@@ -81,6 +81,7 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
   bool get isFixedPoint => switch (this) { frac16 || ufrac16 || fixed16 || percent16 => true, _ => false };
   bool get isScalarBase10 => switch (this) { scalar10 || scalarInv10 => true, _ => false };
 
+  // reference != null
   bool get isNumeric => switch (V) { const (int) || const (double) when (this != bits16) => true, _ => false }; // !isEnum && !isBits && !isBoolean;
 
   // bool get isInteger => switch (this) { int16 || uint16 => true, _ => false };
