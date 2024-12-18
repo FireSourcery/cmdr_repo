@@ -110,11 +110,14 @@ class ServicePollStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceGetS
   ServicePollStreamHandler(
     this.protocolService,
     this.inputGetter,
-    void Function(ServiceGetSlice<K, V> data) onDataSlice,
-  ) : super(protocolService.pollFlex(inputGetter, delay: const Duration(milliseconds: 5)), onDataSlice);
+    super.onDataSlice,
+  );
 
   final ServiceIO<K, V, S> protocolService;
   final Iterable<K> Function() inputGetter;
+
+  @override
+  Stream<ServiceGetSlice<K, V>> get stream => protocolService.pollFlex(inputGetter, delay: const Duration(milliseconds: 5));
   // Stream<ServiceSetSlice> get _asPushStream => protocolService.push(inputGetter, delay: const Duration(milliseconds: 5));
   // Stream<ServiceGetSlice> get _asPollStream => protocolService.pollFlex(inputGetter, delay: const Duration(milliseconds: 5));
 }
@@ -123,20 +126,21 @@ class ServicePushStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceSetS
   ServicePushStreamHandler(
     this.protocolService,
     this.inputGetter,
-    void Function(ServiceSetSlice<K, V, S> data) onDataSlice,
-  ) : super(protocolService.push(inputGetter, delay: const Duration(milliseconds: 5)), onDataSlice);
+    super.onDataSlice,
+  );
 
   final ServiceIO<K, V, S> protocolService;
   final Iterable<(K, V)> Function() inputGetter;
+
+  @override
+  Stream<ServiceSetSlice<K, V, S>> get stream => protocolService.push(inputGetter, delay: const Duration(milliseconds: 5));
 }
 
-class ServiceStreamHandler<T> {
-  ServiceStreamHandler(
-    this.stream, // or pass service
-    this.onDataSlice,
-  );
+abstract class ServiceStreamHandler<T> {
+  ServiceStreamHandler(this.onDataSlice);
 
-  final Stream<T> stream;
+  Stream<T> get stream;
+
   final void Function(T data) onDataSlice;
 
   StreamSubscription? streamSubscription;
