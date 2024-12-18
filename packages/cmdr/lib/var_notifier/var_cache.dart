@@ -30,7 +30,7 @@ class VarCache {
   /// view updates still occur - should not _need_ to manually remove listeners,
   ///   although the listeners map is still filled, nothing references the Var itself, will be handled by garbage collection
   /// if an Var of the same id is reinserted into the map. the disconnected listeners, need be remapped to the new Var
-  /// Wigets using allocate in build will update automatically
+  /// Widgets using allocate in build will update automatically
   ///
   final Map<int, VarNotifier> _cache; // <int, VarNotifier> allows direct access by updateBy
   final int? lengthMax;
@@ -47,8 +47,10 @@ class VarCache {
   ///
   VarNotifier allocate(VarKey varKey) {
     if (_cache is UnmodifiableMapView) return this[varKey]!; // temporary for compatibility
-    if (lengthMax case int max when _cache.length >= max) _cache.remove(_cache.entries.first.key)?.dispose();
-    return _cache.putIfAbsent(varKey.value, () => constructor(varKey));
+    return _cache.putIfAbsent(varKey.value, () {
+      if (lengthMax case int max when _cache.length >= max) _cache.remove(_cache.entries.first.key)?.dispose();
+      return constructor(varKey);
+    });
   }
 
   /// current listeners would need to reattach to the new VarNotifier

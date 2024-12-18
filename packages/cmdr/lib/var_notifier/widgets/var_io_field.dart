@@ -75,11 +75,11 @@ class VarIOFieldWithMenu<T extends VarKey> extends StatelessWidget {
   final T? initialVarKey;
   final VarEventController? eventController;
 
-  Widget buildVar(VarNotifier varNotifier) {
+  Widget _varWidgetBuilder(VarNotifier varNotifier) {
     return VarIOField(varNotifier, eventController: eventController, showLabel: true, isDense: false, showPrefix: true, showSuffix: true);
   }
 
-  Widget menuAnchorBuilder(context, menu, keyWidget) {
+  Widget _menuAnchorBuilder(BuildContext context, FlyweightMenu<T> menu, Widget keyWidget) {
     return Row(
       children: [
         FlyweightMenuButton<T>(menu: menu),
@@ -97,12 +97,12 @@ class VarIOFieldWithMenu<T extends VarKey> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ValueWidgetBuilder<T> keyWidgetBuilder = VarKeyWidgetBuilder(builder: buildVar, varCache: eventController?.varCache).asValueWidgetBuilder;
+    final ValueWidgetBuilder<T> keyWidgetBuilder = VarKeyWidgetBuilder(builder: _varWidgetBuilder, varCache: eventController?.varCache).asValueWidgetBuilder;
 
     return MenuAnchorBuilder(
       menuSource: menuSource,
       initialItem: initialVarKey,
-      menuAnchorBuilder: menuAnchorBuilder,
+      menuAnchorBuilder: _menuAnchorBuilder,
       keyBuilder: keyWidgetBuilder,
     );
   }
@@ -111,21 +111,21 @@ class VarIOFieldWithMenu<T extends VarKey> extends StatelessWidget {
 /// with
 ///
 ///
-class VarIOFieldWithSlider<V> extends StatelessWidget implements VarIOField {
-  const VarIOFieldWithSlider(this.varKey, {super.key});
-  final VarKey varKey;
+// class VarIOFieldWithSlider<V> extends StatelessWidget implements VarIOField {
+//   const VarIOFieldWithSlider(this.varKey, {super.key});
+//   final VarKey varKey;
 
-  @override
-  Widget build(BuildContext context) {
-    return VarKeyContextBuilder.typed(varKey, <G>(varNotifier) => IOField<G>.withSlider(VarIOFieldConfig<G>(varNotifier)));
+//   @override
+//   Widget build(BuildContext context) {
+//     return VarKeyContextBuilderWithType(varKey, <G>(varNotifier) => IOField<G>.withSlider(VarIOFieldConfig<G>(varNotifier)));
 
-    //     return LayoutBuilder(
-    //   builder: (context, constraints) {
-    //     return (constraints.maxWidth > breakWidth) ? Row(children: [Expanded(child: ioField), Expanded(flex: 2, child: slider)]) : OverflowBar(children: [ioField, slider]);
-    //   },
-    // );
-  }
-}
+//     //     return LayoutBuilder(
+//     //   builder: (context, constraints) {
+//     //     return (constraints.maxWidth > breakWidth) ? Row(children: [Expanded(child: ioField), Expanded(flex: 2, child: slider)]) : OverflowBar(children: [ioField, slider]);
+//     //   },
+//     // );
+//   }
+// }
 
 ///
 ///

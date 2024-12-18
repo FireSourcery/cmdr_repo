@@ -18,7 +18,8 @@ class VarKeyWidgetBuilder {
 
   // builder optionally includes a eventController
   // if an varEventController is provided, retrieving through context is not necessary.
-  Widget buildByController(BuildContext _, VarKey value, Widget? __) => VarBaseBuilder(varCache!.allocate(value), builder);
+  // Widget buildByController(BuildContext _, VarKey value, Widget? __) => VarBaseBuilder(varCache!.allocate(value), builder);
+  Widget buildByController(BuildContext _, VarKey value, Widget? __) => builder(varCache!.allocate(value));
   Widget buildByContext(BuildContext _, VarKey value, Widget? __) => VarKeyContextBuilder(value, builder);
 
   ValueWidgetBuilder<VarKey> get asValueWidgetBuilder => (varCache != null) ? buildByController : buildByContext;
