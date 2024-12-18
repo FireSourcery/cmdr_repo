@@ -17,7 +17,6 @@ export 'package:binary_data/binary_data.dart';
 part 'var_cache.dart';
 part 'var_key.dart';
 part 'var_controller.dart';
-part 'var_real_time_controller.dart';
 
 // only default status ids need to be overridden
 class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier {
@@ -89,8 +88,6 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   ////////////////////////////////////////////////////////////////////////////////
   @override
   String toString() => '${describeIdentity(this)}(`${varKey.label}`)($value = $numValue)';
-  // @override
-  // String toString() => '$runtimeType { key: ${varKey.label}, value: $numValue, status: $statusCode }';
 
   // @override
   // void updateStatusByData(int status) {
@@ -131,8 +128,8 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   num viewOf(int data) => viewOfData?.call(data) ?? data; // 'view base'
   int dataOf(num view) => dataOfView?.call(view) ?? view.toInt();
 
-  num clamp(num value) => switch (numLimits) { (:num min, :num max) => value.clamp(min, max), _ => value };
-  // num clamp(num value) => numLimits != null ? value.clamp(numLimits.min, viewMax!) : value;
+  // num clamp(num value) => switch (numLimits) { (:num min, :num max) => value.clamp(min, max), _ => value };
+  num clamp(num value) => (numLimits != null) ? value.clamp(numLimits!.min, numLimits!.max) : value;
 
   Enum enumOf(int value) => enumRange?.elementAtOrNull(value) ?? VarValueEnum.unknown;
   BitStruct<BitField> bitFieldsOf(int value) => BitConstruct<BitStruct, BitField>(bitsKeys ?? const <BitField>[], value as Bits);
@@ -154,8 +151,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // T Function<T>(num value) valueAsSubtype; //pass this via pointer?
 
   /// runtime variables
-  bool isPushPending = false; // pushUpdateFlag
-  // bool get pushDataFlag => hasListeners;
+  bool isPushPending = false; // pushUpdateFlag, isLastUpdateByView
 
   bool isPollingMarked = false;
   // bool get isPollingMarked => isPollingMarked || hasListeners;

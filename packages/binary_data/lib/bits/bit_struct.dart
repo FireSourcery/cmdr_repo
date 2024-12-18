@@ -127,6 +127,8 @@ class BitConstruct<S extends BitStruct<K>, K extends BitField> extends ConstBitS
       : keys = struct.keys,
         super.castBase();
 
+  // BitConstruct.generic(bitsKeys ?? const <BitField>[], value as Bits);
+
   @override
   final List<K> keys;
 

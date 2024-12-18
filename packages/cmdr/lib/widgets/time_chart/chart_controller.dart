@@ -94,11 +94,6 @@ class ChartController with TimerNotifier, ChangeNotifier {
   }
 
   int get chartDataLength => chartData.lineEntries.length;
-  bool get isActive => _timer?.isActive ?? false;
-  bool get isStopped => !isActive;
-
-  // TimerNotifier timerNotifier = TimerNotifier();
-  Duration updateInterval;
 
   /// data update with generators
   void _updateData() {
@@ -108,6 +103,11 @@ class ChartController with TimerNotifier, ChangeNotifier {
       chartData.updateLine(index, entry.valueGetter().toDouble(), remove);
     }
   }
+
+  // TimerNotifier timerNotifier = TimerNotifier();
+  Duration updateInterval;
+  bool get isActive => _timer?.isActive ?? false;
+  bool get isStopped => !isActive;
 
   void start() {
     hideTouchData();
@@ -169,25 +169,30 @@ class ChartController with TimerNotifier, ChangeNotifier {
 
   void showTouchData({List<Color>? colors}) {
     touchData = LineTouchData(
-        enabled: true,
-        handleBuiltInTouches: true,
-        touchTooltipData: LineTouchTooltipData(
-          // getTooltipColor: (touchedSpot) => style.tooltipColor ?? const ChartStyleDefault().tooltipColor,
-          getTooltipItems: (touchedSpots) {
-            return [
-              // alternatively make the first time time
-              ...touchedSpots.map((e) => LineTooltipItem(
-                    // chartEntries[e.barIndex].name, may point to removed entries
-                    // '${chartEntries[e.barIndex].name}: ${e.y.toStringAsFixed(3)}',
-                    '${chartEntries[e.barIndex].name}: ${chartData.lineEntries[e.barIndex].values[e.spotIndex].toStringAsFixed(3)}',
-                    TextStyle(color: style.legendColors?[e.barIndex] ?? Colors.white),
-                    textAlign: TextAlign.left,
-                  )),
-            ];
-          },
-          fitInsideVertically: true,
-        ));
+      enabled: true,
+      handleBuiltInTouches: true,
+      touchTooltipData: LineTouchTooltipData(
+        // getTooltipColor: (touchedSpot) => style.tooltipColor ?? const ChartStyleDefault().tooltipColor,
+        getTooltipItems: (touchedSpots) {
+          return [
+            // alternatively make the first entry time
+            ...touchedSpots.map(_lineTooltipItem),
+          ];
+        },
+        fitInsideVertically: true,
+      ),
+    );
     notifyListeners();
+  }
+
+  LineTooltipItem? _lineTooltipItem(LineBarSpot e) {
+    return LineTooltipItem(
+      // chartEntries[e.barIndex].name, may point to removed entries
+      // '${chartEntries[e.barIndex].name}: ${e.y.toStringAsFixed(3)}',
+      '${chartEntries[e.barIndex].name}: ${chartData.lineEntries[e.barIndex].values[e.spotIndex].toStringAsFixed(3)}',
+      TextStyle(color: style.legendColors?[e.barIndex] ?? Colors.white),
+      textAlign: TextAlign.left,
+    );
   }
 
   void hideTouchData() {

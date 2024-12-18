@@ -51,6 +51,7 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
 
   R callTyped<R>(R Function<G>() callback) => callback<V>();
 
+  // base limits
   (int, int) get minMax {
     return switch (S) {
       const (Uint16) => (0, 65535),

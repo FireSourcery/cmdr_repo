@@ -26,23 +26,24 @@ abstract mixin class ServiceIO<K, V, S> {
   FutureOr<Iterable<V>?> getBatch(Iterable<K> keys);
   Future<Iterable<S>?> setBatch(Iterable<(K, V)> pairs);
 
+  int? get maxGetBatchSize;
+  int? get maxSetBatchSize;
+
   // for single status response
   // FutureOr<(S?, Iterable<V>?)> getBatchWithMeta(Iterable<K> keys);
   // Future<(S?, Iterable<S>?)> setBatchWithMeta(Iterable<(K, V)> pairs);
 
-  int? get maxGetBatchSize;
-  int? get maxSetBatchSize;
-
+  /// Slices maps `Batch` return with `Batch` input
   Future<ServiceGetSlice<K, V>> _getSlice(List<K> keysSlice) async => (keys: keysSlice, values: await getBatch(keysSlice));
+  Future<ServiceSetSlice<K, V, S>> _setSlice(List<(K, V)> pairsSlice) async => (pairs: pairsSlice, statuses: await setBatch(pairsSlice));
 
+  // loop each slice with delay between each Batch
   Stream<ServiceGetSlice<K, V>> _getSlices(Iterable<List<K>> keysSlices, {Duration delay = const Duration(milliseconds: 1)}) async* {
     for (final slice in keysSlices) {
       yield await _getSlice(slice);
       await Future.delayed(delay);
     }
   }
-
-  Future<ServiceSetSlice<K, V, S>> _setSlice(List<(K, V)> pairsSlice) async => (pairs: pairsSlice, statuses: await setBatch(pairsSlice));
 
   Stream<ServiceSetSlice<K, V, S>> _setSlices(Iterable<List<(K, V)>> pairsSlices, {Duration delay = const Duration(milliseconds: 1)}) async* {
     for (final slice in pairsSlices) {
@@ -52,12 +53,10 @@ abstract mixin class ServiceIO<K, V, S> {
   }
 
   ////////////////////////////////////////////////////////////////////////////////
-  /// One-shot Stream
-  ////////////////////////////////////////////////////////////////////////////////
-  ///
-  /// returns as slices of maxBatchSize
+  /// One-Shot Stream
+  /// Splits input/output into slices of [maxBatchSize]
   /// Caller locks [keys] from modifications before building slices
-  /// getSlices
+  ////////////////////////////////////////////////////////////////////////////////
   Stream<ServiceGetSlice<K, V>> getAll(Iterable<K> keys, {Duration delay = const Duration(milliseconds: 1)}) {
     if (keys.isEmpty) return const Stream.empty();
     return _getSlices(keys.slices(maxGetBatchSize ?? keys.length), delay: delay);
@@ -70,63 +69,86 @@ abstract mixin class ServiceIO<K, V, S> {
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Periodic Stream
+  // getters resolve each full iteration of all keys, creates new slices
+  // while the getter iterates, the caller must not add/remove from the source
   ////////////////////////////////////////////////////////////////////////////////
   Stream<ServiceGetSlice<K, V>> pollFixed(Iterable<K> keys, {Duration delay = const Duration(milliseconds: 1)}) async* {
-    final fixedSlices = keys.slices(maxGetBatchSize ?? keys.length);
+    if (keys.isEmpty) return; // input does not change
     while (true) {
-      yield* _getSlices(fixedSlices, delay: delay);
-      // await Future.delayed( ); // an additional delay after each round
+      yield* getAll(keys, delay: delay);
+      // await Future.delayed(); // an additional delay after each round
     }
   }
 
-  // getters resolve each full iteration of all keys, creates new slices
-  // while the getter iterates, the caller must not add/remove from the source
   Stream<ServiceGetSlice<K, V>> pollFlex(Iterable<K> Function() keysGetter, {Duration delay = const Duration(milliseconds: 1)}) async* {
     while (true) {
       yield* getAll(keysGetter(), delay: delay);
-      // var keys = keysGetter();
-      // var slices = keys.slices(maxGetBatchSize ?? keys.length); // can this reuse the same allocated memory buffer for the new slices?
-      // yield* _getSlices(slices, delay: delay);
     }
+    // can this reuse the same allocated memory buffer for the new slices?
+    // while (true) {
+    // var keys = keysGetter();
+    // var slices = keys.slices(maxGetBatchSize ?? keys.length);
+    // yield* _getSlices(slices, delay: delay);
+    // }
   }
 
   Stream<ServiceSetSlice<K, V, S>> push(Iterable<(K, V)> Function() pairsGetter, {Duration delay = const Duration(milliseconds: 1)}) async* {
     while (true) {
       yield* setAll(pairsGetter(), delay: delay);
-      // var pairs = pairsGetter();
-      // var slices = pairs.slices(maxSetBatchSize ?? pairs.length);
-      // yield* _setSlices(slices, delay: delay);
     }
   }
+
+  // Stream<ServiceSetSlice<K, V, S>> pushFixed(Iterable<K> keys, Iterable<V> Function() valuesGetter, {Duration delay = const Duration(milliseconds: 1)}) async* {
+  //   if (keys.isEmpty) return;
+  //   while (true) {
+  //     yield* setAll(Iterable.generate(keys.length, (index) => (keys.elementAt(index), valuesGetter().elementAt(index))), delay: delay);
+  //   }
+  // }
 }
 
-class ServiceStreamHandler {
-  // ServiceStreamHandler();
-  ServiceStreamHandler.polling(
+class ServicePollStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceGetSlice<K, V>> {
+  ServicePollStreamHandler(
+    this.protocolService,
     this.inputGetter,
-    Stream<ServiceGetSlice> this.stream, // or pass service
+    void Function(ServiceGetSlice<K, V> data) onDataSlice,
+  ) : super(protocolService.pollFlex(inputGetter, delay: const Duration(milliseconds: 5)), onDataSlice);
+
+  final ServiceIO<K, V, S> protocolService;
+  final Iterable<K> Function() inputGetter;
+  // Stream<ServiceSetSlice> get _asPushStream => protocolService.push(inputGetter, delay: const Duration(milliseconds: 5));
+  // Stream<ServiceGetSlice> get _asPollStream => protocolService.pollFlex(inputGetter, delay: const Duration(milliseconds: 5));
+}
+
+class ServicePushStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceSetSlice<K, V, S>> {
+  ServicePushStreamHandler(
+    this.protocolService,
+    this.inputGetter,
+    void Function(ServiceSetSlice<K, V, S> data) onDataSlice,
+  ) : super(protocolService.push(inputGetter, delay: const Duration(milliseconds: 5)), onDataSlice);
+
+  final ServiceIO<K, V, S> protocolService;
+  final Iterable<(K, V)> Function() inputGetter;
+}
+
+class ServiceStreamHandler<T> {
+  ServiceStreamHandler(
+    this.stream, // or pass service
     this.onDataSlice,
   );
 
-  Iterable Function() inputGetter;
-  Stream stream;
-  void Function(dynamic event) onDataSlice;
-
-  // Iterable<(int, int)> _writePairs()
-  // Stream<ServiceSetSlice<K, V, S>> get _asPushStream => protocolService.push(keysGetter, delay: const Duration(milliseconds: 5));
+  final Stream<T> stream;
+  final void Function(T data) onDataSlice;
 
   StreamSubscription? streamSubscription;
   bool get isStopped => streamSubscription == null;
 
   StreamSubscription? begin() {
-    // if (inputGetter().isEmpty) return null;
     if (!isStopped) return null;
     return streamSubscription = stream.listen(onDataSlice);
   }
 
   Future<void> end() async => streamSubscription?.cancel().whenComplete(() => streamSubscription = null);
   Future<void> restart() async => end().whenComplete(() => begin());
-  // Future<void> restart<T>(Stream<T> stream, void Function(T)? onData) async => end().whenComplete(() => listenWith<T>(stream, onData));
 }
 
 // IdKey, EntityKey, DataKey, FieldKey, VarKey,

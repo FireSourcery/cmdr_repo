@@ -107,8 +107,6 @@ class Slicer<T> {
   }
 }
 
-
-
 // naming convention notes
 // For classes and types -
 // Module/Most descriptive noun first, then adjective descriptions
