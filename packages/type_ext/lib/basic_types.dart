@@ -1,5 +1,3 @@
-///
-
 /// Mixin for methods
 /// Instantiate temporary object for type checking
 // TypeCarrier, TypeHost, TypeKey
@@ -70,8 +68,9 @@ typedef ValueTest<T> = bool Function(T input);
 
 extension WhereFilter<T> on Iterable<T> {
   Iterable<T> filter(Iterable<T> Function(Iterable<T> input)? filter) => filter?.call(this) ?? this;
-  Iterable<T> havingProperty(PropertyFilter<T>? filter) => filter?.call(this) ?? this;
-  Iterable<T> havingTyped<P extends PropertyFilter<T>>(Iterable<List<PropertyFilter<T>>> allProperties, P filter) {
+  Iterable<T> havingProperty(PropertyFilter<T>? property) => property?.call(this) ?? this;
+  // Iterable<T> havingTyped<P extends PropertyFilter<T>>(Iterable<List<PropertyFilter<T>>> allProperties, P filter) {
+  Iterable<T> havingTyped<P extends PropertyFilter<T>>(Iterable<List<PropertyFilter<T>>> allProperties) {
     return allProperties.whereType<List<P>>().whereType<P>().singleOrNull?.call(this) ?? this;
   }
 }
@@ -106,6 +105,9 @@ class Slicer<T> {
     }
   }
 }
+
+typedef NumRange = ({num min, num max});
+typedef EnumRange = List<Enum>;
 
 // naming convention notes
 // For classes and types -

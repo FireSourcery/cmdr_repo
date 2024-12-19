@@ -161,6 +161,17 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
       suffixText: (showSuffix) ? varNotifier.varKey.suffix : null,
       isDense: isDense,
     );
+
+    // return InputDecoration(
+    //   labelText: varNotifier.varKey.label,
+    //   prefixIcon: !varNotifier.varKey.isReadOnly ? const Icon(Icons.input) : null,
+    //   suffixText: varNotifier.varKey.suffix,
+    //   isDense: isDense,
+    // ).copyWithHide(
+    //   showLabel: showLabel,
+    //   showPrefix: showPrefix,
+    //   showSuffix: showSuffix,
+    // );
   }
 
   @override

@@ -12,26 +12,27 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  async: ^2.11.0
+  meta: ^1.11.0
+  collection: ^1.18.0
+  quiver: ^3.2.2
+
   type_ext: ^0.0.1
   binary_data: ^0.0.1
 
-  collection: ^1.18.0
   csv: ^6.0.0
   file_picker: ^8.0.3
   fl_chart: ^0.68.0
   intel_hex: ^1.2.1
   libserialport: ^0.3.0+1
-  meta: ^1.11.0
   recase: ^4.1.0
   shared_preferences: ^2.2.3
   synchronized: ^3.1.0+1
-  quiver: ^3.2.2
-  async: ^2.11.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
-  melos: ^6.2.0
+  # melos: ^6.2.0
   lints: ^4.0.0
   test: ^1.25.5

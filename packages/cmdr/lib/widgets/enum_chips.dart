@@ -22,7 +22,7 @@ class SingleSelectChips<T> extends StatelessWidget {
 
   final List<T> selectable;
   final ValueSetter<T?> onSelected;
-  final ValueGetter<T?> selected; // change to Listenable for use with getter
+  final T? selected; // change to Listenable for use with getter
   final double spacing;
   final MultiWidgetBuilder? builder;
   final ValueWidgetBuilder<T>? labelBuilder;
@@ -34,7 +34,7 @@ class SingleSelectChips<T> extends StatelessWidget {
       for (final key in selectable)
         ChoiceChip(
           label: _Label<T>(chipKey: key, labelBuilder: labelBuilder),
-          selected: selected() == key,
+          selected: selected == key,
           onSelected: (bool value) => onSelected(value ? key : null),
         ),
     ];
@@ -86,8 +86,7 @@ class MultiSelectChips<T> extends StatelessWidget {
               } else {
                 selectionState.remove(key);
               }
-              onSelected(value ? key : null);
-              // onSelected((property: property, isSelected: value));
+              onSelected(value ? key : null); // onSelected((property: property, isSelected: value));
             },
           ),
       ],
@@ -100,6 +99,9 @@ class _Label<T> extends StatelessWidget {
 
   final ValueWidgetBuilder<T>? labelBuilder;
   final T chipKey;
+
+  // static Widget _enumLabelBuilder(BuildContext context, dynamic value, Widget? child) => Text(value.name.pascalCase);
+  // static Widget _objectLabelBuilder(BuildContext context, dynamic value, Widget? child) => Text(value.toString().pascalCase);
 
   @override
   Widget build(BuildContext context) {

@@ -157,7 +157,13 @@ class SelectionDialog<E> extends StatefulWidget {
 }
 
 class _SelectionDialogState<E> extends State<SelectionDialog<E>> {
-  late final Set<E> selected = widget.selectionState ?? {...?widget.initialSelected};
+  late final Set<E> selected = widget.selectionState ?? {};
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialSelected != null) selected.addAll(widget.initialSelected!);
+  }
 
   Set<E> onConfirm() => selected;
 

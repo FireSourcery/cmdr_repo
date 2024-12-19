@@ -10,6 +10,7 @@ part of 'var_notifier.dart';
 /// ServiceIO can mixin to this module, still both derive from the same context
 ////////////////////////////////////////////////////////////////////////////////
 @immutable
+// class VarCache<K extends VarKey, V extends VarNotifier> {
 class VarCache {
   VarCache([this.lengthMax]) : _cache = {};
 
@@ -32,7 +33,8 @@ class VarCache {
   /// if an Var of the same id is reinserted into the map. the disconnected listeners, need be remapped to the new Var
   /// Widgets using allocate in build will update automatically
   ///
-  final Map<int, VarNotifier> _cache; // <int, VarNotifier> allows direct access by updateBy
+  // <int, VarNotifier> allows direct access by updateBy
+  final Map<int, VarNotifier> _cache;
   final int? lengthMax;
 
   // final Map<VarKey, VarNotifier> _cache; //  this way keys are retained, access without going through var
@@ -107,10 +109,10 @@ class VarCache {
   Iterable<VarNotifier> get varEntries => _cache.values;
 
   /// for filter on keys, alternatively caller filter on entries
-  /// varsOf()
-  Iterable<VarNotifier> entriesOf(Iterable<VarKey> keys) => keys.map<VarNotifier?>((e) => this[e]).nonNulls;
+  Iterable<VarNotifier> varsOf(Iterable<VarKey> keys) => keys.map<VarNotifier?>((e) => this[e]).nonNulls;
+  // Iterable<VarNotifier> varsHaving(PropertyFilter<VarKey>? property) => varsOf(varKeys.havingProperty(property));
 
-  void addPolling(Iterable<VarKey> keys) => entriesOf(keys).forEach((element) => element.isPollingMarked = true);
+  void addPolling(Iterable<VarKey> keys) => varsOf(keys).forEach((element) => element.isPollingMarked = true);
   void removePollingAll() => _cache.forEach((_, element) => element.isPollingMarked = false);
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -122,7 +124,7 @@ class VarCache {
   /// Collective Data Write
   ///   Individual write use VarController/VarValue Instance
   ////////////////////////////////////////////////////////////////////////////////
-  Iterable<(int, int)> dataPairsOf(Iterable<VarKey> keys) => entriesOf(keys).map((e) => e.dataPair);
+  Iterable<(int, int)> dataPairsOf(Iterable<VarKey> keys) => varsOf(keys).map((e) => e.dataPair);
   // Iterable<MapEntry<int, int>> get dataEntries => _cache.values.map((e) => e.dataEntry);
   // Iterable<MapEntry<int, int>> get dataEntries => _cache.keys.map((e) =>  MapEntry(e, _cache[e]!.dataValue)); // if entry does not store key, also move json out
 

@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'basic_types.dart';
 
 extension CallOnNullAsNull on Function {
@@ -42,4 +44,7 @@ extension RecordSlices<T extends Record> on T {
   Iterable<T> slices(T Function(int start, int end) slicer, int totalLength, int sliceLength) => Slicer(slicer, totalLength).slices(sliceLength);
 }
 
-extension MapExt<K, V> on Map<K, V> {}
+extension MapExt<K, V extends Object> on Map<K, V> {
+  Iterable<V> eachOf(Iterable<K> keys) => keys.map<V?>((e) => this[e]).nonNulls;
+  Iterable<V> having(PropertyFilter<K>? property) => eachOf(keys.havingProperty(property));
+}
