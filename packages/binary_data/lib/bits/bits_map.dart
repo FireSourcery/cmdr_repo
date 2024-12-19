@@ -12,6 +12,7 @@ part 'bool_map.dart';
 /// A special case of [FixedMap], all values retrieve from a [Bits] object
 abstract interface class BitsMap<K, V> with MapBase<K, V> implements FixedMap<K, V> {
   const BitsMap._(this.keys);
+
   factory BitsMap.of(List<K> keys, [int bits = 0, bool mutable = true]) {
     return switch (keys) {
       List<BitIndexField> keys => mutable ? MutableBoolMap(keys, Bits(bits)) : ConstBoolMap(keys, Bits(bits)),
@@ -22,13 +23,13 @@ abstract interface class BitsMap<K, V> with MapBase<K, V> implements FixedMap<K,
     } as BitsMap<K, V>;
   }
 
+  // Map operators implemented by subclass depending on V type
+  final List<K> keys;
+
   Bits get bits;
   set bits(Bits value); // only dependency for unmodifiable
 
   // int get width;
-
-  // Map operators implemented by subclass depending on V type
-  final List<K> keys;
 
   V operator [](covariant K key);
   void operator []=(covariant K key, V value);
@@ -45,6 +46,7 @@ abstract interface class BitsMap<K, V> with MapBase<K, V> implements FixedMap<K,
 }
 
 /// [BitFieldMap]
+/// [BitsMapBase]
 abstract mixin class BitFieldMap<K extends BitField> implements BitsMap<K, int> {
   const BitFieldMap._();
 
@@ -53,6 +55,8 @@ abstract mixin class BitFieldMap<K extends BitField> implements BitsMap<K, int> 
   const factory BitFieldMap.constant(List<K> keys, Bits bits) = ConstBitFieldMap<K>;
 
   List<K> get keys;
+  Bits get bits;
+  set bits(Bits value);
 
   // @override
   // int get width => keys.bitmasks.totalWidth;

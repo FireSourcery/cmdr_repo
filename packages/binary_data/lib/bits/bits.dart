@@ -128,6 +128,7 @@ extension BitmasksMethods on Iterable<Bitmask> {
 
 /// [BitsBase]/[BitData]/ - base for classes backed by Bits
 ///   contain bits for setters - Cannot be extension type
+///     allows `pass by pointer`
 ///   gives Bits a type for matching, distinguish from int
 ///   cast with any sub type
 ///
@@ -143,8 +144,7 @@ abstract mixin class BitsBase {
   // int operator [](dynamic key) => bits.getBits(key.bitmask);
   // @override
   // void operator []=(dynamic key, int value) => bits = bits.withBits(key.bitmask, value);
-
-  int getBits(Bitmask mask) => bits.getBits(mask);
+  // int getBits(Bitmask mask) => bits.getBits(mask);
 
   void setBits(Bitmask mask, int value) => bits = bits.withBits(mask, value);
   void setBitsAt(int offset, int width, int value) => bits = bits.withBitsAt(offset, width, value);

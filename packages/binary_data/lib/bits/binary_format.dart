@@ -95,25 +95,27 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
 typedef ViewOfData = num Function(int data);
 typedef DataOfView = int Function(num view);
 
-class ConversionPair {
-  const ConversionPair({
-    this.viewOfData,
-    this.dataOfView,
-  });
+// class ConversionPair {
+//   const ConversionPair({
+//     this.viewOfData,
+//     this.dataOfView,
+//   });
 
-  ConversionPair.linear(num coefficient)
-      : viewOfData = BinaryConversion(coefficient).viewOfData,
-        dataOfView = BinaryConversion(coefficient).dataOfView;
+//   ConversionPair.linear(num coefficient)
+//       : viewOfData = BinaryConversion(coefficient).viewOfData,
+//         dataOfView = BinaryConversion(coefficient).dataOfView;
 
-  // num viewOf(int dataValue);
-  // int dataOf(num viewValue);
+//   // num viewOf(int dataValue);
+//   // int dataOf(num viewValue);
 
-  final ViewOfData? viewOfData;
-  final DataOfView? dataOfView;
-  // final Function(int bytes)? get signExtension
-}
+//   final ViewOfData? viewOfData;
+//   final DataOfView? dataOfView;
+//   // final Function(int bytes)? get signExtension
+// }
 
 extension type const BinaryConversion(num coefficient) {
+  BinaryConversion.unitRef(BinaryFormat format, num unitRef) : coefficient = unitRef / format.reference!;
+
   num viewOf(int dataValue) => (dataValue * coefficient);
   int dataOf(num viewValue) => (viewValue ~/ coefficient);
 

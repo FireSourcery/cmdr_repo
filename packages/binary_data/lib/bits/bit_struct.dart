@@ -23,6 +23,7 @@ abstract mixin class BitStruct<K extends BitField> implements BitsBase, BitsMap<
   // defined by child class
   List<K> get keys;
   Bits get bits;
+  set bits(Bits value);
 
   @override
   int get width => keys.bitmasks.totalWidth;
@@ -30,12 +31,13 @@ abstract mixin class BitStruct<K extends BitField> implements BitsBase, BitsMap<
   // Map operators
   int operator [](covariant K key);
   void operator []=(covariant K key, int value);
+  // Map operators
   void clear();
   int remove(K key);
 
   // Unconstrained type keys
   @protected
-  int get(BitField key) => getBits(key.bitmask);
+  int get(BitField key) => bits.getBits(key.bitmask);
   @protected
   void set(BitField key, int value) => setBits(key.bitmask, value);
   @protected
@@ -59,7 +61,6 @@ abstract mixin class BitStruct<K extends BitField> implements BitsBase, BitsMap<
   Iterable<({K key, bool value})> get fieldsAsBool => keys.map((e) => (key: e, value: (this[e] != 0)));
   Iterable<({K key, int value})> get fieldsAsBits => keys.map((e) => (key: e, value: this[e]));
 
-  @override
   BitStruct<K> copyWithBits(Bits value) => BitConstruct<BitStruct<K>, K>(keys, value);
   // @override
   // BitStruct<K> copyWith() => copyWithBits(bits);
@@ -87,9 +88,9 @@ abstract mixin class BitStruct<K extends BitField> implements BitsBase, BitsMap<
 /// extendable, with Enum.values
 ////////////////////////////////////////////////////////////////////////////////
 // abstract class BitStructBase<K extends BitField> extends BitsBase with MapBase<K, int>, BitFieldMap<K>, BitStruct<K> {
-//   BitStructBase( Bits bits );
-//   BitStructBase.castInitializer(Map<K, int> initializer) : super(Bits.ofEntries(initializer.bitsEntries));
-//   BitStructBase.castBase(super.bits) ;
+//   BitStructBase(Bits bits);
+//   BitStructBase.castInitializer(Map<K, int> initializer) : this(Bits.ofEntries(initializer.bitsEntries));
+//   BitStructBase.castBase(Bits bits);
 // }
 
 abstract class MutableBitStruct<K extends BitField> extends MutableBits with MapBase<K, int>, BitFieldMap<K>, BitStruct<K> {
@@ -132,6 +133,8 @@ class BitConstruct<S extends BitStruct<K>, K extends BitField> extends ConstBitS
   @override
   final List<K> keys;
 
+  // final S _this;
+
   @override
   BitStruct<K> copyWithBits(Bits value) => BitConstruct<BitStruct<K>, K>(keys, value);
   @override
@@ -171,14 +174,6 @@ class BitConstruct<S extends BitStruct<K>, K extends BitField> extends ConstBitS
 //   }
 // }
 
-// this can be init with const
-typedef BitsInitializer<T extends BitField> = Map<T, int>;
-
-extension BitsInitializerMethods on BitsInitializer {
-  int get width => keys.map((e) => e.bitmask).totalWidth;
-  Bits get bits => Bits.ofEntries(bitsEntries); // in order to init using const Map, bits must be derived at run time
-}
-
 /// constructor compile time constant by wrapping Map.
 /// alternatively use final and compare using value
 ///
@@ -188,40 +183,34 @@ extension BitsInitializerMethods on BitsInitializer {
 ///   EnumType.name2: 3,
 /// });
 ///
-// abstract mixin class BitsInitializer<T extends BitField> implements BitStruct<T> {
-//   Map<T, int> get initializer; // per instance
+typedef BitsInitializer<T extends BitField> = Map<T, int>;
 
-//   List<T> get keys; // per class
-
-//   @override
-//   int get width => initializer.keys.map((e) => e.bitmask).totalWidth;
-//   @override
-//   Bits get bits => Bits.ofEntries(initializer.bitsEntries); // in order to initial using const Map, bits must be derived at run time
-//   @override
-//   set bits(Bits value) => throw UnsupportedError("Cannot modify unmodifiable");
-
-//   // @override
-//   // BitField<T> copyWith() => this;
-
-//   // @override
-//   // List<T> get keys => source.keys;
-// }
+extension BitsInitializerMethods on BitsInitializer {
+  int get width => keys.map((e) => e.bitmask).totalWidth;
+  Bits get bits => Bits.ofEntries(bitsEntries); // in order to init using const Map, bits must be derived at run time
+}
 
 /// can be implemented on Enum to give each const Bits an Enum Id and String name
 /// optionally use BitsInitializer to simplfiy compile time const
 abstract mixin class EnumBits<K extends BitField> implements Enum {
-  Bits get bits; // per instance
-
-  BitsInitializer<K> get initializer; //define as const using initializer
+  // per instance
+  BitsInitializer<K> get initializer; // define as const using initializer
+  Bits get bits => initializer.bits;
 
   // or build lookup map
-  static Map<int, EnumBits> buildReverseMap(List<EnumBits> enumValues) {
+  static Map<int, EnumBits<K>> buildReverseMap<K extends BitField>(List<EnumBits<K>> enumValues) {
     return Map.unmodifiable({for (final enumId in enumValues) enumId.bits: enumId});
   }
 
-//  Map<int, EnumBits> get reverseMap  ;
+  // Map<int, EnumBits> get reverseMap;
+  // EnumBitsFactory<K> get factory;
 
-  List<K> get keys; // per class
+  List<K> get bitFields; // per class
 
-  BitStruct<K> asBitStruct() => BitConstruct<BitStruct<K>, K>(keys, bits);
+  BitStruct<K> asBitStruct() => BitConstruct<BitStruct<K>, K>(bitFields, bits);
+}
+
+extension type const EnumBitsFactory<K extends BitField>(Map<int, EnumBits<K>> reverseMap) {
+  EnumBitsFactory.of(List<EnumBits<K>> keys) : reverseMap = EnumBits.buildReverseMap(keys);
+  EnumBits<K>? idOf(Bits bits) => reverseMap[bits];
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
+import 'package:meta/meta.dart';
 
 import 'basic_types.dart';
 
@@ -107,27 +108,17 @@ abstract mixin class ServiceIO<K, V, S> {
 }
 
 class ServicePollStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceGetSlice<K, V>> {
-  ServicePollStreamHandler(
-    this.protocolService,
-    this.inputGetter,
-    super.onDataSlice,
-  );
+  ServicePollStreamHandler(this.protocolService, this.inputGetter, super.onDataSlice);
 
   final ServiceIO<K, V, S> protocolService;
   final Iterable<K> Function() inputGetter;
 
   @override
   Stream<ServiceGetSlice<K, V>> get stream => protocolService.pollFlex(inputGetter, delay: const Duration(milliseconds: 5));
-  // Stream<ServiceSetSlice> get _asPushStream => protocolService.push(inputGetter, delay: const Duration(milliseconds: 5));
-  // Stream<ServiceGetSlice> get _asPollStream => protocolService.pollFlex(inputGetter, delay: const Duration(milliseconds: 5));
 }
 
 class ServicePushStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceSetSlice<K, V, S>> {
-  ServicePushStreamHandler(
-    this.protocolService,
-    this.inputGetter,
-    super.onDataSlice,
-  );
+  ServicePushStreamHandler(this.protocolService, this.inputGetter, super.onDataSlice);
 
   final ServiceIO<K, V, S> protocolService;
   final Iterable<(K, V)> Function() inputGetter;
@@ -139,7 +130,8 @@ class ServicePushStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceSetS
 abstract class ServiceStreamHandler<T> {
   ServiceStreamHandler(this.onDataSlice);
 
-  Stream<T> get stream;
+  @protected
+  Stream<T> get stream; // creates a new stream, call from begin() only
 
   final void Function(T data) onDataSlice;
 
