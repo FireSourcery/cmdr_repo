@@ -63,6 +63,7 @@ abstract class VarContext extends InheritedWidget {
   }
 
   /// this method requires [VarKeyContext] to be provided
+  /// Alternatively, caller can directly use [VarContext.of<G>(context)] to find the controller context by type
   static VarContext ofKey(BuildContext context, VarKey varKey) {
     return VarKeyContext.of(context).contextTypeOfVarKey(varKey).callWithRestrictedType(<G extends VarContext>() => VarContext.of<G>(context));
   }

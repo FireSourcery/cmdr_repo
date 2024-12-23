@@ -22,7 +22,7 @@ dependencies:
 
   csv: ^6.0.0
   file_picker: ^8.0.3
-  fl_chart: ^0.68.0
+  fl_chart: ^0.69.2
   intel_hex: ^1.2.1
   libserialport: ^0.3.0+1
   recase: ^4.1.0

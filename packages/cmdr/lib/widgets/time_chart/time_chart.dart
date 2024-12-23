@@ -56,7 +56,7 @@ class TimeChart extends StatelessWidget {
             rightTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                getTitlesWidget: (value, meta) => SideTitleWidget(axisSide: meta.axisSide, space: 16, child: Text(meta.formattedValue)),
+                getTitlesWidget: (_, meta) => SideTitleWidget(axisSide: meta.axisSide, space: 16, child: Text(meta.formattedValue)),
                 reservedSize: 56,
               ),
             ),
@@ -64,7 +64,7 @@ class TimeChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 36,
-                getTitlesWidget: (value, meta) => SideTitleWidget(axisSide: meta.axisSide, space: 16, child: Text(meta.formattedValue)),
+                getTitlesWidget: (_, meta) => SideTitleWidget(axisSide: meta.axisSide, space: 16, child: Text(meta.formattedValue)),
                 interval: 1,
               ),
             ),

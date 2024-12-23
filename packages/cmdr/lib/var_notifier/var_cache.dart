@@ -36,6 +36,7 @@ class VarCache {
   // <int, VarNotifier> allows direct access by updateBy
   final Map<int, VarNotifier> _cache;
   final int? lengthMax;
+  // final VarNotifier? undefined ;
 
   // final Map<VarKey, VarNotifier> _cache; //  this way keys are retained, access without going through var
   // final Set<VarKey>? preallocatedKeys; // retain if generated,
@@ -98,7 +99,7 @@ class VarCache {
   ////////////////////////////////////////////////////////////////////////////////
   /// Per Instance
   ////////////////////////////////////////////////////////////////////////////////
-  VarNotifier? operator [](VarKey varKey) => _cache[varKey.value];
+  VarNotifier? operator [](VarKey varKey) => _cache[varKey.value]; // alternatively ?? undefined;
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Collective App View

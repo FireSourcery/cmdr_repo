@@ -46,7 +46,7 @@ class ChartController with TimerNotifier, ChangeNotifier {
     stop();
     chartEntries.add(entry);
     chartData.addEntry(entry.name);
-    notifyListeners();
+    // notifyListeners();
     // start();
   }
 
@@ -126,7 +126,7 @@ class ChartController with TimerNotifier, ChangeNotifier {
   double? get yMin => (useScalarView) ? -1.1 : _yMin;
   set yMin(double? value) {
     _yMin = value;
-    notifyListeners();
+    // notifyListeners();
   }
 
   double? _yMax;
@@ -134,7 +134,7 @@ class ChartController with TimerNotifier, ChangeNotifier {
   double? get yMax => (useScalarView) ? 1.1 : _yMax;
   set yMax(double? value) {
     _yMax = value;
-    notifyListeners();
+    // notifyListeners();
   }
 
   double get tValue => stopwatch.elapsedMilliseconds / 1000;
@@ -159,7 +159,16 @@ class ChartController with TimerNotifier, ChangeNotifier {
 
   // List<FlSpot> flSpotsViewOf(int index) => UnmodifiableListView(chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y)));
   List<FlSpot> _flSpotsViewOf(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y))];
-  List<FlSpot> _flSpotsViewOfAsScalar(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y / (chartEntries.elementAtOrNull(index)?.normalRef ?? 1)))];
+  List<FlSpot> _flSpotsViewOfAsScalar(int index) => [
+        ...chartData.lineDataPoints(index).map((e) {
+          if (chartEntries.elementAtOrNull(index)?.normalRef case double value when value.isFinite) {
+            return FlSpot(e.x, e.y / value);
+          } else {
+            return FlSpot(e.x, 0);
+          }
+          // return FlSpot(e.x, e.y / (chartEntries.elementAtOrNull(index)?.normalRef ?? 1));
+        })
+      ];
   List<FlSpot> flSpotsViewOf(int index) => (useScalarView) ? _flSpotsViewOfAsScalar(index) : _flSpotsViewOf(index);
 
   /// todo visual options with notify
