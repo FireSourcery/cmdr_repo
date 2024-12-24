@@ -59,12 +59,12 @@ abstract mixin class ServiceIO<K, V, S> {
   /// Caller locks [keys] from modifications before building slices
   ////////////////////////////////////////////////////////////////////////////////
   Stream<ServiceGetSlice<K, V>> getAll(Iterable<K> keys, {Duration delay = const Duration(milliseconds: 1)}) {
-    if (keys.isEmpty) return const Stream.empty();
+    // if (keys.isEmpty) return const Stream.empty();
     return _getSlices(keys.slices(maxGetBatchSize ?? keys.length), delay: delay);
   }
 
   Stream<ServiceSetSlice<K, V, S>> setAll(Iterable<(K, V)> pairs, {Duration delay = const Duration(milliseconds: 1)}) {
-    if (pairs.isEmpty) return const Stream.empty();
+    // if (pairs.isEmpty) return const Stream.empty();
     return _setSlices(pairs.slices(maxSetBatchSize ?? pairs.length), delay: delay);
   }
 
@@ -83,7 +83,13 @@ abstract mixin class ServiceIO<K, V, S> {
 
   Stream<ServiceGetSlice<K, V>> pollFlex(Iterable<K> Function() keysGetter, {Duration delay = const Duration(milliseconds: 1)}) async* {
     while (true) {
-      yield* getAll(keysGetter(), delay: delay);
+      var keys = keysGetter();
+      if (keys.isEmpty) {
+        // yield* const Stream.empty();
+        await Future.delayed(const Duration(milliseconds: 10));
+      } else {
+        yield* getAll(keys, delay: delay);
+      }
     }
     // can this reuse the same allocated memory buffer for the new slices?
     // while (true) {
@@ -95,8 +101,17 @@ abstract mixin class ServiceIO<K, V, S> {
 
   Stream<ServiceSetSlice<K, V, S>> push(Iterable<(K, V)> Function() pairsGetter, {Duration delay = const Duration(milliseconds: 1)}) async* {
     while (true) {
-      yield* setAll(pairsGetter(), delay: delay);
+      var pairs = pairsGetter();
+      if (pairs.isEmpty) {
+        // yield* const Stream.empty();
+        await Future.delayed(const Duration(milliseconds: 10));
+      } else {
+        yield* setAll(pairs, delay: delay);
+      }
     }
+    // while (true) {
+    //   yield* setAll(pairsGetter(), delay: delay);
+    // }
   }
 
   // Stream<ServiceSetSlice<K, V, S>> pushFixed(Iterable<K> keys, Iterable<V> Function() valuesGetter, {Duration delay = const Duration(milliseconds: 1)}) async* {

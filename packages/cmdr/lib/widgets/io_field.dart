@@ -314,7 +314,8 @@ class _IOFieldTextState<T> extends State<IOFieldText<T>> {
 
   /// num type
   num? validNum(String numString) {
-    if (num.tryParse(numString) case num numValue when numValue.clamp(widget.numMin, widget.numMax) == numValue) return numValue;
+    // if (num.tryParse(numString) case num numValue when numValue.clamp(widget.numMin, widget.numMax) == numValue) return numValue;
+    if (num.tryParse(numString) case num numValue) return numValue.clamp(widget.numMin, widget.numMax);
     return null; // null or out of bounds
   }
 

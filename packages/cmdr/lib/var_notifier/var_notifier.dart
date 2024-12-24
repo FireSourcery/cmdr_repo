@@ -188,6 +188,12 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
     notifyListeners();
   }
 
+  // without checking for change
+  void clearNumValue() {
+    _numValue = 0;
+    notifyListeners();
+  }
+
   ////////////////////////////////////////////////////////////////////////////////
   /// [dataValue] from packet. convert on transmit only. lazy update on updateByView
   ////////////////////////////////////////////////////////////////////////////////
