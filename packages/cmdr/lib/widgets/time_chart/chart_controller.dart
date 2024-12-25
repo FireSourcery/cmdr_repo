@@ -14,8 +14,8 @@ import 'chart_data.dart';
 class ChartController with TimerNotifier, ChangeNotifier {
   ChartController({
     List<ChartEntry>? chartEntries,
-    this.updateInterval = const Duration(milliseconds: 50),
-    int samplesMax = 200, // e.g 100 samples at 10ms => 1s display
+    this.updateInterval = const Duration(milliseconds: 20),
+    int samplesMax = 400, // e.g 100 samples at 10ms => 10s display
     int entriesMax = kSelectionCountMax,
     double? yMin,
     double? yMax,
@@ -58,6 +58,7 @@ class ChartController with TimerNotifier, ChangeNotifier {
     chartEntries.clear();
     chartEntries.addAll(entries);
     chartData.replaceEntries(entries.map((e) => e.name));
+    // stopwatch.reset();
     notifyListeners();
   }
 
