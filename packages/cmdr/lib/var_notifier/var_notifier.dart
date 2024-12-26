@@ -30,7 +30,6 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
     List<Enum>? enumRange,
     List<BitField>? bitsKeys,
   }) {
-    dataKey = varKey.value;
     this.signExtension = signExtension;
     this.viewOfData = viewOfData;
     this.dataOfView = dataOfView;
@@ -40,7 +39,6 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   }
 
   VarNotifier.ofKey(this.varKey) : assert(V != dynamic) {
-    dataKey = varKey.value;
     initReferences();
   }
 
@@ -49,21 +47,12 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
     return varKey.viewType(<G>() => VarNotifier<G>.ofKey(varKey) as VarNotifier<V>);
   }
 
-  // @override
   final VarKey varKey;
 
-  /// Derived from [VarKey] and cached
-  // @override
-  // final int Function(int binaryValue)? signExtension;
-  // @override
-  // final ViewOfData? viewOfData; //num conversion only, null for Enum and Bits
-  // @override
-  // final DataOfView? dataOfView;
-  // @override
-  // final List<Enum>? enumRange;
-  // @override
-  // final List<BitField>? bitsKeys;
+  @override
+  late final int dataKey = varKey.value; // compute once and cache
 
+  /// Derived from [VarKey] and cached
   void initReferences() {
     signExtension = varKey.binaryFormat?.signExtension;
     viewOfData = varKey.viewOfData;
@@ -101,17 +90,15 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
 /// A notifier combining a ValueNotifier with support for conversion between view types and data values.
 /// It be can further combined with a status notifier.
 abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
-  // VarKey get varKey; // allow varKey to be assigned as dynamic. can be removed
   // int get dataMin;
   // int get dataMax;
 
   /// caching results for performance. these do not have to be immutable.
-  /// values are already nullable, immutability offers no benefit.
+  /// values are already nullable
   /// additionally all mutability is contained in a single layer. cache preallocate can be immutable
-  /// by default get from varKey.
-  /// resolve in constructor to cached values derived from varKey
+  /// by default get from varKey. resolve in constructor to cached values derived from varKey
 
-  late final int dataKey;
+  int get dataKey;
   int Function(int binary)? signExtension;
   ViewOfData? viewOfData; // num conversion only, null for Enum and Bits
   DataOfView? dataOfView;
@@ -129,7 +116,6 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   num viewOf(int data) => viewOfData?.call(data) ?? data; // 'view base'
   int dataOf(num view) => dataOfView?.call(view) ?? view.toInt();
 
-  // num clamp(num value) => switch (numLimits) { (:num min, :num max) => value.clamp(min, max), _ => value };
   num clamp(num value) => (numLimits != null) ? value.clamp(numLimits!.min, numLimits!.max) : value;
 
   Enum enumOf(int value) => enumRange?.elementAtOrNull(value) ?? VarValueEnum.unknown;
@@ -152,10 +138,17 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // T Function<T>(num value) valueAsSubtype; //pass this via pointer?
 
   /// runtime variables
+  // clear on response
   bool isPushPending = false; // pushUpdateFlag, isLastUpdateByView
+  void push() => isPushPending = true;
+  void clearPush() => isPushPending = false;
 
-  bool isPollingMarked = false;
-  // bool get isPollingMarked => isPollingMarked || hasListeners;
+  // cleared by user
+  bool _isPollingMarked = false;
+  bool get isPollingMarked => (_isPollingMarked || hasListeners) && !isPushPending;
+  set isPollingMarked(bool value) => _isPollingMarked = value;
+
+  // void pull() => _isPollingMarked = true;
 
   // if separating internal and external status
   // bool outOfRange; // value from client out of range
@@ -163,12 +156,8 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   /// superclass implementation
   @override
   V get value => valueAs<V>();
-  @override // check new == previous?
+  @override
   set value(V newValue) => updateByViewAs<V>(newValue);
-
-  /// as outbound data
-  MapEntry<int, int> get dataEntry => MapEntry(dataKey, dataValue);
-  (int key, int value) get dataPair => (dataKey, dataValue);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// [numValue] The base representation of the value as a num. "view side base"
@@ -210,9 +199,12 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // }
 
   // before sign extension
-  void updateByData(int bytesValue) {
-    if (!isPushPending) _updateByData(dataOfBinary(bytesValue)); // updatedByView wait for push
-  }
+  // updatedByView wait for push
+  void updateByData(int bytesValue) => _updateByData(dataOfBinary(bytesValue));
+
+  /// as outbound data
+  MapEntry<int, int> get dataEntry => MapEntry(dataKey, dataValue);
+  (int key, int value) get dataPair => (dataKey, dataValue);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// [viewValue] from widgets
@@ -262,10 +254,20 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // set valueAsEnum(Enum newValue) => numValue = newValue.index;
   // @protected
   // set valueAsBitsMap(BitsBase newValue) => numValue = newValue.bits;
+  // void updateAsDynamic(dynamic typedValue) {
+  //   numValue = switch (typedValue) {
+  //     num value => clamp(value),
+  //     bool value => (value) ? 1 : 0,
+  //     Enum value => value.index,
+  //     BitsBase value => value.bits,
+  //     _ => throw UnsupportedError(' '),
+  //   };
+  // }
 
   // caller handle display state of over boundary.
   // input bounds checked only to ensure a valid value is sent to client side
-  void updateByViewAs<T>(T typedValue) {
+  // switch on value will also handle dynamic
+  void updateByViewAs<T>(T typedValue, [bool push = false]) {
     numValue = switch (T) {
       const (double) || const (int) || const (num) => clamp(typedValue as num),
       const (bool) => (typedValue as bool) ? 1 : 0,
@@ -273,29 +275,27 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
       const (BitsBase) => (typedValue as BitsBase).bits,
       _ when typedValue is Enum => (typedValue as Enum).index,
       _ when typedValue is BitsBase => (typedValue as BitsBase).bits,
+      // const (dynamic) => switch (typedValue) {
+      //     num value => clamp(value),
+      //     bool value => (value) ? 1 : 0,
+      //     Enum value => value.index,
+      //     BitsBase value => value.bits,
+      //     _ => throw UnsupportedError(' '),
+      //   },
       _ => throw UnsupportedError('valueAs: $T'),
     };
 
-    isPushPending = true;
+    // isPushPending = true;
     // if (typedValue case num input when input != numValue) statusCode = 1;
-
     // asserts view is set with proper bounds
     // assert(!((typedValue is num) && (_clamp(typedValue) != numValue)));
-
-    // viewValue bound should keep motValue within format bounds after conversion
+    // viewValue bound should keep dataValue within format bounds after conversion
     // assert((varKey.binaryFormat?.max != null) ? (dataValue <= varKey.binaryFormat!.max) : true);
     // assert((varKey.binaryFormat?.min != null) ? (dataValue >= varKey.binaryFormat!.min) : true);
   }
 
-  void updateAsDynamic(dynamic typedValue) {
-    numValue = switch (typedValue) {
-      num value => clamp(value),
-      bool value => (value) ? 1 : 0,
-      Enum value => value.index,
-      BitsBase value => value.bits,
-      _ => throw UnsupportedError(' '),
-    };
-  }
+  // convenience for ValueSetter<T>
+  void pushByViewAs<T>(T typedValue) => (this..updateByViewAs<T>(typedValue))..push();
 
   void updateByView(V typedValue) => updateByViewAs<V>(typedValue);
 

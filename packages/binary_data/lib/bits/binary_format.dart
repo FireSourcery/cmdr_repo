@@ -10,8 +10,8 @@ import 'bits.dart';
 enum BinaryFormat<S extends NativeType, V extends Object> {
   /// Fixed-point number formats
   /// Q fraction types, view = rawValue * unitsRef/FormatRef
-  frac16<Int16, double>(reference: 32767), // Q1.15
-  ufrac16<Uint16, double>(reference: 32768), // frac16 abs with 2x over-saturation
+  fract16<Int16, double>(reference: 32767), // Q1.15
+  ufract16<Uint16, double>(reference: 32768), // frac16 abs with 2x over-saturation
   fixed16<Int16, double>(reference: 256), // 256 since base exceeds 8-bits
   percent16<Uint16, double>(reference: 65535), // Q0.16
   // fixed32(reference: 32768, baseType: Int32 ),
@@ -78,7 +78,7 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
 
   int Function(int bytes)? get signExtension => (isSigned) ? _signExtension16 : null;
 
-  bool get isFixedPoint => switch (this) { frac16 || ufrac16 || fixed16 || percent16 => true, _ => false };
+  bool get isFixedPoint => switch (this) { fract16 || ufract16 || fixed16 || percent16 => true, _ => false };
   bool get isScalarBase10 => switch (this) { scalar10 || scalarInv10 => true, _ => false };
 
   // reference != null

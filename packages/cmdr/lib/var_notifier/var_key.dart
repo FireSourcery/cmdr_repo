@@ -42,7 +42,6 @@ abstract mixin class VarKey implements ValueKey<int> {
   // primaryCategory, secondaryCategory, tertiaryCategory
 
   /// View Widgets properties
-  ///
 
   // @override
   // String toString() {
@@ -50,6 +49,13 @@ abstract mixin class VarKey implements ValueKey<int> {
   //   return '[$runtimeType ${binaryFormat?.viewType.type} <$value>]';
   // }
 }
+
+// enum VarReadWrite {
+//   readOnly,
+//   readWrite,
+//   writeOnly,
+//   ;
+// }
 
 extension VarMinMaxs on Iterable<VarKey> {
   Iterable<({num min, num max})?> get viewMinMaxs => map((e) => e.valueNumLimits);

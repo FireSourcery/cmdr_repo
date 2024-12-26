@@ -191,6 +191,7 @@ typedef MenuWidgetBuilder<T> = Widget Function(BuildContext context, FlyweightMe
 
 // resolves source to instance notifier
 /// wraps user provided menu around user provided key widget
+/// FlyweightMenuContainer<T>
 class MenuAnchorBuilder<T> extends StatefulWidget {
   const MenuAnchorBuilder({
     super.key,

@@ -100,10 +100,10 @@ class VarRealTimeController extends VarCacheController {
   late final ServicePushStreamHandler<int, int, int> pushHandler = ServicePushStreamHandler(protocolService, _writePairsGetter, _onWriteSlice);
 
   // stream will call slices creating a new list, at the beginning of each multi-batch operation
-  // while this iterator is accessed, view must not add or remove keys
+  // while this iterator is accessed, view must not add or remove keys, either by lock or preallocate cache
 
-  // hasListeners check is regularly updated. protected warning is ok.
-  Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && (e.hasListeners || e.isPollingMarked)).map((e) => e.varKey);
+  // hasListeners check is regularly updated.
+  Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.isPollingMarked).map((e) => e.varKey);
   Iterable<int> _readKeysGetter() => _readKeys.map((e) => e.value);
 
   Iterable<VarKey> get _writeKeys => cache.varEntries.where((e) => e.varKey.isPushing || e.isPushPending).map((e) => e.varKey);
@@ -126,12 +126,10 @@ class VarRealTimeController extends VarCacheController {
 
   // wait for an user initiated write to resolve
   Future<void> writeBatchCompleted(VarKey varKey) async {
-    // Stopwatch timer = Stopwatch()..start();
     await Future.doWhile(() async {
       await Future.delayed(const Duration(milliseconds: 10)); // wait some duration before every check
       return (cache[varKey]!.isPushPending);
     });
-    // print(timer.elapsedMilliseconds);
   }
 }
 

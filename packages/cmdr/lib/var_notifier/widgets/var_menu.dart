@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../widgets/flyweight_menu/flyweight_menu.dart';
 import '../../widgets/flyweight_menu/flyweight_menu_widgets.dart';
-import '../../widgets/flyweight_menu/menu_anchor_widgets.dart';
 import '../var_notifier.dart';
 import 'var_widget.dart';
 
@@ -14,15 +13,15 @@ class VarKeyWidgetBuilder {
   const VarKeyWidgetBuilder({required this.builder, this.varCache});
 
   final Widget Function(VarNotifier) builder; // May be of type Widget Function<G>(VarNotifier)
-  final VarCache? varCache;
+  final VarCache? varCache; // if an varCache is provided, retrieving through context is not necessary.
 
-  // builder optionally includes a eventController
-  // if an varEventController is provided, retrieving through context is not necessary.
-  // Widget buildByController(BuildContext _, VarKey value, Widget? __) => VarBaseBuilder(varCache!.allocate(value), builder);
-  Widget buildByController(BuildContext _, VarKey value, Widget? __) => builder(varCache!.allocate(value));
+  // builder optionally handle eventController
+  Widget buildByCache(BuildContext _, VarKey value, Widget? __) => builder(varCache!.allocate(value));
   Widget buildByContext(BuildContext _, VarKey value, Widget? __) => VarKeyContextBuilder(value, builder);
 
-  ValueWidgetBuilder<VarKey> get asValueWidgetBuilder => (varCache != null) ? buildByController : buildByContext;
+  ValueWidgetBuilder<VarKey> get asValueWidgetBuilder => (varCache != null) ? buildByCache : buildByContext;
+
+  // Widget asValueWidgetBuilder(BuildContext _, VarKey value, Widget? __) => VarKeyBuilder(value, builder, varCache: varCache);
 }
 
 // wraps widget under, select with right click
@@ -33,23 +32,24 @@ class VarKeyWidgetBuilder {
 class VarSelectableBuilder<T extends VarKey> extends StatelessWidget {
   const VarSelectableBuilder({
     required this.menuSource,
-    required this.builder,
+    required this.builder, // builder optionally includes a event controller. menu notification included with FlyweightMenu
     this.initialVarKey,
     this.varCache,
     this.onPressed,
-    // this.anchorMenu = true,
     this.menuWidgetBuilder = _menuWidgetBuilder, // builds a MenuAnchorOverlay by default
     super.key,
   });
 
   static Widget _menuWidgetBuilder(BuildContext context, FlyweightMenu menu, Widget keyWidget) => MenuAnchorOverlay(menuItems: menu.menuItems, child: keyWidget);
 
-  final FlyweightMenuSource<T> menuSource; // add after
+  final FlyweightMenuSource<T> menuSource;
+  final MenuWidgetBuilder<T> menuWidgetBuilder;
+  final Widget Function(VarNotifier) builder; // May be of type Widget Function<G>(VarNotifier)
   final T? initialVarKey;
   final ValueSetter<T>? onPressed;
-  final Widget Function(VarNotifier) builder; // May be of type Widget Function<G>(VarNotifier)
-  final VarCache? varCache; // builder optionally includes a event controller. menu notification included with FlyweightMenu
-  final MenuWidgetBuilder<T> menuWidgetBuilder;
+  final VarCache? varCache;
+
+  // Widget keyBuilder(BuildContext _, VarKey value, Widget? __) => VarKeyBuilder(value, builder, varCache: varCache);
 
   @override
   Widget build(BuildContext context) {

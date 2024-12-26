@@ -22,6 +22,7 @@ abstract mixin class VarNotifierViewer<V> {
 
   @protected
   VarNotifier<dynamic> get varNotifier;
+  // VarEventController? get eventController;
 
   ValueNotifier<dynamic> get valueNotifier => varNotifier; // for value updates
   ValueChanged<V> get valueChanged => varNotifier.updateByViewAs<V>; // onChange. call for all updates to update UI
@@ -115,6 +116,20 @@ abstract mixin class VarEventViewer<V> /* implements VarNotifierViewer<V> */ {
 //     return varNotifier.varKey.viewType.callWithType(<G>() => builder<G>(varNotifier as VarNotifier<G>));
 //   }
 // }
+
+class VarKeyBuilder extends StatelessWidget {
+  const VarKeyBuilder(this.varKey, this.builder, {this.varCache, super.key});
+
+  final Widget Function(VarNotifier) builder;
+  final VarKey varKey;
+  final VarCache? varCache;
+
+  @override
+  Widget build(BuildContext context) {
+    final varNotifier = varCache?.allocate(varKey) ?? VarContext.ofKey(context, varKey).cacheController.cache.allocate(varKey);
+    return builder(varNotifier);
+  }
+}
 
 /// Retrieves VarNotifier/Controller using VarKey via InheritedWidget/BuildContext
 /// if the callers context/class does not directly contain the VarCache,

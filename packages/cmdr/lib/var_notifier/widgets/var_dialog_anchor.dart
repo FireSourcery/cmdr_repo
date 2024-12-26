@@ -4,6 +4,7 @@ import '../../widgets/dialog/dialog_anchor.dart';
 import '../var_notifier.dart';
 import 'var_widget.dart';
 
+// dependents dialog
 class VarInputDialog extends StatelessWidget {
   const VarInputDialog({
     super.key,

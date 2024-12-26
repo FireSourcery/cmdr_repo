@@ -43,6 +43,7 @@ class VarSwitch extends StatelessWidget with VarNotifierViewer<bool> {
 class VarSlider extends StatelessWidget with VarNotifierViewer<double> {
   const VarSlider(this.varNotifier, {super.key, this.eventController});
 
+  @override
   final VarNotifier<dynamic> varNotifier;
   final VarEventController? eventController;
 
@@ -50,13 +51,13 @@ class VarSlider extends StatelessWidget with VarNotifierViewer<double> {
     // must be num defined if type is numeric
     final min = varNotifier.numLimits!.min.toDouble();
     final max = varNotifier.numLimits!.max.toDouble();
+    final onChangeEnd = (eventController != null) ? (eventController!.submitByViewAs<double>) : valueChanged;
 
     return Slider.adaptive(
-      // label: varNotifier.varKey.label,
       // divisions: ((max - min) ~/ 1).clamp(2, 100),
       value: viewValue.clamp(min, max),
       onChanged: valueChanged,
-      onChangeEnd: (eventController?.submitByView) ?? valueChanged,
+      onChangeEnd: onChangeEnd,
       min: min,
       max: max,
     );

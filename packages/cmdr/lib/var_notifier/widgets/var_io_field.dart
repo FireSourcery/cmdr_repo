@@ -23,11 +23,20 @@ abstract interface class VarIOField extends StatelessWidget {
     bool showPrefix = true,
     bool showSuffix = true,
     bool isDense = false,
+    bool markPushOnSubmit = true,
     Key? key,
   }) {
     // convenience for passing parameters
     _VarIOField<V> local<V>() {
-      final config = VarIOFieldConfig<V>(varNotifier, eventController: eventController, showLabel: showLabel, showPrefix: showPrefix, showSuffix: showSuffix, isDense: isDense);
+      final config = VarIOFieldConfig<V>(
+        varNotifier,
+        eventController: eventController,
+        showLabel: showLabel,
+        showPrefix: showPrefix,
+        showSuffix: showSuffix,
+        isDense: isDense,
+        markPushOnSubmit: markPushOnSubmit,
+      );
       return _VarIOField<V>._(config);
     }
 
@@ -41,9 +50,18 @@ abstract interface class VarIOField extends StatelessWidget {
     bool showPrefix = false,
     bool showSuffix = false,
     bool isDense = false,
+    bool markPushOnSubmit = true,
     Key? key,
   }) {
-    return VarIOField(varNotifier, eventController: eventController, showLabel: showLabel, isDense: isDense, showPrefix: showPrefix, showSuffix: showSuffix);
+    return VarIOField(
+      varNotifier,
+      eventController: eventController,
+      showLabel: showLabel,
+      isDense: isDense,
+      showPrefix: showPrefix,
+      showSuffix: showSuffix,
+      markPushOnSubmit: markPushOnSubmit,
+    );
   }
 
   // factory VarIOField.withMenu(VarNotifier varNotifier, {bool showLabel, bool isDense, bool showPrefix, bool showSuffix, Key? key}) =  ;
@@ -139,6 +157,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
     this.showPrefix = true,
     this.showSuffix = true,
     this.isDense = false,
+    this.markPushOnSubmit = true,
   });
 
   final VarNotifier<dynamic> varNotifier; //should this be cast here?
@@ -151,6 +170,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   final bool showPrefix;
   final bool showSuffix;
   final bool? isDense;
+  final bool markPushOnSubmit;
 
   // control over whether the parameters from VarNotifier are passed
   @override
@@ -185,7 +205,16 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   @override
   ValueGetter<bool> get errorGetter => () => varNotifier.statusIsError;
   @override
-  ValueSetter<V> get valueSetter => (eventController != null) ? eventController!.submitByViewAs<V> : varNotifier.updateByViewAs<V>;
+  ValueSetter<V> get valueSetter {
+    return switch ((eventController != null, markPushOnSubmit)) {
+      (true, true) => eventController!.submitAndPushAs<V>,
+      (true, false) => eventController!.submitByViewAs<V>,
+      (false, true) => varNotifier.pushByViewAs<V>,
+      (false, false) => varNotifier.updateByViewAs<V>,
+    };
+    // return (eventController != null) ? eventController!.submitByViewAs<V> : varNotifier.updateByViewAs<V>;
+  }
+
   @override
   ValueChanged<V> get sliderChanged => varNotifier.updateByViewAs<V>;
   @override
