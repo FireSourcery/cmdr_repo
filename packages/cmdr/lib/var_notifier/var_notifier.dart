@@ -295,8 +295,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   }
 
   // convenience for ValueSetter<T>
-  void pushByViewAs<T>(T typedValue) => (this..updateByViewAs<T>(typedValue))..push();
-
+  void pushByViewAs<T>(T typedValue) => (this..updateByViewAs<T>(typedValue))..push(); // some chance mark occur initiating pull
   void updateByView(V typedValue) => updateByViewAs<V>(typedValue);
 
   ////////////////////////////////////////////////////////////////////////////////
