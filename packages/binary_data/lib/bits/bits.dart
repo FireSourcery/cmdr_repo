@@ -25,6 +25,7 @@ extension type const Bits(int _bits) implements int {
   Bits.ofIndexMap(Map<Enum, bool> map) : this.ofIndexPairs(map.entries.map((e) => (e.key.index, e.value)));
   Bits.ofIndexed(Iterable<bool> values) : _bits = values.foldIndexed<int>(0, (index, previous, element) => previous.withBoolAt(index, element)); // first element is index 0
 
+  // isSet
   bool get isNotZero => (_bits != 0);
   bool get isZero => (_bits == 0);
 
@@ -49,9 +50,6 @@ extension type const Bits(int _bits) implements int {
   Bits withEach(Iterable<(Bitmask mask, int value)> entries) => entries.fold<Bits>(this, (previous, element) => previous.withBits(element.$1, element.$2));
   Bits withEachBit(Iterable<(int index, int value)> entries) => entries.fold<Bits>(this, (previous, element) => previous.withBitAt(element.$1, element.$2));
   Bits withEachBool(Iterable<(int index, bool value)> entries) => entries.fold<Bits>(this, (previous, element) => previous.withBoolAt(element.$1, element.$2));
-
-  // int operator [](int index) => bitAt(index);
-  // void operator []=(int index, int value) => setBitAt(index, value);
 }
 
 // function of a single number, object methods over top level math functions
@@ -140,11 +138,10 @@ abstract mixin class BitsBase {
 
   int get width;
 
-  // @override
-  // int operator [](dynamic key) => bits.getBits(key.bitmask);
-  // @override
-  // void operator []=(dynamic key, int value) => bits = bits.withBits(key.bitmask, value);
-  // int getBits(Bitmask mask) => bits.getBits(mask);
+  // int operator [](Bitmask index) => bitAt(index);
+  // void operator []=(Bitmask index, int value) => setBitAt(index, value);
+
+  int getBits(Bitmask mask) => bits.getBits(mask);
 
   void setBits(Bitmask mask, int value) => bits = bits.withBits(mask, value);
   void setBitsAt(int offset, int width, int value) => bits = bits.withBitsAt(offset, width, value);

@@ -26,7 +26,7 @@ abstract mixin class TypedField<T extends NativeType> {
   int get end => offset + size; // index of the last byte + 1
   // int get valueMax => (1 << width) - 1);
 
-  /// [BitStruct]
+  /// [WordStruct]
   // Bitmask asBitmask() => Bitmask.bytes(offset, size);
 
   /// [ByteStruct]
@@ -35,9 +35,10 @@ abstract mixin class TypedField<T extends NativeType> {
   // T must handled in it's local scope. No type inference when passing `Field` to ByteData
   int getWord(ByteData byteData) => byteData.wordAt<T>(offset);
   void setWord(ByteData byteData, int value) => byteData.setWordAt<T>(offset, value);
+  bool testWordBoundsOf(ByteData byteData) => end <= byteData.lengthInBytes;
+
   int? getWordOrNull(ByteData byteData) => byteData.wordOrNullAt<T>(offset);
   bool setWordOrNot(ByteData byteData, int value) => byteData.setWordOrNotAt<T>(offset, value);
-  bool testWordBoundsOf(ByteData byteData) => end <= byteData.lengthInBytes;
 
   @override
   int get defaultValue => 0;

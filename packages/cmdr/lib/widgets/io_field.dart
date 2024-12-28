@@ -312,11 +312,14 @@ class _IOFieldTextState<T> extends State<IOFieldText<T>> {
 
   late final ValueSetter<String> submitText = switch (T) { const (int) || const (double) || const (num) => submitTextNum, const (String) => submitTextString, _ => throw TypeError() };
 
+  // num? validNum(String numString) {
+  // if (num.tryParse(numString) case num numValue when numValue.clamp(widget.numMin, widget.numMax) == numValue) return numValue;
+  // return null; // null or out of bounds
+  // }
+
   /// num type
   num? validNum(String numString) {
-    // if (num.tryParse(numString) case num numValue when numValue.clamp(widget.numMin, widget.numMax) == numValue) return numValue;
-    if (num.tryParse(numString) case num numValue) return numValue.clamp(widget.numMin, widget.numMax);
-    return null; // null or out of bounds
+    return num.tryParse(numString)?.clamp(widget.numMin, widget.numMax);
   }
 
   // optionally use to clamp bounds 'as-you-type'

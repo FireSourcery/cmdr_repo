@@ -75,6 +75,11 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   // stringifyAs
   String valueStringAs<T>() => varKey.stringify<T>(valueAs<T>());
 
+  @override
+  T subtypeOf<T>(num value) => varKey.subtypeOf<T>(value);
+  @override
+  num valueOfSubtype<T>(T value) => varKey.valueOfSubtype<T>(value);
+
   ////////////////////////////////////////////////////////////////////////////////
   @override
   String toString() => '${describeIdentity(this)}(`${varKey.label}`)($value = $numValue)';
@@ -97,7 +102,6 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   /// values are already nullable
   /// additionally all mutability is contained in a single layer. cache preallocate can be immutable
   /// by default get from varKey. resolve in constructor to cached values derived from varKey
-
   int get dataKey;
   int Function(int binary)? signExtension;
   ViewOfData? viewOfData; // num conversion only, null for Enum and Bits
@@ -105,8 +109,6 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   ({num min, num max})? numLimits; //  view base limits, still effective for non-num V, if set
   List<Enum>? enumRange; // for enum conversion only. other range bound types, e.g String, provide by enum.
   List<BitField>? bitsKeys; // for bits conversion only.
-  // S Function<S>(num value)?  subtypeOfView;
-  // V Function(num value)?  subtypeOfView;
 
   @override
   String toString() => '${describeIdentity(this)}($value)';
@@ -119,25 +121,17 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   num clamp(num value) => (numLimits != null) ? value.clamp(numLimits!.min, numLimits!.max) : value;
 
   Enum enumOf(int value) => enumRange?.elementAtOrNull(value) ?? VarValueEnum.unknown;
-  BitStruct<BitField> bitFieldsOf(int value) => BitConstruct<BitStruct, BitField>(bitsKeys ?? const <BitField>[], value as Bits);
+  BitStruct bitFieldsOf(int value) => BitConstruct<BitStruct, BitField>(bitsKeys ?? const <BitField>[], value as Bits);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// User defined subtypes
   /// Returns the as the exact type, to account for user defined method on that type
-  //  Subtype return nullable,
-  //    a constructor is provided
-  //    a default value is provided
-  //    a prototype object is provided
+  T subtypeOf<T>(num value) => throw UnsupportedError('valueAsSubtype: $T');
+  num valueOfSubtype<T>(T value) => throw UnsupportedError('viewOfSubtype: $T');
 
-  // if a default is not provided, the return must be R?, returning common Meta will be type error
-  // V? enumSubtypeOf(int value) => enumRange?.elementAtOrNull(value) as V?; // returns null if varName is not associated with enum value type
-  // V? bitsSubtypeOf(int value) => (bitsKeys != null) ? BitStructClass(bitsKeys!).castBits(value) as V? : null;
-  // S subtypeValueOf<S>(int value) ; //pass this via pointer?
-
-  T valueAsSubtype<T>() => throw UnsupportedError('valueAsSubtype: $T'); //pass this via pointer?
-  // T Function<T>(num value) valueAsSubtype; //pass this via pointer?
-
+  ////////////////////////////////////////////////////////////////////////////////
   /// runtime variables
+  ////////////////////////////////////////////////////////////////////////////////
   // clear on response
   bool isPushPending = false; // pushUpdateFlag, isLastUpdateByView
   void push() => isPushPending = true;
@@ -148,6 +142,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   bool get isPollingMarked => (_isPollingMarked || hasListeners) && !isPushPending;
   set isPollingMarked(bool value) => _isPollingMarked = value;
 
+  bool isPullComplete = true;
   // void pull() => _isPollingMarked = true;
 
   // if separating internal and external status
@@ -225,7 +220,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   @protected
   Enum get valueAsEnum => enumOf(valueAsInt);
   @protected
-  BitStruct<BitField> get valueAsBitFields => bitFieldsOf(valueAsInt);
+  BitStruct get valueAsBitFields => bitFieldsOf(valueAsInt);
   @protected
   Uint8List get valueAsBytes => Uint8List(8)..buffer.asByteData().setUint64(0, valueAsInt, Endian.big);
   @protected
@@ -245,7 +240,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
       const (BitsBase) => valueAsBitFields,
       const (BitStruct) => valueAsBitFields,
       const (String) => valueAsString,
-      _ => valueAsSubtype<R>(),
+      _ => subtypeOf<R>(numValue),
     } as R;
   }
 
@@ -273,8 +268,9 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
       const (bool) => (typedValue as bool) ? 1 : 0,
       const (Enum) => (typedValue as Enum).index,
       const (BitsBase) => (typedValue as BitsBase).bits,
-      _ when typedValue is Enum => (typedValue as Enum).index,
-      _ when typedValue is BitsBase => (typedValue as BitsBase).bits,
+      _ => valueOfSubtype<T>(typedValue),
+      // _ when typedValue is Enum => (typedValue as Enum).index,
+      // _ when typedValue is BitsBase => (typedValue as BitsBase).bits,
       // const (dynamic) => switch (typedValue) {
       //     num value => clamp(value),
       //     bool value => (value) ? 1 : 0,
@@ -285,7 +281,8 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
       _ => throw UnsupportedError('valueAs: $T'),
     };
 
-    // isPushPending = true;
+    // isPushPending = true; //
+
     // if (typedValue case num input when input != numValue) statusCode = 1;
     // asserts view is set with proper bounds
     // assert(!((typedValue is num) && (_clamp(typedValue) != numValue)));
@@ -294,6 +291,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
     // assert((varKey.binaryFormat?.min != null) ? (dataValue >= varKey.binaryFormat!.min) : true);
   }
 
+  // may not be needed after push pending moved
   // convenience for ValueSetter<T>
   void pushByViewAs<T>(T typedValue) => (this..updateByViewAs<T>(typedValue))..push(); // some chance mark occur initiating pull
   void updateByView(V typedValue) => updateByViewAs<V>(typedValue);

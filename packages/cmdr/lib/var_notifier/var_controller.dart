@@ -126,9 +126,20 @@ class VarRealTimeController extends VarCacheController {
 
   // wait for an user initiated write to resolve
   Future<void> writeBatchCompleted(VarKey varKey) async {
+    // while (cache[varKey]!.isPushPending) {
+    //   await Future.delayed(const Duration(milliseconds: 10)); // wait some duration before every check
+    // }
     await Future.doWhile(() async {
       await Future.delayed(const Duration(milliseconds: 10)); // wait some duration before every check
       return (cache[varKey]!.isPushPending);
+    });
+  }
+
+  Future<void> readBatchCompleted(VarKey varKey) async {
+    cache[varKey]!.isPullComplete = false;
+    await Future.doWhile(() async {
+      await Future.delayed(const Duration(milliseconds: 10)); // wait some duration before every check
+      return (cache[varKey]!.isPullComplete);
     });
   }
 }

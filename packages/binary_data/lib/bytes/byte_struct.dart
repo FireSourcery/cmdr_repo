@@ -98,19 +98,18 @@ abstract mixin class ByteField<V extends NativeType> implements TypedField<V>, F
   const factory ByteField(int offset) = _ByteField<V>;
 
   // replaced by ffi.Struct
-  // applyGet
+  // getThis
   @override
   int getIn(ByteData byteData) => byteData.wordAt<V>(offset);
   @override
   void setIn(ByteData byteData, int value) => byteData.setWordAt<V>(offset, value);
   // not yet replaceable
   @override
+  bool testBoundsOf(ByteData byteData) => end <= byteData.lengthInBytes;
+  @override
   int? getInOrNull(ByteData byteData) => byteData.wordOrNullAt<V>(offset);
   @override
   bool setInOrNot(ByteData byteData, int value) => byteData.setWordOrNotAt<V>(offset, value);
-
-  @override
-  bool testBoundsOf(ByteData byteData) => end <= byteData.lengthInBytes;
 }
 
 class _ByteField<V extends NativeType> with TypedField<V>, ByteField<V> {

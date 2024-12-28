@@ -92,6 +92,7 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
   // double decimal(int bytes) => signed(bytes) / reference;
 }
 
+//numOfBinary, binaryOfNum
 typedef ViewOfData = num Function(int data);
 typedef DataOfView = int Function(num view);
 

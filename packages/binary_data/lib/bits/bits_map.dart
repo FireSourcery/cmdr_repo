@@ -10,7 +10,7 @@ part 'bool_map.dart';
 
 /// Common interface for [BitFieldMap, [BoolMap].
 /// A special case of [FixedMap], all values retrieve from a [Bits] object
-abstract interface class BitsMap<K, V> with MapBase<K, V> implements FixedMap<K, V> {
+abstract interface class BitsMap<K, V> with MapBase<K, V>, FixedMap<K, V> {
   const BitsMap._(this.keys);
 
   factory BitsMap.of(List<K> keys, [int bits = 0, bool mutable = true]) {

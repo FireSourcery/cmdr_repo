@@ -162,21 +162,3 @@ class _ButtonBorderSide implements WidgetStateProperty<BorderSide?> {
     return border;
   }
 }
-
-// extension MaterialStateSet on Set<MaterialState> {
-//   bool get isHovered => contains(MaterialState.hovered);
-//   bool get isFocused => contains(MaterialState.focused);
-//   bool get isPressed => contains(MaterialState.pressed);
-// }
-
-// ElevatedButton button(DriveShiftSelect direction, String label, ButtonStyle style) {
-//   final isSelect = (driveSelect == direction);
-//   final isErrorSelect = (errorSelect == direction);
-//   final color = isSelect ? (selectedColor) : (isErrorSelect ? errorColor : unselectedColor);
-//   final borderSide = (isSelect || isErrorSelect) ? borderSide2 : borderSide1;
-//   return ElevatedButton(
-//     onPressed: () => handleSelect(direction),
-//     style: style.copyWith(side: MaterialStatePropertyAll(borderSide), backgroundColor: MaterialStatePropertyAll(color)),
-//     child: Text(label, textAlign: TextAlign.center, style: widget.letterStyle),
-//   );
-// }

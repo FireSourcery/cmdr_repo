@@ -29,6 +29,8 @@ abstract mixin class VarKey implements ValueKey<int> {
   List<VarKey>? get dependents;
 
   VarStatus varStatusOf(int code); // should only be one. instances shared
+  T subtypeOf<T>(num value) => throw UnsupportedError('valueAsSubtype: $T');
+  num valueOfSubtype<T>(T value) => throw UnsupportedError('viewOfSubtype: $T');
 
   String stringify<V>(V value);
   // String stringify<V>(V? value);

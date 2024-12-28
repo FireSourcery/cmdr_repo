@@ -48,3 +48,9 @@ extension MapExt<K, V extends Object> on Map<K, V> {
   Iterable<V> eachOf(Iterable<K> keys) => keys.map<V?>((e) => this[e]).nonNulls;
   Iterable<V> having(PropertyFilter<K>? property) => eachOf(keys.havingProperty(property));
 }
+
+extension ReverseMap<T> on Iterable<T> {
+  Map<V, T> asReverseMap<V>(V Function(T) mappedValueOf) {
+    return Map.unmodifiable(<V, T>{for (var value in this) mappedValueOf(value): value});
+  }
+}

@@ -2,6 +2,7 @@ import 'package:meta/meta.dart';
 
 import 'package:type_ext/index_map.dart';
 import 'package:type_ext/struct.dart';
+import 'package:type_ext/basic_ext.dart';
 
 import 'bit_field.dart';
 export 'bit_field.dart';
@@ -122,28 +123,43 @@ mixin BitStructAsSubtype<S extends BitStruct<K>, K extends BitField> on BitStruc
 ////////////////////////////////////////////////////////////////////////////////
 /// Wrapper with all interfaces
 ////////////////////////////////////////////////////////////////////////////////
-class BitConstruct<S extends BitStruct<K>, K extends BitField> extends ConstBitStruct<K> with BitStruct<K> {
+class BitConstruct<S extends BitStruct<K>, K extends BitField> extends ConstBitStruct<K> implements BitStruct<K> {
   const BitConstruct(this.keys, super.bits);
+
+  BitConstruct.initWith(this.keys, Map<K, int> initializer) : super(initializer.bits);
+
   BitConstruct.castBase(BitStruct<K> super.struct)
       : keys = struct.keys,
         super.castBase();
 
+  // const BitConstruct.typed({this.keys, S Function(value) constructor = BitConstruct.generic, super.bits});
   // BitConstruct.generic(bitsKeys ?? const <BitField>[], value as Bits);
+  // const BitConstruct.generic(super.bits) : keys = const [];
 
   @override
   final List<K> keys;
+  // final S Function(Bits) constructor;
+  // S constructor(Bits bits) => BitConstruct<S, K>(keys, bits);
 
-  // final S _this;
+  // final S struct;
 
   @override
   BitStruct<K> copyWithBits(Bits value) => BitConstruct<BitStruct<K>, K>(keys, value);
   @override
   BitConstruct<S, K> copyWith() => BitConstruct<S, K>(keys, bits);
+
+  // @override
+  // BitConstruct<S, K> withField(K key, int value);
+  // @override
+  // BitConstruct<S, K> withEntries(Iterable<MapEntry<K, int>> entries) =>
+  // @override
+  // BitConstruct<S, K> withAll(Map<K, int> map) =>
 }
 
+// or equivalently
 // Keys list effectively define type and act as factory
 // Separates subtype `class variables` from instance
-// extension type const BitStructClass<T extends BitStruct, K extends BitField>(List<T> keys) { as subtype
+// extension type const BitStructClass<S extends BitStruct, T extends BitField>(List<T> keys) { as subtype
 // extension type const BitStructClass<T extends BitField>(List<T> keys) {
 //   // BitStruct<T> castBase(BitsBase base) {
 //   //   return switch (base) {
@@ -174,43 +190,16 @@ class BitConstruct<S extends BitStruct<K>, K extends BitField> extends ConstBitS
 //   }
 // }
 
-/// constructor compile time constant by wrapping Map.
-/// alternatively use final and compare using value
-///
-/// for cast of compile time const definition using map literal
-/// BitStruct<EnumType> example = BitsInitializer({
-///   EnumType.name1: 2,
-///   EnumType.name2: 3,
-/// });
-///
-typedef BitsInitializer<T extends BitField> = Map<T, int>;
-
-extension BitsInitializerMethods on BitsInitializer {
-  int get width => keys.map((e) => e.bitmask).totalWidth;
-  Bits get bits => Bits.ofEntries(bitsEntries); // in order to init using const Map, bits must be derived at run time
-}
-
 /// can be implemented on Enum to give each const Bits an Enum Id and String name
 /// optionally use BitsInitializer to simplfiy compile time const
 abstract mixin class EnumBits<K extends BitField> implements Enum {
   // per instance
   BitsInitializer<K> get initializer; // define as const using initializer
-  Bits get bits => initializer.bits;
+  // Bits get bits => initializer.bits;
+  Bits get bits;
 
   // or build lookup map
-  static Map<int, EnumBits<K>> buildReverseMap<K extends BitField>(List<EnumBits<K>> enumValues) {
-    return Map.unmodifiable({for (final enumId in enumValues) enumId.bits: enumId});
-  }
 
-  // Map<int, EnumBits> get reverseMap;
-  // EnumBitsFactory<K> get factory;
-
-  List<K> get bitFields; // per class
-
-  BitStruct<K> asBitStruct() => BitConstruct<BitStruct<K>, K>(bitFields, bits);
-}
-
-extension type const EnumBitsFactory<K extends BitField>(Map<int, EnumBits<K>> reverseMap) {
-  EnumBitsFactory.of(List<EnumBits<K>> keys) : reverseMap = EnumBits.buildReverseMap(keys);
-  EnumBits<K>? idOf(Bits bits) => reverseMap[bits];
+  // List<K> get bitFields; // per class
+  // BitStruct<K> asBitStruct() => BitConstruct<BitStruct<K>, K>(bitFields, bits);
 }

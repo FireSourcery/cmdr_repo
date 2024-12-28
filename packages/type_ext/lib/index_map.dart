@@ -3,6 +3,9 @@ export 'dart:collection';
 
 /// [FixedMap] - interface for Map constraints
 /// FixedMap - fixed set of keys
+///   optimized for small fixed set of keys
+///   guarantees all keys are present
+///   can guarantee non null return - if V is defined as non nullable
 abstract mixin class FixedMap<K, V> implements Map<K, V> {
   const FixedMap();
 
@@ -18,25 +21,31 @@ abstract mixin class FixedMap<K, V> implements Map<K, V> {
   V remove(covariant K key);
 
   // List<V>? get defaultValues;
+  // FixedMap<K, V> clone() => IndexMap<K, V>(this);
 
-  /// Convenience methods
   // Iterable<(K, V)> get pairs => keys.map((e) => (e, this[e]));
-  // Iterable<({K key, V value})> get fields => keys.map((e) => (key: e, value: this[e]));
-  // FixedMap<K, V> clone() => ProxyIndexMap<K, V>(this);
+}
 
+mixin FixedMapWith<K, V> on FixedMap<K, V> {
   // analogous to operator []=, but returns a new instance
-  // FixedMap<K, V> withField(K key, V value) => (ProxyIndexMap<K, V>(this)..[key] = value);
-  // //
-  // FixedMap<K, V> withEach(Iterable<MapEntry<K, V>> newEntries) => ProxyIndexMap<K, V>(this)..addEntries(newEntries);
-  // // A general values map representing external input, may be a partial map
-  // FixedMap<K, V> withAll(Map<K, V> map) => ProxyIndexMap<K, V>(this)..addAll(map);
+  FixedMap<K, V> withField(K key, V value) => (IndexMap<K, V>.castBase(this)..[key] = value);
+  //
+  FixedMap<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => IndexMap<K, V>.castBase(this)..addEntries(newEntries);
+  // A general values map representing external input, may be a partial map
+  FixedMap<K, V> withAll(Map<K, V> map) => IndexMap<K, V>.castBase(this)..addAll(map);
 }
 
 /// [IndexMap]
 /// Default implementation using parallel arrays
+///
+/// buffer a struct list of values
+/// necessary before the subtype memory layout is known
+/// double buffers, however, it can optimize for multiple replacements before copying to the subtype object
+///
 /// Mutable
 /// K must have .index property
-class IndexMap<K extends dynamic, V> with MapBase<K, V> implements FixedMap<K, V> {
+///
+class IndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
   // default by assignment, initialize const using list literal
   const IndexMap._(this._keysReference, this._valuesBuffer) : assert(_keysReference.length == _valuesBuffer.length);
 
@@ -47,8 +56,6 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V> implements FixedMap<K, V
 
   IndexMap.filled(List<K> keys, V fill) : this._(keys, List<V>.filled(keys.length, fill, growable: false));
 
-  // static IndexMap<K1, V1?> _nullFilled<K1, V1>(List<K1> keys) => IndexMap<K1, V1?>.filled(keys, null);
-
   // possibly with nullable entries value V checking key for default value first
   IndexMap.fromEntries(List<K> keys, Iterable<MapEntry<K, V>> entries)
       : assert(keys.every((key) => entries.map((entry) => entry.key).contains(key))),
@@ -56,10 +63,13 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V> implements FixedMap<K, V
         _valuesBuffer = List.from((IndexMap<K, V?>.filled(keys, null)..addEntries(entries))._valuesBuffer);
 
   // default copyFrom implementation
-  IndexMap.castBase(IndexMap<K, V?> state) : this._(state.keys, List<V>.from(state.values, growable: false));
+  IndexMap.castBase(FixedMap<K, V?> state) : this._(state.keys, List<V>.from(state.values, growable: false));
+  // IndexMap.copyFrom(FixedMap<K, V?> state) : this._(state.keys, List<V>.from(state.values, growable: false));
 
-  final List<K> _keysReference;
-  final List<V> _valuesBuffer; // non growable List
+  // static IndexMap<K1, V1?> nullable<K1, V1>(List<K1> keys) => IndexMap<K1, V1?>.filled(keys, null);
+
+  final List<K> _keysReference; // pointer to original
+  final List<V> _valuesBuffer; // allocate new non growable List
   // final List<V>? _defaultValues;
 
   @override
@@ -98,23 +108,23 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V> implements FixedMap<K, V
   // IndexMap<K, V> toMap() => IndexMap<K, V>.castBase(this);
 }
 
-/// IndexMapWith -
+/// IndexMap With -
 /// default copyWith implementation via replacement/override List
-/// a builder surrogate optimize for case replacing a single, or few entries
+///
+/// In case IndexMap is unmodifiable
+/// a builder surrogate for multiple replacements before copying to the subtype object.
 ///
 /// create a new view with an additionally allocated iterable or IndexMap for replacements.
-/// necessary before the subtype memory layout is known
-///
-/// double buffers, however, it can optimize for multiple replacements before copying to the subtype object
 ///
 /// same as cast + modified
 ///
 /// does not need to wrap general maps, general maps are must be converted first to guarantee all keys are present
 ///
-class ProxyIndexMap<K extends dynamic, V> with MapBase<K, V> implements FixedMap<K, V> {
+class ProxyIndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
   const ProxyIndexMap._(this._source, this._modified);
   ProxyIndexMap(FixedMap<K, V> source) : this._(source, IndexMap<K, V?>.filled(source.keys, null));
 
+  // express synchronous creation before returning the new instance
   ProxyIndexMap.field(FixedMap<K, V> source, K key, V value) : this._(source, IndexMap<K, V?>.filled(source.keys, null)..[key] = value);
   ProxyIndexMap.entry(FixedMap<K, V> source, MapEntry<K, V> modified) : this._(source, IndexMap<K, V?>.filled(source.keys, null)..addEntries([modified]));
   ProxyIndexMap.entries(FixedMap<K, V> source, Iterable<MapEntry<K, V>> modified) : this._(source, IndexMap<K, V?>.filled(source.keys, null)..addEntries(modified));
