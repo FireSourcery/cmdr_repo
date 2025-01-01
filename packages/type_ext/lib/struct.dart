@@ -167,7 +167,7 @@ typedef FieldEntry<K, V> = ({K key, V value});
 // abstract interface class EnumField<V> implements Enum, Field<V> {}
 
 /// [Construct]
-///   keys as a data member.
+///   keys as a data member. library side create a structview
 // can be created without extending
 // Scope with T so copyWith can return a consistent type
 // handler with class variables,
@@ -334,7 +334,6 @@ extension type StructView<K extends Field, V>(Object _this) {
   V get(Field key) => key.getIn(_this); // valueOf(Field key);
   @protected
   void set(Field key, V value) => key.setIn(_this, value);
-
   @protected
   bool testBounds(Field key) => key.testBoundsOf(_this);
 
@@ -370,23 +369,20 @@ extension type StructView<K extends Field, V>(Object _this) {
 }
 
 // effectively extends StructView with FixedMap
-// extension type MapStruct<K extends Field, V>(FixedMap<K, V> _this) implements StructView<K, V> {
-//   MapStruct.cast(List<K> keys, StructView<K, V> struct) : _this = IndexMap.of(keys, struct.fieldValues(keys));
-//   // MapStruct.of(List<K> keys, Iterable<V> values) : _this = IndexMap.of(keys, values);
+extension type MapStruct<K extends Field, V>(FixedMap<K, V> _this) implements StructView<K, V> {
+  MapStruct.cast(List<K> keys, StructView<K, V> struct) : _this = IndexMap.of(keys, struct.fieldValues(keys));
+  // MapStruct.of(List<K> keys, Iterable<V> values) : _this = IndexMap.of(keys, values);
 
-//   @protected
-//   V get(Field key) => _this[key as K]; // valueOf(Field key); // by map[index]
-//   @protected
-//   void set(Field key, V value) => _this[key as K] = value;
+  @protected
+  V get(Field key) => _this[key as K]; // valueOf(Field key); // by map[index]
+  @protected
+  void set(Field key, V value) => _this[key as K] = value;
 
-//   // V? getOrNull(Field key);
-//   // bool setOrNot(Field key, V value);
-
-//   // immutable `with` copy operations, via IndexMap
-//   // analogous to operator []=, but returns a new instance
-//   StructView<K, V> withField(K key, V value) => (ProxyIndexMap<K, V>(_this)..[key] = value) as StructView<K, V>;
-//   //
-//   StructView<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => (ProxyIndexMap<K, V>(_this)..addEntries(newEntries)) as StructView<K, V>;
-//   // A general values map representing external input, may be a partial map
-//   StructView<K, V> withAll(Map<K, V> map) => (ProxyIndexMap<K, V>(_this)..addAll(map)) as StructView<K, V>;
-// }
+  // immutable `with` copy operations, via IndexMap
+  // analogous to operator []=, but returns a new instance
+  StructView<K, V> withField(K key, V value) => (IndexMap<K, V>.castBase(_this)..[key] = value) as StructView<K, V>;
+  //
+  StructView<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => (IndexMap<K, V>.castBase(_this)..addEntries(newEntries)) as StructView<K, V>;
+  // A general values map representing external input, may be a partial map
+  StructView<K, V> withAll(Map<K, V> map) => (IndexMap<K, V>.castBase(_this)..addAll(map)) as StructView<K, V>;
+}

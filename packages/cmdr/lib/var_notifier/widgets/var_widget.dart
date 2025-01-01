@@ -131,6 +131,7 @@ class VarKeyBuilder extends StatelessWidget {
   }
 }
 
+// alternatively caller handle get cache from context
 /// Retrieves VarNotifier/Controller using VarKey via InheritedWidget/BuildContext
 /// if the callers context/class does not directly contain the VarCache,
 /// [VarContext] and [VarKeyContext] must be provided.

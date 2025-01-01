@@ -9,7 +9,7 @@ class ChartLegend extends StatelessWidget {
         listenable = controller;
 
   final List<ChartEntry> entries;
-  final Listenable listenable; // notifier for Entries
+  final Listenable listenable; // controller tick
   final Widget Function(BuildContext context, ChartEntry entry, Widget entryWidget)? builder; // optional wrapper for legend entry
   final ChartStyle? style;
 

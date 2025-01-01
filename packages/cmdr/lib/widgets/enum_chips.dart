@@ -50,18 +50,21 @@ class MultiSelectChips<T> extends StatelessWidget {
   const MultiSelectChips({
     super.key,
     required this.selectable,
-    required this.onSelected,
     required this.selectionState,
     this.selectMax,
     // this.initialSelected,
     this.labelBuilder,
     this.spacing = 10,
+    this.onSelected,
   });
 
   final List<T> selectable;
   // final ValueSetter<({T property, bool isSelected})> onSelected;
   // final ValueGetter<Set<T>> selectedProperties; // alternatively change to widget holds state
-  final ValueSetter<T?> onSelected;
+
+  // final ValueSetter<T>? onAdd;
+  // final ValueSetter<T>? onRemove;
+  final ValueSetter<T>? onSelected;
   final Set<T> selectionState;
   final int? selectMax;
   // final Iterable<T>? initialSelected;
@@ -86,7 +89,7 @@ class MultiSelectChips<T> extends StatelessWidget {
               } else {
                 selectionState.remove(key);
               }
-              onSelected(value ? key : null); // onSelected((property: property, isSelected: value));
+              onSelected?.call(key);
             },
           ),
       ],

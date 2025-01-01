@@ -159,16 +159,21 @@ abstract class ByteConstruct<T> {
 
   final ByteStruct structData;
 
-  ByteStructClass<T, ByteField<NativeType>> get structClass; // includes keys
+  ByteStructClass<T, ByteField<NativeType>> get structClass;
 
   // @override
-  // void clear() => throw UnimplementedError();
+  // int operator [](covariant ByteField<NativeType> key) => structData[key];
+  // @override
+  // void operator []=(covariant ByteField<NativeType> key, int value)  => structData[key] = value;
+  // @override
+  // void clear()  => structData.clear();
+  // @override
+  // List<ByteField<NativeType>> get keys => structClass.keys;
+  // @override
+  // int remove(covariant ByteField<NativeType> key)  => structData.remove(key);
 
   // @override
   // ByteStruct<K> copyWith() => this;
-
-  // @override
-  // List<K> get keys => throw UnimplementedError();
 }
 
 // typedef StructCaster<T> = T Function(TypedData typedData);

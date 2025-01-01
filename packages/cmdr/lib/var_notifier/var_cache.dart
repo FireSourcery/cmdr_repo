@@ -114,6 +114,7 @@ class VarCache {
 
   void addPolling(Iterable<VarKey> keys) => varsOf(keys).forEach((element) => element.isPollingMarked = true);
   void removePollingAll() => _cache.forEach((_, element) => element.isPollingMarked = false);
+  void selectPolling(Iterable<VarKey> keys) => (this..removePollingAll())..addPolling(keys);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Collective Data Read
@@ -196,7 +197,7 @@ class VarCache {
   @visibleForTesting
   void printCache() {
     print(this);
-    _cache.forEach((key, value) => print('{ ${value.varKey} : var: $value }'));
+    _cache.forEach((key, value) => print('{ ${value.varKey} : $value }'));
   }
 }
 

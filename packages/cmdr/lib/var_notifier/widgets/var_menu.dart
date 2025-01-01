@@ -50,6 +50,7 @@ class VarSelectableBuilder<T extends VarKey> extends StatelessWidget {
   final VarCache? varCache;
 
   // Widget keyBuilder(BuildContext _, VarKey value, Widget? __) => VarKeyBuilder(value, builder, varCache: varCache);
+  // Widget keyBuilder(BuildContext _, VarKey value, Widget? __) => builder(varCache!.allocate(value)); // alternatively by cache only.
 
   @override
   Widget build(BuildContext context) {

@@ -46,10 +46,9 @@ abstract mixin class VarKey implements ValueKey<int> {
   /// View Widgets properties
 
   // @override
-  // String toString() {
-  //   // return '[$runtimeType: <$value>]';
-  //   return '[$runtimeType ${binaryFormat?.viewType.type} <$value>]';
-  // }
+  String toString() {
+    return '$runtimeType<${binaryFormat?.viewType.type}>(`$label` $value)';
+  }
 }
 
 // enum VarReadWrite {

@@ -66,8 +66,6 @@ class TypedDataBuffer implements BytesBuilder {
 }
 
 // alternative implementation for fragmented trailing buffer
-// @protected
-// Uint8List dataView; // used to hold length, probably change to int
 // disallow changing dataView as pointer directly, caller use length
 // int get viewLength => dataView.lengthInBytes;
 // @protected

@@ -16,6 +16,7 @@ class BottomSheetButton extends StatefulWidget {
   State<BottomSheetButton> createState() => BottomSheetButtonState();
 }
 
+/// Public. [selectedBottomSheet] can be set to a new widget to change the bottom sheet.
 class BottomSheetButtonState extends State<BottomSheetButton> {
   late final double appBarHeight = Scaffold.of(context).appBarMaxHeight ?? 137;
   late final double sheetHeight = MediaQuery.of(context).size.height / 3 + appBarHeight;
@@ -35,6 +36,7 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
   late Widget? fab = fabOpen;
   late PersistentBottomSheetController bottomSheetController;
   // late Widget prevBottomSheet = widget.initialBottomSheet;
+  late Widget? selectedBottomSheet = widget.child;
 
   void onClosed() {
     if (mounted) {
@@ -44,12 +46,14 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
     }
   }
 
+  Widget _bottomSheetBuilder(BuildContext context) => Padding(padding: EdgeInsets.only(top: (widget.iconClose.size ?? 0) / 2), child: selectedBottomSheet ?? widget.child);
+
   void expand([Widget? child]) {
-    Widget bottomSheetBuilder(BuildContext context) => Padding(padding: EdgeInsets.only(top: appBarHeight), child: child ?? widget.child);
+    if (child != null) selectedBottomSheet = child;
     setState(() {
       fab = fabClose;
     });
-    bottomSheetController = Scaffold.of(context).showBottomSheet(bottomSheetBuilder, enableDrag: true, constraints: BoxConstraints.expand(height: sheetHeight));
+    bottomSheetController = Scaffold.of(context).showBottomSheet(_bottomSheetBuilder, enableDrag: true, constraints: BoxConstraints.expand(height: sheetHeight));
     bottomSheetController.closed.whenComplete(onClosed);
   }
 

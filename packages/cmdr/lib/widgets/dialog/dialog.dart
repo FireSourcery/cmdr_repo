@@ -136,7 +136,6 @@ class SelectionDialog<E> extends StatefulWidget {
     this.selectMax,
     this.iconColor,
     required this.selectable,
-    this.onSelected,
     this.labelBuilder,
     this.selectionState,
     this.initialSelected,
@@ -147,7 +146,8 @@ class SelectionDialog<E> extends StatefulWidget {
   // MultiSelectChips
   final List<E> selectable; // must be a new list, iterable non-primitives do not add to set properly
   final Set<E>? selectionState;
-  final ValueSetter<E?>? onSelected;
+  // final ValueSetter<E>? onAdd;
+  // final ValueSetter<E>? onRemove;
   final Iterable<E>? initialSelected;
   final int? selectMax;
   final ValueWidgetBuilder<E>? labelBuilder;
@@ -167,9 +167,9 @@ class _SelectionDialogState<E> extends State<SelectionDialog<E>> {
 
   Set<E> onConfirm() => selected;
 
-  void onSelected(E? value) {
+  void onSelected(E value) {
     setState(() {});
-    widget.onSelected?.call(value);
+    // widget.onSelected?.call(value);
   }
 
   @override
@@ -181,11 +181,11 @@ class _SelectionDialogState<E> extends State<SelectionDialog<E>> {
       iconColor: widget.iconColor,
       content: MultiSelectChips<E>(
         selectable: widget.selectable,
-        onSelected: onSelected,
         selectionState: selected,
         selectMax: widget.selectMax,
         // initialSelected: widget.initialSelected,
         labelBuilder: widget.labelBuilder,
+        onSelected: onSelected,
       ),
     );
   }

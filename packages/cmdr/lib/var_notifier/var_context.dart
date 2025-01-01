@@ -5,48 +5,7 @@ import 'package:type_ext/basic_types.dart';
 
 import 'var_notifier.dart';
 
-/// Maps VarKey to VarController or sub-VarContext which contains VarCacheController
-/// There can only be 1 KeyContext Type. Any number of instances can exist in the Widget tree.
-///
-/// this way VarKey does not need to include context as dependency
-final class VarKeyContext extends InheritedWidget {
-  const VarKeyContext({super.key, required this.contextTypeOfVarKey, required super.child});
-
-  static VarKeyContext? maybeOf(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<VarKeyContext>();
-  }
-
-  static VarKeyContext of(BuildContext context) {
-    final VarKeyContext? result = maybeOf(context);
-    assert(result != null, 'No $VarKeyContext found in context');
-    return result!;
-  }
-
-  /// User provides function - using control type properties to determine the [VarContext] and [VarCacheController] type
-  // effectively provides varKey.contextType, without directly including type in VarKey, as that results in dependency of view layer
-
-  /// slight workaround for `T extends VarContext`
-  final TypeRestrictedKey<VarContext, VarContext> Function(VarKey) contextTypeOfVarKey;
-
-  // Alternatively, controllers per keyContext, instead of search by context type
-  // // holds the cache allocations
-  // // VarCacheController Type to CacheController
-  // final Map<Type, VarCacheController> controllers;
-  // T? controller<T extends VarCacheController>() => controllers[T] as T?;
-
-  // passing control from user to library
-  // Alternative to map key to controller,
-  // This way is modular, and enforces a condensed map
-  // final TypeKey<VarCacheController> Function(VarKey) controllerTypeOfVarKey;
-
-  // returned controller is the type determined by the varKey. caller cast to sub type for subtype methods
-  // VarCacheController? controllerOf(VarKey varKey) => controllerTypeOfVarKey(varKey).callWithRestrictedType(controller);
-
-  @override
-  bool updateShouldNotify(covariant VarKeyContext oldWidget) => false;
-}
-
-/// For additional sub contexts
+/// Get [VarCacheController] via Context
 // abstract class VarContext<T extends VarContext<dynamic>> extends InheritedWidget { //alternatively pass parameter type
 abstract class VarContext extends InheritedWidget {
   const VarContext({super.key, required this.cacheController, required super.child});
@@ -91,6 +50,47 @@ class VarRealTimeContext extends VarContext {
 
 //   static T of<T extends VarConfigContext>(BuildContext context) => VarContext.of<T>(context);
 // }
+
+/// Maps VarKey to VarController or sub-VarContext which contains VarCacheController
+/// There can only be 1 KeyContext Type. Any number of instances can exist in the Widget tree.
+///
+/// this way VarKey does not need to include context as dependency
+final class VarKeyContext extends InheritedWidget {
+  const VarKeyContext({super.key, required this.contextTypeOfVarKey, required super.child});
+
+  static VarKeyContext? maybeOf(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<VarKeyContext>();
+  }
+
+  static VarKeyContext of(BuildContext context) {
+    final VarKeyContext? result = maybeOf(context);
+    assert(result != null, 'No $VarKeyContext found in context');
+    return result!;
+  }
+
+  /// User provides function - using control type properties to determine the [VarContext] and [VarCacheController] type
+  // effectively provides varKey.contextType, without directly including type in VarKey, as that results in dependency of view layer
+
+  /// slight workaround for `T extends VarContext`
+  final TypeRestrictedKey<VarContext, VarContext> Function(VarKey) contextTypeOfVarKey;
+
+  // Alternatively, controllers per keyContext, instead of search by context type
+  // // holds the cache allocations
+  // // VarCacheController Type to CacheController
+  // final Map<Type, VarCacheController> controllers;
+  // T? controller<T extends VarCacheController>() => controllers[T] as T?;
+
+  // passing control from user to library
+  // Alternative to map key to controller,
+  // This way is modular, and enforces a condensed map
+  // final TypeKey<VarCacheController> Function(VarKey) controllerTypeOfVarKey;
+
+  // returned controller is the type determined by the varKey. caller cast to sub type for subtype methods
+  // VarCacheController? controllerOf(VarKey varKey) => controllerTypeOfVarKey(varKey).callWithRestrictedType(controller);
+
+  @override
+  bool updateShouldNotify(covariant VarKeyContext oldWidget) => false;
+}
 
 extension VarKeyMapper on VarKey {
   VarNotifier varFrom(BuildContext context) => VarContext.ofKey(context, this).cacheController.cache.allocate(this);

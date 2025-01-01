@@ -24,7 +24,8 @@ class LineData {
   }
 
   // lazy generate view, a buffered FlSpot may be dynamically allocated, or passthrough values as references
-  Iterable<Point<double>> mapAsPoints(List<double> timeData) => values.mapIndexed((index, element) => Point(timeData[index], element));
+  // Iterable<Point<double>> mapAsPoints(List<double> timeData) => values.mapIndexed((index, element) => Point(timeData[index], element));
+  Iterable<Point<double>> mapAsPoints(List<double> timeData) => Iterable.generate(min(timeData.length, values.length), (index) => Point(timeData[index], values[index]));
 
   factory LineData.fromJson(Map<String, Object?> json) {
     if (json
@@ -71,7 +72,7 @@ class ChartData {
   // include 1 initial point as it is required by the view
   ChartData.zero({required this.linesMax, required this.samplesMax, Iterable<String>? lineNames})
       : assert((lineNames?.length ?? 0) <= linesMax),
-        timeData = LineData.capacity('time', samplesMax)..update(0.0),
+        timeData = LineData.capacity('time', samplesMax)..update(0.0), // start with 1 element for tMin
         lineEntries = [
           if (lineNames != null)
             for (final name in lineNames) LineData.capacity(name, samplesMax)..update(0.0)
@@ -84,7 +85,7 @@ class ChartData {
   final int samplesMax; // common entry length max
 
   // calculate once per update
-  int get excessLength => max(0, (timeData.values.length - samplesMax));
+  int get excessLength => max(0, (timeData.values.length - samplesMax + 1)); // length <= max - 1 before add
 
   void updateTime(double time, int excess) {
     timeData.update(time, excess);
@@ -94,23 +95,23 @@ class ChartData {
     lineEntries[index].update(value, excess);
   }
 
-  void clear() {
-    timeData
-      ..clear()
-      ..update(0.0);
-    for (final line in lineEntries) {
-      line
-        ..clear()
-        ..update(0.0);
-    }
-  }
+  // void zero() {
+  //   timeData
+  //     ..clear()
+  //     ..update(0.0);
+  //   for (final line in lineEntries) {
+  //     line
+  //       ..clear()
+  //       ..update(0.0);
+  //   }
+  // }
 
   void addEntry(String name) {
     if (lineEntries.length < linesMax) lineEntries.add(LineData.capacity(name, samplesMax)..update(0.0));
   }
 
   void replaceEntries(Iterable<String> entries) {
-    // clear();
+    (timeData..clear()).update(0.0);
     lineEntries.clear();
     entries.forEach(addEntry);
   }

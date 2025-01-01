@@ -55,11 +55,10 @@ class ChartController with TimerNotifier, ChangeNotifier {
     // _yMin = value;
     // _yMax = value;
     stop();
-    chartEntries.clear();
-    chartEntries.addAll(entries);
+    (chartEntries..clear()).addAll(entries);
     chartData.replaceEntries(entries.map((e) => e.name));
-    // stopwatch.reset();
-    notifyListeners();
+    stopwatch.reset();
+    // notifyListeners();
   }
 
   // void updateViewRange() {
@@ -160,17 +159,21 @@ class ChartController with TimerNotifier, ChangeNotifier {
 
   // List<FlSpot> flSpotsViewOf(int index) => UnmodifiableListView(chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y)));
   List<FlSpot> _flSpotsViewOf(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y))];
-  List<FlSpot> _flSpotsViewOfAsScalar(int index) => [
-        ...chartData.lineDataPoints(index).map((e) {
-          if (chartEntries.elementAtOrNull(index)?.normalRef case double value when value.isFinite) {
-            return FlSpot(e.x, e.y / value);
-          } else {
-            return FlSpot(e.x, 0);
-          }
-          // return FlSpot(e.x, e.y / (chartEntries.elementAtOrNull(index)?.normalRef ?? 1));
-        })
-      ];
-  List<FlSpot> flSpotsViewOf(int index) => (useScalarView) ? _flSpotsViewOfAsScalar(index) : _flSpotsViewOf(index);
+  List<FlSpot> _flSpotsViewOfAsScalar(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y / chartEntries[index].normalRef))];
+  // ...chartData.lineDataPoints(index).map((e) {
+  //   // if (chartEntries.elementAtOrNull(index)?.normalRef case double ref) {
+  //   if (chartEntries[index].normalRef case double ref) {
+  //     assert(ref.isFinite);
+  //     return FlSpot(e.x, e.y / ref);
+  //   } else {
+  //     return FlSpot(e.x, 0);
+  //   }
+  //   // return FlSpot(e.x, e.y / (chartEntries.elementAtOrNull(index)?.normalRef ?? 1));
+  // })
+  List<FlSpot> flSpotsViewOf(int index) {
+    if (index >= chartData.lineEntries.length) return [];
+    return (useScalarView) ? _flSpotsViewOfAsScalar(index) : _flSpotsViewOf(index);
+  }
 
   /// todo visual options with notify
   FlDotData configDotData = const FlDotData(show: true);
@@ -239,7 +242,7 @@ class ChartEntry {
     this.onSelect,
     this.preferredPrecision,
     this.normalRef = 1,
-  });
+  }) : assert(normalRef != 0);
 
   final String name;
   final ValueGetter<num> valueGetter;
