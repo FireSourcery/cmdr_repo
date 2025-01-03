@@ -31,6 +31,7 @@ abstract mixin class EnumMap<K extends Enum, V> implements FixedMap<K, V> {
     if (valueOf != null) {
       return keys.asReverseMap(valueOf);
     } else {
+      assert(V == int, 'EnumMap: $V must be defined for reverseMap');
       return keys.asMap() as Map<V, K>; // index by default
     }
   }

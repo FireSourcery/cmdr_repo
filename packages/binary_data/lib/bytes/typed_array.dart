@@ -33,6 +33,7 @@ extension type const TypedArray<T extends TypedData>._(T _this) implements Typed
   // TypedArray.word([int? value]) : this(8);
 
   // sublist with extendable length
+  // length in T size
   factory TypedArray.from(TypedData data, [int? length]) {
     final byteLength = (length != null) ? length * bytesPerElementOf<T>() : data.lengthInBytes;
     return TypedArray<T>.cast(Uint8List(byteLength)..setAll(0, Uint8List.sublistView(data, 0, byteLength)));
@@ -165,6 +166,7 @@ extension GenericSublistView on TypedData {
 
   // handles R as dynamic as `this` type, while sublistView throws error
   // offset uses type of 'this', not R type.
+  // todo as offset, length
   R asTypedArray<R extends TypedData>([int typedOffset = 0, int? end]) => TypedArray<R>.cast(this, typedOffset, end).asThis; // return empty list if offset > length by default?
   R? asTypedArrayOrNull<R extends TypedData>([int typedOffset = 0, int? end]) => testBounds(typedOffset, end) ? asTypedArray<R>(typedOffset, end) : null;
 
@@ -206,7 +208,7 @@ extension GenericSublistView on TypedData {
   // R callAsThis<R>(R Function<T extends TypedData>() callback) => typeRestrictedKey.callWithRestrictedType(callback);
 
   // sublistView as 'this' type
-  TypedData? seek(int index) => typeRestrictedKey.callWithRestrictedType(<G extends TypedData>() => asTypedArrayOrNull<G>(index));
+  // TypedData? seek(int index) => typeRestrictedKey.callWithRestrictedType(<G extends TypedData>() => asTypedArrayOrNull<G>(index));
 
   // IntList only
   String asString() => typeRestrictedKey.callWithRestrictedType(<G extends TypedData>() => asIntListOrEmpty<G>()).asString();

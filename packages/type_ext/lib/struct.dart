@@ -90,7 +90,7 @@ abstract mixin class Structure<K extends Field, V> /* with MapBase<K, V>, FixedM
 }
 
 class StructMap<K extends Field, V> extends IndexMap<K, V> with Structure<K, V> {
-  StructMap(Structure<K, V> struct) : super.of(struct.keys, struct.keys.map((key) => struct.field(key)));
+  StructMap(Structure<K, V> struct) : super.of(struct.keys, struct.valuesOf(struct.keys));
   // StructMap.ofMap(super.map) : super.castBase();
 }
 
@@ -167,7 +167,7 @@ typedef FieldEntry<K, V> = ({K key, V value});
 // abstract interface class EnumField<V> implements Enum, Field<V> {}
 
 /// [Construct]
-///   keys as a data member. library side create a structview
+///   keys + meta as a data member. library side create a structview
 // can be created without extending
 // Scope with T so copyWith can return a consistent type
 // handler with class variables,
@@ -180,14 +180,26 @@ typedef FieldEntry<K, V> = ({K key, V value});
 //  - StructView interface
 //  - withX copy methods
 // // T as StrutBase or StructView
-// class Construct<K extends Field, V> with MapBase<K, V>, FixedMap<K, V> {
 @immutable
 // class Construct<T extends Structure<K, V>, K extends Field, V> extends Structure<K, V> {
+// class Construct<K extends Field, V> with MapBase<K, V>, FixedMap<K, V> {
 class Construct<T extends Structure<K, V>, K extends Field, V> with MapBase<K, V>, FixedMap<K, V>, Structure<K, V> {
   Construct({
     required this.keys,
     required this.structData,
+    this.constructor,
   });
+
+  // Construct.generic({
+  //   required this.keys,
+  //   required this.structData,
+  // }); // T is Structure<K, V> base
+
+  // Construct.t({
+  //   required this.keys,
+  //   required this.structData,
+  //   this.constructor,
+  // });
 
   // Construct.fromKeys({
   //   required this.keys,
@@ -196,11 +208,17 @@ class Construct<T extends Structure<K, V>, K extends Field, V> with MapBase<K, V
   // a signature for user override
   // Construct.castBase(StructBase<K, V> base) : this(struct: base, keys: const []);
 
-  // Construct.castBase(Structure<K, V> base)
-  //     : this(
-  //         structData: base as T,
-  //         keys: base.keys,
-  //       );
+  Construct.castBase(Structure<K, V> base)
+      : this(
+          structData: base,
+          keys: base.keys,
+        );
+
+  Construct.copyFrom(Structure<K, V> base)
+      : this(
+          structData: StructMap<K, V>(base),
+          keys: base.keys,
+        );
 
   // factory Construct.fromJson(List<K> keys, Map<String, Object?> json) {
   //   // if (keys is List<EnumField<V>>) {
@@ -212,19 +230,22 @@ class Construct<T extends Structure<K, V>, K extends Field, V> with MapBase<K, V
   //   // throw UnsupportedError('Only EnumField is supported');
   // }
 
-  // Construct.fromEntries
-
   final List<K> keys;
+  final Structure<K, V> structData; // or object
+  final T Function(Structure<K, V>)? constructor;
   // dynamic classVariables;
-  final T structData; // or object
-  // final T Function(StructView) caster;
   // final int lengthMax;
 
-  // T create() =>   ;
-  // final T Function( ) constructor => IndexMap<K, V>. of(keys, values);
+  // T create() =>
 
-  //  T constructor( )   => IndexMap<K, V>. of(keys, values);
+  // T constructor() => IndexMap<K, V>. of(keys, values);
   // T constructor() => StructMap<K, V>(this);
+  // Structure<K, V> _constructor(Structure<K, V> base) => Construct<Structure<K, V>, K, V>(keys: keys, structData: base);
+
+  // T construct(Structure<K, V> base) => constructor?.call(base) ?? Construct<Structure<K, V>, K, V>.castBase(base) as T;
+  // T construct(Structure<K, V> base) => constructor?.call(base) ?? StructMap<K, V>(base) as T;
+
+  // Construct<T, K, V> copyWithBase(Structure<K, V> base) => Construct<T, K, V>.castBase(constructor?.call(base) ?? StructMap<K, V>(base));
 
   Type get structType => T;
 
@@ -330,22 +351,23 @@ class Construct<T extends Structure<K, V>, K extends Field, V> with MapBase<K, V
 // extension type cannot include abstract methods, or implement interfaces
 // cannot define copyWith without context of Keys
 extension type StructView<K extends Field, V>(Object _this) {
+  List<K> get keys => throw UnimplementedError(); // override in child class
+
   @protected
   V get(Field key) => key.getIn(_this); // valueOf(Field key);
   @protected
   void set(Field key, V value) => key.setIn(_this, value);
   @protected
+  //containsField
   bool testBounds(Field key) => key.testBoundsOf(_this);
 
   @protected
   V? getOrNull(Field key) => testBounds(key) ? get(key) : null;
   @protected
   bool setOrNot(Field key, V value) {
-    if (testBounds(key)) {
-      set(key, value);
-      return true;
-    }
-    return false;
+    if (!testBounds(key)) return false;
+    set(key, value);
+    return true;
   }
 
   V operator [](K key) => get(key);

@@ -24,6 +24,11 @@ abstract mixin class FixedMap<K, V> implements Map<K, V> {
   // FixedMap<K, V> clone() => IndexMap<K, V>(this);
 
   // Iterable<(K, V)> get pairs => keys.map((e) => (e, this[e]));
+
+  // @override
+  // bool containsKey(covariant K key) {
+  //   return keys.contains(key);
+  // }
 }
 
 mixin FixedMapWith<K, V> on FixedMap<K, V> {

@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 part of 'var_notifier.dart';
 
 /// Map Service to VarCache
@@ -147,10 +148,16 @@ class VarRealTimeController extends VarCacheController {
 ////////////////////////////////////////////////////////////////////////////////
 /// if a single var update is required. Batch updates via VarCacheController handles most cases.
 /// call service immediately
+/// value will not be synced with cache
 ////////////////////////////////////////////////////////////////////////////////
-abstract mixin class VarSingleController {
-  VarNotifier<dynamic> get varNotifier;
-  ServiceIO<int, int, int> get protocolService;
+class VarSingleController {
+  VarSingleController({
+    required this.varNotifier,
+    required this.protocolService,
+  });
+
+  final VarNotifier<dynamic> varNotifier;
+  final ServiceIO<int, int, int> protocolService;
 
   // async send request id, then receiving value
   Future<void> read() async {

@@ -158,6 +158,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
     this.showSuffix = true,
     this.isDense = false,
     this.markPushOnSubmit = true,
+    //readonly
   });
 
   final VarNotifier<dynamic> varNotifier; //should this be cast here?

@@ -1,30 +1,35 @@
 import 'dart:typed_data';
 
-void memCpy(TypedData destination, TypedData source, int lengthInBytes) {
-  Uint8List.sublistView(destination).setAll(0, Uint8List.sublistView(source, 0, lengthInBytes));
-}
+// void memCpy(TypedData destination, TypedData source, int lengthInBytes) {
+//   Uint8List.sublistView(destination).setAll(0, Uint8List.sublistView(source, 0, lengthInBytes));
+// }
 
-void copyMemory(TypedData destination, TypedData source, [int? lengthInBytes]) {
-  final effectiveLength = (lengthInBytes ?? source.lengthInBytes).clamp(0, destination.lengthInBytes);
-  memCpy(destination, source, effectiveLength);
-}
+// void copyMemory(TypedData destination, TypedData source, [int? lengthInBytes]) {
+//   final effectiveLength = (lengthInBytes ?? source.lengthInBytes).clamp(0, destination.lengthInBytes);
+//   memCpy(destination, source, effectiveLength);
+// }
 
-void copyMemoryRange(TypedData destination, TypedData source, [int destOffset = 0, int? lengthInBytes]) {
-  final effectiveLength = (lengthInBytes ?? source.lengthInBytes).clamp(0, destination.lengthInBytes - destOffset);
-  Uint8List.sublistView(destination).setAll(destOffset, Uint8List.sublistView(source, 0, effectiveLength));
-}
+// void copyMemoryRange(TypedData destination, TypedData source, [int destOffset = 0, int? lengthInBytes]) {
+//   final effectiveLength = (lengthInBytes ?? source.lengthInBytes).clamp(0, destination.lengthInBytes - destOffset);
+//   Uint8List.sublistView(destination).setAll(destOffset, Uint8List.sublistView(source, 0, effectiveLength));
+// }
 
-/// More efficiently without new view
 extension Uint8ListExt on Uint8List {
-  void copyMax(TypedData source, [int? length]) {
-    final effectiveLength = (length ?? source.lengthInBytes).clamp(0, lengthInBytes);
-    setAll(0, Uint8List.sublistView(source, 0, effectiveLength));
-  }
+  /// More efficiently without new view
+  /// length in source type
+  ///     final byteLength = (length != null) ? length * bytesPerElementOf<T>() : data.lengthInBytes;
+  // void copy(TypedData source, [int? length]) => setAll(0, Uint8List.sublistView(source, 0, length));
 
-  void copyRange(TypedData source, [int index = 0, int? length]) {
-    final effectiveLength = (length ?? source.lengthInBytes).clamp(0, lengthInBytes - index);
-    setAll(index, Uint8List.sublistView(source, 0, effectiveLength));
-  }
+  // // length cannot exceed source length
+  // void copyMax(TypedData source, [int? length]) {
+  //   final effectiveLength = (length ?? source.lengthInBytes).clamp(0, lengthInBytes);
+  //   setAll(0, Uint8List.sublistView(source, 0, effectiveLength));
+  // }
+
+  // void copyRangeMax(TypedData source, [int index = 0, int? length]) {
+  //   final effectiveLength = (length ?? source.lengthInBytes).clamp(0, lengthInBytes - index);
+  //   setAll(index, Uint8List.sublistView(source, 0, effectiveLength));
+  // }
 
   // skip() returning a list
   Uint8List? seekIndex(int index) => (index > -1) ? Uint8List.sublistView(this, index) : null;
@@ -34,10 +39,11 @@ extension Uint8ListExt on Uint8List {
 
 extension TypedDataExt on TypedData {
   /// this method uses length, not end, unlike setAll/setRange
-  void copyMax(TypedData source, [int? lengthInBytes]) => Uint8List.sublistView(this).copyMax(source, lengthInBytes);
-  void copyRange(TypedData source, [int index = 0, int? lengthInBytes]) => Uint8List.sublistView(this).copyRange(source, index, lengthInBytes);
+  // void copyMax(TypedData source, [int? lengthInBytes]) => Uint8List.sublistView(this).copyMax(source, lengthInBytes);
+  // void copyRange(TypedData source, [int index = 0, int? lengthInBytes]) => Uint8List.sublistView(this).copyRange(source, index, lengthInBytes);
 
-  Uint8List asUint8List([int offsetInBytes = 0, int? length]) => Uint8List.sublistView(this, offsetInBytes, length);
+  // Uint8List asUint8List([int offsetInBytes = 0, int? length]) => Uint8List.sublistView(this, offsetInBytes, offsetInBytes + (length ?? 0));
+  Uint8List asUint8List([int offsetInBytes = 0, int? length]) => buffer.asUint8List(this.offsetInBytes + offsetInBytes, length);
   // Int8List asInt8List([int offsetInBytes = 0, int? length]);
   // Uint8ClampedList asUint8ClampedList([int offsetInBytes = 0, int? length]);
   // Uint16List asUint16List([int offsetInBytes = 0, int? length]);

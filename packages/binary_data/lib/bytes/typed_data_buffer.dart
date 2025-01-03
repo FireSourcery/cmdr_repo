@@ -51,7 +51,7 @@ class TypedDataBuffer implements BytesBuilder {
   }
 
   @override
-  void addByte(int byte) {}
+  void addByte(int byte) => bufferAsBytes[viewLength++] = byte;
 
   /// return must be processed before next add
   @override
