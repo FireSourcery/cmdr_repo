@@ -15,7 +15,7 @@ class VarButton extends StatelessWidget with VarNotifierViewer<int> {
   final String? labelOverwrite;
   final int writeValue;
 
-  void onPressed() => varNotifier.updateByView(writeValue);
+  void onPressed() => varNotifier.updateByViewAs<int>(writeValue);
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +45,7 @@ class VarSlider extends StatelessWidget with VarNotifierViewer<double> {
 
   @override
   final VarNotifier<dynamic> varNotifier;
-  final VarEventController? eventController;
+  final VarCacheNotifier? eventController;
 
   Widget builder(BuildContext context, Widget? child) {
     // must be num defined if type is numeric

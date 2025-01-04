@@ -278,7 +278,6 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
       //     BitsBase value => value.bits,
       //     _ => throw UnsupportedError(' '),
       //   },
-      _ => throw UnsupportedError('valueAs: $T'),
     };
 
     // isPushPending = true; //
@@ -294,7 +293,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // may not be needed after push pending moved
   // convenience for ValueSetter<T>
   void pushByViewAs<T>(T typedValue) => (this..updateByViewAs<T>(typedValue))..push(); // some chance mark occur initiating pull
-  void updateByView(V typedValue) => updateByViewAs<V>(typedValue);
+  // void updateByView(V typedValue) => updateByViewAs<V>(typedValue);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Json param config

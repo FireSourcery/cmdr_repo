@@ -45,7 +45,7 @@ abstract mixin class VarNotifierViewer<V> {
 abstract mixin class VarEventViewer<V> /* implements VarNotifierViewer<V> */ {
   const VarEventViewer();
 
-  VarEventController get eventController;
+  VarCacheNotifier get eventController;
 
   // VarNotifier<V>? get varNotifier => eventController.varNotifier;
 

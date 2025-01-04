@@ -34,6 +34,8 @@ abstract mixin class BitIndexField implements BitField {
   // int get defaultValue => 0;
 }
 
+typedef BitFieldEntry<K extends BitField> = FieldEntry<K, int>;
+
 // alternatively BitsKey implements Bitmask
 // then these are not needed
 extension BitKeysMethods on Iterable<BitField> {
@@ -53,8 +55,6 @@ extension BitsMapMethods on Map<BitField, int> {
 extension BitsEntrysMethods on Iterable<MapEntry<BitField, int>> {
   Iterable<MapEntry<Bitmask, int>> get bitsEntries => map((e) => MapEntry(e.key.bitmask, e.value));
 }
-
-typedef BitFieldEntry<K extends BitField, V> = FieldEntry<K, V>;
 
 /// constructor compile time constant by wrapping Map.
 /// alternatively use final and compare using value

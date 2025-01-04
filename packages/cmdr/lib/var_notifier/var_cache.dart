@@ -1,7 +1,7 @@
 part of 'var_notifier.dart';
 
 ////////////////////////////////////////////////////////////////////////////////
-/// VarCache - Model of Client Side Entity
+/// [VarCache] - Model of Client Side Entity
 ///   map views to shared listenable value
 ///   visible/active on pages
 ///   Read/Write Vars => use for stream and synced view
@@ -41,7 +41,7 @@ class VarCache {
   // final Map<VarKey, VarNotifier> _cache; // this way keys are retained, access without going through var
   // final Set<VarKey>? preallocatedKeys; // retain if generated,
 
-  // using default status ids unless overridden
+  // override for subtype
   @mustBeOverridden
   VarNotifier<dynamic> constructor(covariant VarKey varKey) => VarNotifier.of(varKey);
 
@@ -58,8 +58,9 @@ class VarCache {
 
   /// current listeners would need to reattach to the new VarNotifier
   VarNotifier reallocate(VarKey varKey) {
-    return _cache.update(varKey.value, (_) {
-      _cache[varKey.value]?.dispose();
+    return _cache.update(varKey.value, (value) {
+      // _cache[varKey.value]?.dispose();
+      value.dispose(); // remove listeners
       return constructor(varKey);
     });
   }
@@ -107,10 +108,13 @@ class VarCache {
   Iterable<VarKey> get varKeys => _cache.values.map((e) => e.varKey);
   Iterable<VarNotifier> get varEntries => _cache.values;
 
+//
   /// for filter on keys, alternatively caller filter on entries
   Iterable<VarNotifier> varsOf(Iterable<VarKey> keys) => keys.map<VarNotifier?>((e) => this[e]).nonNulls;
   // Iterable<VarNotifier> varsHaving(PropertyFilter<VarKey>? property) => varsOf(varKeys.havingProperty(property));
   // Iterable<VarNotifier> varsHaving<T extends VarKey>(PropertyFilter<T>? property) => varsOf(varKeys.havingProperty(property));
+
+  // Iterable<VarNotifier> get varsUpdatedByView => varEntries.where((e) => e.isPushPending);
 
   void addPolling(Iterable<VarKey> keys) => varsOf(keys).forEach((element) => element.isPollingMarked = true);
   void removePollingAll() => _cache.forEach((_, element) => element.isPollingMarked = false);
@@ -127,6 +131,8 @@ class VarCache {
   ////////////////////////////////////////////////////////////////////////////////
   Iterable<(int, int)> dataPairsOf(Iterable<VarKey> keys) => varsOf(keys).map((e) => e.dataPair);
   Iterable<(int, int)> get dataPairs => _cache.values.map((e) => e.dataPair);
+
+  // Iterable<(int, int)> get updatedDataPairs => _cache.values.map((e) => e.dataPair);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Collective Data Read Response - Update by Packet
@@ -151,15 +157,20 @@ class VarCache {
     }
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
-  /// Collective updateByView
-  ///   Single update use VarValue directly
-  ////////////////////////////////////////////////////////////////////////////////
-  void updateByView(Iterable<(VarKey, dynamic)> pairs) {
-    for (final (varKey, value) in pairs) {
-      _cache[varKey.value]?.updateByView(value);
-    }
+  // ////////////////////////////////////////////////////////////////////////////////
+  // /// Collective updateByView
+  // ///   Single update use VarValue directly
+  // ////////////////////////////////////////////////////////////////////////////////
+  void updateDependentsOf(VarKey key, num Function(VarKey dependent) valueOf) {
+    // update(key.dependents ?? []);
+    key.dependents?.forEach((dependent) => this[dependent]?.updateByViewAs<num>(valueOf(dependent)));
   }
+
+  // void updateByView(Iterable<(VarKey, dynamic)> pairs) {
+  //   for (final (varKey, value) in pairs) {
+  //     _cache[varKey.value]?.updateByView(value);
+  //   }
+  // }
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Json
@@ -214,15 +225,15 @@ mixin VarDependents on VarCache {
 // }
 
 ////////////////////////////////////////////////////////////////////////////////
-/// VarHandler, VarViewer
-/// [VarEventController] - a controller for a single [VarNotifier] with context of [VarCache]
-/// A notifier separate from [VarNotifier.value] [updateByView] updates, for UI events
+/// [VarCacheNotifier] - with context of [VarCache]
+/// A notifier separate from [VarNotifier.value] [updateByView] updates
+///    UI events
 ///    Var selection - e.g. change select with Menu
 ///    Submit notifier - e.g. generating dialog
 ///    Updating dependents residing in the same VarCache
 ////////////////////////////////////////////////////////////////////////////////
-class VarEventController with ChangeNotifier implements ValueNotifier<VarViewEvent> {
-  VarEventController({required this.varCache, this.varNotifier});
+class VarCacheNotifier with ChangeNotifier implements ValueNotifier<VarViewEvent> {
+  VarCacheNotifier({required this.varCache, this.varNotifier});
   // VarEventController.byKey({required this.varCache, required VarKey varKey}) : varNotifier = varCache.allocate(varKey);
 
   final VarCache varCache; // a reference to the cache containing this varNotifier
@@ -238,27 +249,12 @@ class VarEventController with ChangeNotifier implements ValueNotifier<VarViewEve
   @override
   VarViewEvent get value => _value;
   // always update value, even if the same
+
   @override
   set value(VarViewEvent newValue) {
     _value = newValue;
     notifyListeners();
   }
-
-  ////////////////////////////////////////////////////////////////////////////////
-  ///
-  ////////////////////////////////////////////////////////////////////////////////
-  // update Var by VarKey, notify with parent class
-  // caller update Stream when using realtime
-
-  // VarNotifier open(VarKey varKey);
-  // void close(VarKey varKey);
-  // VarNotifier replace(VarKey add, VarKey remove);
-
-  // Future<void> select(VarKey key) async {
-  //   // varNotifier = varCache.replace(key, varNotifier?.varKey);
-  //   value = VarViewEvent.select;
-  //   // await cacheController.updatePeriodicStream([key]);
-  // }
 
   // void notifyDependents(VarKey key) => varCache.updateDependents(varNotifier!.varKey);
 
@@ -285,7 +281,15 @@ class VarEventController with ChangeNotifier implements ValueNotifier<VarViewEve
     // cacheController.push(varNotifier!.varKey);
   }
 
-//  void submitEntryByViewAs<T>(VarKey key, T varValue)
+  void submitEntryAs<T>(VarKey key, T varValue) {
+    varCache[key]?.updateByViewAs<T>(varValue);
+    // if varCache has mixin VarDependents, update dependents
+    if (varCache case VarDependents typedCache) {
+      typedCache.updateDependents(varNotifier!.varKey);
+    }
+    //isSubmittedByView
+    value = VarViewEvent.submit;
+  }
 }
 
 enum VarViewEvent {

@@ -19,7 +19,7 @@ class VarInputDialog extends StatelessWidget {
 
   final VarNotifier varNotifier;
   final VarCache varCache;
-  final VarEventController? eventController;
+  final VarCacheNotifier? eventController;
   final Widget child; // caller may map child callbacks to the same event controller
 
   final String? beginEditMessage;
@@ -33,6 +33,7 @@ class VarInputDialog extends StatelessWidget {
 // Widget? content,
   // optionally include onpop
 
+  // on first time focus
   Widget initialDialog(BuildContext context) {
     final theme = Theme.of(context);
     return AlertDialog(
@@ -53,6 +54,7 @@ class VarInputDialog extends StatelessWidget {
     );
   }
 
+  // on submit
   // if (value == VarViewEvent.submit) matching handled by DialogAnchor
   Widget eventDialog(BuildContext context, VarViewEvent? value) {
     final theme = Theme.of(context);
@@ -76,7 +78,7 @@ class VarInputDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveEventController = eventController ?? VarEventController(varCache: varCache, varNotifier: varNotifier); // DialogAnchor handles dispose / remove listener
+    final effectiveEventController = eventController ?? VarCacheNotifier(varCache: varCache, varNotifier: varNotifier); // DialogAnchor handles dispose / remove listener
 
     if (varNotifier.varKey.dependents != null) {
       // change to conditional

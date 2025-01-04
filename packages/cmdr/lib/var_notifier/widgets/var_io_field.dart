@@ -18,7 +18,7 @@ abstract interface class VarIOField extends StatelessWidget {
   // assigns type, maps additional options to config
   factory VarIOField(
     VarNotifier<dynamic> varNotifier, {
-    VarEventController? eventController,
+    VarCacheNotifier? eventController,
     bool showLabel = true,
     bool showPrefix = true,
     bool showSuffix = true,
@@ -45,7 +45,7 @@ abstract interface class VarIOField extends StatelessWidget {
 
   factory VarIOField.compact(
     VarNotifier varNotifier, {
-    VarEventController? eventController,
+    VarCacheNotifier? eventController,
     bool showLabel = false,
     bool showPrefix = false,
     bool showSuffix = false,
@@ -91,7 +91,7 @@ class VarIOFieldWithMenu<T extends VarKey> extends StatelessWidget {
 
   final FlyweightMenuSource<T> menuSource;
   final T? initialVarKey;
-  final VarEventController? eventController;
+  final VarCacheNotifier? eventController;
 
   Widget _varWidgetBuilder(VarNotifier varNotifier) {
     return VarIOField(varNotifier, eventController: eventController, showLabel: true, isDense: false, showPrefix: true, showSuffix: true);
@@ -162,7 +162,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   });
 
   final VarNotifier<dynamic> varNotifier; //should this be cast here?
-  final VarEventController? eventController;
+  final VarCacheNotifier? eventController;
 
   // alternatively handle in constructor
   // VarIOFieldConfig._(this.varNotifier);

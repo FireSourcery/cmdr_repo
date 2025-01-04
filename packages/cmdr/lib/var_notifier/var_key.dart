@@ -32,6 +32,7 @@ abstract mixin class VarKey implements ValueKey<int> {
   T subtypeOf<T>(num value) => throw UnsupportedError('valueAsSubtype: $T');
   num valueOfSubtype<T>(T value) => throw UnsupportedError('viewOfSubtype: $T');
 
+  // value stringifier
   String stringify<V>(V value);
   // String stringify<V>(V? value);
 

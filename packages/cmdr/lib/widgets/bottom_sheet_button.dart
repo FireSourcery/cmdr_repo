@@ -19,7 +19,6 @@ class BottomSheetButton extends StatefulWidget {
 /// Public. [selectedBottomSheet] can be set to a new widget to change the bottom sheet.
 class BottomSheetButtonState extends State<BottomSheetButton> {
   late final double appBarHeight = Scaffold.of(context).appBarMaxHeight ?? 137;
-  late final double sheetHeight = MediaQuery.of(context).size.height / 3 + appBarHeight;
   late final BottomSheetThemeData theme = Theme.of(context).bottomSheetTheme;
   late final Color color = Theme.of(context).colorScheme.surface;
 
@@ -49,6 +48,7 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
   Widget _bottomSheetBuilder(BuildContext context) => Padding(padding: EdgeInsets.only(top: (widget.iconClose.size ?? 0) / 2), child: selectedBottomSheet ?? widget.child);
 
   void expand([Widget? child]) {
+    late final double sheetHeight = MediaQuery.of(context).size.height / 3 + appBarHeight; // repeat in case of change
     if (child != null) selectedBottomSheet = child;
     setState(() {
       fab = fabClose;

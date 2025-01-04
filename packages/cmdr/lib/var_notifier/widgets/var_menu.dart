@@ -47,7 +47,7 @@ class VarSelectableBuilder<T extends VarKey> extends StatelessWidget {
   final Widget Function(VarNotifier) builder; // May be of type Widget Function<G>(VarNotifier)
   final T? initialVarKey;
   final ValueSetter<T>? onPressed;
-  final VarCache? varCache;
+  final VarCache? varCache; //alternatively, let caller handle retrieval from context.
 
   // Widget keyBuilder(BuildContext _, VarKey value, Widget? __) => VarKeyBuilder(value, builder, varCache: varCache);
   // Widget keyBuilder(BuildContext _, VarKey value, Widget? __) => builder(varCache!.allocate(value)); // alternatively by cache only.

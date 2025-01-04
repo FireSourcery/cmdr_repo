@@ -1,11 +1,10 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 part of 'var_notifier.dart';
 
-/// Map Service to VarCache
-// base type and interface
+/// [VarCache] with [Serivce]
 class VarCacheController {
+  // alternatively extend cache
   const VarCacheController({required this.cache, required this.protocolService});
-  // initCache and dispose handle here?
 
   final VarCache cache;
   final ServiceIO<int, int, int> protocolService;
@@ -36,7 +35,7 @@ class VarCacheController {
   }
 
   ////////////////////////////////////////////////////////////////////////////////
-  /// Collective Write Vars `Update`
+  /// Collective Write Vars `Send/Update`
   ////////////////////////////////////////////////////////////////////////////////
   VarStatus? _onWriteSlice(ServiceSetSlice<int, int, int> slice) {
     if (slice.statuses == null) return null; // no response error
@@ -44,15 +43,24 @@ class VarCacheController {
     return VarStatusDefault.success;
   }
 
+  // return first error, alternatively continue collecting errors in cache
+  Future<VarStatus?> _write(Iterable<(int, int)> pairs) async {
+    await for (final event in protocolService.setAll(pairs)) {
+      if (_onWriteSlice(event) == null) return null;
+    }
+    // await protocolService.setAll(pairs).forEach(_onWriteSlice);
+    return VarStatusDefault.success;
+  }
+
   Iterable<(int, int)> _pairs(Iterable<VarKey>? keys) => cache.dataPairsOf(keys ?? cache.varKeys);
 
   // optionally select keys or both keys and values
-  Future<VarStatus?> writeAll([Iterable<VarKey>? keys]) async {
-    await for (final event in protocolService.setAll(_pairs(keys))) {
-      if (_onWriteSlice(event) == null) return null;
-    }
-    return VarStatusDefault.success;
-  }
+  Future<VarStatus?> writeAll([Iterable<VarKey>? keys]) async => _write(_pairs(keys));
+
+  // separate method, as updated involved varNotifier state
+  Future<VarStatus?> writeUpdated() async => _write(cache.dataPairsOf(cache.varEntries.where((e) => e.isPushPending).map((e) => e.varKey)));
+
+  Future<VarStatus?> write([bool updatedOnly = true]) async => updatedOnly ? writeUpdated() : writeAll();
 
   // Future<VarStatus?> writeEachAs<V>([Iterable<(VarKey, V)>? pairs]) async {
   //   cache.updateByView(pairs!);
@@ -68,8 +76,23 @@ class VarCacheController {
     }
   }
 
+  // Future<V?> readAs<V>(VarKey key) async {
+  //   if (await protocolService.get(key.value) case int value) {
+  //     cache[key]?.updateByData(value);
+  //     return cache[key]?.valueAs<V>();
+  //   }
+  //   return null;
+  // }
+
+  // Future<num?> operator [](VarKey key) async {
+  //   if (await protocolService.get(key.value) case int value) {
+  //     cache[key]?.updateByData(value);
+  //   }
+  //   return cache[key]!.valueAsNum;
+  // }
+
   Future<VarStatus?> writeAs<V>(VarKey key, [V? value]) async {
-    if (value != null) cache[key]?.updateByView(value);
+    if (value != null) cache[key]?.updateByViewAs<V>(value);
     if (await protocolService.set(key.value, cache[key]?.dataValue ?? 0) case int statusValue) {
       return (cache[key]?..updateStatusByData(statusValue))?.status;
     }
