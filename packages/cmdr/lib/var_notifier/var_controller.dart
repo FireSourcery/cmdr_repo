@@ -160,10 +160,10 @@ class VarRealTimeController extends VarCacheController {
   }
 
   Future<void> readBatchCompleted(VarKey varKey) async {
-    cache[varKey]!.isPullComplete = false;
+    cache[varKey]!.isPollComplete = false;
     await Future.doWhile(() async {
       await Future.delayed(const Duration(milliseconds: 10)); // wait some duration before every check
-      return (cache[varKey]!.isPullComplete);
+      return (!cache[varKey]!.isPollComplete);
     });
   }
 }

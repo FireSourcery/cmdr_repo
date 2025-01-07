@@ -142,7 +142,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   bool get isPollingMarked => (_isPollingMarked || hasListeners) && !isPushPending;
   set isPollingMarked(bool value) => _isPollingMarked = value;
 
-  bool isPullComplete = true;
+  bool isPollComplete = true;
   // void pull() => _isPollingMarked = true;
 
   // if separating internal and external status
@@ -182,7 +182,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   /// [dataValue] from packet. convert on transmit only. lazy update on updateByView
   ////////////////////////////////////////////////////////////////////////////////
   int get dataValue => dataOf(numValue);
-  // set dataValue(int value) => updateByData(value);
+  // set dataValue(int value) => numValue = viewOf(dataValue);
 
   // Always accept client data. correction is handled at client side.
   // value over view boundaries handle by UI

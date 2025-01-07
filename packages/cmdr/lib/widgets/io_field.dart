@@ -395,7 +395,7 @@ class _IOFieldTextState<T> extends State<IOFieldText<T>> {
         canRequestFocus: true,
         focusNode: focusNode,
         maxLines: 1,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
         inputFormatters: widget.inputFormatters,
         // onChanged: onChanged,
       ),

@@ -142,7 +142,9 @@ class VarCache {
   void updateByData(Iterable<int> ids, Iterable<int> bytesValuesIn, [Iterable<int>? statusesIn]) {
     assert(bytesValuesIn.length == ids.length);
     for (final (id, value) in Iterable.generate(ids.length, (i) => (ids.elementAt(i), bytesValuesIn.elementAt(i)))) {
-      _cache[id]?.updateByData(value);
+      _cache[id]
+        ?..updateByData(value)
+        ..isPollComplete = true;
     }
   }
 
