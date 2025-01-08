@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 
@@ -6,7 +8,7 @@ typedef AsyncValueSetterWithStatus<T> = Future<bool> Function(T value);
 class DriveShift extends StatefulWidget {
   const DriveShift({this.onSelect, this.confirmSelected, this.initialSelect = DriveShiftSelect.park, super.key});
 
-  final ValueSetter<DriveShiftSelect>? onSelect;
+  final AsyncValueSetter<DriveShiftSelect>? onSelect;
   final AsyncValueGetter<DriveShiftSelect>? confirmSelected;
   // final FutureOr<T> Function()? confirmSelected;
   final DriveShiftSelect initialSelect;
@@ -53,9 +55,15 @@ class _DriveShiftState extends State<DriveShift> {
   late final WidgetStatesController controllerR = WidgetStatesController({if (widget.initialSelect == DriveShiftSelect.reverse) WidgetState.selected});
   late final WidgetStatesController controllerP = WidgetStatesController({if (widget.initialSelect == DriveShiftSelect.park) WidgetState.selected});
 
+  FutureOr<bool> _confirmSelected(DriveShiftSelect select) async {
+    if (widget.confirmSelected != null) return (await widget.confirmSelected!() == select);
+    return true;
+  }
+
   Future<void> handleSelect(DriveShiftSelect select) async {
-    widget.onSelect?.call(select);
-    if ((widget.confirmSelected?.call() ?? select) == select) {
+    DriveShiftSelect? errorSelect;
+    await widget.onSelect?.call(select);
+    if (await _confirmSelected(select)) {
       if (mounted) {
         controllerF.update(WidgetState.selected, (select == DriveShiftSelect.forward));
         controllerN.update(WidgetState.selected, (select == DriveShiftSelect.neutral));
@@ -63,12 +71,14 @@ class _DriveShiftState extends State<DriveShift> {
         controllerP.update(WidgetState.selected, (select == DriveShiftSelect.park));
       }
     } else {
-      if (mounted) {
-        controllerF.update(WidgetState.error, (select == DriveShiftSelect.forward));
-        controllerN.update(WidgetState.error, (select == DriveShiftSelect.neutral));
-        controllerR.update(WidgetState.error, (select == DriveShiftSelect.reverse));
-        controllerP.update(WidgetState.error, (select == DriveShiftSelect.park));
-      }
+      errorSelect = select;
+    }
+
+    if (mounted) {
+      controllerF.update(WidgetState.error, (errorSelect == DriveShiftSelect.forward));
+      controllerN.update(WidgetState.error, (errorSelect == DriveShiftSelect.neutral));
+      controllerR.update(WidgetState.error, (errorSelect == DriveShiftSelect.reverse));
+      controllerP.update(WidgetState.error, (errorSelect == DriveShiftSelect.park));
     }
     // setState(() {});
   }
