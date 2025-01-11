@@ -2,7 +2,8 @@ part of 'var_notifier.dart';
 
 ////////////////////////////////////////////////////////////////////////////////
 /// [VarCache] - Model of Client Side Entity
-///   map views to shared listenable value
+///   map views to shared listenable value -
+///     keeps views in sync, each Var entry occurs only once in the cache.
 ///   visible/active on pages
 ///   Read/Write Vars => use for stream and synced view
 ///   Write-Only Vars => use to maintain synced view only
@@ -33,7 +34,7 @@ class VarCache {
   /// if an Var of the same id is reinserted into the map. the disconnected listeners, need be remapped to the new Var
   /// Widgets using allocate in build will update automatically
   ///
-  // <int, VarNotifier> allows direct access by updateBy
+  // <int, VarNotifier> allows direct access by updateByData
   final Map<int, VarNotifier> _cache;
   final int? lengthMax;
   // final VarNotifier? undefined ;
@@ -86,7 +87,7 @@ class VarCache {
 
   bool get isEmpty => _cache.isEmpty;
   bool contains(VarKey varKey) => _cache.containsKey(varKey.value);
-  void zero() => _cache.forEach((key, value) => value.numValue = 0);
+  void zero() => _cache.forEach((key, value) => value._viewValue = 0);
 
   void dispose() => _cache.forEach((_, value) => value.dispose());
 
@@ -97,7 +98,7 @@ class VarCache {
   ////////////////////////////////////////////////////////////////////////////////
   /// Per Instance
   ////////////////////////////////////////////////////////////////////////////////
-  // would it be faster to use VarKey has as base key? and cache varKey.value in VarNotifier
+  // would it be faster to use VarKey hash as base key? and cache varKey.value in VarNotifier
   VarNotifier? operator [](VarKey varKey) => _cache[varKey.value]; // alternatively ?? undefined;
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -107,18 +108,10 @@ class VarCache {
   // name as 'keys' creates some conflict on cast<>()
   Iterable<VarKey> get varKeys => _cache.values.map((e) => e.varKey);
   Iterable<VarNotifier> get varEntries => _cache.values;
-
-//
-  /// for filter on keys, alternatively caller filter on entries
+  Iterable<VarNotifier> get varsUpdatedByView => varEntries.where((e) => e.lastUpdate == VarLastUpdate.byView);
   Iterable<VarNotifier> varsOf(Iterable<VarKey> keys) => keys.map<VarNotifier?>((e) => this[e]).nonNulls;
   // Iterable<VarNotifier> varsHaving(PropertyFilter<VarKey>? property) => varsOf(varKeys.havingProperty(property));
   // Iterable<VarNotifier> varsHaving<T extends VarKey>(PropertyFilter<T>? property) => varsOf(varKeys.havingProperty(property));
-
-  // Iterable<VarNotifier> get varsUpdatedByView => varEntries.where((e) => e.isPushPending);
-
-  void addPolling(Iterable<VarKey> keys) => varsOf(keys).forEach((element) => element.isPollingMarked = true);
-  void removePollingAll() => _cache.forEach((_, element) => element.isPollingMarked = false);
-  void selectPolling(Iterable<VarKey> keys) => (this..removePollingAll())..addPolling(keys);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Collective Data Read
@@ -130,49 +123,69 @@ class VarCache {
   ///   Individual write use VarController/VarValue Instance
   ////////////////////////////////////////////////////////////////////////////////
   Iterable<(int, int)> dataPairsOf(Iterable<VarKey> keys) => varsOf(keys).map((e) => e.dataPair);
-  Iterable<(int, int)> get dataPairs => _cache.values.map((e) => e.dataPair);
-
-  // Iterable<(int, int)> get updatedDataPairs => _cache.values.map((e) => e.dataPair);
+  Iterable<(int, int)> get dataPairs => varEntries.map((e) => e.dataPair);
+  Iterable<(int, int)> get dataPairsUpdatedByView => varsUpdatedByView.map((e) => e.dataPair);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Collective Data Read Response - Update by Packet
   ////////////////////////////////////////////////////////////////////////////////
   // calling function checks packet length, data
   // returned values should be lists
-  void updateByData(Iterable<int> ids, Iterable<int> bytesValuesIn, [Iterable<int>? statusesIn]) {
-    assert(bytesValuesIn.length == ids.length);
-    for (final (id, value) in Iterable.generate(ids.length, (i) => (ids.elementAt(i), bytesValuesIn.elementAt(i)))) {
-      _cache[id]
-        ?..updateByData(value)
-        ..isPollComplete = true;
+  // void updateByData(Iterable<int> ids, Iterable<int> valuesIn, [bool overwriteUpdateByView = false]) {
+  void updateByData(Iterable<int> ids, Iterable<int> valuesIn) {
+    assert(valuesIn.length == ids.length);
+    for (final (id, value) in Iterable.generate(ids.length, (i) => (ids.elementAt(i), valuesIn.elementAt(i)))) {
+      if (_cache[id] case VarNotifier varNotifier) {
+        // Prevent sending results of fetch/poll, updateByData is blocked by isUpdatedByView,
+        // handle case where value is polling response is received in between mark updateByView and send
+        // relevant only when var is read/write; periodic polling AND calls updateByView
+        if (varNotifier.lastUpdate != VarLastUpdate.byView) varNotifier.updateByData(value); // only update if not updatedByView pending
+      }
     }
   }
 
-  /// DataWriteResponse
+  ////////////////////////////////////////////////////////////////////////////////
+  /// Collective Data Write Response
+  ////////////////////////////////////////////////////////////////////////////////
   /// Update Status by mot response to view initiated write, per var status
-  void updateStatuses(Iterable<int> ids, Iterable<int> statusesIn, [bool clearPushPending = true]) {
-    assert(statusesIn.length == ids.length);
-    for (final (id, status) in Iterable.generate(ids.length, (i) => (ids.elementAt(i), statusesIn.elementAt(i)))) {
-      _cache[id]
-        ?..updateStatusByData(status)
-        ..isPushPending = false;
+  // void updateStatuses(Iterable<int> ids, Iterable<int> statusesIn, [bool clearPushPending = true]) {
+  //   assert(statusesIn.length == ids.length);
+  //   for (final (id, status) in Iterable.generate(ids.length, (i) => (ids.elementAt(i), statusesIn.elementAt(i)))) {
+  //     _cache[id]?.updateStatusByData(status);
+  //   }
+  // }
+
+  void updateByViewResponse(Iterable<(int id, int value)> pairs, Iterable<int> statusesIn) {
+    assert(statusesIn.length == pairs.length);
+    for (final ((id, value), status) in Iterable.generate(pairs.length, (i) => (pairs.elementAt(i), statusesIn.elementAt(i)))) {
+      if (_cache[id] case VarNotifier varNotifier) {
+        varNotifier.updateStatusByData(status);
+        // handle case where value is updatedByView again in between send and response
+        // isUpdatedByView cannot cleared on getdataids to block updateByData
+        // sync note:
+        //  there is a small window for error, if updateByViewResponse does not run to completion.
+        //   if (pair.$2 == varNotifier.dataValue)
+        //   -> user: set value, set pushPending
+        //   clear pushPending
+        if (value == varNotifier.dataValue) varNotifier.lastUpdate = VarLastUpdate.clear; // clear push pending unless value has changed since send
+      }
     }
   }
 
-  // ////////////////////////////////////////////////////////////////////////////////
-  // /// Collective updateByView
-  // ///   Single update use VarValue directly
-  // ////////////////////////////////////////////////////////////////////////////////
-  void updateDependentsOf(VarKey key, num Function(VarKey dependent) valueOf) {
-    // update(key.dependents ?? []);
-    key.dependents?.forEach((dependent) => this[dependent]?.updateByViewAs<num>(valueOf(dependent)));
-  }
-
+  ////////////////////////////////////////////////////////////////////////////////
+  /// Collective updateByView
+  ///   Single update use VarValue directly
+  ////////////////////////////////////////////////////////////////////////////////
   // void updateByView(Iterable<(VarKey, dynamic)> pairs) {
   //   for (final (varKey, value) in pairs) {
   //     _cache[varKey.value]?.updateByView(value);
   //   }
   // }
+
+  void updateDependentsOf(VarKey key, num Function(VarKey dependent) valueOf) {
+    // update(key.dependents ?? []);
+    key.dependents?.forEach((dependent) => this[dependent]?.updateByViewAs<num>(valueOf(dependent)));
+  }
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Json
@@ -199,7 +212,7 @@ class VarCache {
   ////////////////////////////////////////////////////////////////////////////////
   String dependentsString(VarKey key, [String prefix = '', String divider = ': ', String separator = '\n']) {
     return (StringBuffer(prefix)
-          ..writeAll(key.dependents?.map((k) => '${k.label}$divider${this[k]?.viewValue}') ?? [], separator)
+          ..writeAll(key.dependents?.map((k) => '${k.label}$divider${this[k]?.valueAsNum}') ?? [], separator)
           ..writeln(''))
         .toString();
   }
@@ -250,8 +263,8 @@ class VarCacheNotifier with ChangeNotifier implements ValueNotifier<VarViewEvent
   VarViewEvent _value = VarViewEvent.none;
   @override
   VarViewEvent get value => _value;
-  // always update value, even if the same
 
+  // always update value, even if the same
   @override
   set value(VarViewEvent newValue) {
     _value = newValue;
@@ -277,11 +290,11 @@ class VarCacheNotifier with ChangeNotifier implements ValueNotifier<VarViewEvent
     value = VarViewEvent.submit;
   }
 
-  void submitAndPushAs<T>(T varValue) {
-    submitByViewAs(varValue);
-    varNotifier?.push();
-    // cacheController.push(varNotifier!.varKey);
-  }
+  // void submitByViewAs<T>(T varValue) {
+  //   submitByViewAs(varValue);
+  //   varNotifier?.push();
+  //   // cacheController.push(varNotifier!.varKey);
+  // }
 
   void submitEntryAs<T>(VarKey key, T varValue) {
     varCache[key]?.updateByViewAs<T>(varValue);

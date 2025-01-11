@@ -128,6 +128,7 @@ class ServicePollStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceGetS
   final ServiceIO<K, V, S> protocolService;
   final Iterable<K> Function() inputGetter;
 
+  @protected
   @override
   Stream<ServiceGetSlice<K, V>> get stream => protocolService.pollFlex(inputGetter, delay: const Duration(milliseconds: 5));
 }
@@ -138,6 +139,7 @@ class ServicePushStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceSetS
   final ServiceIO<K, V, S> protocolService;
   final Iterable<(K, V)> Function() inputGetter;
 
+  @protected
   @override
   Stream<ServiceSetSlice<K, V, S>> get stream => protocolService.push(inputGetter, delay: const Duration(milliseconds: 5));
 }

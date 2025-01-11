@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' hide BitField;
 import 'package:meta/meta.dart';
+import 'package:quiver/cache.dart';
 import 'package:type_ext/basic_ext.dart';
 
 import 'package:type_ext/basic_types.dart';
@@ -82,7 +83,7 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
 
   ////////////////////////////////////////////////////////////////////////////////
   @override
-  String toString() => '${describeIdentity(this)}(`${varKey.label}`)($value = $numValue)';
+  String toString() => '${describeIdentity(this)}(`${varKey.label}`)($value = $_viewValue)';
 
   // @override
   // void updateStatusByData(int status) {
@@ -132,18 +133,23 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   ////////////////////////////////////////////////////////////////////////////////
   /// runtime variables
   ////////////////////////////////////////////////////////////////////////////////
+  VarLastUpdate lastUpdate = VarLastUpdate.clear;
+
   // clear on response
-  bool isPushPending = false; // pushUpdateFlag, isLastUpdateByView
-  void push() => isPushPending = true;
-  void clearPush() => isPushPending = false;
+  // bool isUpdatedByView = false; // isPushPending, isLastUpdateByView
+  // void push() => isUpdatedByView = true;
+  // void clearPush() => isUpdatedByView = false;
 
   // cleared by user
-  bool _isPollingMarked = false;
-  bool get isPollingMarked => (_isPollingMarked || hasListeners) && !isPushPending;
-  set isPollingMarked(bool value) => _isPollingMarked = value;
+  // bool _isPollingMarked = false;
+  // bool get isPollingMarked => (_isPollingMarked || hasListeners); // && !isPushPending;
+  // set isPollingMarked(bool value) => _isPollingMarked = value;
 
-  bool isPollComplete = true;
+  // bool isPollComplete = true;
   // void pull() => _isPollingMarked = true;
+
+  bool hasIndirectListeners = false;
+  bool get hasListenersCombined => hasListeners || hasIndirectListeners;
 
   // if separating internal and external status
   // bool outOfRange; // value from client out of range
@@ -155,7 +161,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   set value(V newValue) => updateByViewAs<V>(newValue);
 
   ////////////////////////////////////////////////////////////////////////////////
-  /// [numValue] The base representation of the value as a num. "view side base"
+  /// [_viewValue] The base representation of the value as a num. "view side base"
   ///   since it is the base for all generic types that can be converted to and from,
   ///     [valueAs<R>()] can always return a value without throwing; the closest representation possible.
   ///   primitive/register sized only for now
@@ -165,37 +171,41 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   ///   notify view side listener on all updates, not all changes are pushed to client
   ////////////////////////////////////////////////////////////////////////////////
   num _numValue = 0;
-  num get numValue => _numValue;
-  set numValue(num value) {
+  num get _viewValue => _numValue;
+  set _viewValue(num value) {
     if (_numValue == value) return;
     _numValue = value;
     notifyListeners();
   }
 
   // without checking for change
-  void clearNumValue() {
-    _numValue = 0;
-    notifyListeners();
-  }
+  // void clearNumValue() {
+  //   _numValue = 0;
+  //   notifyListeners();
+  // }
 
   ////////////////////////////////////////////////////////////////////////////////
   /// [dataValue] from packet. convert on transmit only. lazy update on updateByView
   ////////////////////////////////////////////////////////////////////////////////
-  int get dataValue => dataOf(numValue);
+  int get dataValue => dataOf(_viewValue);
   // set dataValue(int value) => numValue = viewOf(dataValue);
 
   // Always accept client data. correction is handled at client side.
   // value over view boundaries handle by UI
 
   // after sign extension
-  void _updateByData(int dataValue) => numValue = viewOf(dataValue);
+  // alternatively alway notify on data update
+  void _updateByData(int dataValue) => _viewValue = viewOf(dataValue);
   // if (numValue != _clampedNumValue) {
   //   statusCode = 1;
   // }
 
   // before sign extension
   // updatedByView wait for push
-  void updateByData(int bytesValue) => _updateByData(dataOfBinary(bytesValue));
+  void updateByData(int bytesValue) {
+    _updateByData(dataOfBinary(bytesValue));
+    lastUpdate = VarLastUpdate.byData;
+  }
 
   /// as outbound data
   MapEntry<int, int> get dataEntry => MapEntry(dataKey, dataValue);
@@ -206,17 +216,17 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   /// The value in real world units and constraints. as seen by the user
   ////////////////////////////////////////////////////////////////////////////////
   /// typed view value
-  V get viewValue => valueAs<V>();
+  // V get viewValue => valueAs<V>();
   // set viewValue(V newValue) => updateByViewAs<V>(newValue);
 
   @protected
-  num get valueAsNum => numValue;
+  num get valueAsNum => _viewValue;
   @protected
-  int get valueAsInt => (numValue).toInt();
+  int get valueAsInt => (_viewValue).toInt();
   @protected
-  double get valueAsDouble => (numValue).toDouble();
+  double get valueAsDouble => (_viewValue).toDouble();
   @protected
-  bool get valueAsBool => (numValue != 0);
+  bool get valueAsBool => (_viewValue != 0);
   @protected
   Enum get valueAsEnum => enumOf(valueAsInt);
   @protected
@@ -240,7 +250,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
       const (BitsBase) => valueAsBitFields,
       const (BitStruct) => valueAsBitFields,
       const (String) => valueAsString,
-      _ => subtypeOf<R>(numValue),
+      _ => subtypeOf<R>(_viewValue),
     } as R;
   }
 
@@ -263,7 +273,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // input bounds checked only to ensure a valid value is sent to client side
   // switch on value will also handle dynamic
   void updateByViewAs<T>(T typedValue, [bool push = false]) {
-    numValue = switch (T) {
+    _viewValue = switch (T) {
       const (double) || const (int) || const (num) => clamp(typedValue as num),
       const (bool) => (typedValue as bool) ? 1 : 0,
       const (Enum) => (typedValue as Enum).index,
@@ -280,7 +290,8 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
       //   },
     };
 
-    // isPushPending = true; //
+    // isUpdatedByView = true;
+    lastUpdate = VarLastUpdate.byView;
 
     // if (typedValue case num input when input != numValue) statusCode = 1;
     // asserts view is set with proper bounds
@@ -292,7 +303,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
 
   // may not be needed after push pending moved
   // convenience for ValueSetter<T>
-  void pushByViewAs<T>(T typedValue) => (this..updateByViewAs<T>(typedValue))..push(); // some chance mark occur initiating pull
+  // void updateByViewAs<T>(T typedValue) => (this..updateByViewAs<T>(typedValue))..push(); // some chance mark occur initiating pull
   // void updateByView(V typedValue) => updateByViewAs<V>(typedValue);
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -301,7 +312,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   Map<String, Object?> toJson() {
     return {
       'varId': dataKey,
-      'varValue': numValue,
+      'varValue': _viewValue,
       'dataValue': dataValue,
       // 'description': varKey.toString(),
     };
@@ -322,6 +333,8 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
     }
   }
 }
+
+enum VarLastUpdate { clear, byData, byView }
 
 // default for over bounds
 enum VarValueEnum { unknown }

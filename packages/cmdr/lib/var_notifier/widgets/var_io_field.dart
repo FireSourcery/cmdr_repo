@@ -208,9 +208,9 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   @override
   ValueSetter<V> get valueSetter {
     return switch ((eventController != null, markPushOnSubmit)) {
-      (true, true) => eventController!.submitAndPushAs<V>,
+      (true, true) => eventController!.submitByViewAs<V>,
       (true, false) => eventController!.submitByViewAs<V>,
-      (false, true) => varNotifier.pushByViewAs<V>,
+      (false, true) => varNotifier.updateByViewAs<V>,
       (false, false) => varNotifier.updateByViewAs<V>,
     };
     // return (eventController != null) ? eventController!.submitByViewAs<V> : varNotifier.updateByViewAs<V>;

@@ -2,6 +2,8 @@
 part of 'var_notifier.dart';
 
 /// [VarCache] with [Serivce]
+///
+/// implements Cache
 class VarCacheController {
   // alternatively extend cache
   const VarCacheController({required this.cache, required this.protocolService});
@@ -16,7 +18,7 @@ class VarCacheController {
   /// Collective Read Vars `Fetch/Load`
   ////////////////////////////////////////////////////////////////////////////////
   /// cache.updateByDataSlice
-  VarStatus? _onReadSlice(ServiceGetSlice<int, int> slice) {
+  VarStatus? _onReadSlice(ServiceGetSlice<int, int> slice /* , [bool overwriteUpdatedByView = false] */) {
     if (slice.values == null) return null; // no response error
     cache.updateByData(slice.keys, slice.values!);
     return VarStatusDefault.success;
@@ -34,12 +36,19 @@ class VarCacheController {
     return VarStatusDefault.success;
   }
 
+  Future<VarStatus?> readAllOverwrite([Iterable<VarKey>? keys]) async {
+    for (var element in cache.varEntries) {
+      element.lastUpdate = VarLastUpdate.clear;
+    }
+    return readAll(keys);
+  }
+
   ////////////////////////////////////////////////////////////////////////////////
   /// Collective Write Vars `Send/Update`
   ////////////////////////////////////////////////////////////////////////////////
   VarStatus? _onWriteSlice(ServiceSetSlice<int, int, int> slice) {
     if (slice.statuses == null) return null; // no response error
-    cache.updateStatuses(slice.pairs.map((e) => e.$1), slice.statuses!); // clears scheduled write
+    cache.updateByViewResponse(slice.pairs, slice.statuses!); // clears scheduled write
     return VarStatusDefault.success;
   }
 
@@ -48,42 +57,50 @@ class VarCacheController {
     await for (final event in protocolService.setAll(pairs)) {
       if (_onWriteSlice(event) == null) return null;
     }
-    // await protocolService.setAll(pairs).forEach(_onWriteSlice);
+    // await protocolService.setAll(pairs).forEach(_onWriteSlice); // process all, continue on error
     return VarStatusDefault.success;
   }
 
   Iterable<(int, int)> _pairs(Iterable<VarKey>? keys) => cache.dataPairsOf(keys ?? cache.varKeys);
 
+  // write all via batches
   // optionally select keys or both keys and values
   Future<VarStatus?> writeAll([Iterable<VarKey>? keys]) async => _write(_pairs(keys));
 
-  // separate method, as updated involved varNotifier state
-  Future<VarStatus?> writeUpdated() async => _write(cache.dataPairsOf(cache.varEntries.where((e) => e.isPushPending).map((e) => e.varKey)));
-
-  Future<VarStatus?> write([bool updatedOnly = true]) async => updatedOnly ? writeUpdated() : writeAll();
-
-  // Future<VarStatus?> writeEachAs<V>([Iterable<(VarKey, V)>? pairs]) async {
-  //   cache.updateByView(pairs!);
-  //   return writeEach(pairs.map((e) => e.$1));
-  // }
+  // separate method, as updated involves varNotifier state
+  Future<VarStatus?> writeUpdated([bool updatedOnly = true]) async => updatedOnly ? _write(cache.dataPairsUpdatedByView) : writeAll();
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Single Read/Write Var
   ////////////////////////////////////////////////////////////////////////////////
-  Future<void> read(VarKey key) async {
+  // fetch
+  Future<bool> read(VarKey key) async {
     if (await protocolService.get(key.value) case int value) {
       cache[key]?.updateByData(value);
+      return true;
     }
+    return false;
   }
 
-  // Future<V?> readAs<V>(VarKey key) async {
-  //   if (await protocolService.get(key.value) case int value) {
-  //     cache[key]?.updateByData(value);
-  //     return cache[key]?.valueAs<V>();
-  //   }
-  //   return null;
-  // }
+  // send
+  Future<VarStatus?> write(VarKey key) async {
+    if (await protocolService.set(key.value, cache[key]?.dataValue ?? 0) case int statusValue) {
+      return (cache[key]?..updateStatusByData(statusValue))?.status;
+    }
+    return null;
+  }
 
+  Future<V?> readAs<V>(VarKey key) async {
+    if (await read(key) == true) return cache[key]?.valueAs<V>();
+    return null;
+  }
+
+  Future<VarStatus?> writeAs<V>(VarKey key, V value) async {
+    cache[key]?.updateByViewAs<V>(value);
+    return write(key);
+  }
+
+  // return num or object
   // Future<num?> operator [](VarKey key) async {
   //   if (await protocolService.get(key.value) case int value) {
   //     cache[key]?.updateByData(value);
@@ -91,50 +108,59 @@ class VarCacheController {
   //   return cache[key]!.valueAsNum;
   // }
 
-  Future<VarStatus?> writeAs<V>(VarKey key, [V? value]) async {
-    if (value != null) cache[key]?.updateByViewAs<V>(value);
-    if (await protocolService.set(key.value, cache[key]?.dataValue ?? 0) case int statusValue) {
-      return (cache[key]?..updateStatusByData(statusValue))?.status;
-    }
-    return null;
-  }
+  // @override
+  // Future<Object?> get(VarKey key, {Loader? ifAbsent}) async {
+  //   await read(key);
+  //   return cache[key]?.viewValue;
+  // }
+
+  // @override
+  // Future<void> invalidate(key) {
+  //   // TODO: implement invalidate
+  //   throw UnimplementedError();
+  // }
+
+  // @override
+  // Future<void> set(key, value) {
+  //   // TODO: implement set
+  //   throw UnimplementedError();
+  // }
 }
 
 /// Poll/Push Periodic Process Stream
 // A var should not be in both streams, that would be a loop back.
 // A var may be both read and write, but not both periodic.
 //   e.g. periodic read, but write on update only
-//
 // returning on a yield should complete a send/receive request, so there cannot be send/receive mismatch
-// begin create a new copy of keys, updating selected keys to the working set
-// need stream getter or begin() to call stream.listen(onData)
-//
-// Cache keeps views in sync, each Var entry occurs only once in the cache.
 // Streams may be per cache, or partial selection
 //
-// as the slice are created, although there is no active tx/rx via the service, the stream may re-iterate the keys.
-// views must not add/remove keys, when calling add/remove, either await lock, await cancel, or preallocate keys
-//
-// if an entry is removed from the cache map, listener will still exist synced with previously allocated.
+// if an entry is removed from the cache map, listener will still exist synced with previously allocated Var.
 // it will no longer be updated by Streams.
+//
+// alternative to iterating over cache, add to a Set
+// begin create a new copy of keys, updating selected keys to the working set
 class VarRealTimeController extends VarCacheController {
   VarRealTimeController({required super.cache, required super.protocolService});
 
   late final ServicePollStreamHandler<int, int, int> pollHandler = ServicePollStreamHandler(protocolService, _readKeysGetter, _onReadSlice);
   late final ServicePushStreamHandler<int, int, int> pushHandler = ServicePushStreamHandler(protocolService, _writePairsGetter, _onWriteSlice);
+  // Stream<(ServiceGetSlice> get _readStream => protocolService.pollFlex(_readKeysGetter, delay: const Duration(milliseconds: 5));
+  // Stream<(ServiceSetSlice> get _writeStream => protocolService.push(_writePairsGetter, delay: const Duration(milliseconds: 5));
 
   // stream will call slices creating a new list, at the beginning of each multi-batch operation
+  // although there is no active tx/rx via the service, the stream will iterate the Map backing.
   // while this iterator is accessed, view must not add or remove keys, either by lock or preallocate cache
 
   // hasListeners check is regularly updated.
-  Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.isPollingMarked).map((e) => e.varKey);
+  Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListenersCombined).map((e) => e.varKey);
   Iterable<int> _readKeysGetter() => _readKeys.map((e) => e.value);
 
-  Iterable<VarKey> get _writeKeys => cache.varEntries.where((e) => e.varKey.isPushing || e.isPushPending).map((e) => e.varKey);
-  Iterable<(int, int)> _writePairsGetter() => cache.dataPairsOf(_writeKeys);
+  void addPolling(Iterable<VarKey> keys) => cache.varsOf(keys).forEach((element) => element.hasIndirectListeners = true);
+  void removePollingAll() => cache.varEntries.forEach((element) => element.hasIndirectListeners = false);
+  void selectPolling(Iterable<VarKey> keys) => (this..removePollingAll()).addPolling(keys);
 
-  // Stream<(ServiceGetSlice> get _readStream => protocolService.pollFlex(_readKeysGetter, delay: const Duration(milliseconds: 5));
-  // Stream<(ServiceSetSlice> get _writeStream => protocolService.push(_writePairsGetter, delay: const Duration(milliseconds: 5));
+  Iterable<VarKey> get _writeKeys => cache.varEntries.where((e) => e.varKey.isPushing || (e.lastUpdate == VarLastUpdate.byView)).map((e) => e.varKey);
+  Iterable<(int, int)> _writePairsGetter() => cache.dataPairsOf(_writeKeys);
 
   Future<bool> beginPeriodic() async {
     if (!protocolService.isConnected) return false;
@@ -155,15 +181,15 @@ class VarRealTimeController extends VarCacheController {
     // }
     await Future.doWhile(() async {
       await Future.delayed(const Duration(milliseconds: 10)); // wait some duration before every check
-      return (cache[varKey]!.isPushPending);
+      return (cache[varKey]!.lastUpdate == VarLastUpdate.byView);
     });
   }
 
   Future<void> readBatchCompleted(VarKey varKey) async {
-    cache[varKey]!.isPollComplete = false;
+    cache[varKey]!.lastUpdate = VarLastUpdate.clear;
     await Future.doWhile(() async {
       await Future.delayed(const Duration(milliseconds: 10)); // wait some duration before every check
-      return (!cache[varKey]!.isPollComplete);
+      return (cache[varKey]!.lastUpdate == VarLastUpdate.clear);
     });
   }
 }

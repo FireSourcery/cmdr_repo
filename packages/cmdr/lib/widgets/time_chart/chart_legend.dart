@@ -4,12 +4,12 @@ import 'chart_style.dart';
 
 class ChartLegend extends StatelessWidget {
   const ChartLegend({super.key, required this.listenable, required this.entries, this.style, this.builder});
-  ChartLegend.chart({super.key, required ChartController controller, this.style, this.builder})
+  ChartLegend.of({super.key, required ChartController controller, this.style, this.builder})
       : entries = controller.chartEntries,
         listenable = controller;
 
   final List<ChartEntry> entries;
-  final Listenable listenable; // controller tick
+  final Listenable listenable; // update on controller tick
   final Widget Function(BuildContext context, ChartEntry entry, Widget entryWidget)? builder; // optional wrapper for legend entry
   final ChartStyle? style;
 
@@ -75,6 +75,8 @@ class _LegendListTile extends StatelessWidget {
   final TextStyle? textStyle;
   // final bool isSelected;
 
+  Widget builder(context, child) => Text(valueGetter().toStringAsFixed(1), textAlign: TextAlign.right, style: textStyle);
+
   @override
   Widget build(BuildContext context) {
     return ListTile(
@@ -82,7 +84,7 @@ class _LegendListTile extends StatelessWidget {
       dense: true,
       leading: DecoratedBox(decoration: BoxDecoration(color: color, shape: BoxShape.circle), child: const SizedBox.square(dimension: 15)),
       title: Text(name, style: textStyle),
-      trailing: ListenableBuilder(listenable: listenable, builder: (context, child) => Text(valueGetter().toStringAsFixed(1), textAlign: TextAlign.right, style: textStyle)),
+      trailing: ListenableBuilder(listenable: listenable, builder: builder),
     );
   }
 }
