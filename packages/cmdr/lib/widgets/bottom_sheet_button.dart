@@ -48,8 +48,9 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
   Widget _bottomSheetBuilder(BuildContext context) => Padding(padding: EdgeInsets.only(top: (widget.iconClose.size ?? 0) / 2), child: selectedBottomSheet ?? widget.child);
 
   void expand([Widget? child]) {
-    late final double sheetHeight = MediaQuery.of(context).size.height / 3 + appBarHeight; // repeat in case of change
+    late final double sheetHeight = MediaQuery.of(context).size.height / 3 + appBarHeight; // repeat in case of screen size change
     if (child != null) selectedBottomSheet = child;
+    if (selectedBottomSheet == null) return;
     setState(() {
       fab = fabClose;
     });

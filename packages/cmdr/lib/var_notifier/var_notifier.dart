@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' hide BitField;
+import 'package:flutter/widgets.dart';
 import 'package:meta/meta.dart';
 import 'package:quiver/cache.dart';
 import 'package:type_ext/basic_ext.dart';

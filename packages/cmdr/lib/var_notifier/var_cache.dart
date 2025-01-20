@@ -249,17 +249,11 @@ mixin VarDependents on VarCache {
 ////////////////////////////////////////////////////////////////////////////////
 class VarCacheNotifier with ChangeNotifier implements ValueNotifier<VarViewEvent> {
   VarCacheNotifier({required this.varCache, this.varNotifier});
-  // VarEventController.byKey({required this.varCache, required VarKey varKey}) : varNotifier = varCache.allocate(varKey);
 
   final VarCache varCache; // a reference to the cache containing this varNotifier
 
-  // this is not needed if context of cache is provided
-  /// Type assigned by VarKey/VarCache
-  // use null for default. If a 'empty' VarNotifier is attached, it may register excess callbacks, and dispatch meaningless notifications.
-  VarNotifier<dynamic>? varNotifier; // always typed by Key returning as dynamic.
-
   // single listener table, notify with id. this way invokes extra notifications
-  // or use separate changeNotifier? separate tables for different types of events
+  //  separate changeNotifier, separate tables for different types of events
   VarViewEvent _value = VarViewEvent.none;
   @override
   VarViewEvent get value => _value;
@@ -279,6 +273,14 @@ class VarCacheNotifier with ChangeNotifier implements ValueNotifier<VarViewEvent
   ///   with context of cache for dependents
   ///   Listeners to the VarNotifier on another UI component will not be notified of submit
   ////////////////////////////////////////////////////////////////////////////////
+
+  // todo removes
+  // using selected state
+  // this is not needed if context of cache is provided
+  // Type assigned by VarKey/VarCache
+  // null for default. If a 'empty' VarNotifier is attached, it may register excess callbacks, and dispatch meaningless notifications.
+  VarNotifier<dynamic>? varNotifier; // always typed by Key returning as dynamic.
+
   void submitByViewAs<T>(T varValue) {
     if (varNotifier == null) return;
     varNotifier!.updateByViewAs<T>(varValue);
@@ -290,12 +292,7 @@ class VarCacheNotifier with ChangeNotifier implements ValueNotifier<VarViewEvent
     value = VarViewEvent.submit;
   }
 
-  // void submitByViewAs<T>(T varValue) {
-  //   submitByViewAs(varValue);
-  //   varNotifier?.push();
-  //   // cacheController.push(varNotifier!.varKey);
-  // }
-
+  // passing key
   void submitEntryAs<T>(VarKey key, T varValue) {
     varCache[key]?.updateByViewAs<T>(varValue);
     // if varCache has mixin VarDependents, update dependents

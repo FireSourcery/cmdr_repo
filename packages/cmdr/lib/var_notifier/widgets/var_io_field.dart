@@ -206,15 +206,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   @override
   ValueGetter<bool> get errorGetter => () => varNotifier.statusIsError;
   @override
-  ValueSetter<V> get valueSetter {
-    return switch ((eventController != null, markPushOnSubmit)) {
-      (true, true) => eventController!.submitByViewAs<V>,
-      (true, false) => eventController!.submitByViewAs<V>,
-      (false, true) => varNotifier.updateByViewAs<V>,
-      (false, false) => varNotifier.updateByViewAs<V>,
-    };
-    // return (eventController != null) ? eventController!.submitByViewAs<V> : varNotifier.updateByViewAs<V>;
-  }
+  ValueSetter<V> get valueSetter => (eventController != null) ? eventController!.submitByViewAs<V> : varNotifier.updateByViewAs<V>;
 
   @override
   ValueChanged<V> get sliderChanged => varNotifier.updateByViewAs<V>;

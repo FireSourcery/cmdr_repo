@@ -150,6 +150,7 @@ enum DialogButtonStyle {
   warning,
 }
 
+//DialogExtensionTheme
 class DialogButtonTheme extends ThemeExtension<DialogButtonTheme> {
   const DialogButtonTheme({this.buttonStyle, this.warningButtonStyle, this.warningColor});
 

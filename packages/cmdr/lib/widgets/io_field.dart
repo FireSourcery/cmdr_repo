@@ -301,6 +301,15 @@ class IOFieldText<T> extends StatefulWidget with _IOFieldStringBox<T> implements
     };
   }
 
+  TextInputType get keyboardType {
+    return switch (T) {
+      const (int) => const TextInputType.numberWithOptions(decimal: false, signed: true),
+      const (double) || const (num) => const TextInputType.numberWithOptions(decimal: true, signed: true),
+      const (String) => TextInputType.text,
+      _ => throw TypeError(),
+    };
+  }
+
   @override
   State<IOFieldText<T>> createState() => _IOFieldTextState<T>();
 }
@@ -395,7 +404,7 @@ class _IOFieldTextState<T> extends State<IOFieldText<T>> {
         canRequestFocus: true,
         focusNode: focusNode,
         maxLines: 1,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+        keyboardType: widget.keyboardType,
         inputFormatters: widget.inputFormatters,
         // onChanged: onChanged,
       ),
