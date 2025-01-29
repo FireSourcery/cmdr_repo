@@ -6,14 +6,14 @@ class SettingsController with ChangeNotifier {
   SettingsController();
 
   /// Update view without waiting. no guarantee of persisting
-  void updateSettingView<T>(Setting<T> setting, T value) {
-    setting.value = value;
-    notifyListeners();
-  }
+  // void updateSettingView<T>(Setting<T> setting, T value) {
+  //   setting.value = value;
+  //   notifyListeners();
+  // }
 
   /// Update and persist the settings.
   Future<void> updateSetting<T>(Setting<T> setting, T value) async {
-    await setting.updateValue(value);
+    await setting.update(value);
     notifyListeners();
   }
 

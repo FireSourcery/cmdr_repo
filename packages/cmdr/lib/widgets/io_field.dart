@@ -9,9 +9,10 @@ abstract mixin class IOField<T> implements Widget {
   factory IOField(IOFieldConfig<T> config, {Key? key}) {
     return switch (config) {
       IOFieldConfig(isReadOnly: true) => IOFieldReader<T>.config(config),
+      IOFieldConfig(valueEnumRange: != null) => IOFieldMenu<T>.config(config),
       IOFieldConfig<num>() => IOFieldText<T>.config(config),
       IOFieldConfig<Enum>() => IOFieldMenu<T>.config(config),
-      IOFieldConfig<String>() => IOFieldMenu<T>.config(config),
+      IOFieldConfig<String>(valueEnumRange: null) => IOFieldText<T>.config(config),
       IOFieldConfig<bool>(:final boolStyle) => switch (boolStyle) {
           IOFieldBoolStyle.textMenu => IOFieldMenu<T>.config(config),
           IOFieldBoolStyle.latchingSwitch => IOFieldSwitch(config as IOFieldConfig<bool>) as IOField<T>,
@@ -68,6 +69,8 @@ abstract mixin class _IOFieldStringBox<T> implements IOField<T> {
   Stringifier<T>? get valueStringifier;
 
   static String _stringifyDefault(Object? value) => value.toString(); // unhandled null value string
+  // static String _stringifyEnum(Enum value) => value.name.titleCase;
+
   Stringifier<T> get _effectiveStringifier => valueStringifier ?? _stringifyDefault;
 
   Stringifier<T?> get _effectiveNullableStringifier {
@@ -77,7 +80,7 @@ abstract mixin class _IOFieldStringBox<T> implements IOField<T> {
 
   String _stringifyValue() {
     if (valueGetter() case T value) return _effectiveStringifier(value);
-    return 'IOField Value Error'; // or handle null
+    return 'null'; // or handle null
 
     // _effectiveNullableStringifier(valueGetter());
   }
@@ -110,7 +113,7 @@ class IOFieldConfig<T> {
     this.useSliderBorder = false,
     this.useSwitchBorder = true,
     this.boolStyle = IOFieldBoolStyle.latchingSwitch,
-  }) : assert(!((T == num || T == int || T == double) && (valueNumLimits == null)));
+  }) : assert(!((T == num || T == int || T == double) && (valueNumLimits == null && valueEnumRange == null)));
 
   final InputDecoration idDecoration;
   final bool isReadOnly;
@@ -251,7 +254,6 @@ class IOFieldReader<T> extends StatelessWidget with _IOFieldStringBox<T> impleme
 }
 
 /// T == num or String
-
 // split sub types requires the default constructor to be a sub factory
 class IOFieldText<T> extends StatefulWidget with _IOFieldStringBox<T> implements IOField<T> {
   const IOFieldText({
@@ -426,6 +428,7 @@ class _IOFieldTextState<T> extends State<IOFieldText<T>> {
 
 /// T is Enum, bool, or String
 /// PopupMenu
+/// class IOFieldEnum<T extends Enum>
 class IOFieldMenu<T> extends StatelessWidget with _IOFieldStringBox<T> implements IOField<T> {
   IOFieldMenu({
     super.key,

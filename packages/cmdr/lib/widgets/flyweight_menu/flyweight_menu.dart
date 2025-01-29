@@ -206,8 +206,8 @@ class MenuAnchorBuilder<T> extends StatefulWidget {
   final FlyweightMenuSource<T> menuSource;
   // final FlyweightMenu<T> menuInstance;  // provide one of either
   final T? initialItem;
-  final MenuWidgetBuilder<T> menuAnchorBuilder;
-  final ValueWidgetBuilder<T> keyBuilder; // passed to menuAnchorBuilder
+  final MenuWidgetBuilder<T> menuAnchorBuilder; // builds the outer wrap
+  final ValueWidgetBuilder<T> keyBuilder; // builds the inner widget under the menu, passed to menuAnchorBuilder
   final Widget? child; // passed to keyBuilder
 
   @override

@@ -41,17 +41,20 @@ class VarSwitch extends StatelessWidget with VarNotifierViewer<bool> {
 }
 
 class VarSlider extends StatelessWidget with VarNotifierViewer<double> {
-  const VarSlider(this.varNotifier, {super.key, this.eventController});
+  const VarSlider(this.varNotifier, {super.key, this.eventNotifier});
 
   @override
   final VarNotifier<dynamic> varNotifier;
-  final VarCacheNotifier? eventController;
+  final VarCacheNotifier? eventNotifier;
+
+  void _submitWithCache(double value) => eventNotifier!.submitEntryAs<double>(varNotifier.varKey, value);
 
   Widget builder(BuildContext context, Widget? child) {
     // must be num defined if type is numeric
     final min = varNotifier.numLimits!.min.toDouble();
     final max = varNotifier.numLimits!.max.toDouble();
-    final onChangeEnd = (eventController != null) ? (eventController!.submitByViewAs<double>) : valueChanged;
+    // final onChangeEnd = (eventNotifier != null) ? (eventNotifier!.submitByViewAs<double>) : valueChanged;
+    final onChangeEnd = (eventNotifier != null) ? _submitWithCache : valueChanged;
 
     return Slider.adaptive(
       // divisions: ((max - min) ~/ 1).clamp(2, 100),
@@ -65,7 +68,7 @@ class VarSlider extends StatelessWidget with VarNotifierViewer<double> {
 
   @override
   Widget build(BuildContext context) {
-    if (!varNotifier.varKey.viewType.isSubtype<num>() || varNotifier.varKey.isReadOnly) return const SizedBox.shrink();
+    if (!varNotifier.varKey.viewType.isSubtype<num>() || varNotifier.varKey.isReadOnly || (varNotifier.numLimits!.max <= varNotifier.numLimits!.min)) return const SizedBox.shrink();
     return ListenableBuilder(listenable: varNotifier, builder: builder);
   }
 }

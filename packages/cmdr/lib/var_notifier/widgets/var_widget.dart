@@ -42,26 +42,28 @@ abstract mixin class VarNotifierViewer<V> {
   String? get tip => varNotifier.varKey.tip;
 }
 
-abstract mixin class VarEventViewer<V> /* implements VarNotifierViewer<V> */ {
-  const VarEventViewer();
+// abstract mixin class VarEventViewer<V> /* implements VarNotifierViewer<V> */ {
+//   const VarEventViewer();
 
-  VarCacheNotifier get eventController;
+//   VarCacheNotifier get eventController;
 
-  // VarNotifier<V>? get varNotifier => eventController.varNotifier;
+//   // VarNotifier<V>? get varNotifier => eventController.varNotifier;
 
-  @protected
-  ValueNotifier<VarViewEvent?> get eventNotifier => eventController; // for UI triggered updates
-  ValueSetter<V> get valueSubmitted => eventController.submitByViewAs<V>; // onSubmit. only for updates requesting write and/or indicating user confirmation. using scheduled write
+//   void _submitWithCache<V>(V value) => eventController!.submitEntryAs<V>(varNotifier.varKey, value);
 
-  // directly return response
-  // ValueSetter<V> get valueSetter => isConnected ? submitAndWrite : submitByView; // non scheduled
-  // Future<Null> _asyncSubmitByView(V value) async {
-  //   submitByView(value);
-  //   return null;
-  // }
-  // // AsyncValueSetter<V> get asyncValueSetter => isConnected ? setAndSend : _setAsFuture;
-  // Future<S?> Function(V value) get valueResponseSetter => isConnected ? submitAndWrite : _asyncSubmitByView;
-}
+//   @protected
+//   ValueNotifier<VarViewEvent?> get eventNotifier => eventController; // for UI triggered updates
+//   ValueSetter<V> get valueSubmitted => eventController.submitByViewAs<V>; // onSubmit. only for updates requesting write and/or indicating user confirmation. using scheduled write
+
+//   // directly return response
+//   // ValueSetter<V> get valueSetter => isConnected ? submitAndWrite : submitByView; // non scheduled
+//   // Future<Null> _asyncSubmitByView(V value) async {
+//   //   submitByView(value);
+//   //   return null;
+//   // }
+//   // // AsyncValueSetter<V> get asyncValueSetter => isConnected ? setAndSend : _setAsFuture;
+//   // Future<S?> Function(V value) get valueResponseSetter => isConnected ? submitAndWrite : _asyncSubmitByView;
+// }
 
 // abstract interface class VarBuilder implements StatelessWidget {
 //   factory VarBuilder(VarNotifier varNotifier, Widget Function(VarNotifier) builder) = VarBaseBuilder;

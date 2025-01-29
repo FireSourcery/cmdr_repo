@@ -10,7 +10,6 @@ part of 'var_notifier.dart';
 ///
 /// ServiceIO can mixin to this module, still both derive from the same context
 ////////////////////////////////////////////////////////////////////////////////
-@immutable
 // class VarCache<K extends VarKey, V extends VarNotifier> {
 class VarCache {
   VarCache([this.lengthMax]) : _cache = {};
@@ -131,8 +130,8 @@ class VarCache {
   ////////////////////////////////////////////////////////////////////////////////
   // calling function checks packet length, data
   // returned values should be lists
-  // void updateByData(Iterable<int> ids, Iterable<int> valuesIn, [bool overwriteUpdateByView = false]) {
   void updateByData(Iterable<int> ids, Iterable<int> valuesIn) {
+    /* [bool overwriteUpdateByView = false] */
     assert(valuesIn.length == ids.length);
     for (final (id, value) in Iterable.generate(ids.length, (i) => (ids.elementAt(i), valuesIn.elementAt(i)))) {
       if (_cache[id] case VarNotifier varNotifier) {
@@ -155,6 +154,7 @@ class VarCache {
   //   }
   // }
 
+  // update by DataResponse
   void updateByViewResponse(Iterable<(int id, int value)> pairs, Iterable<int> statusesIn) {
     assert(statusesIn.length == pairs.length);
     for (final ((id, value), status) in Iterable.generate(pairs.length, (i) => (pairs.elementAt(i), statusesIn.elementAt(i)))) {
@@ -172,30 +172,22 @@ class VarCache {
     }
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
-  /// Collective updateByView
-  ///   Single update use VarValue directly
-  ////////////////////////////////////////////////////////////////////////////////
-  // void updateByView(Iterable<(VarKey, dynamic)> pairs) {
-  //   for (final (varKey, value) in pairs) {
-  //     _cache[varKey.value]?.updateByView(value);
-  //   }
-  // }
-
-  void updateDependentsOf(VarKey key, num Function(VarKey dependent) valueOf) {
-    // update(key.dependents ?? []);
-    key.dependents?.forEach((dependent) => this[dependent]?.updateByViewAs<num>(valueOf(dependent)));
-  }
+  /// Single updateByView use VarValue directly
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Json
   ////////////////////////////////////////////////////////////////////////////////
   /// load from json
   void loadFromJson(List<Map<String, Object?>> json) {
-    for (final paramJson in json) {
-      if (paramJson case {'varId': int motVarId, 'varValue': num _, 'motValue': int _, 'description': String _}) {
-        _cache[motVarId]?.loadFromJson(paramJson);
-        // this[VarKey.from(motVarId)]?.loadFromJson(paramJson);
+    for (final entry in json) {
+      if (entry
+          case {
+            'varId': int motVarId,
+            'varValue': num _,
+            'dataValue': int _,
+            'description': String _,
+          }) {
+        _cache[motVarId]?.loadFromJson(entry);
       } else {
         throw const FormatException('Unexpected JSON');
       }
@@ -217,6 +209,11 @@ class VarCache {
         .toString();
   }
 
+  // void updateDependentsOf(VarKey key, num Function(VarKey dependent) valueOf) {
+  //   // update(key.dependents ?? []);
+  //   key.dependents?.forEach((dependent) => this[dependent]?.updateByViewAs<num>(valueOf(dependent)));
+  // }
+
   ////////////////////////////////////////////////////////////////////////////////
   /// debug
   ////////////////////////////////////////////////////////////////////////////////
@@ -227,18 +224,6 @@ class VarCache {
   }
 }
 
-// abstract mixin as compile time const instead of function variable
-mixin VarDependents on VarCache {
-  // propagateSet
-  // caller provides function via switch case
-  void updateDependents(covariant VarKey key);
-}
-
-// gives Notifier context of cache for dependents
-// mixin VarDependents on VarNotifier {
-//   void updateDependents(VarCache cache);
-// }
-
 ////////////////////////////////////////////////////////////////////////////////
 /// [VarCacheNotifier] - with context of [VarCache]
 /// A notifier separate from [VarNotifier.value] [updateByView] updates
@@ -247,10 +232,12 @@ mixin VarDependents on VarCache {
 ///    Submit notifier - e.g. generating dialog
 ///    Updating dependents residing in the same VarCache
 ////////////////////////////////////////////////////////////////////////////////
-class VarCacheNotifier with ChangeNotifier implements ValueNotifier<VarViewEvent> {
-  VarCacheNotifier({required this.varCache, this.varNotifier});
-
-  final VarCache varCache; // a reference to the cache containing this varNotifier
+// altenatively combine with mixin
+abstract mixin class VarCacheNotifier implements VarCache, ValueNotifier<VarViewEvent> {
+  // propagateSet
+  // caller provides function via switch case
+  // updateHook
+  void updateDependents(covariant VarKey key);
 
   // single listener table, notify with id. this way invokes extra notifications
   //  separate changeNotifier, separate tables for different types of events
@@ -265,43 +252,38 @@ class VarCacheNotifier with ChangeNotifier implements ValueNotifier<VarViewEvent
     notifyListeners();
   }
 
-  // void notifyDependents(VarKey key) => varCache.updateDependents(varNotifier!.varKey);
+  // passing key
+  void submitEntryAs<T>(VarKey key, T varValue) {
+    this[key]?.updateByViewAs<T>(varValue);
+    // if (varCache case VarDependents typedCache) {
+    updateDependents(key);
+    // }
+    value = VarViewEvent.submit;
+  }
 
-  ////////////////////////////////////////////////////////////////////////////////
-  /// User submit
-  ///   associated with UI component, rather than VarNotifier
-  ///   with context of cache for dependents
-  ///   Listeners to the VarNotifier on another UI component will not be notified of submit
-  ////////////////////////////////////////////////////////////////////////////////
+  // ValueSetter<T> valueSetterOf<T>(VarKey key) => ((T value) => submitEntryAs<T>(key, value));
 
-  // todo removes
+  // //////////////////////////////////////////////////////////////////////////////
+  // / User submit
+  // /   associated with UI component, rather than VarNotifier
+  // /   with context of cache for dependents
+  // /   Listeners to the VarNotifier on another UI component will not be notified of submit
+  // //////////////////////////////////////////////////////////////////////////////
   // using selected state
   // this is not needed if context of cache is provided
   // Type assigned by VarKey/VarCache
   // null for default. If a 'empty' VarNotifier is attached, it may register excess callbacks, and dispatch meaningless notifications.
-  VarNotifier<dynamic>? varNotifier; // always typed by Key returning as dynamic.
+  // VarNotifier<dynamic>? varNotifier; // always typed by Key returning as dynamic.
 
-  void submitByViewAs<T>(T varValue) {
-    if (varNotifier == null) return;
-    varNotifier!.updateByViewAs<T>(varValue);
-    // if varCache has mixin VarDependents, update dependents
-    if (varCache case VarDependents typedCache) {
-      typedCache.updateDependents(varNotifier!.varKey);
-    }
-    //isSubmittedByView
-    value = VarViewEvent.submit;
-  }
-
-  // passing key
-  void submitEntryAs<T>(VarKey key, T varValue) {
-    varCache[key]?.updateByViewAs<T>(varValue);
-    // if varCache has mixin VarDependents, update dependents
-    if (varCache case VarDependents typedCache) {
-      typedCache.updateDependents(varNotifier!.varKey);
-    }
-    //isSubmittedByView
-    value = VarViewEvent.submit;
-  }
+  // void submitByViewAs<T>(T varValue) {
+  //   if (varNotifier == null) return;
+  //   varNotifier!.updateByViewAs<T>(varValue);
+  //   // if varCache has mixin VarDependents, update dependents
+  //   // if (varCache case VarDependents typedCache) {
+  //   updateDependents(varNotifier!.varKey);
+  //   // }
+  //   value = VarViewEvent.submit;
+  // }
 }
 
 enum VarViewEvent {

@@ -157,7 +157,6 @@ class ChartController with TimerNotifier, ChangeNotifier {
   //   return false;
   // }
 
-  // List<FlSpot> flSpotsViewOf(int index) => UnmodifiableListView(chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y)));
   List<FlSpot> _flSpotsViewOf(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y))];
   List<FlSpot> _flSpotsViewOfAsScalar(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y / chartEntries[index].normalRef))];
   // ...chartData.lineDataPoints(index).map((e) {
@@ -247,7 +246,7 @@ class ChartEntry {
   final String name;
   final ValueGetter<num> valueGetter;
 
-  final double normalRef; // yRange
+  final num normalRef; // yRange
   // final T key;
 
   final Color? color; //override default

@@ -23,6 +23,8 @@ export 'typed_data_buffer.dart';
 ///  or implement class interfaces
 // cannot directly implement ByteData due to final class
 extension type ByteStruct<K extends ByteField<NativeType>>(ByteData byteData) implements StructView<K, int>, ByteData {
+  // List<K> get keys
+
   int get lengthMax => length; // in the immutable case
   int get length => byteData.lengthInBytes;
 
@@ -134,7 +136,7 @@ class _ByteField<V extends NativeType> with TypedField<V>, ByteField<V> {
 // T does not directly extend ByteStruct to allow for composed types; with abstract methods, additional properties
 //  the only requirement is T is the result of TypedData
 class ByteStructClass<T, K extends ByteField<NativeType>> {
-  ByteStructClass({required this.lengthMax, required this.endian, required this.keys, required this.caster});
+  const ByteStructClass({required this.lengthMax, required this.endian, required this.keys, required this.caster});
 
   final int lengthMax;
   final Endian endian;

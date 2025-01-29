@@ -10,7 +10,7 @@ class SettingsService {
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance(); // loads the SharedPreferences cache
   late final SharedPreferences prefs;
 
-  Future<void> init({String? prefix}) async => (prefs = await _prefs);
+  Future<void> init(/* {String? prefix} */) async => (prefs = await _prefs);
 
   R? _get<R>(String key) => prefs.get(key) as R?;
 
@@ -29,6 +29,7 @@ class SettingsService {
   }
 
   // loaded on init
+  R? load<R>(String key, [dynamic bounds]) => get<R>(key, bounds);
   // R? load<R>(String key, [dynamic bounds]) {
   //  prefs = await _prefs
   //   return switch (R) {
@@ -55,21 +56,21 @@ class SettingsService {
 
   // Future<bool> _setEnumAsync(String key, Enum value) => _setAsync<int>(key, value.index);
 
+  // calling without await will set that cached value
   // do not await propagate to disk, process up to _preferenceCache[key] = value;
   void set<T>(String key, T value) => _setAsync<T>(key, value);
 
   Future<bool> update<T>(String key, T value) async => _setAsync<T>(key, value);
 }
 
-// abstract interface class Setting<T>  = ServiceKey<T>
+// abstract interface class Setting<T>  = ServiceKey<T> UnionValueKey<V>
 
 // SettingBase using SharedPreferences
-// can be inherited by enums
 abstract mixin class SharedPrefSetting<T> implements Setting<T> {
-  @override
   String get key;
+
   @override
-  List<T>? get enumValues; // Enum or options set
+  List<T>? get valueRange; // Enum or options set
   @override
   ({num min, num max})? get numLimits;
   // T get defaultValue;
@@ -89,33 +90,37 @@ abstract mixin class SharedPrefSetting<T> implements Setting<T> {
   T? get value {
     return switch (T) {
       const (bool) || const (int) || const (double) || const (String) || const (List<String>) => SettingsService.main.get<T>(key),
-      const (Enum) => SettingsService.main.get<T>(key, enumValues!),
+      const (Enum) => SettingsService.main.get<T>(key, valueRange!),
       _ => throw UnsupportedError('$T'),
     };
   }
 
   // not needed if all settings are loaded at once in the case of sharedPreferences, may keep interface for network settings
-  // T? load() {
-  //   return switch (T) {
-  //     const (bool) || const (int) || const (double) || const (String) || const (List<String>) => SettingsService.main.load<T>(key),
-  //     const (Enum) => SettingsService.main.loadEnum(key, enumValues!),
-  //     _ => throw UnsupportedError(''),
-  //   } as T;
-  // }
-
-  // bool isBound(num newValue) => (newValue.clamp(numLimits!.min, numLimits!.max) == newValue);
+  @override
+  Future<T?> load() async => value;
 
   T _boundValue(T newValue) {
-    if (numLimits == null) return newValue;
-    assert(T == int || T == double, 'Only num types are supported');
-    return (newValue as num).clamp(numLimits!.min, numLimits!.max) as T;
-    // final clamped = (newValue as num).clamp(numLimits!.min, numLimits!.max);
-    // return switch (T) { const (int) => clamped.toInt(), const (double) => clamped.toDouble(), _ => newValue } as T;
+    // if (numLimits == null) return newValue;
+    // assert(T == int || T == double, 'Only num types are supported');
+    // return (newValue as num).clamp(numLimits!.min, numLimits!.max) as T;
+    // // final clamped = (newValue as num).clamp(numLimits!.min, numLimits!.max);
+    // // return switch (T) { const (int) => clamped.toInt(), const (double) => clamped.toDouble(), _ => newValue } as T;
+
+    return switch (T) {
+      const (int) || const (double) => ((numLimits != null) ? (newValue as num).clamp(numLimits!.min, numLimits!.max) : newValue) as T,
+      const (bool) || const (String) || const (List<String>) => newValue,
+      const (Enum) => newValue,
+      _ => throw UnsupportedError('$T'),
+    };
   }
 
   @override
-  set value(T? newValue) => (newValue != null) ? SettingsService.main.set<T>(key, _boundValue(newValue)) : null;
+  set value(T? newValue) {
+    if (newValue != null) SettingsService.main.set<T>(key, _boundValue(newValue));
+  }
 
   @override
-  Future<bool> updateValue(T value) async => await SettingsService.main.update<T>(key, _boundValue(value));
+  Future<bool> update(T value) async {
+    return SettingsService.main.update<T>(key, _boundValue(value));
+  }
 }

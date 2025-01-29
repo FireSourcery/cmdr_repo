@@ -45,7 +45,7 @@ class SettingFieldTile extends StatelessWidget {
   }
 }
 
-class SettingWidgetsList<T> extends StatelessWidget {
+class SettingWidgetsList extends StatelessWidget {
   const SettingWidgetsList({super.key, required this.settingsController, required this.settings});
 
   final SettingsController settingsController;
@@ -60,59 +60,90 @@ class SettingWidgetsList<T> extends StatelessWidget {
   }
 }
 
-abstract class SettingTypedWidget<T> extends StatelessWidget {
-  const SettingTypedWidget._({required this.setting, required this.settingsController, super.key});
-  final Setting<T> setting;
-  final SettingsController settingsController;
+// auto typed IOField
+abstract class SettingTypedWidget extends StatelessWidget {
+  // const SettingTypedWidget._({required this.setting, required this.settingsController, super.key});
+  // final Setting setting;
+  // final SettingsController settingsController;
 
   // auto typed using Setting Type
-  factory SettingTypedWidget({required Setting<T> setting, required SettingsController settingsController, Key? key}) {
-    if (setting.enumValues != null) {
-      return setting.callWithType(<G>() => SettingMenu<G>(setting: setting as Setting<G>, settingsController: settingsController) as SettingMenu<T>);
+  factory SettingTypedWidget({required Setting setting, required SettingsController settingsController, Key? key}) {
+    // if (setting.enumRange != null) {
+    //   return setting.callWithType(<G>() => SettingMenu<G>(setting: setting as Setting<G>, settingsController: settingsController) as SettingMenu<T>);
+    // }
+    // return setting.callWithType(<G>() => SettingTextField<G>(setting: setting as Setting<G>, settingsController: settingsController) as SettingTextField<T>);
+
+    // convenience for passing parameters
+    _SettingTypedWidget<V> local<V>() {
+      final config = IOFieldConfig<V>(
+        valueListenable: settingsController,
+        valueGetter: () => setting.value as V?,
+        valueNumLimits: setting.numLimits,
+        valueEnumRange: setting.valueRange as List<V>?,
+        valueSetter: (value) async => await settingsController.updateSetting<V>(setting as Setting<V>, value),
+        // label: setting.label,
+        // valueStringGetter: () => setting.valueString,
+        valueStringifier: (setting is Setting<Enum>) ? (value) => (value as Enum).name.titleCase : (value) => value.toString(),
+        tip: setting.tip ?? '',
+      );
+      return _SettingTypedWidget<V>(config);
     }
-    return setting.callWithType(<G>() => SettingTextField<G>(setting: setting as Setting<G>, settingsController: settingsController) as SettingTextField<T>);
+
+    return setting.callWithType(<G>() => local<G>() as SettingTypedWidget);
+  }
+  // static String _stringify(Object value) => value.toString();
+  // static String _stringifyEnum(Enum value) => value.name.titleCase;
+}
+
+class _SettingTypedWidget<V> extends StatelessWidget implements SettingTypedWidget {
+  const _SettingTypedWidget(this.config, {super.key});
+  final IOFieldConfig<V> config;
+
+  @override
+  Widget build(BuildContext context) {
+    return IOField<V>(config);
   }
 }
 
 //to move to io field
-class SettingTextField<T> extends SettingTypedWidget<T> {
-  const SettingTextField({required super.setting, required super.settingsController, super.key}) : super._();
+// class SettingTextField<T> extends SettingTypedWidget<T> {
+//   const SettingTextField({required super.setting, required super.settingsController, super.key}) : super._();
 
-  @override
-  Widget build(BuildContext context) {
-    return IOFieldText<T>(
-      listenable: settingsController,
-      valueGetter: () => setting.value,
-      valueSetter: (value) => settingsController.updateSetting<T>(setting, value),
-      decoration: const InputDecoration().applyDefaults(Theme.of(context).inputDecorationTheme).copyWith(isDense: true),
-      numLimits: setting.numLimits,
-      // numMax: setting.numLimits?.max,
-      // numMin: setting.numLimits?.min,
-      tip: setting.key,
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return IOFieldText<T>(
+//       listenable: settingsController,
+//       valueGetter: () => setting.value,
+//       valueSetter: (value) => settingsController.updateSetting<T>(setting, value),
+//       decoration: const InputDecoration().applyDefaults(Theme.of(context).inputDecorationTheme).copyWith(isDense: true),
+//       numLimits: setting.numLimits,
+//       // numMax: setting.numLimits?.max,
+//       // numMin: setting.numLimits?.min,
+//       tip: setting.label,
+//     );
+//   }
+// }
 
-//change enum to T for with selection set
-/// PopupMenu
-class SettingMenu<T> extends SettingTypedWidget<T> {
-  const SettingMenu({required super.setting, required super.settingsController, super.key}) : super._();
+// //change enum to T for with selection set
+// /// PopupMenu
+// class SettingMenu<T> extends SettingTypedWidget<T> {
+//   const SettingMenu({required super.setting, required super.settingsController, super.key}) : super._();
 
-  @override
-  Widget build(BuildContext context) {
-    String string(T value) => switch (value) { Enum() => value.name.titleCase, _ => value.toString() };
+//   @override
+//   Widget build(BuildContext context) {
+//     String string(T value) => switch (value) { Enum() => value.name.titleCase, _ => value.toString() };
 
-    return IOFieldMenu<T>(
-      decoration: const InputDecoration().applyDefaults(Theme.of(context).inputDecorationTheme).copyWith(isDense: true),
-      listenable: settingsController,
-      valueGetter: () => setting.value,
-      valueSetter: (value) async => await settingsController.updateSetting<T>(setting, value),
-      // stringMap: {for (var e in setting.enumValues ?? []) e: string(e)},
-      valueEnumRange: setting.enumValues!,
-      tip: setting.key,
-    );
-  }
-}
+//     return IOFieldMenu<T>(
+//       decoration: const InputDecoration().applyDefaults(Theme.of(context).inputDecorationTheme).copyWith(isDense: true),
+//       listenable: settingsController,
+//       valueGetter: () => setting.value,
+//       valueSetter: (value) async => await settingsController.updateSetting<T>(setting, value),
+//       // stringMap: {for (var e in setting.enumValues ?? []) e: string(e)},
+//       valueEnumRange: setting.enumRange! as List<T>,
+//       tip: setting.label,
+//     );
+//   }
+// }
 
 // class SettingSlider<T extends num> extends SettingTypedWidget<T> {
 //   const SettingSlider({required super.setting, required super.settingsController, super.key}) : super._();

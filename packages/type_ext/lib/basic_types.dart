@@ -37,8 +37,65 @@ abstract mixin class UnionValueKey<V> implements TypeKey<V> {
   ({num min, num max})? get valueNumLimits; // must be null for non-num types
   V? get valueDefault;
 
+  V get value;
+  set value(V newValue);
+
+  // num get valueAsNum;
+
+  set valueAsNum(num newValue) {
+    // assert(V == int || V == double, 'Only num types are supported');
+    if (valueNumLimits != null) {
+      value = newValue.clamp(valueNumLimits!.min, valueNumLimits!.max) as V;
+    }
+  }
+
+  set valueAsEnum(Enum newValue) {
+    if (valueEnumRange != null) {
+      if (valueEnumRange!.contains(newValue)) value = newValue as V;
+    }
+  }
+
   // move check limits here
 }
+
+typedef NumRange = ({num min, num max});
+typedef EnumRange = List<Enum>;
+
+// ServiceKey for retrieving data of dynamic type from external source and casting
+// IdKey, EntityKey, DataKey, FieldKey, VarKey,
+// abstract mixin class ServiceKey<K, V> implements UnionValueKey<V> {
+//   // VarKey
+//   K get key;
+//   String get label;
+//   // Stringifier? get valueStringifier;
+
+//   // a serviceKey can directly access the value with a provided reference to service
+//   // ServiceIO? get service;
+//   // V? get value => service?.get(keyValue);
+//   // alternatively as V always return a cached value
+//   V? get value;
+//   set value(V? newValue);
+
+//   Future<V?> loadValue();
+//   Future<bool> updateValue(V value);
+//   String get valueString;
+
+//   void setValueAsNum(num newValue) {
+//     if (valueNumLimits != null) {
+//       // assert(V == int || V == double, 'Only num types are supported');
+//       value = newValue.clamp(valueNumLimits!.min, valueNumLimits!.max) as V;
+//     }
+//   }
+
+//   void setValueAsEnum(Enum newValue) {
+//     if (valueEnumRange != null) {
+//       value = valueEnumRange!.contains(newValue) ? newValue as V : valueDefault;
+//     }
+//   }
+
+//   // Type get type;
+//   // TypeKey<V> get valueType => TypeKey<V>();
+// }
 
 /// a type of status where non-zero is an error
 /// todo with enum factory
@@ -81,6 +138,7 @@ typedef Stringifier<T> = String Function(T input);
 typedef GenericStringifier = String Function<T>(T input);
 typedef NullableStringifier<T> = String Function(T? input); // defining non-nullable type allows null input, cases where T is used for selection
 
+/// [Slicer]
 abstract mixin class Sliceable<T extends Sliceable<dynamic>> {
   // int get start => 0;
   int get totalLength;
@@ -105,9 +163,6 @@ class Slicer<T> {
     }
   }
 }
-
-typedef NumRange = ({num min, num max});
-typedef EnumRange = List<Enum>;
 
 // naming convention notes
 // For classes and types -

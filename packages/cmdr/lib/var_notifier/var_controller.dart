@@ -13,6 +13,7 @@ class VarCacheController {
 
   // VarStatus? readStatus; // optionally store previous response code
   // VarStatus? writeStatus;
+  // Completer _completer = Completer();
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Collective Read Vars `Fetch/Load`
@@ -37,8 +38,8 @@ class VarCacheController {
   }
 
   Future<VarStatus?> readAllOverwrite([Iterable<VarKey>? keys]) async {
-    for (var element in cache.varEntries) {
-      element.lastUpdate = VarLastUpdate.clear;
+    for (final element in cache.varEntries) {
+      element.lastUpdate = VarLastUpdate.clear; // updateByData rejects when updated by view by default
     }
     return readAll(keys);
   }
@@ -155,6 +156,7 @@ class VarRealTimeController extends VarCacheController {
   Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListenersCombined).map((e) => e.varKey);
   Iterable<int> _readKeysGetter() => _readKeys.map((e) => e.value);
 
+  // polling stream setters, optionally implement local Set
   void addPolling(Iterable<VarKey> keys) => cache.varsOf(keys).forEach((element) => element.hasIndirectListeners = true);
   void removePollingAll() => cache.varEntries.forEach((element) => element.hasIndirectListeners = false);
   void selectPolling(Iterable<VarKey> keys) => (this..removePollingAll()).addPolling(keys);
@@ -176,9 +178,6 @@ class VarRealTimeController extends VarCacheController {
 
   // wait for an user initiated write to resolve
   Future<void> writeBatchCompleted(VarKey varKey) async {
-    // while (cache[varKey]!.isPushPending) {
-    //   await Future.delayed(const Duration(milliseconds: 10)); // wait some duration before every check
-    // }
     await Future.doWhile(() async {
       await Future.delayed(const Duration(milliseconds: 10)); // wait some duration before every check
       return (cache[varKey]!.lastUpdate == VarLastUpdate.byView);
@@ -187,6 +186,7 @@ class VarRealTimeController extends VarCacheController {
 
   Future<void> readBatchCompleted(VarKey varKey) async {
     cache[varKey]!.lastUpdate = VarLastUpdate.clear;
+
     await Future.doWhile(() async {
       await Future.delayed(const Duration(milliseconds: 10)); // wait some duration before every check
       return (cache[varKey]!.lastUpdate == VarLastUpdate.clear);

@@ -3,6 +3,10 @@ import 'package:flutter/services.dart';
 
 class VDivider {
   const VDivider(this.r1, this.r2);
+  const VDivider.zero()
+      : r1 = 0,
+        r2 = 1;
+
   final int r1;
   final int r2;
 

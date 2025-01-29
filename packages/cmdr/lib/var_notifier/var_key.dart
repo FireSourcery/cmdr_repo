@@ -1,5 +1,6 @@
 part of 'var_notifier.dart';
 
+//remove valuekey if mixin unionkey
 @immutable
 abstract mixin class VarKey implements ValueKey<int> {
   const VarKey();

@@ -50,7 +50,7 @@ abstract class WordStruct<T extends WordField> extends ConstBitStruct<T> {
 /// a field within a [WordStruct]
 /// interface for including [TypedField<T>], [Enum]
 /// type ensures bitmask is power of 2
-abstract mixin class WordField<V extends NativeType> implements BitField, TypedField<V>, Enum {
+abstract mixin class WordField<V extends NativeType> implements BitField, TypedField<V> {
   // alternatively store the bitmask
   @override
   Bitmask get bitmask => Bitmask.bytes(offset, size);

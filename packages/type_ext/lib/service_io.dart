@@ -24,11 +24,11 @@ abstract mixin class ServiceIO<K, V, S> {
   FutureOr<V?> get(K key);
   Future<S?> set(K key, V value);
 
-  FutureOr<Iterable<V>?> getBatch(Iterable<K> keys);
-  Future<Iterable<S>?> setBatch(Iterable<(K, V)> pairs);
-
   int? get maxGetBatchSize;
   int? get maxSetBatchSize;
+
+  FutureOr<Iterable<V>?> getBatch(Iterable<K> keys);
+  Future<Iterable<S>?> setBatch(Iterable<(K, V)> pairs);
 
   // for single status response
   // FutureOr<(S?, Iterable<V>?)> getBatchWithMeta(Iterable<K> keys);
@@ -162,26 +162,4 @@ abstract class ServiceStreamHandler<T> {
 
   Future<void> end() async => streamSubscription?.cancel().whenComplete(() => streamSubscription = null);
   Future<void> restart() async => end().whenComplete(() => begin());
-}
-
-// IdKey, EntityKey, DataKey, FieldKey, VarKey,
-// ServiceKey for retrieving data of dynamic type from external source and casting
-abstract mixin class ServiceKey<K, V> implements UnionValueKey<V> {
-  // VarKey
-  K get key;
-  String get label;
-  // Stringifier? get valueStringifier;
-
-  // a serviceKey can directly access the value with a provided reference to service
-  // ServiceIO? get service;
-  // V? get value => service?.get(keyValue);
-  // alternatively as V always return a cached value
-  V? get value;
-  set value(V? newValue);
-  Future<bool> updateValue(V value);
-  Future<V?> loadValue();
-  String get valueString;
-
-  // Type get type;
-  TypeKey<V> get valueType => TypeKey<V>();
 }

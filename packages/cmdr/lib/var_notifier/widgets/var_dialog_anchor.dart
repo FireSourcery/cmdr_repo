@@ -11,7 +11,7 @@ class VarInputDialog extends StatelessWidget {
     required this.child,
     required this.varNotifier,
     required this.varCache,
-    this.eventController,
+    required this.eventNotifier,
     this.beginEditMessage = initialMessageDefault,
     this.endEditMessage = finalMessageDefault,
     // this.displayCondition,
@@ -19,7 +19,7 @@ class VarInputDialog extends StatelessWidget {
 
   final VarNotifier varNotifier;
   final VarCache varCache;
-  final VarCacheNotifier? eventController;
+  final VarCacheNotifier eventNotifier; // make this required
   final Widget child; // caller may map child callbacks to the same event controller
 
   final String? beginEditMessage;
@@ -28,14 +28,14 @@ class VarInputDialog extends StatelessWidget {
   static const String initialMessageDefault = 'Are you sure you want to continue?';
   static const String finalMessageDefault = 'You have completed editing this field.';
 
-  // ValueGetter<bool>? displayCondition;
+// ValueGetter<bool>? displayCondition;
 // Widget? title,
 // Widget? content,
-  // optionally include onpop
+// optionally include onpop
 
   // on first time focus
   Widget initialDialog(BuildContext context) {
-    final theme = Theme.of(context);
+    // final theme = Theme.of(context);
     return AlertDialog(
       // title: const Text('Edit'),
       title: Text(varNotifier.varKey.label),
@@ -78,13 +78,13 @@ class VarInputDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveEventController = eventController ?? VarCacheNotifier(varCache: varCache, varNotifier: varNotifier); // DialogAnchor handles dispose / remove listener
+    // final effectiveEventNotifier = eventNotifier ?? VarCacheNotifier(varCache: varCache, varNotifier: varNotifier); // DialogAnchor handles dispose / remove listener
 
     if (varNotifier.varKey.dependents != null) {
       // change to conditional
       return DialogAnchor<VarViewEvent>(
         // displayCondition: displayCondition,
-        eventNotifier: effectiveEventController,
+        eventNotifier: eventNotifier,
         initialDialogBuilder: initialDialog,
         eventDialogBuilder: eventDialog,
         eventMatch: VarViewEvent.submit,

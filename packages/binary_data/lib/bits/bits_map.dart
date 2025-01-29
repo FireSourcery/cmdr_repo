@@ -99,3 +99,22 @@ class ConstBitFieldMap<K extends BitField> extends BitsMap<K, int> with BitField
   @override
   set bits(Bits value) => throw UnsupportedError('ConstBitFieldMap.bits is read-only');
 }
+
+// abstract interface class BitFieldEnum implements BitField, Enum {}
+
+// extension BitFieldEnumMap on Map<BitFieldEnum, int> {
+//   Map<String, Object> toJson() {
+//     // by default returns keyed fields
+//     // {
+//     //   'fix': fix,
+//     //   'minor': minor,
+//     //   'major': major,
+//     //   'optional': optional,
+//     // }
+//     return <String, Object>{
+//       'name': name,
+//       'value': bits,
+//       'description': toStringAsVersion(),
+//     };
+//   }
+// }

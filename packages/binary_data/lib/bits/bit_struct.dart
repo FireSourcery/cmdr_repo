@@ -81,7 +81,7 @@ abstract mixin class BitStruct<K extends BitField> implements BitsBase, BitsMap<
 
   // String toStringAs(String Function(MapEntry<K, int> entry) stringifier) => entries.fold('', (previousValue, element) => previousValue + stringifier(element));
 
-  MapEntry<String, int> toMapEntry() => MapEntry<String, int>(runtimeType.toString(), bits);
+  // MapEntry<String, int> toMapEntry() => MapEntry<String, int>(runtimeType.toString(), bits); // {name: value}
 }
 
 ////////////////////////////////////////////////////////////////////////////////

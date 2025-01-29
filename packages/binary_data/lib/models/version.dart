@@ -52,9 +52,6 @@ abstract class Version<T extends WordField> extends WordStruct<T> with BitStruct
   @override
   int get byteLength => (bits.byteLength > 4) ? 8 : 4;
 
-  // @override
-  (String, String) get labelPair => (name ?? '', toStringAsVersion());
-
   /// alias
   List<int> get numbers => values.toList(); // [fix, minor, major, optional]
 
@@ -87,20 +84,30 @@ abstract class Version<T extends WordField> extends WordStruct<T> with BitStruct
   // }
 
   // @override
-  // Map<String, dynamic> toJson() {
-  //   // by default returns keyed fields
-  //   // {
-  //   //   'fix': fix,
-  //   //   'minor': minor,
-  //   //   'major': major,
-  //   //   'optional': optional,
-  //   // }
-  //   // return <String, dynamic>{
-  //   //   'name': name,
-  //   //   'value': bits,
-  //   //   'description': toStringAsVersion(),
-  //   // };
-  // }
+  Map<String, Object> toJson() {
+    // by default returns keyed fields
+    // {
+    //   'fix': fix,
+    //   'minor': minor,
+    //   'major': major,
+    //   'optional': optional,
+    // }
+    return <String, Object>{
+      'name': name ?? T.toString(),
+      'value': bits,
+      'description': numbers.reversed,
+    };
+  }
+
+  MapEntry<String, Object> toJsonAsEntry() {
+    return MapEntry<String, Object>(name!, numbers.reversed.toString());
+    // return <String, Object>{
+    //   name!, {
+    //     'value': bits,
+    //     'description': toStringAsVersion(),
+    //   },
+    // };
+  }
 
   // factory Version.fromMapEntry(MapEntry<dynamic, dynamic> entry) {
   //   if (entry case MapEntry<String, int>()) {
@@ -112,7 +119,10 @@ abstract class Version<T extends WordField> extends WordStruct<T> with BitStruct
 
   // factory Version.ofMapEntry(MapEntry<String, int> entry) => Version.init(entry.value, name: entry.key);
 
-  MapEntry<String, int> toMapEntry() => MapEntry<String, int>(name ?? '', bits);
+  // @override
+  (String, String) get labelPair => (name ?? '', toStringAsVersion());
+
+  MapEntry<String, int> toMapEntryByName() => MapEntry<String, int>(name ?? '', bits);
 
   @override
   bool operator ==(covariant Version<T> other) {

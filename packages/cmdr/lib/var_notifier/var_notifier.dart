@@ -62,6 +62,8 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
     numLimits = varKey.valueNumLimits;
     enumRange = varKey.valueEnumRange;
     bitsKeys = varKey.valueBitsKeys;
+
+    _viewValue = clamp(_viewValue);
   }
 
   /// [VarStatus] type is the same for all vars in most cases.
@@ -91,6 +93,31 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   //   super.updateStatusByData(status);
   //   isUpdatedByView = false;
   // }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /// Json
+  ////////////////////////////////////////////////////////////////////////////////
+  Map<String, Object?> toJson() {
+    return {
+      'varId': dataKey,
+      'varValue': _viewValue,
+      'dataValue': dataValue,
+      'description': varKey.label,
+    };
+  }
+
+  /// init values from json config file, no new/allocation.
+  void loadFromJson(Map<String, Object?> json) {
+    if (json
+        case {
+          'varId': int _,
+          'varValue': num viewValue,
+          'dataValue': int _,
+          'description': String _,
+        }) {
+      updateByViewAs<num>(viewValue);
+    }
+  }
 }
 
 ///
@@ -105,6 +132,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   /// additionally all mutability is contained in a single layer. cache preallocate can be immutable
   /// by default get from varKey. resolve in constructor to cached values derived from varKey
   int get dataKey;
+  // final VarReferences references;
   int Function(int binary)? signExtension;
   ViewOfData? viewOfData; // num conversion only, null for Enum and Bits
   DataOfView? dataOfView;
@@ -135,19 +163,6 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   /// runtime variables
   ////////////////////////////////////////////////////////////////////////////////
   VarLastUpdate lastUpdate = VarLastUpdate.clear;
-
-  // clear on response
-  // bool isUpdatedByView = false; // isPushPending, isLastUpdateByView
-  // void push() => isUpdatedByView = true;
-  // void clearPush() => isUpdatedByView = false;
-
-  // cleared by user
-  // bool _isPollingMarked = false;
-  // bool get isPollingMarked => (_isPollingMarked || hasListeners); // && !isPushPending;
-  // set isPollingMarked(bool value) => _isPollingMarked = value;
-
-  // bool isPollComplete = true;
-  // void pull() => _isPollingMarked = true;
 
   bool hasIndirectListeners = false;
   bool get hasListenersCombined => hasListeners || hasIndirectListeners;
@@ -237,6 +252,10 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   @protected
   String get valueAsString => String.fromCharCodes(valueAsBytes);
 
+  // returns as the subtype, must be nullable
+  @protected
+  R? valueAsEnumCast<R extends Enum>() => enumRange?.elementAtOrNull(valueAsInt) as R?;
+
   /// generic getter use switch on type literal, and require extension to account for subtypes
   /// generic setter can optionally switch on object type
 
@@ -307,32 +326,8 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // void updateByViewAs<T>(T typedValue) => (this..updateByViewAs<T>(typedValue))..push(); // some chance mark occur initiating pull
   // void updateByView(V typedValue) => updateByViewAs<V>(typedValue);
 
-  ////////////////////////////////////////////////////////////////////////////////
-  /// Json param config
-  ////////////////////////////////////////////////////////////////////////////////
-  Map<String, Object?> toJson() {
-    return {
-      'varId': dataKey,
-      'varValue': _viewValue,
-      'dataValue': dataValue,
-      // 'description': varKey.toString(),
-    };
-  }
-
-  /// init values from json config file, no new/allocation.
-  void loadFromJson(Map<String, Object?> json) {
-    if (json
-        case {
-          'varId': int _,
-          'varValue': num viewValue,
-          'dataValue': int _,
-          // 'description': String _,
-        }) {
-      updateByViewAs<num>(viewValue);
-    } else {
-      throw const FormatException('Unexpected JSON');
-    }
-  }
+  // for set before loading num limits
+  void updateByFile(num newValue) => _viewValue = newValue;
 }
 
 enum VarLastUpdate { clear, byData, byView }

@@ -166,6 +166,13 @@ abstract mixin class Field<V> {
 typedef FieldEntry<K, V> = ({K key, V value});
 // abstract interface class EnumField<V> implements Enum, Field<V> {}
 
+class StructFactory<T extends Structure<K, V>, K extends Field, V> {
+  final List<K> keys;
+  final T Function(Structure<K, V>) constructor;
+
+  StructFactory(this.keys, this.constructor);
+}
+
 /// [Construct]
 ///   keys + meta as a data member. library side create a structview
 // can be created without extending
