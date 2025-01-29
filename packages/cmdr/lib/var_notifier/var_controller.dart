@@ -189,7 +189,7 @@ class VarRealTimeController extends VarCacheController {
 
     await Future.doWhile(() async {
       await Future.delayed(const Duration(milliseconds: 10)); // wait some duration before every check
-      return (cache[varKey]!.lastUpdate == VarLastUpdate.clear);
+      return (cache[varKey]!.lastUpdate == VarLastUpdate.byData);
     });
   }
 }

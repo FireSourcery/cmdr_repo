@@ -204,7 +204,7 @@ class VarCache {
   ////////////////////////////////////////////////////////////////////////////////
   String dependentsString(VarKey key, [String prefix = '', String divider = ': ', String separator = '\n']) {
     return (StringBuffer(prefix)
-          ..writeAll(key.dependents?.map((k) => '${k.label}$divider${this[k]?.valueAsNum}') ?? [], separator)
+          ..writeAll(key.dependents?.map((k) => '${k.label}$divider${this[k]?.valueAsNum.toStringAsFixed(2)}') ?? [], separator)
           ..writeln(''))
         .toString();
   }
@@ -255,9 +255,7 @@ abstract mixin class VarCacheNotifier implements VarCache, ValueNotifier<VarView
   // passing key
   void submitEntryAs<T>(VarKey key, T varValue) {
     this[key]?.updateByViewAs<T>(varValue);
-    // if (varCache case VarDependents typedCache) {
     updateDependents(key);
-    // }
     value = VarViewEvent.submit;
   }
 
