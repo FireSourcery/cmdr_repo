@@ -25,10 +25,13 @@ abstract mixin class FileStorageNotifier<T> implements FileStorage<T> {
   double get progress => progressNotifier.value;
 
   /// async state notifiers for FutureBuilder
-  Future<File?>? _pickedFile; // pick open and pick save
+  Future<File?> _pickedFile = Future.value(null);
+  // Future<File?>? _pickedFile; // pick open and pick save
   set pickedFile(Future<File?> value) => (_pickedFile = value).then((value) => file = value);
-  Future<File?> get pickedFile => _pickedFile ?? Future.value(null);
-  Future<String>? get pickedFileName => _pickedFile?.then((value) => value?.path ?? 'No file selected') ?? Future.value('Error: Not initialized');
+  // Future<File?> get pickedFile => _pickedFile ?? Future.value(null);
+  // Future<String>? get pickedFileName => _pickedFile?.then((value) => value?.path ?? 'No file selected') ?? Future.value('Error: Not initialized');
+  Future<File?> get pickedFile => _pickedFile;
+  Future<String> get pickedFileName => _pickedFile.then((value) => value?.path ?? 'No file selected');
 
   Future<dynamic>? operationCompleted; // return of function pass to processWithNotify
 

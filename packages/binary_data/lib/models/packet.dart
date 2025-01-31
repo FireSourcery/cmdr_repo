@@ -224,7 +224,7 @@ abstract class Packet {
   /// for valueOrNull from header status
   bool isValidStart(int value) => (value == packetClass.startId);
   bool isValidId(int value) => (packetClass.idOf(value) != null);
-  bool isValidLength(int value) => (value == value.clamp(packetClass.headerLength, packetClass.lengthMax));
+  bool isValidLength(int value) => (value == value.clamp(packetClass.headerLength, packetClass.lengthMax)); // where length is total length
   bool isValidChecksum(int value) => (value == checksum());
 
   // bool get isStartValid => isValidStart(headerAsSyncType.startFieldValue);
@@ -334,6 +334,7 @@ abstract interface class PacketFixedHeader implements PacketIdHeader {
   set checksumField(int value);
 }
 
+// meta char
 abstract interface class PacketSyncHeader implements PacketIdHeader {
   int get startField;
   int get idField;
@@ -460,19 +461,19 @@ abstract interface class PacketId implements Enum {
 
 abstract interface class PacketSyncId implements PacketId {}
 
-// Id hold a constructor to create a handler instance to process as packet
+// // Id hold a constructor to create a handler instance to process as packet
 abstract interface class PacketPayloadId<V> implements PacketId {
   PayloadCaster<V> get payloadCaster;
 }
 
-abstract interface class PacketFixedId<V> implements PacketPayloadId<V> {
-  int get length;
-}
+// abstract interface class PacketFixedId<V> implements PacketPayloadId<V> {
+//   int get length;
+// }
 
-abstract interface class PacketVariableId<V> implements PacketPayloadId<V> {
-  // int get lengthMax;
-  // int lengthOf(V values);
-}
+// abstract interface class PacketVariableId<V> implements PacketPayloadId<V> {
+//   // int get lengthMax;
+//   // int lengthOf(V values);
+// }
 
 /// Id as payload factory
 /// A `Request` matched with a `Response`

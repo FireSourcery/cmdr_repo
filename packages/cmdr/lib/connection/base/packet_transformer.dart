@@ -56,9 +56,9 @@ class HeaderStatus {
 
   /// is full length packet or greater, caller `ensure field are valid` before calling
   bool get isPacketComplete {
-    assert(isStartValid == true);
+    assert(isStartValid != false);
     assert(isIdValid != false);
-    // assert(isLengthValid != false); buffer.packet.isLengthValid
+    assert(isLengthValid != false);
     return packet.isPacketComplete;
   }
 
@@ -118,7 +118,7 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
                 throw ProtocolException.checksum;
             }
 
-          /// in case of [sync][sync]
+          /// in case of [sync][sync], todo check before complete
           case HeaderStatus(isLengthValid: false):
             throw ProtocolException.meta;
 
