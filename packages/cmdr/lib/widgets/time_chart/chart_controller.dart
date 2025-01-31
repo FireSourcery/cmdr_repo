@@ -15,7 +15,7 @@ class ChartController with TimerNotifier, ChangeNotifier {
   ChartController({
     List<ChartEntry>? chartEntries,
     this.updateInterval = const Duration(milliseconds: 20),
-    int samplesMax = 400, // e.g 100 samples at 10ms => 10s display
+    int samplesMax = 200, // e.g 100 samples at 10ms => 10s display
     int entriesMax = kSelectionCountMax,
     double? yMin,
     double? yMax,
