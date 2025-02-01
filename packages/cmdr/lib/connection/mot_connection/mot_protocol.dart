@@ -20,33 +20,13 @@ class MotProtocolSocket extends ProtocolSocket {
   Future<int?> stopMotors() async => requestResponse(MotPacketRequestId.MOT_PACKET_STOP_ALL, null);
   Future<VersionResponseValues?> version() async => await requestResponse(MotPacketRequestId.MOT_PACKET_VERSION, null);
 
-  Future<CallResponseValues?> call(int id, int? arg, [Duration? timeout]) async => requestResponse(MotPacketRequestId.MOT_PACKET_CALL, (id, arg), timeout: timeout);
+  Future<CallResponseValues?> call(int id, int? arg, [Duration timeout = const Duration(milliseconds: 500)]) async => requestResponse(MotPacketRequestId.MOT_PACKET_CALL, (id, arg), timeout: timeout);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Vars by Key
   ////////////////////////////////////////////////////////////////////////////////
   Future<VarReadResponseValues?> readVars(VarReadRequestValues ids) async => requestResponse(MotPacketRequestId.MOT_PACKET_VAR_READ, ids);
   Future<VarWriteResponseValues?> writeVars(VarWriteRequestValues pairs) async => requestResponse(MotPacketRequestId.MOT_PACKET_VAR_WRITE, pairs);
-
-  /// Slices
-  /// same input signature, but is not the content sent to the packet
-  Stream<(VarReadRequestValues sliceIds, VarReadResponseValues?)> readVarsSlices(Iterable<int> ids) => iterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, ids.slices(16));
-  Stream<(VarWriteRequestValues slicePairs, VarWriteResponseValues?)> writeVarsSlices(Iterable<(int id, int value)> ids) => iterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_WRITE, ids.slices(8));
-
-  /// Periodic Stream
-  Stream<VarReadResponseValues?> readVarsStream(VarReadRequestValues ids, {Duration delay = const Duration(milliseconds: 50)}) {
-    assert(ids.length <= VarReadRequest.idCountMax);
-    return periodicRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, ids, delay: delay);
-  }
-
-  Stream<(VarReadRequestValues sliceIds, VarReadResponseValues?)> readVarsSlicesStream(Iterable<int> ids, {Duration delay = const Duration(milliseconds: 50)}) {
-    return periodicIterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, ids.slices(VarReadRequest.idCountMax), delay: delay);
-  }
-
-  Stream<VarWriteResponseValues?> writeVarsStream(VarWriteRequestValues Function() idValuesGetter, {Duration delay = const Duration(milliseconds: 10)}) {
-    assert(idValuesGetter().length <= VarWriteRequest.pairCountMax);
-    return periodicUpdate(MotPacketRequestId.MOT_PACKET_VAR_WRITE, idValuesGetter, delay: delay);
-  }
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Mem
@@ -81,7 +61,7 @@ class MotProtocolSocket extends ProtocolSocket {
   /// DataMode
   ////////////////////////////////////////////////////////////////////////////////
   Future<int?> initDataModeWrite(int address, int sizeBytes, int flags) async {
-    return requestResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE, (address, sizeBytes, flags), syncOptions: ProtocolSyncOptions.sendAndRecv);
+    return requestResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE, (address, sizeBytes, flags), syncOptions: ProtocolSyncOptions.sendAndRecv, timeout: const Duration(milliseconds: 2000));
   }
 
   Future<int?> initDataModeRead(int address, int sizeBytes, int flags) async {
@@ -120,3 +100,23 @@ class MotProtocolSocket extends ProtocolSocket {
 //   return stream.map((event) => (event.$1, 0, <int>[for (var i = 0; i < event.$1.length; i++) (sin(debugStopwatch.elapsedMilliseconds / 1000) * 32767).toInt()]));
 //   //  (cos(debugStopwatch.elapsedMilliseconds / 1000) * 32767).toInt(),
 // }
+
+  /// Slices
+  /// same input signature, but is not the content sent to the packet
+  // Stream<(VarReadRequestValues sliceIds, VarReadResponseValues?)> readVarsSlices(Iterable<int> ids) => iterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, ids.slices(16));
+  // Stream<(VarWriteRequestValues slicePairs, VarWriteResponseValues?)> writeVarsSlices(Iterable<(int id, int value)> ids) => iterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_WRITE, ids.slices(8));
+
+  // /// Periodic Stream
+  // Stream<VarReadResponseValues?> readVarsStream(VarReadRequestValues ids, {Duration delay = const Duration(milliseconds: 50)}) {
+  //   assert(ids.length <= VarReadRequest.idCountMax);
+  //   return periodicRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, ids, delay: delay);
+  // }
+
+  // Stream<(VarReadRequestValues sliceIds, VarReadResponseValues?)> readVarsSlicesStream(Iterable<int> ids, {Duration delay = const Duration(milliseconds: 50)}) {
+  //   return periodicIterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, ids.slices(VarReadRequest.idCountMax), delay: delay);
+  // }
+
+  // Stream<VarWriteResponseValues?> writeVarsStream(VarWriteRequestValues Function() idValuesGetter, {Duration delay = const Duration(milliseconds: 10)}) {
+  //   assert(idValuesGetter().length <= VarWriteRequest.pairCountMax);
+  //   return periodicUpdate(MotPacketRequestId.MOT_PACKET_VAR_WRITE, idValuesGetter, delay: delay);
+  // }

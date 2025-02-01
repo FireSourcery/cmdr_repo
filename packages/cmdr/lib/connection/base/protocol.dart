@@ -142,6 +142,7 @@ class ProtocolSocket implements Sink<Packet> {
   Stopwatch timer = Stopwatch()..start();
 
   static const Duration timeoutDefault = Duration(milliseconds: 500);
+  static const Duration rxTimeoutDefault = Duration(milliseconds: 500);
   static const Duration reqRespTimeoutDefault = Duration(milliseconds: 1000);
   static const Duration datagramDelay = Duration(milliseconds: 1);
 
@@ -159,7 +160,7 @@ class ProtocolSocket implements Sink<Packet> {
   /// T - Request Payload Values
   ///
   /// Caller ensure connection is available
-  Future<R?> requestResponse<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration? timeout = reqRespTimeoutDefault, ProtocolSyncOptions syncOptions = ProtocolSyncOptions.none}) async {
+  Future<R?> requestResponse<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration timeout = reqRespTimeoutDefault, ProtocolSyncOptions syncOptions = ProtocolSyncOptions.none}) async {
     waitingOnLockCount++;
     try {
       return await _lock.synchronized<R?>(
@@ -176,12 +177,14 @@ class ProtocolSocket implements Sink<Packet> {
           final PayloadMeta requestMeta = await sendRequest(requestId, requestArgs); //alternatively without waiting
 
           if (syncOptions.recvSync) {
-            if (await recvSync() != packetInterface.ack) return null; // handle nack?
+            if (await recvSync(timeout) != packetInterface.ack) return null; // handle nack?
             // if (await recvSync() case PacketSyncId? id when id != packetInterface.ack) {
             //   return Future.error(id ?? TimeoutException());
             // }
           }
-          final R? response = await recvResponse(requestId, reqStateMeta: requestMeta);
+          final R? response = await recvResponse(requestId, reqStateMeta: requestMeta, timeout: timeout);
+
+          if (response == null) return null;
 
           if (syncOptions.sendSync) await sendSync(packetInterface.ack);
           return response;
@@ -289,7 +292,7 @@ class ProtocolSocket implements Sink<Packet> {
 
   /// using response side
   @protected
-  Future<V?> recvResponse<V>(PacketIdRequest<dynamic, V> packetId, {PayloadMeta? reqStateMeta, Duration timeout = timeoutDefault}) async {
+  Future<V?> recvResponse<V>(PacketIdRequest<dynamic, V> packetId, {PayloadMeta? reqStateMeta, Duration timeout = rxTimeoutDefault}) async {
     //todo handle case of rx nack
     return await tryRecv<V>(() => packetBufferIn.parseResponse<V>(packetId, reqStateMeta), timeout);
   }
@@ -302,7 +305,7 @@ class ProtocolSocket implements Sink<Packet> {
   }
 
   @protected
-  Future<PacketSyncId?> recvSync([Duration timeout = timeoutDefault]) {
+  Future<PacketSyncId?> recvSync([Duration timeout = rxTimeoutDefault]) {
     return tryRecv<PacketSyncId>(() => packetBufferIn.parseSyncId(), timeout);
   }
 
@@ -322,7 +325,7 @@ class ProtocolSocket implements Sink<Packet> {
   // using sync completer to execute parse immediately, although code it is not the final computation.
   // lock receiving side only?
   @protected
-  Future<R?> tryRecv<R>(R? Function() parse, [Duration timeout = timeoutDefault]) async {
+  Future<R?> tryRecv<R>(R? Function() parse, [Duration timeout = rxTimeoutDefault]) async {
     try {
       // await stream.first.timeout(timeout);
       return await _recved.future.timeout(timeout).then((_) => parse());

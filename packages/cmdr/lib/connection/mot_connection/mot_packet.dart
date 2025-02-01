@@ -339,7 +339,7 @@ base class StopResponse extends Struct implements Payload<int> {
 /// Request:
 /// Response: [Ver_LSB, Ver1, Ver2, Ver_MSB][4]
 ////////////////////////////////////////////////////////////////////////////////
-typedef VersionResponseValues = ({int protocol, int library, int firmware, int board});
+typedef VersionResponseValues = ({int protocol, int library, int firmware});
 
 class VersionRequest implements Payload<void> {
   VersionRequest();
@@ -361,8 +361,6 @@ base class VersionResponse extends Struct implements Payload<VersionResponseValu
   external int library;
   @Uint32()
   external int firmware;
-  @Uint32()
-  external int board; //deprecated
 
   // factory VersionResponse({int board = 0, int firmware = 0, int library = 0, int protocol = 0}) {
   //   return Struct.create<VersionResponse>()..build((board: board, firmware: firmware, library: library, protocol: protocol));
@@ -372,7 +370,7 @@ base class VersionResponse extends Struct implements Payload<VersionResponseValu
 
   @override
   VersionResponseValues parse(MotPacket header, void stateMeta) {
-    return (protocol: protocol, library: library, firmware: firmware, board: board);
+    return (protocol: protocol, library: library, firmware: firmware);
   }
 
   @override
@@ -380,7 +378,7 @@ base class VersionResponse extends Struct implements Payload<VersionResponseValu
     protocol = args.protocol;
     firmware = args.firmware;
     library = args.library;
-    return const PayloadMeta(16);
+    return const PayloadMeta(12);
   }
 
   // @Array(4)

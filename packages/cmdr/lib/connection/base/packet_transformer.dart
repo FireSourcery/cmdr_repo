@@ -58,7 +58,7 @@ class HeaderStatus {
   bool get isPacketComplete {
     assert(isStartValid != false);
     assert(isIdValid != false);
-    assert(isLengthValid != false);
+    // assert(isLengthValid != false);
     return packet.isPacketComplete;
   }
 
