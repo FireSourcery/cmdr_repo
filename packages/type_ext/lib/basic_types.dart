@@ -33,6 +33,7 @@ abstract mixin class UnionValueKey<V> implements TypeKey<V> {
   const UnionValueKey();
 
   List<Enum>? get valueEnumRange; // EnumSubtype.values must be non-null for Enum types
+  // Iterable<V>? get valueRange;
   // Limits as the values the num can take, compare with >= and <=
   ({num min, num max})? get valueNumLimits; // must be null for non-num types
   V? get valueDefault;
@@ -42,18 +43,18 @@ abstract mixin class UnionValueKey<V> implements TypeKey<V> {
 
   // num get valueAsNum;
 
-  set valueAsNum(num newValue) {
-    // assert(V == int || V == double, 'Only num types are supported');
-    if (valueNumLimits != null) {
-      value = newValue.clamp(valueNumLimits!.min, valueNumLimits!.max) as V;
-    }
-  }
+  // set valueAsNum(num newValue) {
+  //   // assert(V == int || V == double, 'Only num types are supported');
+  //   if (valueNumLimits != null) {
+  //     value = newValue.clamp(valueNumLimits!.min, valueNumLimits!.max) as V;
+  //   }
+  // }
 
-  set valueAsEnum(Enum newValue) {
-    if (valueEnumRange != null) {
-      if (valueEnumRange!.contains(newValue)) value = newValue as V;
-    }
-  }
+  // set valueAsEnum(Enum newValue) {
+  //   if (valueEnumRange != null) {
+  //     if (valueEnumRange!.contains(newValue)) value = newValue as V;
+  //   }
+  // }
 
   // move check limits here
 }

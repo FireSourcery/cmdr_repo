@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
-import 'basic_types.dart';
-
 typedef ServiceGetSlice<K, V> = ({Iterable<K> keys, Iterable<V>? values});
 typedef ServiceSetSlice<K, V, S> = ({Iterable<(K, V)> pairs, Iterable<S>? statuses});
 

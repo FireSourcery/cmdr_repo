@@ -10,13 +10,15 @@ export 'index_map.dart';
 ///   fixed set of keys
 ///   getOrNull/setOrNot
 ///
-/// implements the same Key interface as StructBase, on final classes
+/// Provides Key interface to an Object
 ///
 /// subclass determines mutability
 /// interface and implementation
 ///
 // extend to fill class variables.
 // Field may use a type parameter other than V, used to determine the value of V
+// always wrap a single Object, can implement as extension type when better support of abstract methods/override is available
+// must be a mixin if it is to be included after Map
 abstract mixin class Structure<K extends Field, V> /* with MapBase<K, V>, FixedMap<K, V>  */ {
   // const Structure(this.data);
   // @protected
@@ -89,26 +91,16 @@ abstract mixin class Structure<K extends Field, V> /* with MapBase<K, V>, FixedM
   }
 }
 
+/// implement Structure using parallel arrays
 class StructMap<K extends Field, V> extends IndexMap<K, V> with Structure<K, V> {
   StructMap(Structure<K, V> struct) : super.of(struct.keys, struct.valuesOf(struct.keys));
   // StructMap.ofMap(super.map) : super.castBase();
 }
 
-// abstract interface class CopyWith<T, K, V> {
-// abstract interface class Atomic<T, K, V> {
-//   const Atomic();
-//   // analogous to operator []=, but returns a new instance
-//   T withField(K key, V value);
-//   // T withEach(Iterable<{K, V}> newEntries);
-//   T withEach(Iterable<MapEntry<K, V>> newEntries);
-//   // A general values map representing external input, may be a partial map
-//   T withAll(Map<K, V> map);
-// }
-
 /// default implementation of immutable copy as subtype
 /// auto typing return as Subtype class.
 /// copy references to a new buffer, then pass to child constructor
-mixin StructAsSubtype<S extends Structure<K, V>, K extends Field<V>, V> on Structure<K, V> {
+mixin StructAsSubtype<S extends Structure<K, V>, K extends Field, V> on Structure<K, V> {
   // Overridden the in child class
   //  calls the child class constructor
   //  return an instance of the child class type
@@ -120,7 +112,7 @@ mixin StructAsSubtype<S extends Structure<K, V>, K extends Field<V>, V> on Struc
   @override
   S withField(K key, V value) => (super.withField(key, value) as StructAsSubtype<S, K, V>).copyWith();
   @override
-  S withEntries(Iterable<MapEntry<K, V>> entries) => (super.withEntries(entries) as StructAsSubtype<S, K, V>).copyWith();
+  S withEntries(Iterable<MapEntry<K, V>> newEntries) => (super.withEntries(newEntries) as StructAsSubtype<S, K, V>).copyWith();
   @override
   S withAll(Map<K, V> map) => (super.withAll(map) as StructAsSubtype<S, K, V>).copyWith();
 }
@@ -130,7 +122,6 @@ mixin StructAsSubtype<S extends Structure<K, V>, K extends Field<V>, V> on Struc
 /// with full context of relationships between fields
 /// define accessors on the struct within key, to keep type withing local scope
 /// the key maintains scope of V
-///
 ///
 /// effectively allows StructView to be abstract
 abstract mixin class Field<V> {
@@ -166,12 +157,38 @@ abstract mixin class Field<V> {
 typedef FieldEntry<K, V> = ({K key, V value});
 // abstract interface class EnumField<V> implements Enum, Field<V> {}
 
-class StructFactory<T extends Structure<K, V>, K extends Field, V> {
+/// Struct Class/Type/Factory
+/// create S using constructor, or Structure<K, V> using keys
+class StructFactory<S extends Structure<K, V>, K extends Field, V> {
+  const StructFactory(this.keys, this.constructor);
   final List<K> keys;
-  final T Function(Structure<K, V>) constructor;
-
-  StructFactory(this.keys, this.constructor);
+  final S Function(Structure<K, V>) constructor;
 }
+// extension type const StructureFactory<S extends Structure<K, V>, K extends Field, V>(List<K> keys) {
+//   // only this needs to be redefined in child class
+//   // or castFrom
+//   S castBase(Structure<K, V> state) => state as S;
+
+//   // alternatively use copyWith.
+//   // or allow user end to maintain 2 separate routines?
+//   // also separates cast as subtype from Structure class
+
+//   // Structure<K, V?> create({Structure<K, V>? state, V? fill}) {
+//   //   if (state == null) {
+//   //     return StructureDefault<K, V?>.filled(keys, null);
+//   //   } else {
+//   //     return castBase(state);
+//   //   }
+//   // }
+
+//   // Structure<K, V?> filled(V? fill) => StructureDefault<K, V?>.filled(keys, null);
+//   // Structure<K, V?> fromValues([List<V>? values, V? fill]) => StructureDefault<K, V?>._fromValues(keys, values);
+
+//   Structure<K, V> _fromEntries(Iterable<MapEntry<K, V>> entries) => EnumIndexMap<K, V>.fromEntries(keys, entries);
+//   // assert all keys are present
+//   S fromEntries(Iterable<MapEntry<K, V>> entries) => castBase(_fromEntries(entries));
+//   S fromMap(Map<K, V> map) => castBase(_fromEntries(map.entries));
+// }
 
 /// [Construct]
 ///   keys + meta as a data member. library side create a structview
@@ -290,70 +307,6 @@ class Construct<T extends Structure<K, V>, K extends Field, V> with MapBase<K, V
   // }
 }
 
-// extension type const StructureFactory<S extends Structure<K, V>, K extends Field, V>(List<K> keys) {
-//   // only this needs to be redefined in child class
-//   // or castFrom
-//   S castBase(Structure<K, V> state) => state as S;
-
-//   // alternatively use copyWith.
-//   // or allow user end to maintain 2 separate routines?
-//   // also separates cast as subtype from Structure class
-
-//   // Structure<K, V?> create({Structure<K, V>? state, V? fill}) {
-//   //   if (state == null) {
-//   //     return StructureDefault<K, V?>.filled(keys, null);
-//   //   } else {
-//   //     return castBase(state);
-//   //   }
-//   // }
-
-//   // Structure<K, V?> filled(V? fill) => StructureDefault<K, V?>.filled(keys, null);
-//   // Structure<K, V?> fromValues([List<V>? values, V? fill]) => StructureDefault<K, V?>._fromValues(keys, values);
-
-//   Structure<K, V> _fromEntries(Iterable<MapEntry<K, V>> entries) => EnumIndexMap<K, V>.fromEntries(keys, entries);
-//   // assert all keys are present
-//   S fromEntries(Iterable<MapEntry<K, V>> entries) => castBase(_fromEntries(entries));
-//   S fromMap(Map<K, V> map) => castBase(_fromEntries(map.entries));
-// }
-
-///constructors to create struct from map
-/// Class/Type/Factory
-/// Keys list effectively define EnumMap type and act as factory
-/// inheritable constructors
-/// this way all factory constructors are related by a single point of interface.
-///   otherwise each factory in the child must wrap the parent factory.
-///   e.g. Child factory fromJson(Map<String, Object?> json) => Child.castBase(Super.fromJson(json));
-/// additionally
-/// no passing keys as parameter
-/// partial/nullable return
-// extension type const EnumMapFactory<S extends EnumMap<K, V>, K extends Enum, V>(List<K> keys) {
-//   // only this needs to be redefined in child class
-//   // or castFrom
-//   S castBase(EnumMap<K, V> state) => state as S;
-
-//   // alternatively use copyWith.
-//   // or allow user end to maintain 2 separate routines?
-//   // also separates cast as subtype from EnumMap class
-
-//   // EnumMap<K, V?> create({EnumMap<K, V>? state, V? fill}) {
-//   //   if (state == null) {
-//   //     return EnumMapDefault<K, V?>.filled(keys, null);
-//   //   } else {
-//   //     return castBase(state);
-//   //   }
-//   // }
-
-//   // EnumMap<K, V?> filled(V? fill) => EnumMapDefault<K, V?>.filled(keys, null);
-//   // EnumMap<K, V?> fromValues([List<V>? values, V? fill]) => EnumMapDefault<K, V?>._fromValues(keys, values);
-
-//   EnumMap<K, V> _fromEntries(Iterable<MapEntry<K, V>> entries) => EnumIndexMap<K, V>.fromEntries(keys, entries);
-
-//   // assert all keys are present
-//   S fromEntries(Iterable<MapEntry<K, V>> entries) => castBase(_fromEntries(entries));
-//   S fromMap(Map<K, V> map) => castBase(_fromEntries(map.entries));
-
-// }
-
 /// extension type version
 // extension type cannot include abstract methods, or implement interfaces
 // cannot define copyWith without context of Keys
@@ -409,9 +362,9 @@ extension type MapStruct<K extends Field, V>(FixedMap<K, V> _this) implements St
 
   // immutable `with` copy operations, via IndexMap
   // analogous to operator []=, but returns a new instance
-  StructView<K, V> withField(K key, V value) => (IndexMap<K, V>.castBase(_this)..[key] = value) as StructView<K, V>;
+  StructView<K, V> withField(K key, V value) => (IndexMap<K, V>.fromBase(_this)..[key] = value) as StructView<K, V>;
   //
-  StructView<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => (IndexMap<K, V>.castBase(_this)..addEntries(newEntries)) as StructView<K, V>;
+  StructView<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => (IndexMap<K, V>.fromBase(_this)..addEntries(newEntries)) as StructView<K, V>;
   // A general values map representing external input, may be a partial map
-  StructView<K, V> withAll(Map<K, V> map) => (IndexMap<K, V>.castBase(_this)..addAll(map)) as StructView<K, V>;
+  StructView<K, V> withAll(Map<K, V> map) => (IndexMap<K, V>.fromBase(_this)..addAll(map)) as StructView<K, V>;
 }

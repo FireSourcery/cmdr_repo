@@ -22,23 +22,16 @@ abstract mixin class FixedMap<K, V> implements Map<K, V> {
 
   // List<V>? get defaultValues;
   // FixedMap<K, V> clone() => IndexMap<K, V>(this);
-
-  // Iterable<(K, V)> get pairs => keys.map((e) => (e, this[e]));
-
-  // @override
-  // bool containsKey(covariant K key) {
-  //   return keys.contains(key);
-  // }
 }
 
-mixin FixedMapWith<K, V> on FixedMap<K, V> {
-  // analogous to operator []=, but returns a new instance
-  FixedMap<K, V> withField(K key, V value) => (IndexMap<K, V>.castBase(this)..[key] = value);
-  //
-  FixedMap<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => IndexMap<K, V>.castBase(this)..addEntries(newEntries);
-  // A general values map representing external input, may be a partial map
-  FixedMap<K, V> withAll(Map<K, V> map) => IndexMap<K, V>.castBase(this)..addAll(map);
-}
+// mixin FixedMapWith<K, V> on FixedMap<K, V> {
+//   // analogous to operator []=, but returns a new instance
+//   FixedMap<K, V> withField(K key, V value) => (IndexMap<K, V>.castBase(this)..[key] = value);
+//   //
+//   FixedMap<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => IndexMap<K, V>.castBase(this)..addEntries(newEntries);
+//   // A general values map representing external input, may be a partial map
+//   FixedMap<K, V> withAll(Map<K, V> map) => IndexMap<K, V>.castBase(this)..addAll(map);
+// }
 
 /// [IndexMap]
 /// Default implementation using parallel arrays
@@ -68,10 +61,9 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
         _valuesBuffer = List.from((IndexMap<K, V?>.filled(keys, null)..addEntries(entries))._valuesBuffer);
 
   // default copyFrom implementation
-  IndexMap.castBase(FixedMap<K, V?> state) : this._(state.keys, List<V>.from(state.values, growable: false));
-  // IndexMap.copyFrom(FixedMap<K, V?> state) : this._(state.keys, List<V>.from(state.values, growable: false));
+  IndexMap.fromBase(FixedMap<K, V?> state) : this._(state.keys, List<V>.from(state.values, growable: false));
 
-  // static IndexMap<K1, V1?> nullable<K1, V1>(List<K1> keys) => IndexMap<K1, V1?>.filled(keys, null);
+  // IndexMap.castBase(IndexMap<K, V> state) : this._(state._keysReference, state._valuesBuffer);
 
   final List<K> _keysReference; // pointer to original
   final List<V> _valuesBuffer; // allocate new non growable List

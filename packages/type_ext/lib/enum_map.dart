@@ -24,7 +24,7 @@ abstract mixin class EnumMap<K extends Enum, V> implements FixedMap<K, V> {
 
   /// keys => Enum.values which implement byName(String name)
   factory EnumMap.fromJson(List<K> keys, Map<String, Object?> json) {
-    return EnumIndexMap<K, V>.castBase(EnumIndexMap<K, V?>.filled(keys, null)..addJson(json));
+    return EnumIndexMap<K, V>.fromBase(EnumIndexMap<K, V?>.filled(keys, null)..addJson(json));
   }
 
   static Map<V, K> buildReverse<K extends Enum, V>(List<K> keys, [V Function(K)? valueOf]) {
@@ -42,18 +42,6 @@ abstract mixin class EnumMap<K extends Enum, V> implements FixedMap<K, V> {
   void clear();
   V remove(covariant K key);
 }
-
-// extension type const EnumIdFactory<K extends Enum, V>._(Map<V, K> reverseMap) {
-//   EnumIdFactory.of(List<K> keys) : reverseMap = EnumMap.buildReverseMap<K, V>(keys);
-//   K? idOf(V mappedValue) => reverseMap[mappedValue];
-// }
-
-// if inheriting factory constructors is needed
-// extension type const EnumMapFactory<K extends Enum, V>(List<K> keys) {
-//   // EnumMap fromJson(Map<String, Object?> json) {
-//   //   return EnumIndexMap<K, V>.castBase(EnumIndexMap<K, V?>.filled(keys, null)..addJson(json));
-//   // }
-// }
 
 /// Apply to [EnumMap<K, V>] as well as [Map<Enum, V>]
 /// Enum.name base methods are applicable regardless of EnumMap FixedMap constraints
@@ -90,7 +78,7 @@ extension EnumMapByName<K extends Enum, V> on Map<K, V> {
       }
       return json;
     }
-    throw FormatException('$runtimeType: $json is not of type Map<String, V>');
+    throw FormatException('$runtimeType: $json is not of type Map<String, $V>');
   }
 }
 
@@ -104,3 +92,15 @@ extension EnumNamedValues<K extends Enum, V> on Iterable<MapEntry<K, V>> {
 
 class EnumIndexMap<K extends Enum, V> = IndexMap<K, V> with EnumMap<K, V>;
 class EnumProxyMap<K extends Enum, V> = ProxyIndexMap<K, V> with EnumMap<K, V>;
+
+// extension type const EnumIdFactory<K extends Enum, V>._(Map<V, K> reverseMap) {
+//   EnumIdFactory.of(List<K> keys) : reverseMap = EnumMap.buildReverseMap<K, V>(keys);
+//   K? idOf(V mappedValue) => reverseMap[mappedValue];
+// }
+
+// if inheriting factory constructors is needed
+// extension type const EnumMapFactory<K extends Enum, V>(List<K> keys) {
+//   // EnumMap fromJson(Map<String, Object?> json) {
+//   //   return EnumIndexMap<K, V>.castBase(EnumIndexMap<K, V?>.filled(keys, null)..addJson(json));
+//   // }
+// }
