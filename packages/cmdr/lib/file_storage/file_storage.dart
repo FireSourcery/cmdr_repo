@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 /// FileStorage
@@ -13,105 +14,126 @@ abstract class FileStorage<T> {
   final String? defaultName;
 
   // per class/type
-  FileCodec<T, dynamic> get fileCodec; // getter over mixin for codecs with state to maintain encapsulation
+  // getter over mixin for codecs with state to maintain encapsulation
+  FileStorageCodec<T, dynamic> get fileCodec;
 
   /// Abstract functions to handle file contents
   /// called by openAsync, saveAsync
   Object? fromContents(T contents); //parseContents
   T toContents(); //buildContents
 
-  Object? _fromNullableContents(T? contents) => (contents != null) ? fromContents(contents) : null;
+  Future<T> _read(File file) async => fileCodec.read(file);
+  Future<File> _write(File file, T contents) async => fileCodec.write(file, contents);
 
-  Future<T> readContents(File file) async => fileCodec.read(file);
-  Future<File> writeContents(File file, T contents) async => fileCodec.write(file, contents);
+  // returns null for no file selected
+  Future<T?> open(File? file) async => (file != null) ? _read(file) : null;
+  Future<T?> openAsync(Future<File?> file) async => file.then(open);
+  Future<File?> save(File? file, T contents) async => (file != null) ? _write(file, contents) : null;
+  Future<File?> saveAsync(Future<File?> file, T contents) async => file.then((value) => save(value, contents));
 
   // full sequence for future builder
-  // returns null for no file selected
-  Future<T?> open(File? file) async => (file != null) ? readContents(file) : null;
-  Future<T?> openAsync(Future<File?> file) async => file.then(open);
   // openThenParse
+  Object? _fromNullableContents(T? contents) => (contents != null) ? fromContents(contents) : null;
   Future<Object?> openParseAsync(Future<File?> file) async => openAsync(file).then(_fromNullableContents);
-
-  Future<File?> save(File? file, T contents) async => (file != null) ? writeContents(file, contents) : null;
-  Future<File?> saveAsync(Future<File?> file, T contents) async => file.then((value) => save(value, contents));
   // saveAfterBuild
   Future<File?> saveBuildAsync(Future<File?> file) async => saveAsync(file, toContents());
 }
 
 // skip Converter encoder/decoder of Codec class for simplicity
+// implements Codec<S, T>
 abstract mixin class FileCodec<S, T> {
   const FileCodec();
 
-  // Codec<S, T> get formatCodec;
   T encode(S input);
   S decode(T encoded);
 
-  Future<File> write(File file, S input);
-  Future<S> read(File file);
-
-  // FileCodec<S, R> fuse<R>(FileCodec<T, R> other) => _FusedFileCodec<S, T, R>(this, other);
+  FileCodec<S, R> fuse<R>(FileCodec<T, R> other) {
+    return (other is FileStorageCodec<T, R>) ? _FusedFileStorageCodec<S, T, R>(this, other) : _FusedFileContentCodec<S, T, R>(this, other);
+  }
 }
 
-/// T from String
-// implements Codec<T, String>
-abstract mixin class FileStringCodec<T> implements FileCodec<T, String> {
+/// write function with innerCodec only
+/// S e.g. Map from T
+abstract class FileContentCodec<S, T> with FileCodec<S, T> implements FileCodec<S, T> {
+  const FileContentCodec();
+
+  // @override
+  // T encode(S decoded); // buildContents,
+  // @override
+  // S decode(T contents); // parseContents,
+
+  // FileCodec<T, dynamic> get innerCodec;
+  // @override
+  // Future<File> write(File file, S decoded) async => _FusedFileCodec(this, innerCodec).write(file, decoded);
+  // @override
+  // Future<S> read(File file) async => _FusedFileCodec(this, innerCodec).read(file);
+}
+
+/// include file read/write
+abstract mixin class FileStorageCodec<S, T> implements FileCodec<S, T> {
+  const FileStorageCodec();
+
+  // compile-time const return as subtype
+  const factory FileStorageCodec.fuse(FileCodec<S, dynamic> format, FileStorageCodec<dynamic, T> storage) = _FusedFileStorageCodec<S, dynamic, T>;
+
+  T encode(S input);
+  S decode(T encoded);
+
+  // Converter<S, T> get encoder;
+  // Converter<T, S> get decoder;
+
+  Future<File> write(File file, S input);
+  Future<S> read(File file);
+}
+
+/// Base case with write/read as String
+/// T to/from String
+abstract class FileStringCodec<S> extends FileStorageCodec<S, String> with FileCodec<S, String> {
   const FileStringCodec();
 
   @override
-  String encode(T input);
+  String encode(S input);
   @override
-  T decode(String encoded);
+  S decode(String encoded);
 
   @override
-  Future<File> write(File file, T input) async => file.writeAsString(encode(input));
+  Future<File> write(File file, S input) async => file.writeAsString(encode(input));
   @override
-  Future<T> read(File file) async => file.readAsString().then((value) => decode(value));
+  Future<S> read(File file) async => file.readAsString().then((value) => decode(value));
 }
 
-/// S e.g. Map from T
-abstract mixin class FileContentCodec<S, T> implements FileCodec<S, T> {
-  const FileContentCodec();
+class _FusedFileContentCodec<S, M, T> extends FileContentCodec<S, T> {
+  const _FusedFileContentCodec(this._first, this._second);
 
-  FileCodec<T, dynamic> get innerCodec;
-  @override
-  T encode(S decoded); // buildContents, encodeOuter
-  @override
-  S decode(T contents); // parseContents, decodeInner
-
-  @override
-  Future<File> write(File file, S decoded) async => _FusedFileCodec(this, innerCodec).write(file, decoded);
-  @override
-  Future<S> read(File file) async => _FusedFileCodec(this, innerCodec).read(file);
-
-  // Future<File> write(File file, S decoded) async => innerCodec.write(file, encode(decoded));
-  // Future<S> read(File file) async => innerCodec.read(file).then((value) => decode(value));
-}
-
-// in encoding order
-// e.g. mapCodec as first, stringCodec as second
-class _FusedFileCodec<S, M, T> extends FileCodec<S, T> {
-  _FusedFileCodec(this._first, this._second);
-
-  final FileCodec<S, M> _first; // <Map, T>
-  final FileCodec<M, T> _second; // <T, String>
+  final FileCodec<S, M> _first; // outer type <Map, T>
+  final FileCodec<M, T> _second; // inner type <T, String>
 
   @override
   T encode(S input) => _second.encode(_first.encode(input));
   @override
   S decode(T encoded) => _first.decode(_second.decode(encoded));
 
-  @override
-  Future<File> write(File file, S input) async => _second.write(file, _first.encode(input));
-  @override
-  Future<S> read(File file) async => _second.read(file).then((value) => _first.decode(value));
-
   // Converter<S, T> get encoder => _first.encoder.fuse<T>(_second.encoder);
   // Converter<T, S> get decoder => _second.decoder.fuse<S>(_first.decoder);
 }
 
+// in encoding order
+// e.g. mapCodec as first, stringCodec as second
+class _FusedFileStorageCodec<S, M, T> extends _FusedFileContentCodec<S, M, T> implements FileStorageCodec<S, T> {
+  const _FusedFileStorageCodec(super._first, FileStorageCodec<M, T> super._second) : super();
+
+  @override
+  FileStorageCodec<M, T> get _second => super._second as FileStorageCodec<M, T>;
+
+  @override
+  Future<File> write(File file, S input) async => _second.write(file, _first.encode(input));
+  @override
+  Future<S> read(File file) async => _second.read(file).then((value) => _first.decode(value));
+}
+
 extension FileCodecExtension on File {
-  Future<T> readAs<T>(FileCodec<T, dynamic> codec) async => codec.read(this);
-  Future<File> writeAs<T>(FileCodec<T, dynamic> codec, T contents) async => codec.write(this, contents);
+  Future<T> readAs<T>(FileStorageCodec<T, dynamic> codec) async => codec.read(this);
+  Future<File> writeAs<T>(FileStorageCodec<T, dynamic> codec, T contents) async => codec.write(this, contents);
 
   // Future<Map<K, V>> readAsMap<K, V>(FileMapCodec codec) async => codec.read(this) as Map<K, V>;
   // Future<File> writeAsMap<K, V>(FileMapCodec codec, Map<K, V> map) async => codec.write(this, map);

@@ -11,6 +11,7 @@ import 'package:fl_chart/fl_chart.dart';
 
 import 'chart_data.dart';
 
+// notifies on every data update, caller handle selection update
 class ChartController with TimerNotifier, ChangeNotifier {
   ChartController({
     List<ChartEntry>? chartEntries,
@@ -50,7 +51,6 @@ class ChartController with TimerNotifier, ChangeNotifier {
     // start();
   }
 
-  // void updateSelection(Iterable<ChartEntry> entries) {
   void replaceEntries(Iterable<ChartEntry> entries) {
     // _yMin = value;
     // _yMax = value;
@@ -60,13 +60,6 @@ class ChartController with TimerNotifier, ChangeNotifier {
     stopwatch.reset();
     // notifyListeners();
   }
-
-  // void updateViewRange() {
-  //   chartEntries.
-
-  //   //scale to 1
-
-  // }
 
   // void replaceEntryAt(int index, ChartEntry entry) {
   //   stop();
@@ -95,6 +88,7 @@ class ChartController with TimerNotifier, ChangeNotifier {
 
   int get chartDataLength => chartData.lineEntries.length;
 
+//  final ValueNotifier<double> timerNotifier = ValueNotifier(0);
   /// data update with generators
   void _updateData() {
     final remove = chartData.excessLength;

@@ -136,6 +136,8 @@ extension WhereFilter<T> on Iterable<T> {
 ///
 typedef Stringifier<T> = String Function(T input);
 typedef GenericStringifier = String Function<T>(T input);
+// typedef Stringifier<T> = String Function(T? input);
+// typedef GenericStringifier = String Function<T>(T? input);
 typedef NullableStringifier<T> = String Function(T? input); // defining non-nullable type allows null input, cases where T is used for selection
 
 /// [Slicer]

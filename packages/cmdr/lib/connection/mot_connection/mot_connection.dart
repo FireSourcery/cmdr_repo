@@ -15,27 +15,26 @@ export 'mot_protocol.dart';
 // 115200 bauds | 86.806 µs | 2.083344 ms | 3.47224 ms
 
 class MotConnection {
-  // MotConnection._();
-  // factory MotConnection() => _singleton;
-  // static final MotConnection _singleton = MotConnection._();
+  MotConnection._();
+  static final MotConnection _singleton = MotConnection._();
+  factory MotConnection() => _singleton;
   // static MotConnection get main => _singleton;
 
-  static final SerialLink serialLink = SerialLink();
+  final SerialLink serialLink = SerialLink();
   // final BluetoothLink bluetoothLink = BluetoothLink();
-  static final Protocol protocol = Protocol(serialLink, const MotPacketInterface());
-  static final MotProtocolSocket general = MotProtocolSocket(protocol);
-  static final MotProtocolSocket stop = MotProtocolSocket(protocol);
-  static final MotProtocolSocket varRead = MotProtocolSocket(protocol);
-  static final MotProtocolSocket varWrite = MotProtocolSocket(protocol);
-  // static final MotProtocolSocket events = MotProtocolSocket(protocol);
+  late final Protocol protocol = Protocol(serialLink, const MotPacketInterface());
+  late final MotProtocolSocket general = MotProtocolSocket(protocol);
+  late final MotProtocolSocket stop = MotProtocolSocket(protocol);
+  late final MotProtocolSocket varRead = MotProtocolSocket(protocol);
+  late final MotProtocolSocket varWrite = MotProtocolSocket(protocol);
+  //   final MotProtocolSocket events = MotProtocolSocket(protocol);
 
-  static Link get activeLink => protocol.link;
-  static bool get isConnected => protocol.link.isConnected;
+  Link get activeLink => protocol.link;
+  bool get isConnected => protocol.link.isConnected;
 
-  static bool begin({Enum? linkType, String? name, int? baudRate}) {
+  bool begin({Enum? linkType, String? name, int? baudRate}) {
     serialLink.connect(name: name, baudRate: baudRate);
 
-    //todo connect and begin
     if (isConnected) protocol.begin();
     return isConnected;
   }

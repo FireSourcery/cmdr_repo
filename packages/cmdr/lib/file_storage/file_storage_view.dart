@@ -28,7 +28,7 @@ abstract class FileLoadButton extends StatelessWidget {
   final String title; // e.g. open close
   final IconData iconData; // e.g. Icons.file_open
 
-  Future<void> beginAsync(); // load initial async state referenced by dialog
+  Future<void> beginAsync(); // load initial async state referenced by dialog, sets fileNotifier.operationCompleted
 
   // Future object reference is set once initially. changes do not update without ChangeNotifier.
   // ConnectionState will not be ConnectionState.none in the case of StatelessWidget

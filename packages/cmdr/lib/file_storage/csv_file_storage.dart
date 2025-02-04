@@ -5,9 +5,9 @@ import 'file_storage.dart';
 class CsvFileCodec extends FileStringCodec<List<List<dynamic>>> {
   const CsvFileCodec();
   @override
-  List<List<dynamic>> decode(String encoded) => const CsvToListConverter().convert(encoded, convertEmptyTo: null);
-  @override
   String encode(List<List<dynamic>> input) => const ListToCsvConverter().convert(input, convertNullTo: '');
+  @override
+  List<List<dynamic>> decode(String encoded) => const CsvToListConverter().convert(encoded, convertEmptyTo: null);
 }
 
 class CsvFileMapCodec extends FileContentCodec<Map<String, List<dynamic>>, List<List<dynamic>>> {
@@ -15,12 +15,12 @@ class CsvFileMapCodec extends FileContentCodec<Map<String, List<dynamic>>, List<
 
   bool transposeToColumnMap;
 
-  @override
-  final FileStringCodec<List<List<dynamic>>> innerCodec = const CsvFileCodec();
-  @override
-  Map<String, List> decode(List<List> contents) => transposeToColumnMap ? columnMapOf(contents) : rowMapOf(contents);
+  // @override
+  // final FileStringCodec<List<List<dynamic>>> innerCodec = const CsvFileCodec();
   @override
   List<List> encode(Map<String, List> decoded) => transposeToColumnMap ? csvOfColumnMap(decoded) : csvOfRowMap(decoded);
+  @override
+  Map<String, List> decode(List<List> contents) => transposeToColumnMap ? columnMapOf(contents) : rowMapOf(contents);
 
   /// Column per object
   // Convert a CSV file to a List of Maps.
@@ -64,13 +64,14 @@ class CsvFileMapCodec extends FileContentCodec<Map<String, List<dynamic>>, List<
   }
 }
 
-abstract class CsvFileStorage extends FileStorage<Map<String, List>> {
-  CsvFileStorage({super.defaultName, super.extensions = const ['csv', 'txt'], bool transposeToColumnMap = true}) : _fileCodec = CsvFileMapCodec(transposeToColumnMap: transposeToColumnMap);
+abstract class CsvFileStorage extends FileStorage<Map<String, List<dynamic>>> {
+  CsvFileStorage({super.defaultName, super.extensions = const ['csv', 'txt'], bool transposeToColumnMap = true})
+      : _fileCodec = FileStorageCodec.fuse(CsvFileMapCodec(transposeToColumnMap: transposeToColumnMap), const CsvFileCodec());
 
-  final CsvFileMapCodec _fileCodec;
+  final FileStorageCodec<Map<String, List<dynamic>>, String> _fileCodec;
 
   @override
-  CsvFileMapCodec get fileCodec => _fileCodec;
+  FileStorageCodec<Map<String, List<dynamic>>, String> get fileCodec => _fileCodec;
 
   @override
   Object? fromContents(Map<String, List> contents);

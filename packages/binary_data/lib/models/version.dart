@@ -5,7 +5,6 @@ import '../word/word_struct.dart';
 
 /// 4 fields [optional, major, minor, fix] by default, 1 or 2 bytes each
 /// parameterize T to constrain functions of T key to types the Version is defined with
-// alternatively `class Version extends WordFieldsBase<WordField<NativeType>>` allows for access with any WordField key
 abstract class Version<T extends WordField> extends WordStruct<T> with BitStructAsSubtype<Version<T>, T> {
   // uses VersionFieldStandard keys when no keys AND type parameter is specified
   factory Version(int optional, int major, int minor, int fix, {String? name}) => VersionStandard(optional, major, minor, fix, name: name) as Version<T>;
@@ -27,15 +26,15 @@ abstract class Version<T extends WordField> extends WordStruct<T> with BitStruct
   List<T> get keys;
   String? get name;
 
-  @override
-  Version<T> copyWith() => VersionConstruct(this.keys, name: this.name, value: bits);
+  // @override
+  // Version<T> copyWith() => VersionConstruct(this.keys, name: this.name, value: bits);
 
   @override
   Version<T> copyWithBits(Bits value) => VersionConstruct(this.keys, name: this.name, value: value);
 
   // defaults to 4 fields. alternatively leave undefined
   // @override
-  Version<T> copyWithStandard({int? optional, int? major, int? minor, int? fix, String? name}) {
+  Version<T> copyWithFields({int? optional, int? major, int? minor, int? fix, String? name}) {
     return VersionConstruct(
       keys,
       name: name ?? this.name,
@@ -153,6 +152,7 @@ class VersionConstruct<T extends WordField> extends Version<T> {
   final String? name;
 }
 
+// byte size chars
 class VersionStandard extends Version<VersionFieldStandard> {
   const VersionStandard(super.optional, super.major, super.minor, super.fix, {this.name = 'Version'}) : super.char8();
   const VersionStandard.word(super.value, {this.name = 'Version'}) : super.word();

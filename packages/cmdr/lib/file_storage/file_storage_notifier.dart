@@ -14,24 +14,26 @@ abstract mixin class FileStorageNotifier<T> implements FileStorage<T> {
   File? get file => fileNotifier.value;
   String? get filePath => file?.path;
 
+// // FileStorageStatus status = FileStorageStatus.ok;
+  // final ValueNotifier<FileStorageStatus> statusNotifier = ValueNotifier(FileStorageStatus.ok);
   final ValueNotifier<String?> statusNotifier = ValueNotifier(null);
   String get status => statusNotifier.value ?? 'Ok';
   set status(String value) => statusNotifier.value = status;
-// // FileStorageStatus status = FileStorageStatus.ok;
 
   // normalized progress to 0-1
   final ValueNotifier<double> progressNotifier = ValueNotifier(0);
   set progress(double value) => progressNotifier.value = value;
   double get progress => progressNotifier.value;
 
-  /// async state notifiers for FutureBuilder
+  /// async state notifiers for FutureBuilder, pick open and pick save
   Future<File?> _pickedFile = Future.value(null);
-  // Future<File?>? _pickedFile; // pick open and pick save
-  set pickedFile(Future<File?> value) => (_pickedFile = value).then((value) => file = value);
-  // Future<File?> get pickedFile => _pickedFile ?? Future.value(null);
-  // Future<String>? get pickedFileName => _pickedFile?.then((value) => value?.path ?? 'No file selected') ?? Future.value('Error: Not initialized');
+  set pickedFile(Future<File?> value) => (_pickedFile = value);
   Future<File?> get pickedFile => _pickedFile;
   Future<String> get pickedFileName => _pickedFile.then((value) => value?.path ?? 'No file selected');
+  // Future<File?>? _pickedFile; // pick open and pick save
+  // set pickedFile(Future<File?> value) => (_pickedFile = value).then((value) => file = value);
+  // Future<File?> get pickedFile => _pickedFile ?? Future.value(null);
+  // Future<String>? get pickedFileName => _pickedFile?.then((value) => value?.path ?? 'No file selected') ?? Future.value('Error: Not initialized');
 
   Future<dynamic>? operationCompleted; // return of function pass to processWithNotify
 
@@ -64,8 +66,9 @@ abstract mixin class FileStorageNotifier<T> implements FileStorage<T> {
   // full sequence for future builder
   // returns null for no file selected
   // await file resolve file set
-  Future<T?> openWithNotify(Future<File?> value) async => processWithNotify<T?>(() async => await openAsync(pickedFile = value));
-  Future<Object?> openParseWithNotify(Future<File?> value) async => processWithNotify<Object?>(() async => await openParseAsync(pickedFile = value));
+  // dispatch fileNotifier update after parsing
+  Future<T?> openWithNotify(Future<File?> value) async => processWithNotify<T?>(() async => await openAsync(pickedFile = value)).whenComplete(() async => file = await pickedFile);
+  Future<Object?> openParseWithNotify(Future<File?> value) async => processWithNotify<Object?>(() async => await openParseAsync(pickedFile = value)).whenComplete(() async => file = await pickedFile);
 
   Future<File?> saveWithNotify(Future<File?> value, T contents) async => processWithNotify<File?>(() async => await saveAsync(pickedFile = value, contents));
   Future<File?> saveBuildWithNotify(Future<File?> value) async => processWithNotify<File?>(() async => await saveBuildAsync(pickedFile = value));

@@ -18,8 +18,9 @@ abstract mixin class FirmwareFileStorage implements FileStorage<Map<int, Uint8Li
 
   @override
   Object? fromContents(Map<int, Uint8List> contents) => contentsBuffer = contents;
-  // @override
-  // Map<int, Uint8List> toContents() => throw UnimplementedError();
+  @override
+  Map<int, Uint8List> toContents();
+
   // @override
   // FileCodec<Map<int, Uint8List>, dynamic> get fileCodec => throw UnimplementedError();
 
@@ -44,8 +45,6 @@ class HexFileMapCodec extends FileContentCodec<Map<int, Uint8List>, List<MemoryS
   const HexFileMapCodec();
 
   @override
-  final FileStringCodec<List<MemorySegment>> innerCodec = const HexFileCodec();
-  @override
   Map<int, Uint8List> decode(List<MemorySegment> contents) => {for (final e in contents) e.address: e.slice()};
   @override
   List<MemorySegment> encode(Map<int, Uint8List> decoded) => decoded.entries.map((e) => MemorySegment.fromBytes(address: e.key, data: e.value)).toList();
@@ -56,7 +55,7 @@ class HexFileStorage extends FileStorage<Map<int, Uint8List>> with FirmwareFileS
   HexFileStorage({super.defaultName, super.extensions = const ['hex']});
 
   @override
-  FileCodec<Map<int, Uint8List>, dynamic> get fileCodec => const HexFileMapCodec();
+  FileStorageCodec<Map<int, Uint8List>, dynamic> get fileCodec => const FileStorageCodec.fuse(HexFileMapCodec(), HexFileCodec());
 
   @override
   Map<int, Uint8List> toContents() => throw UnimplementedError();
