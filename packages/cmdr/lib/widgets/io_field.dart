@@ -22,6 +22,14 @@ abstract mixin class IOField<T> implements Widget {
     };
   }
 
+  // factory IOField.valueNotifier({
+  //   ValueNotifier<T?> valueNotifier,
+  //   InputDecoration? decoration,
+  //   Key? key,
+  // }) {
+  //   return IOField(IOFieldConfig(valueListenable: valueNotifier, valueGetter: valueNotifier.value, valueSetter: valueNotifier.value , key: key);
+  // }
+
   factory IOField.withSlider(IOFieldConfig<T> config, {Key? key}) {
     assert(config.valueNumLimits != null);
     return switch (T) {
@@ -130,8 +138,6 @@ class IOFieldConfig<T> {
   final ValueGetter<String>? valueStringGetter;
   final Stringifier<T>? valueStringifier; // for enum and other range bound types
 
-  // final num? valueMin;
-  // final num? valueMax;
   final ({num min, num max})? valueNumLimits; // required for num type, slider and input range check on submit
   final List<T>? valueEnumRange; // enum or String selection, alternatively type as enum only
 
@@ -252,6 +258,8 @@ class IOFieldReader<T> extends StatelessWidget with _IOFieldStringBox<T> impleme
     return Tooltip(message: tip, child: widget);
   }
 }
+
+typedef IOFieldNum = IOFieldText<num>;
 
 /// T == num or String
 // split sub types requires the default constructor to be a sub factory

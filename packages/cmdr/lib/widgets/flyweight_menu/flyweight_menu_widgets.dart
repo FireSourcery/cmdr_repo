@@ -68,9 +68,11 @@ class MenuAnchorOverlay extends StatelessWidget {
 
   MenuAnchorOverlay({required this.menuItems, required this.child, MenuController? menuController, super.key}) : menuController = menuController ?? MenuController();
 
+  // MenuAnchorOverlay.asBuilder(BuildContext context, FlyweightMenu menu, Widget keyWidget) : this._(menuItems: menu.menuItems, child: keyWidget, menuController: MenuController());
+
   final List<Widget> menuItems; // MenuItemButton
   final Widget child;
-  final MenuController? menuController; // pass null disables GestureDetector
+  final MenuController? menuController; // null disables GestureDetector
   // final VoidCallback? onOpen;
   // final VoidCallback? onClose;
 

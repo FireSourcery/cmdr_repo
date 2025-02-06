@@ -21,6 +21,10 @@ class VarCache {
     this.lengthMax,
   }) : _cache = Map.unmodifiable({for (final varKey in varKeys) varKey.value: constructor(varKey)});
 
+  // VarCache.preallocate1(Iterable<VarKey> varKeys, {this.lengthMax}) {
+  //   _cache = Map.unmodifiable({for (final varKey in varKeys) varKey.value: constructor(varKey)});
+  // }
+
   /// "It is generally not allowed to modify the map (add or remove keys) while
   /// an operation is being performed on the map."
   ///
@@ -232,7 +236,6 @@ class VarCache {
 ///    Submit notifier - e.g. generating dialog
 ///    Updating dependents residing in the same VarCache
 ////////////////////////////////////////////////////////////////////////////////
-// altenatively combine with mixin
 abstract mixin class VarCacheNotifier implements VarCache, ValueNotifier<VarViewEvent> {
   // propagateSet
   // caller provides function via switch case

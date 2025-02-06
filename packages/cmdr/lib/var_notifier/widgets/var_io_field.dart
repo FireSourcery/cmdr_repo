@@ -19,6 +19,7 @@ abstract interface class VarIOField extends StatelessWidget {
   factory VarIOField(
     VarNotifier<dynamic> varNotifier, {
     VarCacheNotifier? eventNotifier,
+    VarSingleController? controller,
     bool showLabel = true,
     bool showPrefix = true,
     bool showSuffix = true,
@@ -30,6 +31,7 @@ abstract interface class VarIOField extends StatelessWidget {
       final config = VarIOFieldConfig<V>(
         varNotifier,
         eventNotifier: eventNotifier,
+        controller: controller,
         showLabel: showLabel,
         showPrefix: showPrefix,
         showSuffix: showSuffix,
@@ -44,6 +46,7 @@ abstract interface class VarIOField extends StatelessWidget {
   factory VarIOField.compact(
     VarNotifier varNotifier, {
     VarCacheNotifier? eventNotifier,
+    VarSingleController? controller,
     bool showLabel = false,
     bool showPrefix = false,
     bool showSuffix = false,
@@ -143,6 +146,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   const VarIOFieldConfig(
     this.varNotifier, {
     this.eventNotifier,
+    this.controller,
     this.labelAlignment = FloatingLabelAlignment.start,
     this.showLabel = true,
     this.showPrefix = true,
@@ -153,9 +157,9 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
 
   final VarNotifier<dynamic> varNotifier; //should this be cast here?
   final VarCacheNotifier? eventNotifier;
+  final VarSingleController? controller;
 
   // alternatively handle in constructor
-  // VarIOFieldConfig._(this.varNotifier);
   final FloatingLabelAlignment? labelAlignment;
   final bool showLabel;
   final bool showPrefix;
@@ -185,6 +189,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   }
 
   void _submitWithCache(V value) => eventNotifier!.submitEntryAs<V>(varNotifier.varKey, value);
+  // void submitWithService(V value) => controller!.write(value);
 
   @override
   bool get isReadOnly => varNotifier.varKey.isReadOnly;

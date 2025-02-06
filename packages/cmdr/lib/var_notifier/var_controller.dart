@@ -13,7 +13,6 @@ class VarCacheController {
 
   // VarStatus? readStatus; // optionally store previous response code
   // VarStatus? writeStatus;
-  // Completer _completer = Completer();
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Collective Read Vars `Fetch/Load`
@@ -101,7 +100,7 @@ class VarCacheController {
     return write(key);
   }
 
-  // return num or object
+  // return num or object of key V type
   // Future<num?> operator [](VarKey key) async {
   //   if (await protocolService.get(key.value) case int value) {
   //     cache[key]?.updateByData(value);
@@ -156,7 +155,7 @@ class VarRealTimeController extends VarCacheController {
   Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListenersCombined).map((e) => e.varKey);
   Iterable<int> _readKeysGetter() => _readKeys.map((e) => e.value);
 
-  // polling stream setters, optionally implement local Set
+  // polling stream setters, optionally implement local <Set>
   void addPolling(Iterable<VarKey> keys) => cache.varsOf(keys).forEach((element) => element.hasIndirectListeners = true);
   void removePollingAll() => cache.varEntries.forEach((element) => element.hasIndirectListeners = false);
   void selectPolling(Iterable<VarKey> keys) => (this..removePollingAll()).addPolling(keys);
@@ -199,13 +198,13 @@ class VarRealTimeController extends VarCacheController {
 /// call service immediately
 /// value will not be synced with cache
 ////////////////////////////////////////////////////////////////////////////////
-class VarSingleController {
-  VarSingleController({
+class VarSingleController<V> {
+  const VarSingleController({
     required this.varNotifier,
     required this.protocolService,
   });
 
-  final VarNotifier<dynamic> varNotifier;
+  final VarNotifier<V> varNotifier;
   final ServiceIO<int, int, int> protocolService;
 
   // async send request id, then receiving value

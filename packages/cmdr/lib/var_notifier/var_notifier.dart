@@ -44,6 +44,7 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
     initReferences();
   }
 
+  // derive type from [VarKey]
   factory VarNotifier.of(VarKey varKey) {
     assert(V == dynamic, 'V must be dynamic');
     return varKey.viewType(<G>() => VarNotifier<G>.ofKey(varKey) as VarNotifier<V>);
