@@ -293,7 +293,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // caller handle display state of over boundary.
   // input bounds checked only to ensure a valid value is sent to client side
   // switch on value will also handle dynamic
-  void updateByViewAs<T>(T typedValue, [bool push = false]) {
+  void updateByViewAs<T>(T typedValue) {
     _viewValue = switch (T) {
       const (double) || const (int) || const (num) => clamp(typedValue as num),
       const (bool) => (typedValue as bool) ? 1 : 0,
@@ -311,7 +311,6 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
       //   },
     };
 
-    // isUpdatedByView = true;
     lastUpdate = VarLastUpdate.byView;
 
     // if (typedValue case num input when input != numValue) statusCode = 1;
