@@ -18,10 +18,10 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
   // int32(reference: Int32, baseType: Int32 ),
 
   ///
-  scalarInv10<Uint16, int>(reference: 1 / 10), // view = bytesValue*10
-  scalar10<Uint16, double>(reference: 10), // view = bytesValue/10
+  scalar10<Int16, double>(reference: 10), // view = bytesValue/10
   // scalar100(reference: 100),
   // scalar1000(reference: 1000),
+  scalarInv10<Int16, int>(reference: 1 / 10), // view = bytesValue*10
 
   /// Integer types, transmitted as int or truncated value
   int16<Int16, int>(reference: 1),
