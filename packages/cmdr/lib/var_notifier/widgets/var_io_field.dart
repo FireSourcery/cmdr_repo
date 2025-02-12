@@ -189,7 +189,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   }
 
   void _submitWithCache(V value) => eventNotifier!.submitEntryAs<V>(varNotifier.varKey, value);
-  // void submitWithService(V value) => controller!.write(value);
+  // void submitWithService(V value) => controller!.updateValue(value);
 
   @override
   bool get isReadOnly => varNotifier.varKey.isReadOnly;

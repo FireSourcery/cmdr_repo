@@ -25,6 +25,7 @@ abstract class Version<T extends WordField> extends WordStruct<T> with BitStruct
   @override
   List<T> get keys;
   String? get name;
+  // String? get typeName => T.toString().;
 
   // @override
   // Version<T> copyWith() => VersionConstruct(this.keys, name: this.name, value: bits);

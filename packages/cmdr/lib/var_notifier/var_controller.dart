@@ -221,4 +221,14 @@ class VarSingleController<V> {
     }
     return null;
   }
+
+  Future<V?> value() async {
+    await read();
+    return varNotifier.value;
+  }
+
+  Future<void> updateValue(V value) async {
+    varNotifier.updateByViewAs<V>(value);
+    await write();
+  }
 }

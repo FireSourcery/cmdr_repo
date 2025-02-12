@@ -71,7 +71,7 @@ abstract mixin class BitStruct<K extends BitField> implements BitsBase, BitsMap<
   @override
   BitStruct<K> withEntries(Iterable<MapEntry<K, int>> entries) => copyWithBits(bits.withEach(entries.map((e) => (e.key.bitmask, e.value))));
   @override
-  BitStruct<K> withAll(Map<K, int> map) => withEntries(map.entries);
+  BitStruct<K> withMap(Map<K, int> map) => withEntries(map.entries);
 
   @override
   String toString() => toStringAsMap();
@@ -110,14 +110,17 @@ abstract class ConstBitStruct<K extends BitField> extends ConstBits with MapBase
 /// to return a subtype of [BitStruct], :
 ///   provide the constructor of the subtype
 ///   use a prototype object .copyWithBits()
-
 mixin BitStructAsSubtype<S extends BitStruct<K>, K extends BitField> on BitStruct<K> {
+  // S copyWith();
+  @mustBeOverridden
+  S copyWithBits(Bits value);
+
   @override
   S withField(K key, int value) => super.withField(key, value) as S;
   @override
   S withEntries(Iterable<MapEntry<K, int>> entries) => super.withEntries(entries) as S;
   @override
-  S withAll(Map<K, int> map) => super.withAll(map) as S;
+  S withMap(Map<K, int> map) => super.withMap(map) as S;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
