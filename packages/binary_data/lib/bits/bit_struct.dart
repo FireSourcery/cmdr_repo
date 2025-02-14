@@ -198,11 +198,12 @@ class BitConstruct<S extends BitStruct<K>, K extends BitField> extends ConstBitS
 abstract mixin class EnumBits<K extends BitField> implements Enum {
   // per instance
   BitsInitializer<K> get initializer; // define as const using initializer
-  // Bits get bits => initializer.bits;
-  Bits get bits;
+  Bits get bits => initializer.bits;
+  // Bits get bits;
 
   // or build lookup map
 
+  List<K> get keys; // per class
   // List<K> get bitFields; // per class
-  // BitStruct<K> asBitStruct() => BitConstruct<BitStruct<K>, K>(bitFields, bits);
+  BitStruct<K> asBitStruct() => BitConstruct<BitStruct<K>, K>(keys, bits);
 }

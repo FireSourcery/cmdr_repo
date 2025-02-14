@@ -84,7 +84,7 @@ abstract mixin class ServiceIO<K, V, S> {
       var keys = keysGetter();
       if (keys.isEmpty) {
         yield* const Stream.empty();
-        await Future.delayed(const Duration(milliseconds: 10));
+        await Future.delayed(const Duration(milliseconds: 1000));
       } else {
         yield* getAll(keys, delay: delay);
       }
@@ -102,7 +102,7 @@ abstract mixin class ServiceIO<K, V, S> {
       var pairs = pairsGetter();
       if (pairs.isEmpty) {
         yield* const Stream.empty();
-        await Future.delayed(const Duration(milliseconds: 10));
+        await Future.delayed(const Duration(milliseconds: 1000));
       } else {
         yield* setAll(pairs, delay: delay);
       }
@@ -145,6 +145,7 @@ class ServicePushStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceSetS
 abstract class ServiceStreamHandler<T> {
   ServiceStreamHandler(this.onDataSlice);
 
+  // createStream()
   @protected
   Stream<T> get stream; // creates a new stream, call from begin() only
 

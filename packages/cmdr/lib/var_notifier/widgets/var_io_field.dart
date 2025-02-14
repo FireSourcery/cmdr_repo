@@ -147,6 +147,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
     this.varNotifier, {
     this.eventNotifier,
     this.controller,
+    //disableConversion = false,
     this.labelAlignment = FloatingLabelAlignment.start,
     this.showLabel = true,
     this.showPrefix = true,

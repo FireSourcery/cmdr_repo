@@ -1,3 +1,4 @@
+import 'package:cmdr/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -21,7 +22,7 @@ class StringFormField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       decoration: InputDecoration(labelText: label),
-      initialValue: word.asString(),
+      initialValue: word.asString().trimNulls(),
       readOnly: false,
       maxLengthEnforcement: MaxLengthEnforcement.enforced,
       maxLength: maxLength,

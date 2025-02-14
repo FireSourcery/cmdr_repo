@@ -110,7 +110,16 @@ class _DialogAnchorState<T> extends State<DialogAnchor<T>> {
 /// [DialogButton] is a button that opens a dialog when pressed.
 ////////////////////////////////////////////////////////////////////////////////
 class DialogButton<T> extends StatelessWidget {
-  const DialogButton({super.key, required this.dialogBuilder, this.child, this.onPressed, this.onPop, this.useRootNavigator = true, this.styleId});
+  const DialogButton({
+    super.key,
+    required this.dialogBuilder,
+    this.child,
+    this.onPressed,
+    this.onPop,
+    this.useRootNavigator = true,
+    this.styleId,
+    this.barrierDismissible = false,
+  });
   // use the warning theme
   // const DialogButton.warning({super.key, required this.dialogBuilder, this.useRootNavigator = true, this.child, this.onPop, this.onPressed}) : themeStyle = DialogButtonStyle.warning;
 
@@ -120,6 +129,8 @@ class DialogButton<T> extends StatelessWidget {
   final ValueSetter<T?>? onPop;
   final bool useRootNavigator;
   final DialogButtonStyle? styleId;
+
+  final bool barrierDismissible;
 
   @override
   Widget build(BuildContext context) {
@@ -131,12 +142,7 @@ class DialogButton<T> extends StatelessWidget {
     return ElevatedButton(
       onPressed: () async {
         onPressed?.call();
-        final result = await showDialog<T>(
-          context: context,
-          builder: dialogBuilder,
-          barrierDismissible: false,
-          useRootNavigator: useRootNavigator,
-        );
+        final result = await showDialog<T>(context: context, builder: dialogBuilder, barrierDismissible: barrierDismissible, useRootNavigator: useRootNavigator);
         onPop?.call(result); // alternatively show dialog next over async
       },
       style: buttonStyle,
