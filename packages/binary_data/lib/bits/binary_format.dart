@@ -38,6 +38,7 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
   /// keyed types, has type dependencies
   bits16<Uint16, BitsBase>(reference: null),
   enum16<Uint16, Enum>(reference: null),
+  never<Void, Never>(reference: null),
   ;
 
   const BinaryFormat({required this.reference});
@@ -57,7 +58,8 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
       const (Uint16) => (0, 65535),
       const (Int16) => (-32768, 32767),
       const (Bool) => (0, 1),
-      _ => throw Error(),
+      const (Void) => (0, 0),
+      _ => throw StateError('Invalid type $S'),
     };
   }
 
@@ -69,7 +71,8 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
       const (Uint16) => false,
       const (Int16) => true,
       const (Bool) => false,
-      _ => throw Error(),
+      const (Void) => false,
+      _ => throw StateError('Invalid type $S'),
     };
   }
 

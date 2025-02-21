@@ -33,8 +33,7 @@ abstract class VarContext extends InheritedWidget {
   bool updateShouldNotify(covariant VarContext oldWidget) => cacheController != oldWidget.cacheController;
 }
 
-/// 2 types by default. RealTime and Settings
-// Real-Time Vars use VarRealTimeController
+/// additional sub type containing [VarRealTimeController]
 class VarRealTimeContext extends VarContext {
   const VarRealTimeContext({super.key, required VarRealTimeController super.cacheController, required super.child});
 

@@ -12,8 +12,8 @@ class VarButton extends StatelessWidget with VarNotifierViewer<int> {
 
   @override
   final VarNotifier<dynamic> varNotifier;
-  final String? labelOverwrite;
   final int writeValue;
+  final Widget? labelOverwrite;
 
   void onPressed() => varNotifier.updateByViewAs<int>(writeValue);
 
@@ -21,7 +21,7 @@ class VarButton extends StatelessWidget with VarNotifierViewer<int> {
   Widget build(BuildContext context) {
     return ElevatedButton(
       onPressed: onPressed,
-      child: Text(labelOverwrite ?? varNotifier.varKey.label),
+      child: labelOverwrite ?? Text(varNotifier.varKey.label),
     );
   }
 }

@@ -65,6 +65,8 @@ abstract mixin class VarNotifierViewer<V> {
 //   // Future<S?> Function(V value) get valueResponseSetter => isConnected ? submitAndWrite : _asyncSubmitByView;
 // }
 
+/// resolve if the builder is a generic builder
+///
 // abstract interface class VarBuilder implements StatelessWidget {
 //   factory VarBuilder(VarNotifier varNotifier, Widget Function(VarNotifier) builder) = VarBaseBuilder;
 //   factory VarBuilder.byKey(VarKey varKey, Widget Function(VarNotifier) builder) = VarKeyContextBuilder;
@@ -148,7 +150,6 @@ class VarKeyContextBuilder extends StatelessWidget {
   Widget build(BuildContext context) {
     final varNotifier = VarContext.ofKey(context, varKey).cacheController.cache.allocate(varKey);
     return builder(varNotifier);
-    // return VarBaseBuilder(VarContext.ofKey(context, varKey).cacheController.cache.allocate(varKey), builder);
   }
 }
 
