@@ -57,12 +57,10 @@ abstract mixin class ServiceIO<K, V, S> {
   /// Caller locks [keys] from modifications before building slices
   ////////////////////////////////////////////////////////////////////////////////
   Stream<ServiceGetSlice<K, V>> getAll(Iterable<K> keys, {Duration delay = const Duration(milliseconds: 1)}) {
-    // if (keys.isEmpty) return const Stream.empty();
     return _getSlices(keys.slices(maxGetBatchSize ?? keys.length), delay: delay);
   }
 
   Stream<ServiceSetSlice<K, V, S>> setAll(Iterable<(K, V)> pairs, {Duration delay = const Duration(milliseconds: 1)}) {
-    // if (pairs.isEmpty) return const Stream.empty();
     return _setSlices(pairs.slices(maxSetBatchSize ?? pairs.length), delay: delay);
   }
 
@@ -84,7 +82,7 @@ abstract mixin class ServiceIO<K, V, S> {
       var keys = keysGetter();
       if (keys.isEmpty) {
         yield* const Stream.empty();
-        await Future.delayed(const Duration(milliseconds: 1000));
+        await Future.delayed(const Duration(milliseconds: 10)); // subsitute time of 1 iteration
       } else {
         yield* getAll(keys, delay: delay);
       }
@@ -102,7 +100,7 @@ abstract mixin class ServiceIO<K, V, S> {
       var pairs = pairsGetter();
       if (pairs.isEmpty) {
         yield* const Stream.empty();
-        await Future.delayed(const Duration(milliseconds: 1000));
+        await Future.delayed(const Duration(milliseconds: 10));
       } else {
         yield* setAll(pairs, delay: delay);
       }
@@ -128,7 +126,7 @@ class ServicePollStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceGetS
 
   @protected
   @override
-  Stream<ServiceGetSlice<K, V>> get stream => protocolService.pollFlex(inputGetter, delay: const Duration(milliseconds: 5));
+  Stream<ServiceGetSlice<K, V>> get stream => protocolService.pollFlex(inputGetter, delay: const Duration(milliseconds: 1));
 }
 
 class ServicePushStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceSetSlice<K, V, S>> {
@@ -139,7 +137,7 @@ class ServicePushStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceSetS
 
   @protected
   @override
-  Stream<ServiceSetSlice<K, V, S>> get stream => protocolService.push(inputGetter, delay: const Duration(milliseconds: 5));
+  Stream<ServiceSetSlice<K, V, S>> get stream => protocolService.push(inputGetter, delay: const Duration(milliseconds: 1));
 }
 
 abstract class ServiceStreamHandler<T> {
