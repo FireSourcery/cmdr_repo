@@ -92,7 +92,7 @@ final class VarKeyContext extends InheritedWidget {
 }
 
 extension VarKeyMapper on VarKey {
-  VarNotifier varFrom(BuildContext context) => VarContext.ofKey(context, this).cacheController.cache.allocate(this);
+  VarNotifier varFrom(BuildContext context) => VarContext.ofKey(context, this).cacheController.cache.resolve(this);
 }
 
 extension VarNotifierContext on BuildContext {

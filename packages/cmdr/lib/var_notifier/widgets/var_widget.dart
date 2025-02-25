@@ -130,7 +130,7 @@ class VarKeyBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final varNotifier = varCache?.allocate(varKey) ?? VarContext.ofKey(context, varKey).cacheController.cache.allocate(varKey);
+    final varNotifier = varCache?.resolve(varKey) ?? VarContext.ofKey(context, varKey).cacheController.cache.resolve(varKey);
     return builder(varNotifier);
   }
 }
@@ -148,7 +148,7 @@ class VarKeyContextBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final varNotifier = VarContext.ofKey(context, varKey).cacheController.cache.allocate(varKey);
+    final varNotifier = VarContext.ofKey(context, varKey).cacheController.cache.resolve(varKey);
     return builder(varNotifier);
   }
 }
@@ -161,7 +161,7 @@ class VarKeyContextBuilderWithType extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final varNotifier = VarContext.ofKey(context, varKey).cacheController.cache.allocate(varKey);
+    final varNotifier = VarContext.ofKey(context, varKey).cacheController.cache.resolve(varKey);
     return varKey.viewType.callWithType(<G>() => builder<G>(varNotifier as VarNotifier<G>));
     // return VarBaseBuilderWithType(VarContext.ofKey(context, varKey).cacheController.cache.allocate(varKey), builder);
   }

@@ -16,7 +16,7 @@ class VarKeyWidgetBuilder {
   final VarCache? varCache; // if an varCache is provided, retrieving through context is not necessary.
 
   // builder optionally handle eventController
-  Widget buildByCache(BuildContext _, VarKey value, Widget? __) => builder(varCache!.allocate(value));
+  Widget buildByCache(BuildContext _, VarKey value, Widget? __) => builder(varCache!.resolve(value));
   Widget buildByContext(BuildContext _, VarKey value, Widget? __) => VarKeyContextBuilder(value, builder);
 
   ValueWidgetBuilder<VarKey> get asValueWidgetBuilder => (varCache != null) ? buildByCache : buildByContext;

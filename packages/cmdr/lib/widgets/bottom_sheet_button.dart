@@ -1,16 +1,28 @@
 import 'package:flutter/material.dart';
 
 class BottomSheetButton extends StatefulWidget {
-  const BottomSheetButton({required this.backgroundImage, this.shape, required this.child, super.key});
+  const BottomSheetButton({
+    required this.backgroundImage,
+    this.shape,
+    this.heightScale = .33,
+    required this.child,
+    this.iconOpen = const Icon(Icons.keyboard_arrow_up, size: 50),
+    this.iconClose = const Icon(Icons.keyboard_arrow_down, size: 50),
+    this.iconInactive = const Icon(Icons.circle, size: 50),
+    super.key,
+  });
   final ImageProvider backgroundImage;
   final OutlinedBorder? shape;
-  final Icon iconOpen = const Icon(Icons.keyboard_arrow_up, size: 50);
-  final Icon iconClose = const Icon(Icons.keyboard_arrow_down, size: 50);
+  final Icon iconOpen;
+  final Icon iconClose;
+  final Icon iconInactive;
+
   // final Color shadowClosed =  Colors.black;
   // final Color shadowOpen = Colors.black;
   // final double elevationOpen =  10;
   // final double elevationClosed =  10;
-  final Widget child;
+  final double heightScale;
+  final Widget? child;
 
   @override
   State<BottomSheetButton> createState() => BottomSheetButtonState();
@@ -31,24 +43,19 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
 
   late final FloatingActionButton fabOpen = FloatingActionButton(onPressed: expand, child: widget.iconOpen);
   late final FloatingActionButton fabClose = FloatingActionButton(onPressed: collapse, child: widget.iconClose); // null to hide
+  late final FloatingActionButton fabNull = FloatingActionButton(onPressed: collapse, child: widget.iconInactive); // null to hide
 
-  late Widget? fab = fabOpen;
   late PersistentBottomSheetController bottomSheetController;
-  // late Widget prevBottomSheet = widget.initialBottomSheet;
+  // mutable
+  late Widget? fab = fabOpen;
   late Widget? selectedBottomSheet = widget.child;
 
-  void onClosed() {
-    if (mounted) {
-      setState(() {
-        fab = fabOpen;
-      });
-    }
-  }
+  Future get closed => bottomSheetController.closed;
 
   Widget _bottomSheetBuilder(BuildContext context) => Padding(padding: EdgeInsets.only(top: (widget.iconClose.size ?? 0) / 2), child: selectedBottomSheet ?? widget.child);
 
   void expand([Widget? child]) {
-    late final double sheetHeight = MediaQuery.of(context).size.height / 3 + appBarHeight; // repeat in case of screen size change
+    late final double sheetHeight = MediaQuery.of(context).size.height * widget.heightScale + appBarHeight; // repeat in case of screen size change
     if (child != null) selectedBottomSheet = child;
     if (selectedBottomSheet == null) return;
     setState(() {
@@ -58,9 +65,24 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
     bottomSheetController.closed.whenComplete(onClosed);
   }
 
+  void onClosed() {
+    if (mounted) setState(() => fab = fabOpen);
+  }
+
   void collapse() {
     bottomSheetController.close();
     bottomSheetController.closed.whenComplete(onClosed);
+  }
+
+  void _exit() {
+    if (mounted) setState(() {});
+    // fab = fabNull;
+    selectedBottomSheet = null;
+  }
+
+  void exit() {
+    bottomSheetController.close();
+    bottomSheetController.closed.whenComplete(_exit);
   }
 
   // Material? materialWrapOpen(Widget child) => Material(type: MaterialType.card, shadowColor: shadowOpen, elevation: elevationOpen, shape: shape, child: Center(child: child));

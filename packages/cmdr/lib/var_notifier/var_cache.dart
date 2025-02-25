@@ -49,20 +49,15 @@ class VarCache {
   @mustBeOverridden
   VarNotifier<dynamic> constructor(covariant VarKey varKey) => VarNotifier.of(varKey);
 
-  // VarNotifier resolve(VarKey varKey) {
-  //   if (_cache is UnmodifiableMapView) return this[varKey]!; // preallocated
-
-  //   return _cache.putIfAbsent(varKey.value, () {
-  //     if (lengthMax case int max when _cache.length >= max) _cache.remove(_cache.entries.first.key)?.dispose();
-  //     return constructor(varKey);
-  //   });
-  // }
-
   /// Maps VarKey to VarNotifier
   /// `allocate` the same VarNotifier storage if found. `create if not found`
   ///
-  VarNotifier allocate(VarKey varKey) {
+  VarNotifier resolve(VarKey varKey) {
     if (_cache is UnmodifiableMapView) return this[varKey]!; // preallocated
+    return allocate(varKey);
+  }
+
+  VarNotifier allocate(VarKey varKey) {
     return _cache.putIfAbsent(varKey.value, () {
       if (lengthMax case int max when _cache.length >= max) _cache.remove(_cache.entries.first.key)?.dispose();
       return constructor(varKey);
