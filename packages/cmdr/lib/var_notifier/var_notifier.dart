@@ -56,7 +56,7 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   late final int dataKey = varKey.value; // compute once and cache
 
   /// Derived from [VarKey] and cached
-  void initReferences() {
+  void initReferences(/* optionally pass */) {
     signExtension = varKey.binaryFormat?.signExtension;
     viewOfData = varKey.viewOfData;
     dataOfView = varKey.dataOfView;

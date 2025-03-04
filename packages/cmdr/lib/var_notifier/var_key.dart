@@ -21,17 +21,18 @@ abstract mixin class VarKey implements ValueKey<int> {
   int? get valueStringDigits;
   // num? get valueDefault;
 
-  bool get isReadOnly; // isPushing == false
+  T subtypeOf<T>(num value) => throw UnsupportedError('valueAsSubtype: $T');
+  num valueOfSubtype<T>(T value) => throw UnsupportedError('viewOfSubtype: $T');
 
+  VarStatus varStatusOf(int code); // should only be one. instances shared
+
+  /// Service properties
   // should not be both, that would incur real-time loopback
+  bool get isReadOnly; // isPushing == false
   bool get isPolling; // polling, all readable. Processed by read stream
   bool get isPushing; // pushing, selected writable, other writable updated on change, processed by write stream
 
   List<VarKey>? get dependents;
-
-  VarStatus varStatusOf(int code); // should only be one. instances shared
-  T subtypeOf<T>(num value) => throw UnsupportedError('valueAsSubtype: $T');
-  num valueOfSubtype<T>(T value) => throw UnsupportedError('viewOfSubtype: $T');
 
   // value stringifier
   String stringify<V>(V value);

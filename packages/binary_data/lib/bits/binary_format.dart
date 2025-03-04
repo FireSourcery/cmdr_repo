@@ -14,6 +14,8 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
   ufract16<Uint16, double>(reference: 32768), // frac16 abs with 2x over-saturation
   percent16<Uint16, double>(reference: 65535), // Q0.16
   ufixed16<Uint16, double>(reference: null),
+  uaccum16<Uint16, double>(reference: 128), // Q9.7
+  accum16<Int16, double>(reference: 128), // Q9.7
 
   // fixed32(reference: 32768, baseType: Int32 ),
   // int32(reference: Int32, baseType: Int32 ),
@@ -26,6 +28,9 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
   /// Integer types, transmitted as int or truncated value
   int16<Int16, int>(reference: 1),
   uint16<Uint16, int>(reference: 1),
+
+  // sign<Int, int>(reference: 1),
+  sign16<Int16, int>(reference: 1),
 
   /// Not a number format but a value relative to the client platform.
   /// Included here as use case is similar and simplifies caller logic, such as unit conversion
@@ -66,6 +71,12 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
   int get min => minMax.$1;
   int get max => minMax.$2;
 
+  // before unit conversion
+  (int, int) get numMinMax => (reference != null) ? (min ~/ reference!, max ~/ reference!) : minMax;
+
+  int get numMin => numMinMax.$1;
+  int get numMax => numMinMax.$2;
+
   bool get isSigned {
     return switch (S) {
       const (Uint16) => false,
@@ -79,7 +90,14 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
   int _signExtension16(int raw16) => raw16.toSigned(16);
   int _signExtension32(int raw32) => raw32.toSigned(32);
 
-  int Function(int bytes)? get signExtension => (isSigned) ? _signExtension16 : null;
+  int Function(int bytes)? get signExtension {
+    return switch (S) {
+      const (Int32) => _signExtension32,
+      const (Int16) => _signExtension16,
+      _ => null,
+    };
+    // return (isSigned) ? _signExtension16 : null;
+  }
 
   bool get isFixedPoint => switch (this) { fract16 || ufract16 || ufixed16 || percent16 => true, _ => false };
   bool get isScalarBase10 => switch (this) { scalar10 || scalarInv10 => true, _ => false };
