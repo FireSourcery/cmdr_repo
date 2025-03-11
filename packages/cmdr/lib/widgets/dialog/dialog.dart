@@ -51,7 +51,7 @@ class AsyncConfirmationDialog<T> extends StatefulWidget {
 
 class _AsyncConfirmationDialogState<T> extends State<AsyncConfirmationDialog<T>> {
   final Completer<void> userConfirmation = Completer(); // results of 'Confirm' button
-  late final Future<T> onConfirmCompleted; // process onConfirm. is it more defensive to leave uninitialized?
+  Future<T>? onConfirmCompleted; // process onConfirm.
 
   // @override
   // void initState() {
@@ -77,10 +77,10 @@ class _AsyncConfirmationDialogState<T> extends State<AsyncConfirmationDialog<T>>
       content: FutureBuilder(
         future: userConfirmation.future,
         builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-          return switch (snapshot) {
-            AsyncSnapshot(connectionState: ConnectionState.none || ConnectionState.active) => widget.initialContent,
-            AsyncSnapshot(connectionState: ConnectionState.waiting) => widget.initialContent,
-            AsyncSnapshot(connectionState: ConnectionState.done) => FutureBuilder(future: onConfirmCompleted, builder: widget.onConfirmContent),
+          return switch (snapshot.connectionState) {
+            ConnectionState.waiting => widget.initialContent,
+            ConnectionState.done => FutureBuilder(future: onConfirmCompleted, builder: widget.onConfirmContent),
+            ConnectionState.none || ConnectionState.active => const SizedBox.shrink(),
           };
         },
       ),
@@ -91,9 +91,9 @@ class _AsyncConfirmationDialogState<T> extends State<AsyncConfirmationDialog<T>>
         FutureBuilder(
           future: userConfirmation.future,
           builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-            return switch (snapshot) {
-              AsyncSnapshot(connectionState: ConnectionState.waiting) => TextButton(onPressed: Navigator.of(context).pop, child: const Text('Cancel')),
-              AsyncSnapshot(connectionState: ConnectionState.none || ConnectionState.active || ConnectionState.done) => const SizedBox.shrink(),
+            return switch (snapshot.connectionState) {
+              ConnectionState.waiting => TextButton(onPressed: Navigator.of(context).pop, child: const Text('Cancel')),
+              ConnectionState.none || ConnectionState.active || ConnectionState.done => const SizedBox.shrink(),
             };
           },
         ),
@@ -102,17 +102,16 @@ class _AsyncConfirmationDialogState<T> extends State<AsyncConfirmationDialog<T>>
         FutureBuilder(
           future: userConfirmation.future,
           builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-            return switch (snapshot) {
-              AsyncSnapshot(connectionState: ConnectionState.waiting) => TextButton(onPressed: onPressedConfirm, child: const Text('Confirm')),
-              AsyncSnapshot(connectionState: ConnectionState.none || ConnectionState.active || ConnectionState.done) => FutureBuilder(
+            return switch (snapshot.connectionState) {
+              ConnectionState.waiting => TextButton(onPressed: onPressedConfirm, child: const Text('Confirm')),
+              ConnectionState.none || ConnectionState.active || ConnectionState.done => FutureBuilder(
                   future: onConfirmCompleted,
                   builder: (BuildContext context, AsyncSnapshot<T> snapshot) {
-                    return switch (snapshot) {
-                      // AsyncSnapshot(hasError: true) =>  ,
-                      AsyncSnapshot(connectionState: ConnectionState.none) => const Text('Initialing...'),
-                      AsyncSnapshot(connectionState: ConnectionState.waiting || ConnectionState.active) => const CircularProgressIndicator(),
-                      AsyncSnapshot(connectionState: ConnectionState.done) =>
-                        TextButton(onPressed: () => Navigator.of(context).pop(snapshot.data), child: const Text('Ok')), // done with or without error
+                    // AsyncSnapshot(hasError: true) =>  ,
+                    return switch (snapshot.connectionState) {
+                      ConnectionState.none => const Text('Initialing...'),
+                      ConnectionState.waiting || ConnectionState.active => const CircularProgressIndicator(),
+                      ConnectionState.done => TextButton(onPressed: () => Navigator.of(context).pop(snapshot.data), child: const Text('Ok')), // done with or without error
                     };
                   },
                 ),

@@ -11,15 +11,19 @@ class VarInputDialog extends StatelessWidget {
     required this.child,
     required this.varNotifier,
     required this.varCache,
-    required this.eventNotifier,
+    this.eventNotifier,
     this.beginEditMessage = initialMessageDefault,
     this.endEditMessage = finalMessageDefault,
+    this.onSubmitted,
     // this.displayCondition,
   });
 
   final VarNotifier varNotifier;
   final VarCache varCache;
-  final VarCacheNotifier eventNotifier; // make this required
+  // final VarCacheNotifier eventNotifier; // make this required
+  final VarEventNotifier? eventNotifier; // make this required
+  final ValueSetter<VarNotifier>? onSubmitted;
+
   final Widget child; // caller may map child callbacks to the same event controller
 
   final String? beginEditMessage;
@@ -56,7 +60,7 @@ class VarInputDialog extends StatelessWidget {
 
   // on submit
   // if (value == VarViewEvent.submit) matching handled by DialogAnchor
-  Widget eventDialog(BuildContext context, VarViewEvent? value) {
+  Widget eventDialog(BuildContext context, void _) {
     final theme = Theme.of(context);
     return AlertDialog(
       // title: const Text('Completed Editing'),
@@ -79,15 +83,16 @@ class VarInputDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // final effectiveEventNotifier = eventNotifier ?? VarCacheNotifier(varCache: varCache, varNotifier: varNotifier); // DialogAnchor handles dispose / remove listener
+    final effectiveEventNotifier = eventNotifier ?? VarEventNotifier(onSubmitted: onSubmitted!, varNotifier: varNotifier); // DialogAnchor handles dispose / remove listener
 
     if (varNotifier.varKey.dependents != null) {
       // change to conditional
-      return DialogAnchor<VarViewEvent>(
+      return DialogAnchor<void>(
         // displayCondition: displayCondition,
-        eventNotifier: eventNotifier,
+        eventNotifier: effectiveEventNotifier,
         initialDialogBuilder: initialDialog,
         eventDialogBuilder: eventDialog,
-        eventMatch: VarViewEvent.submit,
+        // eventMatch: VarViewEvent.submit,
         child: child,
       );
     }

@@ -45,16 +45,17 @@ class VarSlider extends StatelessWidget with VarNotifierViewer<double> {
 
   @override
   final VarNotifier<dynamic> varNotifier;
-  final VarCacheNotifier? eventNotifier;
+  final VarEventNotifier? eventNotifier;
 
-  void _submitWithCache(double value) => eventNotifier!.submitEntryAs<double>(varNotifier.varKey, value);
+  // void _submitWithCache(double value) => eventNotifier!.submitEntryAs<double>(varNotifier.varKey, value);
 
   Widget builder(BuildContext context, Widget? child) {
     // must be num defined if type is numeric
     final min = varNotifier.numLimits!.min.toDouble();
     final max = varNotifier.numLimits!.max.toDouble();
     // final onChangeEnd = (eventNotifier != null) ? (eventNotifier!.submitByViewAs<double>) : valueChanged;
-    final onChangeEnd = (eventNotifier != null) ? _submitWithCache : valueChanged;
+    // final onChangeEnd = (eventNotifier != null) ? _submitWithCache : valueChanged;
+    final onChangeEnd = valueChanged;
 
     return Slider.adaptive(
       // divisions: ((max - min) ~/ 1).clamp(2, 100),

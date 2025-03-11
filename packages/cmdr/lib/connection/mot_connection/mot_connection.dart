@@ -22,7 +22,7 @@ class MotConnection {
 
   final SerialLink serialLink = SerialLink();
   // final BluetoothLink bluetoothLink = BluetoothLink();
-  late final Protocol protocol = Protocol(serialLink, const MotPacketInterface());
+  late final Protocol protocol = Protocol(serialLink, const MotPacketInterface()); //todo empty link for state, nullcheck/isconnected
   late final MotProtocolSocket general = MotProtocolSocket(protocol);
   late final MotProtocolSocket stop = MotProtocolSocket(protocol);
   late final MotProtocolSocket varRead = MotProtocolSocket(protocol);

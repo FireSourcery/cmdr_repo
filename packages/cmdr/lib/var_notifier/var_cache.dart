@@ -239,56 +239,34 @@ class VarCache {
 ///    Submit notifier - e.g. generating dialog
 ///    Updating dependents residing in the same VarCache
 ////////////////////////////////////////////////////////////////////////////////
-abstract mixin class VarCacheNotifier implements VarCache, ValueNotifier<VarViewEvent> {
-  // propagateSet
-  // caller provides function via switch case
-  // updateHook
-  void updateDependents(covariant VarKey key);
+// abstract mixin class VarCacheNotifier implements VarCache, ValueNotifier<VarViewEvent> {
+//   // propagateSet
+//   // caller provides function via switch case
+//   // updateHook
+//   void updateDependents(covariant VarKey key);
 
-  // single listener table, notify with id. this way invokes extra notifications
-  //  separate changeNotifier, separate tables for different types of events
-  VarViewEvent _value = VarViewEvent.none;
-  @override
-  VarViewEvent get value => _value;
+//   // single listener table, notify with id. this way invokes extra notifications
+//   //  separate changeNotifier, separate tables for different types of events
+//   VarViewEvent _value = VarViewEvent.none;
+//   @override
+//   VarViewEvent get value => _value;
 
-  // always update value, even if the same
-  @override
-  set value(VarViewEvent newValue) {
-    _value = newValue;
-    notifyListeners();
-  }
+//   // always update value, even if the same
+//   @override
+//   set value(VarViewEvent newValue) {
+//     _value = newValue;
+//     notifyListeners();
+//   }
 
-  // passing key
-  void submitEntryAs<T>(VarKey key, T varValue) {
-    this[key]?.updateByViewAs<T>(varValue);
-    updateDependents(key);
-    value = VarViewEvent.submit;
-  }
+//   // passing key
+//   void submitEntryAs<T>(VarKey key, T varValue) {
+//     this[key]?.updateByViewAs<T>(varValue);
+//     updateDependents(key);
+//     value = VarViewEvent.submit;
+//   }
 
-  // ValueSetter<T> valueSetterOf<T>(VarKey key) => ((T value) => submitEntryAs<T>(key, value));
-
-  // //////////////////////////////////////////////////////////////////////////////
-  // / User submit
-  // /   associated with UI component, rather than VarNotifier
-  // /   with context of cache for dependents
-  // /   Listeners to the VarNotifier on another UI component will not be notified of submit
-  // //////////////////////////////////////////////////////////////////////////////
-  // using selected state
-  // this is not needed if context of cache is provided
-  // Type assigned by VarKey/VarCache
-  // null for default. If a 'empty' VarNotifier is attached, it may register excess callbacks, and dispatch meaningless notifications.
-  // VarNotifier<dynamic>? varNotifier; // always typed by Key returning as dynamic.
-
-  // void submitByViewAs<T>(T varValue) {
-  //   if (varNotifier == null) return;
-  //   varNotifier!.updateByViewAs<T>(varValue);
-  //   // if varCache has mixin VarDependents, update dependents
-  //   // if (varCache case VarDependents typedCache) {
-  //   updateDependents(varNotifier!.varKey);
-  //   // }
-  //   value = VarViewEvent.submit;
-  // }
-}
+//   // ValueSetter<T> valueSetterOf<T>(VarKey key) => ((T value) => submitEntryAs<T>(key, value));
+// }
 
 enum VarViewEvent {
   select,

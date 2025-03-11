@@ -224,42 +224,6 @@ class ProtocolSocket implements Sink<Packet> {
     return null;
   }
 
-  Stream<R?> periodicRequest<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration delay = datagramDelay}) async* {
-    while (true) {
-      yield await requestResponse<T, R>(requestId, requestArgs);
-      await Future.delayed(delay); // todo as byte time
-    }
-  }
-
-  /// Must return as stream, so callback can run following each response. This way eliminates additional buffering. Reducing to Iterable would direct each element to the same packet buffer.
-  Stream<(T segmentArgs, R? segmentResponse)> iterativeRequest<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> requestSlices, {Duration delay = datagramDelay}) async* {
-    for (final segmentArgs in requestSlices) {
-      yield (segmentArgs, await requestResponse<T, R>(requestId, segmentArgs));
-      await Future.delayed(delay);
-    }
-  }
-
-  Stream<(T segmentArgs, R? segmentResponse)> periodicIterativeRequest<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> requestSlices, {Duration delay = datagramDelay}) async* {
-    while (true) {
-      yield* iterativeRequest<T, R>(requestId, requestSlices, delay: delay);
-    }
-  }
-
-  /// periodic Response/Write
-  Stream<R?> periodicUpdate<T, R>(PacketIdRequest<T, R> requestId, T Function() requestArgsGetter, {Duration delay = datagramDelay}) async* {
-    while (true) {
-      yield await requestResponse<T, R>(requestId, requestArgsGetter());
-      await Future.delayed(delay); // todo as byte time
-    }
-  }
-
-  // Stream<R?> iterativeUpdate<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> Function() requestArgsGetter, {Duration delay = datagramDelay}) async* {
-  //   for (final segmentArgs in requestArgsGetter()) {
-  //     yield await requestResponse<T, R>(requestId, segmentArgs);
-  //     await Future.delayed(delay);
-  //   }
-  // }
-
   Future<PacketSyncId?> ping(covariant PacketSyncId id, [covariant PacketSyncId? respId, Duration timeout = timeoutDefault]) async {
     protocol.mapResponse(respId ?? id, this);
     return sendSync(id).then((_) async => await recvSync(timeout));
@@ -374,6 +338,43 @@ class ProtocolSocket implements Sink<Packet> {
   void close() {
     print('Socket closed');
   }
+
+  /// extension
+  Stream<R?> periodicRequest<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration delay = datagramDelay}) async* {
+    while (true) {
+      yield await requestResponse<T, R>(requestId, requestArgs);
+      await Future.delayed(delay); // todo as byte time
+    }
+  }
+
+  /// Must return as stream, so callback can run following each response. This way eliminates additional buffering. Reducing to Iterable would direct each element to the same packet buffer.
+  Stream<(T segmentArgs, R? segmentResponse)> iterativeRequest<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> requestSlices, {Duration delay = datagramDelay}) async* {
+    for (final segmentArgs in requestSlices) {
+      yield (segmentArgs, await requestResponse<T, R>(requestId, segmentArgs));
+      await Future.delayed(delay);
+    }
+  }
+
+  Stream<(T segmentArgs, R? segmentResponse)> periodicIterativeRequest<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> requestSlices, {Duration delay = datagramDelay}) async* {
+    while (true) {
+      yield* iterativeRequest<T, R>(requestId, requestSlices, delay: delay);
+    }
+  }
+
+  /// periodic Response/Write
+  Stream<R?> periodicUpdate<T, R>(PacketIdRequest<T, R> requestId, T Function() requestArgsGetter, {Duration delay = datagramDelay}) async* {
+    while (true) {
+      yield await requestResponse<T, R>(requestId, requestArgsGetter());
+      await Future.delayed(delay); // todo as byte time
+    }
+  }
+
+  // Stream<R?> iterativeUpdate<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> Function() requestArgsGetter, {Duration delay = datagramDelay}) async* {
+  //   for (final segmentArgs in requestArgsGetter()) {
+  //     yield await requestResponse<T, R>(requestId, segmentArgs);
+  //     await Future.delayed(delay);
+  //   }
+  // }
 }
 
 enum ProtocolSyncOptions {

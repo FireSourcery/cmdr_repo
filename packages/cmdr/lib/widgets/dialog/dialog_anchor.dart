@@ -82,7 +82,8 @@ class _DialogAnchorState<T> extends State<DialogAnchor<T>> {
   }
 
   void _showEventDialogAsListener() {
-    if (widget.eventGetter == null || widget.eventGetter!.call() == widget.eventMatch) _showEventDialog();
+    // if (widget.eventGetter == null || widget.eventGetter?.call() == widget.eventMatch)
+    _showEventDialog();
   }
 
   @override

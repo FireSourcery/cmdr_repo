@@ -49,7 +49,7 @@ class StringTile extends StatelessWidget {
       // dense: null,
       titleAlignment: ListTileTitleAlignment.bottom,
       title: Text(nameId.asString()),
-      subtitle: ((label != null) ? Text(label!) : null),
+      subtitle: (label != null) ? Text(label!) : null,
     );
   }
 }

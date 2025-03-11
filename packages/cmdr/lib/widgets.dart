@@ -6,7 +6,7 @@ export 'widgets/io_field.dart';
 export 'widgets/logo.dart';
 export 'widgets/dialog/dialog_anchor.dart';
 
-export 'widgets/string_view.dart';
+export 'widgets/binary_data/string_view.dart';
 
 export 'widgets/time_chart/chart_controller.dart';
 export 'widgets/time_chart/chart_data.dart';

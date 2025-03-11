@@ -8,7 +8,7 @@ import '../../widgets/flyweight_menu/flyweight_menu_widgets.dart';
 import '../../widgets/io_field.dart';
 import '../var_notifier.dart';
 import 'var_widget.dart';
-import 'var_dialog_anchor.dart';
+import 'var_input_dialog.dart';
 
 ////////////////////////////////////////////////////////////////////////////////
 /// IO Field
@@ -18,7 +18,7 @@ abstract interface class VarIOField extends StatelessWidget {
   // assigns type, maps additional options to config
   factory VarIOField(
     VarNotifier<dynamic> varNotifier, {
-    VarCacheNotifier? eventNotifier,
+    VarEventNotifier? eventNotifier,
     VarSingleController? controller,
     bool showLabel = true,
     bool showPrefix = true,
@@ -45,7 +45,7 @@ abstract interface class VarIOField extends StatelessWidget {
 
   factory VarIOField.compact(
     VarNotifier varNotifier, {
-    VarCacheNotifier? eventNotifier,
+    VarEventNotifier? eventNotifier,
     VarSingleController? controller,
     bool showLabel = false,
     bool showPrefix = false,
@@ -86,11 +86,12 @@ class _VarIOField<V> extends StatelessWidget implements VarIOField {
 ///
 ///
 class VarIOFieldWithMenu<T extends VarKey> extends StatelessWidget {
-  const VarIOFieldWithMenu({this.initialVarKey, this.eventNotifier, super.key, required this.menuSource});
+  const VarIOFieldWithMenu({this.initialVarKey, this.varCache, this.eventNotifier, super.key, required this.menuSource});
 
   final FlyweightMenuSource<T> menuSource;
   final T? initialVarKey;
-  final VarCacheNotifier? eventNotifier;
+  final VarCache? varCache;
+  final VarEventNotifier? eventNotifier;
 
   Widget _varWidgetBuilder(VarNotifier varNotifier) {
     return VarIOField(varNotifier, eventNotifier: eventNotifier, showLabel: true, isDense: false, showPrefix: true, showSuffix: true);
@@ -109,7 +110,7 @@ class VarIOFieldWithMenu<T extends VarKey> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ValueWidgetBuilder<T> keyWidgetBuilder = VarKeyWidgetBuilder(builder: _varWidgetBuilder, varCache: eventNotifier).asValueWidgetBuilder;
+    final ValueWidgetBuilder<T> keyWidgetBuilder = VarKeyWidgetBuilder(builder: _varWidgetBuilder, varCache: varCache).asValueWidgetBuilder;
 
     return MenuAnchorBuilder(
       menuSource: menuSource,
@@ -157,7 +158,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   });
 
   final VarNotifier<dynamic> varNotifier; //should this be cast here?
-  final VarCacheNotifier? eventNotifier;
+  final VarEventNotifier? eventNotifier;
   final VarSingleController? controller;
 
   // alternatively handle in constructor
@@ -189,7 +190,10 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
     // );
   }
 
-  void _submitWithCache(V value) => eventNotifier!.submitEntryAs<V>(varNotifier.varKey, value);
+  // void _submitWith(V value) {
+  //   varNotifier.updateByViewAs<V>(value);
+  //   eventNotifier!.onSubmitted(varNotifier);
+  // }
   // void submitWithService(V value) => controller!.updateValue(value);
 
   @override
@@ -204,7 +208,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   ValueGetter<bool> get errorGetter => () => varNotifier.statusIsError;
   @override
   // ValueSetter<V> get valueSetter => (eventNotifier != null) ? eventNotifier!.submitByViewAs<V> : varNotifier.updateByViewAs<V>;
-  ValueSetter<V> get valueSetter => (eventNotifier != null) ? _submitWithCache : varNotifier.updateByViewAs<V>;
+  ValueSetter<V> get valueSetter => (eventNotifier != null) ? eventNotifier!.submitByView : varNotifier.updateByViewAs<V>;
 
   @override
   ValueChanged<V> get sliderChanged => varNotifier.updateByViewAs<V>;
