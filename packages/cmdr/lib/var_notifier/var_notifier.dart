@@ -161,10 +161,15 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   ////////////////////////////////////////////////////////////////////////////////
   /// runtime variables
   ////////////////////////////////////////////////////////////////////////////////
+  /// move to VarNotifier?
   VarLastUpdate lastUpdate = VarLastUpdate.clear;
 
   bool hasIndirectListeners = false;
   bool get hasListenersCombined => hasListeners || hasIndirectListeners;
+
+  /// as outbound data
+  MapEntry<int, int> get dataEntry => MapEntry(dataKey, dataValue);
+  (int key, int value) get dataPair => (dataKey, dataValue);
 
   // if separating internal and external status
   // bool outOfRange; // value from client out of range
@@ -201,19 +206,16 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
 
   ////////////////////////////////////////////////////////////////////////////////
   /// [dataValue] from packet. convert on transmit only. lazy update on updateByView
-  ////////////////////////////////////////////////////////////////////////////////
-  int get dataValue => dataOf(_viewValue);
-  // set dataValue(int value) => numValue = viewOf(dataValue);
-
   // Always accept client data. correction is handled at client side.
   // value over view boundaries handle by UI
+  ////////////////////////////////////////////////////////////////////////////////
+  int get dataValue => dataOf(_viewValue);
+  // set dataValue(int value) => _viewValue = viewOf(dataValue);
 
   // after sign extension
   // alternatively alway notify on data update
   void _updateByData(int dataValue) => _viewValue = viewOf(dataValue);
-  // if (numValue != _clampedNumValue) {
-  //   statusCode = 1;
-  // }
+  // if (numValue != _clampedNumValue) statusCode = 1;
 
   // before sign extension
   // updatedByView wait for push
@@ -221,10 +223,6 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
     _updateByData(dataOfBinary(bytesValue));
     lastUpdate = VarLastUpdate.byData;
   }
-
-  /// as outbound data
-  MapEntry<int, int> get dataEntry => MapEntry(dataKey, dataValue);
-  (int key, int value) get dataPair => (dataKey, dataValue);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// [viewValue] from widgets
@@ -258,6 +256,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   /// generic getter use switch on type literal, and require extension to account for subtypes
   /// generic setter can optionally switch on object type
 
+  /// viewAs
   /// view determines type after accounting fo varId.valueType
   R valueAs<R>() {
     return switch (R) {
@@ -318,11 +317,6 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
     // assert((varKey.binaryFormat?.max != null) ? (dataValue <= varKey.binaryFormat!.max) : true);
     // assert((varKey.binaryFormat?.min != null) ? (dataValue >= varKey.binaryFormat!.min) : true);
   }
-
-  // may not be needed after push pending moved
-  // convenience for ValueSetter<T>
-  // void updateByViewAs<T>(T typedValue) => (this..updateByViewAs<T>(typedValue))..push(); // some chance mark occur initiating pull
-  // void updateByView(V typedValue) => updateByViewAs<V>(typedValue);
 
   // for set before loading num limits
   void updateByFile(num newValue) => _viewValue = newValue;
@@ -395,25 +389,25 @@ abstract mixin class VarStatusNotifier implements ChangeNotifier {
   void updateStatusByView(VarStatus status) => updateStatusByViewAs<VarStatus>(status);
 }
 
-class VarEventNotifier<T> extends ChangeNotifier {
+class VarEventNotifier extends ChangeNotifier {
   VarEventNotifier({required this.varNotifier, required this.onSubmitted});
 
-  // //////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
   // / User submit
   // /   associated with UI component, rather than VarNotifier
   // /   with context of cache for dependents
   // /   Listeners to the VarNotifier on another UI component will not be notified of submit
-  // //////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
   // using selected state
   // this is not needed if context of cache is provided
   // Type assigned by VarKey/VarCache
   // null for default. If a 'empty' VarNotifier is attached, it may register excess callbacks, and dispatch meaningless notifications.
-  final VarNotifier<T> varNotifier; // always typed by Key returning as dynamic.
-  final ValueSetter<VarNotifier<T>> onSubmitted;
+  final VarNotifier<dynamic> varNotifier; // always typed by Key returning as dynamic.
+  final ValueSetter<VarNotifier<dynamic>> onSubmitted;
 
-  void submitByView(T varValue) {
+  void submitByView<T>(T varValue) {
     varNotifier.updateByViewAs<T>(varValue);
-    onSubmitted(varNotifier); // why does this only run if the previous line is executed?
+    onSubmitted(varNotifier);
     notifyListeners();
   }
 }

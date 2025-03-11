@@ -232,12 +232,12 @@ class VarCache {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/// [VarCacheNotifier] - with context of [VarCache]
-/// A notifier separate from [VarNotifier.value] [updateByView] updates
-///    UI events
-///    Var selection - e.g. change select with Menu
-///    Submit notifier - e.g. generating dialog
-///    Updating dependents residing in the same VarCache
+// / [VarCacheNotifier] - with context of [VarCache]
+// / A notifier separate from [VarNotifier.value] [updateByView] updates
+// /    UI events
+// /    Var selection - e.g. change select with Menu
+// /    Submit notifier - e.g. generating dialog
+// /    Updating dependents residing in the same VarCache
 ////////////////////////////////////////////////////////////////////////////////
 // abstract mixin class VarCacheNotifier implements VarCache, ValueNotifier<VarViewEvent> {
 //   // propagateSet
@@ -268,14 +268,14 @@ class VarCache {
 //   // ValueSetter<T> valueSetterOf<T>(VarKey key) => ((T value) => submitEntryAs<T>(key, value));
 // }
 
-enum VarViewEvent {
-  select,
-  submit,
-  // update,
-  // error,
-  // clear,
-  none
-}
+// enum VarViewEvent {
+//   select,
+//   submit,
+//   // update,
+//   // error,
+//   // clear,
+//   none
+// }
 
 // mixin VarCacheAsSubtype<K extends VarKey, V extends VarNotifier> on VarCache {
 //   // @override
