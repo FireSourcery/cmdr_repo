@@ -190,12 +190,6 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
     // );
   }
 
-  // void _submitWith(V value) {
-  //   varNotifier.updateByViewAs<V>(value);
-  //   eventNotifier!.onSubmitted(varNotifier);
-  // }
-  // void submitWithService(V value) => controller!.updateValue(value);
-
   @override
   bool get isReadOnly => varNotifier.varKey.isReadOnly;
   @override
@@ -207,8 +201,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   @override
   ValueGetter<bool> get errorGetter => () => varNotifier.statusIsError;
   @override
-  // ValueSetter<V> get valueSetter => (eventNotifier != null) ? eventNotifier!.submitByViewAs<V> : varNotifier.updateByViewAs<V>;
-  ValueSetter<V> get valueSetter => (eventNotifier != null) ? eventNotifier!.submitByView : varNotifier.updateByViewAs<V>;
+  ValueSetter<V> get valueSetter => (eventNotifier != null) ? eventNotifier!.submitByViewAs<V> : varNotifier.updateByViewAs<V>;
 
   @override
   ValueChanged<V> get sliderChanged => varNotifier.updateByViewAs<V>;

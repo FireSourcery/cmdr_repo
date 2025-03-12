@@ -389,23 +389,17 @@ abstract mixin class VarStatusNotifier implements ChangeNotifier {
   void updateStatusByView(VarStatus status) => updateStatusByViewAs<VarStatus>(status);
 }
 
+//////////////////////////////////////////////////////////////////////////////
+// User submit
+//   associated with UI component, instead of VarNotifier value
+//   Listeners to the VarNotifier value on another UI component will not be notified of submit
+//////////////////////////////////////////////////////////////////////////////
 class VarEventNotifier extends ChangeNotifier {
   VarEventNotifier({required this.varNotifier, required this.onSubmitted});
-
-  //////////////////////////////////////////////////////////////////////////////
-  // / User submit
-  // /   associated with UI component, rather than VarNotifier
-  // /   with context of cache for dependents
-  // /   Listeners to the VarNotifier on another UI component will not be notified of submit
-  //////////////////////////////////////////////////////////////////////////////
-  // using selected state
-  // this is not needed if context of cache is provided
-  // Type assigned by VarKey/VarCache
-  // null for default. If a 'empty' VarNotifier is attached, it may register excess callbacks, and dispatch meaningless notifications.
-  final VarNotifier<dynamic> varNotifier; // always typed by Key returning as dynamic.
+  final VarNotifier<dynamic> varNotifier; // typed by Key. returning as dynamic.
   final ValueSetter<VarNotifier<dynamic>> onSubmitted;
 
-  void submitByView<T>(T varValue) {
+  void submitByViewAs<T>(T varValue) {
     varNotifier.updateByViewAs<T>(varValue);
     onSubmitted(varNotifier);
     notifyListeners();

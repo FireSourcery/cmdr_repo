@@ -20,7 +20,6 @@ class VarInputDialog extends StatelessWidget {
 
   final VarNotifier varNotifier;
   final VarCache varCache;
-  // final VarCacheNotifier eventNotifier; // make this required
   final VarEventNotifier? eventNotifier; // make this required
   final ValueSetter<VarNotifier>? onSubmitted;
 
@@ -82,7 +81,6 @@ class VarInputDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final effectiveEventNotifier = eventNotifier ?? VarCacheNotifier(varCache: varCache, varNotifier: varNotifier); // DialogAnchor handles dispose / remove listener
     final effectiveEventNotifier = eventNotifier ?? VarEventNotifier(onSubmitted: onSubmitted!, varNotifier: varNotifier); // DialogAnchor handles dispose / remove listener
 
     if (varNotifier.varKey.dependents != null) {

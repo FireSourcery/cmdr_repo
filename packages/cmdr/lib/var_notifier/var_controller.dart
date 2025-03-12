@@ -152,7 +152,8 @@ class VarRealTimeController extends VarCacheController {
   // while this iterator is accessed, view must not add or remove keys, either by lock or preallocate cache
 
   // hasListeners check is regularly updated.
-  Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListenersCombined).map((e) => e.varKey);
+  // (e.lastUpdate == VarLastUpdate.clear) read all once.
+  Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListenersCombined /* || (e.lastUpdate == VarLastUpdate.clear) */).map((e) => e.varKey);
   Iterable<int> _readKeysGetter() => _readKeys.map((e) => e.value);
 
   // polling stream setters, optionally implement local <Set>
@@ -199,10 +200,9 @@ class VarRealTimeController extends VarCacheController {
 /// value will not be synced with cache
 ////////////////////////////////////////////////////////////////////////////////
 class VarSingleController<V> {
-  const VarSingleController({
-    required this.varNotifier,
-    required this.protocolService,
-  });
+  const VarSingleController({required this.varNotifier, required this.protocolService});
+
+  const VarSingleController.inline(this.varNotifier, this.protocolService); //VarIO
 
   final VarNotifier<V> varNotifier;
   final ServiceIO<int, int, int> protocolService;

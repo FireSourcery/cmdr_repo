@@ -51,9 +51,6 @@ class VarSelectableBuilder<T extends VarKey> extends StatelessWidget {
   final ValueSetter<T>? onPressed;
   final VarCache? varCache; //alternatively, let caller handle retrieval from context.
 
-  // Widget keyBuilder(BuildContext _, VarKey value, Widget? __) => VarKeyBuilder(value, builder, varCache: varCache);
-  // Widget keyBuilder(BuildContext _, VarKey value, Widget? __) => builder(varCache!.allocate(value)); // alternatively by cache only.
-
   @override
   Widget build(BuildContext context) {
     final keyBuilder = VarKeyWidgetBuilder(builder: builder, varCache: varCache); // Retrieve VarCache through context if not provided.
