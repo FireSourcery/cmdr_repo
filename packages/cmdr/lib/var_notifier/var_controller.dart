@@ -1,4 +1,3 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 part of 'var_notifier.dart';
 
 /// [VarCache] with [Serivce]
@@ -48,7 +47,7 @@ class VarCacheController {
   ////////////////////////////////////////////////////////////////////////////////
   VarStatus? _onWriteSlice(ServiceSetSlice<int, int, int> slice) {
     if (slice.statuses == null) return null; // no response error
-    cache.updateByViewResponse(slice.pairs, slice.statuses!); // clears scheduled write
+    cache.updateByDataResponse(slice.pairs, slice.statuses!); // clears scheduled write
     return VarStatusDefault.success;
   }
 
@@ -204,8 +203,9 @@ class VarSingleController<V> {
 
   const VarSingleController.inline(this.varNotifier, this.protocolService); //VarIO
 
+  final ServiceIO<int, int, int> protocolService; // alternatively abstract as getter common per type
   final VarNotifier<V> varNotifier;
-  final ServiceIO<int, int, int> protocolService;
+  // final VarEventNotifier? varEventNotifier;
 
   // async send request id, then receiving value
   Future<void> read() async {

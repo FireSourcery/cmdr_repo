@@ -8,9 +8,11 @@ abstract mixin class VarKey implements ValueKey<int> {
   @override
   int get value; // int id of the key, NOT the value of associated Var
 
+  // BinaryFormat? get binaryFormat; // can depreciate
   // the varNotifier type parameter
-  TypeKey<dynamic> get viewType => binaryFormat!.viewType; // override if binaryFormat is null
-  BinaryFormat? get binaryFormat;
+  TypeKey<dynamic> get viewType; // binaryFormat!.viewType; // override if binaryFormat is null
+
+  int Function(int binary)? get signExtension;
   ViewOfData? get viewOfData;
   DataOfView? get dataOfView;
 
@@ -28,9 +30,14 @@ abstract mixin class VarKey implements ValueKey<int> {
 
   /// Service properties
   // should not be both, that would incur real-time loopback
-  bool get isReadOnly; // isPushing == false
   bool get isPolling; // polling, all readable. Processed by read stream
   bool get isPushing; // pushing, selected writable, other writable updated on change, processed by write stream
+
+  bool get isReadOnly; // isPushing == false
+  bool get isWriteOnly;
+  // VarReadWriteAccess get access;
+  // bool get isReadOnly => access == VarReadWriteAccess.readOnly; // isPushing == false
+  // bool get isWriteOnly => access == VarReadWriteAccess.writeOnly;
 
   List<VarKey>? get dependents;
 
@@ -48,18 +55,21 @@ abstract mixin class VarKey implements ValueKey<int> {
 
   /// View Widgets properties
 
-  // @override
+  @override
   String toString() {
-    return '$runtimeType<${binaryFormat?.viewType.type}>(`$label` $value)';
+    return '$runtimeType<${viewType.type}>(`$label` $value)';
   }
 }
 
-// enum VarReadWrite {
-//   readOnly,
-//   readWrite,
-//   writeOnly,
-//   ;
-// }
+enum VarReadWriteAccess {
+  readOnly,
+  writeOnly,
+  readWrite,
+  ;
+
+  bool get isWritable => this != readOnly;
+  bool get isReadable => this != writeOnly;
+}
 
 extension VarMinMaxs on Iterable<VarKey> {
   Iterable<({num min, num max})?> get viewMinMaxs => map((e) => e.valueNumLimits);
@@ -69,10 +79,11 @@ extension VarMinMaxs on Iterable<VarKey> {
   num get viewMin => viewMins.min;
 }
 
+/// [VarStatus]
 // generalize as system status, 0 -> ok, -1 -> error
 // does not implement Enum, as it can be a union of Enums
 abstract mixin class VarStatus implements Exception {
-  factory VarStatus.defaultCode(int code) => VarStatusDefault.values.elementAtOrNull(code) ?? VarStatusUnknown.unknown;
+  factory VarStatus.defaultOf(int code) => VarStatusDefault.values.elementAtOrNull(code) ?? VarStatusUnknown.unknown;
 
   // static const int defaultErrorCode = -1;
 
@@ -93,23 +104,14 @@ abstract mixin class VarEnumStatus implements VarStatus, Enum {
 enum VarStatusDefault with VarStatus, VarEnumStatus {
   success,
   error,
-  // warning,
-  // info,
-  // none,
   ;
-
-  factory VarStatusDefault.of(int code) => VarStatusDefault.values.elementAt(code);
 }
 
-enum VarStatusUnknown with VarStatus {
+enum VarStatusUnknown with VarStatus, VarEnumStatus {
   unknown;
 
   @override
   int get code => -1;
-  @override
-  Enum? get enumId => this;
-  @override
-  String get message => name;
 }
 
 // optional properties

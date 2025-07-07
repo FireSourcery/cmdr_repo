@@ -11,6 +11,7 @@ abstract mixin class FixedMap<K, V> implements Map<K, V> {
 
   @override
   List<K> get keys;
+  // Iterable<K> get keys;
   @override
   V operator [](covariant K key);
   @override
@@ -20,18 +21,23 @@ abstract mixin class FixedMap<K, V> implements Map<K, V> {
   @override
   V remove(covariant K key);
 
-  // List<V>? get defaultValues;
-  // FixedMap<K, V> clone() => IndexMap<K, V>(this);
+  //   // List<V>? get defaultValues;
+//   // FixedMap<K, V> clone() => IndexMap<K, V>(this);
 }
 
-// mixin FixedMapWith<K, V> on FixedMap<K, V> {
-//   // analogous to operator []=, but returns a new instance
-//   FixedMap<K, V> withField(K key, V value) => (IndexMap<K, V>.castBase(this)..[key] = value);
-//   //
-//   FixedMap<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => IndexMap<K, V>.castBase(this)..addEntries(newEntries);
-//   // A general values map representing external input, may be a partial map
-//   FixedMap<K, V> withAll(Map<K, V> map) => IndexMap<K, V>.castBase(this)..addAll(map);
+// abstract class FixedMap <K, V> implements FixedMap<K, V> {
+//   const FixedMapImpl(this.keys);
+//   final List<K> keys;
 // }
+
+mixin FixedMapWith<K, V> on FixedMap<K, V> {
+  // analogous to operator []=, but returns a new instance
+  // FixedMap<K, V> withField(K key, V value) => (IndexMap<K, V>.fromBase(this)..[key] = value);
+  //
+  FixedMap<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => IndexMap<K, V>.fromBase(this)..addEntries(newEntries);
+  // A general values map representing external input, may be a partial map
+  FixedMap<K, V> withAll(Map<K, V> map) => IndexMap<K, V>.fromBase(this)..addAll(map);
+}
 
 /// [IndexMap]
 /// Default implementation using parallel arrays
@@ -47,8 +53,8 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
   // default by assignment, initialize const using list literal
   const IndexMap._(this._keysReference, this._valuesBuffer) : assert(_keysReference.length == _valuesBuffer.length);
 
-  /// constructors always pass original keys, concrete class cannot use getter, do not derive from Map.keys
-  // a new list should always be allocated for a new map
+  /// constructors pass original keys, concrete class cannot use getter, do not derive from Map.keys
+  // a new values buffer list is allocated for a new map
 
   IndexMap.of(List<K> keys, Iterable<V> values) : this._(keys, List<V>.of(values, growable: false));
 
@@ -112,9 +118,7 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
 /// a builder surrogate for multiple replacements before copying to the subtype object.
 ///
 /// create a new view with an additionally allocated iterable or IndexMap for replacements.
-///
 /// same as cast + modified
-///
 /// does not need to wrap general maps, general maps are must be converted first to guarantee all keys are present
 ///
 class ProxyIndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {

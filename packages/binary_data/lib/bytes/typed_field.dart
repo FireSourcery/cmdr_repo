@@ -26,7 +26,7 @@ abstract mixin class TypedField<T extends NativeType> {
   int get end => offset + size; // index of the last byte + 1
   // int get valueMax => (1 << width) - 1);
 
-  /// [WordStruct]
+  /// [WordStruct/BitStruct]
   // Bitmask asBitmask() => Bitmask.bytes(offset, size);
 
   /// [ByteStruct]

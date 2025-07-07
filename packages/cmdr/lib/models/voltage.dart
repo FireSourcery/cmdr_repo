@@ -1,5 +1,4 @@
 import 'package:cmdr/binary_data.dart';
-import 'package:flutter/services.dart';
 
 class VDivider {
   const VDivider(this.r1, this.r2);
@@ -18,7 +17,6 @@ class VDivider {
   // num voltsOf(int adcu) => adcu * voltsPerAdcu;
   // int adcuOf(num volts) => volts ~/ voltsPerAdcu;
 
-  // does this guarantee the variable is cached?
   BinaryConversion get conversion => BinaryConversion(voltsPerAdcu);
 
   @override

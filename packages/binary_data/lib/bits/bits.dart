@@ -3,83 +3,64 @@ import 'package:meta/meta.dart';
 export 'package:meta/meta.dart';
 
 /// Bits - Bitwise operations on [int]
+/// function of a single number, object methods over top level math functions
 extension type const Bits(int _bits) implements int {
-  const Bits.allOnes() : _bits = -1;
-  const Bits.allZeros() : _bits = 0;
+  const Bits.allOnes() : this(-1);
+  const Bits.allZeros() : this(0);
 
-  // general Bits case
-  Bits.ofPairs(Iterable<(Bitmask, int)> pairs, [Bits initial = const Bits.allZeros()]) : _bits = const Bits.allZeros().withEach(pairs);
+  /// general case
+  Bits.ofPairs(Iterable<(Bitmask, int)> pairs) : _bits = const Bits.allZeros().withEach(pairs);
 
-  // Iterable.generate assert(keys.length == values.length),
   Bits.ofIterables(Iterable<Bitmask> keys, Iterable<int> values) : this.ofPairs(Iterable.generate(keys.length, (index) => (keys.elementAt(index), values.elementAt(index))));
+  // Iterable.generate assert(keys.length == values.length),
   Bits.ofEntries(Iterable<MapEntry<Bitmask, int>> entries) : this.ofPairs(entries.map((e) => (e.key, e.value)));
   Bits.ofMap(Map<Bitmask, int> map) : this.ofEntries(map.entries);
 
+  // Bits.ofInitializer(Map<Bitmask, int> map) : this.ofEntries(map.entries);
+  // Bits.ofBitsMap(Map<BitsKey, int> map) : this.ofEntries(map.bitsEntries);
+
   // width value pairs
   Bits.ofWidthPairs(Iterable<(int width, int value)> pairs) : this.ofIterables(Bitmasks.fromWidths(pairs.map((e) => e.$1)), pairs.map((e) => e.$2));
-  // Bits.ofBitsMap(Map<BitsKey, int> map) : this.ofEntries(map.bitsEntries);
 
   // general bool case
   Bits.ofIndexPairs(Iterable<(int index, bool value)> pairs) : _bits = const Bits.allZeros().withEachBool(pairs);
   // using enum index, name is discarded
   Bits.ofIndexMap(Map<Enum, bool> map) : this.ofIndexPairs(map.entries.map((e) => (e.key.index, e.value)));
-  Bits.ofIndexed(Iterable<bool> values) : _bits = values.foldIndexed<int>(0, (index, previous, element) => previous.withBoolAt(index, element)); // first element is index 0
+  Bits.ofIndexed(Iterable<bool> values) : _bits = values.foldIndexed<Bits>(0 as Bits, (index, previous, element) => previous.withBoolAt(index, element)); // first element is index 0
 
+  /// Implementation
+  /// let int cast to access
   // isSet
   bool get isNotZero => (_bits != 0);
   bool get isZero => (_bits == 0);
 
-  Bits getBits(Bitmask mask) => _bits.getBits(mask) as Bits;
-  Bits withBits(Bitmask mask, int value) => _bits.withBits(mask, value) as Bits;
-
-  Bits bitsAt(int offset, int width) => _bits.bitsAt(offset, width) as Bits;
-  Bits withBitsAt(int offset, int width, int value) => _bits.withBitsAt(offset, width, value) as Bits;
-
-  Bits bitAt(int index) => _bits.bitAt(index) as Bits;
-  Bits withBitAt(int index, int value) => _bits.withBitAt(index, value) as Bits;
-
-  Bits byteAt(int index) => _bits.byteAt(index) as Bits;
-  Bits withByteAt(int index, int value) => _bits.withByteAt(index, value) as Bits;
-
-  Bits bytesAt(int index, int size) => _bits.bytesAt(index, size) as Bits;
-  Bits withBytesAt(int index, int size, int value) => _bits.withBytesAt(index, size, value) as Bits;
-
-  bool boolAt(int index) => _bits.boolAt(index);
-  Bits withBoolAt(int index, bool value) => _bits.withBoolAt(index, value) as Bits;
-
-  Bits withEach(Iterable<(Bitmask mask, int value)> entries) => entries.fold<Bits>(this, (previous, element) => previous.withBits(element.$1, element.$2));
-  Bits withEachBit(Iterable<(int index, int value)> entries) => entries.fold<Bits>(this, (previous, element) => previous.withBitAt(element.$1, element.$2));
-  Bits withEachBool(Iterable<(int index, bool value)> entries) => entries.fold<Bits>(this, (previous, element) => previous.withBoolAt(element.$1, element.$2));
-}
-
-// function of a single number, object methods over top level math functions
-extension BitFieldOfInt on int {
-  int get byteLength => ((bitLength - 1) ~/ 8) + 1; // (bitLength / 8).ceil();
-
-  // int clear(Bitmask mask) => this & ~mask._bitmask;
   // int read(Bitmask mask) => (this & mask._bitmask) >>> mask.shift;
   // int modify(Bitmask mask, int value) => clear(mask) | mask.apply(value);
 
-  /// Bit operations
   int getBits(Bitmask mask) => mask.applyOff(this);
-  int withBits(Bitmask mask, int value) => mask.modify(this, value);
+  Bits withBits(Bitmask mask, int value) => mask.modify(this, value) as Bits;
 
   int bitsAt(int offset, int width) => getBits(Bitmask.bits(offset, width));
-  int withBitsAt(int offset, int width, int value) => withBits(Bitmask.bits(offset, width), value);
+  Bits withBitsAt(int offset, int width, int value) => withBits(Bitmask.bits(offset, width), value);
 
   int bitAt(int index) => getBits(Bitmask.bit(index));
-  int withBitAt(int index, int value) => withBits(Bitmask.bit(index), value);
+  Bits withBitAt(int index, int value) => withBits(Bitmask.bit(index), value);
 
   // use bitmask directly skip TypedData buffer
   int bytesAt(int index, int size) => getBits(Bitmask.bytes(index, size));
-  int withBytesAt(int index, int size, int value) => withBits(Bitmask.bytes(index, size), value);
+  Bits withBytesAt(int index, int size, int value) => withBits(Bitmask.bytes(index, size), value);
 
   int byteAt(int index) => getBits(Bitmask.byte(index));
-  int withByteAt(int index, int value) => withBits(Bitmask.byte(index), value);
+  Bits withByteAt(int index, int value) => withBits(Bitmask.byte(index), value);
 
   // let flags optimize slightly as special case
   bool boolAt(int index) => (this & (1 << index)) != 0;
-  int withBoolAt(int index, bool value) => value ? (this | (1 << index)) : (this & ~(1 << index));
+  Bits withBoolAt(int index, bool value) => (value ? (this | (1 << index)) : (this & ~(1 << index))) as Bits;
+
+  /// withEach
+  Bits withEach(Iterable<(Bitmask mask, int value)> entries) => entries.fold<Bits>(this, (previous, element) => previous.withBits(element.$1, element.$2));
+  Bits withEachBit(Iterable<(int index, int value)> entries) => entries.fold<Bits>(this, (previous, element) => previous.withBitAt(element.$1, element.$2));
+  Bits withEachBool(Iterable<(int index, bool value)> entries) => entries.fold<Bits>(this, (previous, element) => previous.withBoolAt(element.$1, element.$2));
 
   /// Pow2 only
   int alignDown(int align) => (this & -align);
@@ -89,31 +70,39 @@ extension BitFieldOfInt on int {
   String toStringAsBinary() => '0b${toRadixString(2)}';
 }
 
-/// Bitmask, change to record?
+extension BitsOfInt on int {
+  Bits get bits => Bits(this);
+  int get byteLength => ((bitLength - 1) ~/ 8) + 1; // (bitLength / 8).ceil();
+}
+
+/// Bitmask
 // as storable object to use as key
 class Bitmask {
+  const Bitmask._(this.bitmask, this.shift, this.width);
+  const Bitmask(this.shift, this.width) : bitmask = ((1 << width) - 1) << shift;
 // int bitmask(int shift, int width) => ((1 << width) - 1) << shift;
-  const Bitmask._(this._bitmask, this.shift, this.width);
-  const Bitmask(this.shift, this.width) : _bitmask = ((1 << width) - 1) << shift;
+
   const Bitmask.bits(int shift, int width) : this(shift, width);
   const Bitmask.bit(int index) : this(index, 1);
   const Bitmask.bytes(int shift, int size) : this(shift * 8, size * 8);
   const Bitmask.byte(int index) : this(index * 8, 8);
   const Bitmask.index(int index) : this._(1 << index, index, 1); // can this optimize unused assignments?
 
-  final int _bitmask;
+  final int bitmask; // store compile time derived value
   final int shift;
-  final int width; // (_bitmask >>> shift).bitLength;
+  final int width; // (bitmask >>> shift).bitLength;
 
-  // move to Bits?
-  int clear(int source) => source & ~_bitmask; // clear bits
-  int fill(int source) => source | _bitmask; // fill bits
-  int applyOn(int value) => (value << shift) & _bitmask; // get as masked
-  int applyOff(int source) => (source & _bitmask) >>> shift; // get as shifted back
+  // move to Bits?, for inheritance conveinience
+  int clear(int source) => source & ~bitmask; // clear bits
+  int fill(int source) => source | bitmask; // fill bits
+  int applyOn(int value) => (value << shift) & bitmask; // get as masked
+  int applyOff(int source) => (source & bitmask) >>> shift; // get as shifted back
   int modify(int source, int value) => clear(source) | applyOn(value); // ready for write back
 
   // int operator *(int value) => ((value << shift) & _bitmask); // apply as compile time const??
   // int call(int value) => (value & _bitmask);
+
+  // int operator |(int value) => (value | bitmask); // fill bits
 }
 
 extension type const Bitmasks(Iterable<Bitmask> bitmasks) implements Iterable<Bitmask> {
@@ -129,7 +118,7 @@ extension BitmasksMethods on Iterable<Bitmask> {
 ///     allows `pass by pointer`
 ///   gives Bits a type for matching, distinguish from int
 ///   cast with any sub type
-///
+///  use by BitsMap. BitsStuct, BoolMap, etc.
 abstract mixin class BitsBase {
   const BitsBase();
 
@@ -137,6 +126,8 @@ abstract mixin class BitsBase {
   set bits(Bits value); // only dependency for unmodifiable
 
   int get width;
+
+  int get value => bits;
 
   // int operator [](Bitmask index) => bitAt(index);
   // void operator []=(Bitmask index, int value) => setBitAt(index, value);
@@ -166,6 +157,7 @@ abstract mixin class BitsBase {
   int get hashCode => bits.hashCode;
 }
 
+/// base for Map or Struct
 class MutableBits with BitsBase {
   MutableBits([this.bits = const Bits.allZeros()]);
   MutableBits.castBase(BitsBase state) : this(state.bits);
@@ -180,6 +172,7 @@ class MutableBits with BitsBase {
 @immutable
 class ConstBits with BitsBase {
   const ConstBits(this.bits);
+  // ConstBits(int value) : this( );
   ConstBits.castBase(BitsBase state) : this(state.bits);
 
   @override
@@ -189,3 +182,21 @@ class ConstBits with BitsBase {
   @override
   int get width => bits.bitLength;
 }
+
+// typedef _BitsInitializer = Map<Bitmask, int>;
+
+// class ConstBitsInitializer with BitsBase implements ConstBits {
+//   const ConstBitsInitializer(this._init);
+
+//   final _BitsInitializer _init;
+
+//   Iterable<Bitmask> get keys => _init.keys;
+
+//   @override
+//   Bits get bits => Bits.ofEntries(_init.entries); // in order to init using const Map, bits must be derived at run time
+//   @override
+//   set bits(Bits value) => throw UnsupportedError('Cannot modify unmodifiable');
+
+//   @override
+//   int get width => throw UnimplementedError();
+// }

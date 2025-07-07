@@ -1,6 +1,6 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
-import 'dart:convert';
 import 'dart:math';
+
+import 'package:binary_data/binary_format/binary_format.dart';
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Math
@@ -17,27 +17,35 @@ const double roomTemperatureKelvin = 25 - absoluteZeroCelsius;
       R2 = R1/(VIN*ADC_MAX/(ADC*VREF)-1)
       R2 = (R1*ADC*VREF)/(VIN*ADC_MAX - ADC*VREF)
 */
-double rPullDownOf(num rPullUp, double vIn, double adcVRef, int adcMax, int adcu) {
+double rPullDownOf(num rPullUp, num vIn, num adcVRef, int adcMax, int adcu) {
   return (rPullUp * adcVRef * adcu) / (vIn * adcMax - adcVRef * adcu);
 }
 
 /* Thermistor as pull-up */
-double rPullUpOf(num rPullDown, double vIn, double adcVRef, int adcMax, int adcu) {
+double rPullUpOf(num rPullDown, double vIn, num adcVRef, int adcMax, int adcu) {
   return (rPullDown * vIn * adcMax) / (adcVRef * adcu) - rPullDown;
 }
 
 /* Resistance [Ohm] to ADCU */
-int adcuOfR(int adcMax, double adcVRef, double vIn, num rPullUp, num rPullDown) {
+int adcuOfR(int adcMax, num adcVRef, num vIn, num rPullUp, num rPullDown) {
   if ((rPullUp + rPullDown) case num(isFinite: false) || 0) return 0;
   return (vIn * adcMax * rPullDown) ~/ (adcVRef * (rPullUp + rPullDown));
 }
 
-double rNetOf(num rParallel1, num rParallel2) {
-  return (rParallel1 * rParallel2) / (rParallel1 + rParallel2); /* 1 / (1/r1 + 1/r2) */
+/* 1 / (1/r1 + 1/r2) */
+double _rNetOf(num rParallel1, num rParallel2) => (rParallel1 * rParallel2) / (rParallel1 + rParallel2);
+
+num rNetOf(num rParallel1, num? rParallel2) {
+  if (rParallel2 == null) return rParallel1; // rParallel2 is infinite, rNet = rParallel1
+  return _rNetOf(rParallel1, rParallel2);
 }
 
-double rParallelOf(num rNet, num rParallel) {
-  return (rNet * rParallel) / (rNet - rParallel); /* 1 / (1/rNet - 1/rParallel) */
+/* 1 / (1/rNet - 1/rParallel) */
+double _rParallelOf(num rNet, num rParallel) => (rNet * rParallel) / (rNet - rParallel);
+
+num rParallelOf(num rNet, num? rParallel) {
+  if (rParallel == null) return rNet; // rParallel is infinite, rParallelOf = rNet
+  return _rParallelOf(rNet, rParallel);
 }
 
 /// 1/T = 1/T0 + (1/B)*ln(R/R0)
@@ -59,8 +67,7 @@ class Thermistor {
   const Thermistor.detached({required this.rSeries, this.rParallel})
       : b = 0,
         r0 = 0,
-        t0 = roomTemperatureKelvin,
-        assert(rParallel != 0);
+        t0 = roomTemperatureKelvin;
 
   const Thermistor.zero()
       : b = 0,
@@ -89,7 +96,8 @@ class Thermistor {
   ////////////////////////////////////////////////////////////////////////////////
   double kelvinOf(int adcu) {
     final rNet = rPullDownOf(rSeries, vInRef, vAdcRef, adcMax, adcu);
-    final rThermistor = (rParallel != null && rParallel != 0) ? rParallelOf(rNet, rParallel!) : rNet;
+    // final rThermistor = (rParallel != null && rParallel != 0) ? rParallelOf(rNet, rParallel!) : rNet;
+    final rThermistor = rParallelOf(rNet, rParallel);
     final invT = steinhartB(b, t0, r0, rThermistor);
     return (1.0 / invT);
   }
@@ -100,11 +108,19 @@ class Thermistor {
     if (kelvin == 0) return 0;
     final invT = 1.0 / kelvin;
     final rThermistor = invSteinhartB(b, t0, r0, invT);
-    final rNet = (rParallel != null && rParallel != 0) ? rNetOf(rParallel!, rThermistor) : rThermistor;
+    // final rNet = (rParallel != null && rParallel != 0) ? rNetOf(rParallel!, rThermistor) : rThermistor;
+    final rNet = rNetOf(rThermistor, rParallel);
     return adcuOfR(adcMax, vAdcRef, vInRef, rSeries, rNet);
   }
 
   int adcuOfCelsius(num celsius) => adcuOfKelvin(celsius - absoluteZeroCelsius);
+
+  BinaryConversionCodec? get binaryCodecCelsius {
+    assert(rParallel != 0);
+    if (b == 0 || r0 == 0 || rSeries == 0) return null; // no coefficients, no conversion
+    return (viewOfData: celsiusOf, dataOfView: adcuOfCelsius);
+  }
+  //  ({ViewOfData viewOfData, DataOfView dataOfView}) get binaryCodecCelsius => (viewOfData: celsiusOf, dataOfView: adcuOfCelsius);
 
   Thermistor copyWith({
     int? r0,
@@ -124,9 +140,11 @@ class Thermistor {
 
   // or use separate class?
   // keep only the fixed values for comparison
-  Thermistor asDetached() => Thermistor.detached(rSeries: rSeries, rParallel: rParallel);
+  // Thermistor asDetached() => Thermistor.detached(rSeries: rSeries, rParallel: rParallel);
+  // Thermistor updateAsDetached({int? r0, double? t0, int? b}) => copyWith(r0: r0, t0: t0, b: b);
 
-  Thermistor updateAsDetached({int? r0, double? t0, int? b}) => copyWith(r0: r0, t0: t0, b: b);
+  Thermistor copyWithoutCoeffcients() => Thermistor.detached(rSeries: rSeries, rParallel: rParallel);
+  Thermistor copyWithCoeffcients({int? r0, double? t0, int? b}) => copyWith(r0: r0, t0: t0, b: b);
 
   @override
   bool operator ==(covariant Thermistor other) {

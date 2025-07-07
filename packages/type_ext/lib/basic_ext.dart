@@ -50,6 +50,7 @@ extension MapExt<K, V extends Object> on Map<K, V> {
 }
 
 extension ReverseMap<T> on Iterable<T> {
+  // Map<V, T> asMapWith<V>(V Function(T) mappedValueOf) {
   Map<V, T> asReverseMap<V>(V Function(T) mappedValueOf) {
     return Map.unmodifiable(<V, T>{for (var value in this) mappedValueOf(value): value});
   }

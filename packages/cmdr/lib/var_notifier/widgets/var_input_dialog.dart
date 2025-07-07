@@ -31,6 +31,17 @@ class VarInputDialog extends StatelessWidget {
   static const String initialMessageDefault = 'Are you sure you want to continue?';
   static const String finalMessageDefault = 'You have completed editing this field.';
 
+  String dependentsString(VarKey key, [String prefix = '', String divider = ': ', String separator = '\n']) {
+    // return (StringBuffer(prefix)
+    //       ..writeAll(key.dependents?.map((k) => '${k.label}$divider${this[k]?.valueAsNum.toStringAsFixed(2)}') ?? [], separator)
+    //       ..writeln(''))
+    //     .toString();
+    return (StringBuffer(prefix)
+          ..writeAll(varCache.dependentsOf(varNotifier.varKey).map((e) => '${e.varKey.label}$divider${e.valueAsNum.toStringAsFixed(2)}'), separator)
+          ..writeln(''))
+        .toString();
+  }
+
 // ValueGetter<bool>? displayCondition;
 // Widget? title,
 // Widget? content,
@@ -49,7 +60,8 @@ class VarInputDialog extends StatelessWidget {
           // Text(beginEditMessage ?? ''),
           if (varNotifier.varKey.dependents != null) ...[
             const Text('The following values will be updated:\n'),
-            Text(varCache.dependentsString(varNotifier.varKey), textAlign: TextAlign.left),
+            // Text(varCache.dependentsString(varNotifier.varKey), textAlign: TextAlign.left),
+            Text(dependentsString(varNotifier.varKey), textAlign: TextAlign.left),
           ]
         ],
       ),
@@ -71,7 +83,7 @@ class VarInputDialog extends StatelessWidget {
           // Text(endEditMessage ?? ''),
           if (varNotifier.varKey.dependents != null) ...[
             const Text('The following values have been updated:\n'),
-            Text(varCache.dependentsString(varNotifier.varKey), textAlign: TextAlign.left),
+            Text(dependentsString(varNotifier.varKey), textAlign: TextAlign.left),
           ]
         ],
       ),

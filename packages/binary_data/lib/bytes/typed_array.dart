@@ -8,8 +8,35 @@ import 'package:type_ext/basic_types.dart';
 import 'typed_data_ext.dart';
 export 'dart:typed_data';
 
+/// View Wrapper with generic view
+/// extension type on ByteData cannot contain abstract methods. subclasses may contain additional abstract methods
+///  or implement class interfaces
+// cannot directly implement ByteData due to final class
+// the contents are not directly memory mapped, as this is only possible with ffi.Struct
+// ffi.Struct cannot access with OrNull methods
+// included is only the meta contents of ByteData,
+//
+// move to extension?
+//
+// ArrayView
+extension type ByteStruct(ByteData byteData) implements ByteData {
+  // int get lengthMax => length; // in the immutable case
+  int get length => byteData.lengthInBytes;
+
+  // sublistView using length instead of end
+  int? endOf(int offset, int? length) => (length != null) ? length + offset : null;
+
+  ByteData dataAt(int offset, [int? length]) => ByteData.sublistView(byteData, offset, endOf(offset, length));
+
+  T arrayAt<T extends TypedData>(int offset, [int? length]) => byteData.asTypedArray<T>(offset, endOf(offset, length));
+  T? arrayOrNullAt<T extends TypedData>(int offset, [int? length]) => byteData.asTypedArrayOrNull<T>(offset, endOf(offset, length));
+
+  List<int> intArrayAt<T extends TypedData>(int offset, [int? length]) => byteData.asIntList<T>(offset, endOf(offset, length));
+  List<int> intArrayOrEmptyAt<T extends TypedData>(int offset, [int? length]) => byteData.asIntListOrEmpty<T>(offset, endOf(offset, length));
+}
+
 /// [TypedArray<T extends TypedData>] - `Generic TypedData`
-/// via collected constructors
+/// collected constructors
 //  ArrayData, TypedArray
 extension type const TypedArray<T extends TypedData>._(T _this) implements TypedData {
   // prefer super function anti pattern. cannot compose from all sub type groups without overlap
@@ -48,7 +75,7 @@ extension type const TypedArray<T extends TypedData>._(T _this) implements Typed
 }
 
 /// [const IntArray<T extends TypedData>] - `Typed Int List`
-/// TypeData subset that with List<int> interface
+/// TypeData subset that with [List<int>] interface
 // todo change _this to List<int>?
 // or should the representation be a List<int>? for direct index a
 extension type const IntArray<T extends TypedData>._(T _this) implements TypedData, TypedArray<T> {
@@ -96,6 +123,7 @@ extension type const IntArray<T extends TypedData>._(T _this) implements TypedDa
   T? seekSequence(Iterable<int> match) => seekOrNull(asThis.indexOfSequence(match));
 }
 
+/// Wrappers as top level functions
 int bytesPerElementOf<T extends TypedData>() {
   return switch (T) {
     const (Uint8List) => Uint8List.bytesPerElement,

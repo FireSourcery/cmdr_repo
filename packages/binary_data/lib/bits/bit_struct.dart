@@ -10,32 +10,38 @@ import 'bits_map.dart';
 export 'bits_map.dart';
 
 ////////////////////////////////////////////////////////////////////////////////
-/// [Bits] with key access
-/// [] Map operators, returning [int]
+/// [Bits] + [BitField] keys, [] operators, returning [int]
+///
+/// wrapper with key access, Map interface,
+/// [Map<Enum, int>] mixin provides serialization
+///   MapBase<K, int> must be mixed in first.
 ///
 /// [BitStruct] Interface for extending with Subtypes
-///   cannot be built directly, extend with Keys or use [BitConstruct]
 ///   Struct must be extended with Keys
 ///   Partial Map implementation with [Bits] as source
 ///
 /// [BitsMap] - a version of Map with [Bits] as source. Does not need to be extended in most cases
 ////////////////////////////////////////////////////////////////////////////////
 abstract mixin class BitStruct<K extends BitField> implements BitsBase, BitsMap<K, int> {
-  // defined by child class
-  List<K> get keys;
+  const factory BitStruct.view(List<K> keys, Bits bits) = _BitStruct<K>;
+  // factory BitStruct.of(List<K> keys, [int bits = 0, bool mutable = true])= _BitStruct<K>;
+
+  // Child class defines fixed keys
+  Iterable<K> get keys; // effectively the BitStruct type
   Bits get bits;
   set bits(Bits value);
+
+  // Map operators common
+  int operator [](covariant K key);
+  void operator []=(covariant K key, int value);
+  // Map operators implemented by [BitFieldMap] mixin
+  void clear();
+  int remove(K key);
 
   @override
   int get width => keys.bitmasks.totalWidth;
 
-  // Map operators
-  int operator [](covariant K key);
-  void operator []=(covariant K key, int value);
-  // Map operators
-  void clear();
-  int remove(K key);
-
+  // implements Structure
   // Unconstrained type keys
   @protected
   int get(BitField key) => bits.getBits(key.bitmask);
@@ -43,10 +49,12 @@ abstract mixin class BitStruct<K extends BitField> implements BitsBase, BitsMap<
   void set(BitField key, int value) => setBits(key.bitmask, value);
   @protected
   bool testBounds(BitField key) => key.bitmask.shift + key.bitmask.width <= width;
+
+  // can include from Structure
   @protected
   int? getOrNull(BitField key) => testBounds(key) ? bits.getBits(key.bitmask) : null;
   @protected
-  bool setOrNot(BitField key, int value) {
+  bool trySet(BitField key, int value) {
     if (testBounds(key)) {
       bits = bits.withBits(key.bitmask, value);
       return true;
@@ -56,16 +64,19 @@ abstract mixin class BitStruct<K extends BitField> implements BitsBase, BitsMap<
 
   int field(K key) => get(key);
   void setField(K key, int value) => set(key, value);
-  int? fieldOrNull(K key) => getOrNull(key);
-  bool setFieldOrNot(K key, int value) => setOrNot(key, value);
+  int? fieldOrNull(BitField key) => getOrNull(key);
+  bool trySetField(BitField key, int value) => trySet(key, value);
 
   Iterable<({K key, bool value})> get fieldsAsBool => keys.map((e) => (key: e, value: (this[e] != 0)));
   Iterable<({K key, int value})> get fieldsAsBits => keys.map((e) => (key: e, value: this[e]));
 
-  BitStruct<K> copyWithBits(Bits value) => BitConstruct<BitStruct<K>, K>(keys, value);
+  /// returned instance is immutable
+  BitStruct<K> copyWithBits(Bits value) => _BitStruct(keys, value);
   // @override
   // BitStruct<K> copyWith() => copyWithBits(bits);
 
+  // keep keys, update value
+  BitStruct<K> withValue(int value) => copyWithBits(Bits(value));
   @override
   BitStruct<K> withField(K key, int value) => copyWithBits(bits.withBits(key.bitmask, value));
   @override
@@ -76,43 +87,35 @@ abstract mixin class BitStruct<K extends BitField> implements BitsBase, BitsMap<
   @override
   String toString() => toStringAsMap();
 
-  String toStringAsMap() => MapBase.mapToString(this); // {key: value, key: value}
+  String toStringAsMap() => MapBase.mapToString(this); // {key: 0, key: 0}
   String toStringAsValues() => values.toString(); // (0, 0, 0)
 
-  // String toStringAs(String Function(MapEntry<K, int> entry) stringifier) => entries.fold('', (previousValue, element) => previousValue + stringifier(element));
+  // String toStringAs(String Function(K key, int value) stringifier) => entries.fold('', (previousValue, element) => previousValue + stringifier(element));
 
-  // MapEntry<String, int> toMapEntry() => MapEntry<String, int>(runtimeType.toString(), bits); // {name: value}
+  // MapEntry<String, int> toMapEntry() => MapEntry<String, int>(K.toString(), bits); // {name: value}
+
+  /// bitfields compare by value
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! BitStruct<K>) return false;
+    // keys are not copied, so they must match
+    return ((other.keys == keys) && (other.bits == bits));
+  }
+
+  @override
+  int get hashCode {
+    return keys.hashCode ^ bits.hashCode;
+  }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/// Struct abstract keys
-/// extendable, with Enum.values
-////////////////////////////////////////////////////////////////////////////////
-// abstract class BitStructBase<K extends BitField> extends BitsBase with MapBase<K, int>, BitFieldMap<K>, BitStruct<K> {
-//   BitStructBase(Bits bits);
-//   BitStructBase.castInitializer(Map<K, int> initializer) : this(Bits.ofEntries(initializer.bitsEntries));
-//   BitStructBase.castBase(Bits bits);
-// }
-
-abstract class MutableBitStruct<K extends BitField> extends MutableBits with MapBase<K, int>, BitFieldMap<K>, BitStruct<K> {
-  MutableBitStruct([super.bits]);
-  MutableBitStruct.castInitializer(Map<K, int> initializer) : super(Bits.ofEntries(initializer.bitsEntries));
-  MutableBitStruct.castBase(super.bits) : super.castBase();
-}
-
-abstract class ConstBitStruct<K extends BitField> extends ConstBits with MapBase<K, int>, BitFieldMap<K>, BitStruct<K> {
-  const ConstBitStruct(super.bits);
-  ConstBitStruct.castInitializer(Map<K, int> initializer) : super(Bits.ofEntries(initializer.bitsEntries));
-  ConstBitStruct.castBase(super.bits) : super.castBase();
-}
-
+/// mixn to override [copyWithBits]/copyWith to return a subtype
 /// Subtype considerations:
-/// to return a subtype of [BitStruct], :
+/// to return a subtype,[S extends BitStruct<K>]:
 ///   provide the constructor of the subtype
-///   use a prototype object .copyWithBits()
+///   use a prototype object copyWith(), which calls the constructor of the subtype
 mixin BitStructAsSubtype<S extends BitStruct<K>, K extends BitField> on BitStruct<K> {
-  // S copyWith();
-  @mustBeOverridden
+  @mustBeOverridden // mark for overide in the case of return as a subtype
   S copyWithBits(Bits value);
 
   @override
@@ -121,64 +124,108 @@ mixin BitStructAsSubtype<S extends BitStruct<K>, K extends BitField> on BitStruc
   S withEntries(Iterable<MapEntry<K, int>> entries) => super.withEntries(entries) as S;
   @override
   S withMap(Map<K, int> map) => super.withMap(map) as S;
+
+  // @mustBeOverridden
+  // S copyWith();
+  // S withField(K key, int value) => withField(key, value).copyWith();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/// Wrapper with all interfaces
+/// Struct abstract keys
+/// extendable, with Enum.values
 ////////////////////////////////////////////////////////////////////////////////
-class BitConstruct<S extends BitStruct<K>, K extends BitField> extends ConstBitStruct<K> implements BitStruct<K> {
-  const BitConstruct(this.keys, super.bits);
+// abstract class MutableBitStruct<K extends BitField> extends MutableBits with MapBase<K, int>, BitFieldMap<K>, BitStruct<K> {
+//   MutableBitStruct([super.bits]);
+//   MutableBitStruct.castInitializer(Map<K, int> initializer) : super(Bits.ofEntries(initializer.bitsEntries));
+//   MutableBitStruct.castBase(super.bits) : super.castBase();
+// }
 
-  BitConstruct.initWith(this.keys, Map<K, int> initializer) : super(initializer.bits);
+// @immutable
+// abstract class ConstBitStruct<K extends BitField> extends ConstBits with MapBase<K, int>, BitFieldMap<K>, BitStruct<K> {
+//   // const ConstBitStruct(int super.bits);
+//   const ConstBitStruct(super.bits);
+//   ConstBitStruct.castInitializer(Map<K, int> initializer) : super(Bits.ofEntries(initializer.bitsEntries));
+//   ConstBitStruct.castBase(super.bits) : super.castBase();
+// }
 
-  BitConstruct.castBase(BitStruct<K> super.struct)
-      : keys = struct.keys,
-        super.castBase();
+abstract class BitStructBase<K extends BitField> = BitsBase with MapBase<K, int>, BitFieldMap<K>, BitStruct<K>;
 
-  // const BitConstruct.typed({this.keys, S Function(value) constructor = BitConstruct.generic, super.bits});
-  // BitConstruct.generic(bitsKeys ?? const <BitField>[], value as Bits);
-  // const BitConstruct.generic(super.bits) : keys = const [];
-
+abstract class MutableBitStruct<K extends BitField> extends BitStructBase<K> {
+  MutableBitStruct(int value) : bits = Bits(value);
   @override
-  final List<K> keys;
-  // final S Function(Bits) constructor;
-  // S constructor(Bits bits) => BitConstruct<S, K>(keys, bits);
-
-  // final S struct;
-
-  @override
-  BitStruct<K> copyWithBits(Bits value) => BitConstruct<BitStruct<K>, K>(keys, value);
-  @override
-  BitConstruct<S, K> copyWith() => BitConstruct<S, K>(keys, bits);
-
-  // @override
-  // BitConstruct<S, K> withField(K key, int value);
-  // @override
-  // BitConstruct<S, K> withEntries(Iterable<MapEntry<K, int>> entries) =>
-  // @override
-  // BitConstruct<S, K> withAll(Map<K, int> map) =>
+  Bits bits;
 }
 
-// or equivalently
+abstract class ConstBitStruct<K extends BitField> extends BitStructBase<K> {
+  const ConstBitStruct(int value) : bits = value as Bits;
+  @override
+  final Bits bits;
+  @override
+  set bits(Bits value) => throw UnsupportedError('Cannot modify unmodifiable');
+}
+
+/// [BitsInitializer]
+/// compile time const definition using map literal
+/// implements [ConstBitStruct<K>] via base data of [const Map<T, int>]
+///
+/// BitStruct<EnumType> example = ConstBitsInitializer({
+///   EnumType.name1: 2,
+///   EnumType.name2: 3,
+/// });
+///
+typedef _BitsInitializer<T extends BitField> = Map<T, int>; // typedef BitsInitializer = Map<BitField, int>;
+
+@immutable
+class BitsInitializer<K extends BitField> with BitsBase, MapBase<K, int>, BitFieldMap<K>, BitStruct<K> implements ConstBitStruct<K> {
+  const BitsInitializer(this._init);
+
+  final _BitsInitializer<K> _init;
+
+  @override
+  Iterable<K> get keys => _init.keys;
+  @override
+  Bits get bits => Bits.ofEntries(_init.bitsEntries); // in order to init using const Map, bits must be derived at run time
+  @override
+  set bits(Bits value) => throw UnsupportedError('Cannot modify unmodifiable');
+
+  @override
+  String toString() => toStringAsMap();
+}
+
+/// concrete pair return
+/// passing keys
+@immutable
+class _BitStruct<K extends BitField> extends ConstBitStruct<K> implements BitStruct<K> {
+  const _BitStruct(this.keys, super.value);
+  @override
+  final Iterable<K> keys;
+}
+
+/// concrete pair return
+/// passing keys
 // Keys list effectively define type and act as factory
 // Separates subtype `class variables` from instance
-// extension type const BitStructClass<S extends BitStruct, T extends BitField>(List<T> keys) { as subtype
-// extension type const BitStructClass<T extends BitField>(List<T> keys) {
-//   // BitStruct<T> castBase(BitsBase base) {
-//   //   return switch (base) {
-//   //     MutableBitFieldsBase() => MutableBitStructWithKeys(keys, base.bits),
-//   //     ConstBitFieldsBase() => ConstBitStructWithKeys(keys, base.bits),
-//   //     BitsBase() => throw StateError(''),
-//   //   };
-//   // }
+// extension type const BitStructType<S extends BitStruct<T>, T extends BitField>(List<T> keys) {
+//   // redeclare in the subtype
+//   // S castBase(BitsBase base) => throw UnimplementedError('castBase must be implemented in the subtype');
+// }
+// extension type const BitStructType<T extends BitField>(List<T> keys) {
+//   BitStruct<T> castBase(BitsBase base) {
+//     return switch (base) {
+//       ConstBitStruct() => _BitStruct(keys, base.bits),
+//       // MutableBitFieldsBase() => MutableBitStruc (keys, base.bits),
+//       BitsBase() => throw StateError(''),
+//     };
+//   }
 
-//   // BitStruct<T> castBits(int value) => ConstBitStructWithKeys(keys, Bits(value));
+//   BitStruct<T> castBits(int value) => _BitStruct<T>(keys, Bits(value));
+//   BitStruct<T> unmodifiableView(int value) => _BitStruct<T>(keys, Bits(value));
 
 //   // alternatively default constructors can return partial implementation without Keys/MapOperator
 //   BitStruct<T> create([int value = 0, bool mutable = true]) {
 //     return switch (mutable) {
-//       true => MutableBitStructWithKeys(keys, Bits(value)),
-//       false => ConstBitStructWithKeys(keys, Bits(value)),
+//       true => _BitStruct(keys, Bits(value)),
+//       false => _BitStruct(keys, Bits(value)),
 //     };
 //   }
 
@@ -193,17 +240,39 @@ class BitConstruct<S extends BitStruct<K>, K extends BitField> extends ConstBitS
 //   }
 // }
 
-/// can be implemented on Enum to give each const Bits an Enum Id and String name
-/// optionally use BitsInitializer to simplfiy compile time const
-abstract mixin class EnumBits<K extends BitField> implements Enum {
-  // per instance
-  BitsInitializer<K> get initializer; // define as const using initializer
-  Bits get bits => initializer.bits;
-  // Bits get bits;
+////////////////////////////////////////////////////////////////////////////////
+/// Wrapper with all interfaces, factory, return as subtype
+/// passing keys
+/// castBase returning S
+////////////////////////////////////////////////////////////////////////////////
+// class BitConstruct<S extends BitStruct<K>, K extends BitField> extends ConstBitStruct<K> implements BitStruct<K> {
+//   const BitConstruct.view(this.keys, super.bits);
 
-  // or build lookup map
+//   // BitConstruct.initWith(this.keys, Map<K, int> initializer) : super(Bits.ofEntries(initializer.bitsEntries));
 
-  List<K> get keys; // per class
-  // List<K> get bitFields; // per class
-  BitStruct<K> asBitStruct() => BitConstruct<BitStruct<K>, K>(keys, bits);
-}
+//   // BitConstruct.of(BitStruct<K> super.struct)
+//   //     : keys = struct.keys,
+//   //       super.castBase();
+
+//   // const BitConstruct.typed({this.keys, S Function(value) constructor = BitConstruct.generic, super.bits});
+//   // BitConstruct.generic(bitsKeys ?? const <BitField>[], value as Bits);
+//   // const BitConstruct.generic(super.bits) : keys = const [];
+
+//   @override
+//   final Iterable<K> keys;
+//   // final S Function(Bits) constructor;
+//   S constructor(Bits bits) => BitConstruct<S, K>(keys, bits);
+//   // final S struct;
+
+//   @override
+//   BitStruct<K> copyWithBits(Bits value) => BitConstruct<BitStruct<K>, K>(keys, value);
+//   @override
+//   BitConstruct<S, K> copyWith() => BitConstruct<S, K>(keys, bits);
+
+//   // @override
+//   // BitConstruct<S, K> withField(K key, int value);
+//   // @override
+//   // BitConstruct<S, K> withEntries(Iterable<MapEntry<K, int>> entries) =>
+//   // @override
+//   // BitConstruct<S, K> withAll(Map<K, int> map) =>
+// }

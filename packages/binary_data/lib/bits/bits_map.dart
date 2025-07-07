@@ -4,13 +4,13 @@ import "bit_field.dart";
 
 part 'bool_map.dart';
 
-// export 'package:flutter/foundation.dart' hide BitField;
-
 /// [BitsMap]
-
 /// Common interface for [BitFieldMap, [BoolMap].
+/// Enforce concrete keys as base.
 /// A special case of [FixedMap], all values retrieve from a [Bits] object
-abstract interface class BitsMap<K, V> with MapBase<K, V>, FixedMap<K, V> {
+/// Map operators implemented by subclass depending on V type, int or bool.
+//  alternatively as abstract class to enforce keys as data member
+abstract interface class BitsMap<K, V> with MapBase<K, V> implements Map<K, V> /* , FixedMap<K, V> */ {
   const BitsMap._(this.keys);
 
   factory BitsMap.of(List<K> keys, [int bits = 0, bool mutable = true]) {
@@ -23,8 +23,8 @@ abstract interface class BitsMap<K, V> with MapBase<K, V>, FixedMap<K, V> {
     } as BitsMap<K, V>;
   }
 
-  // Map operators implemented by subclass depending on V type
-  final List<K> keys;
+  @override
+  final Iterable<K> keys;
 
   Bits get bits;
   set bits(Bits value); // only dependency for unmodifiable
@@ -33,7 +33,7 @@ abstract interface class BitsMap<K, V> with MapBase<K, V>, FixedMap<K, V> {
 
   V operator [](covariant K key);
   void operator []=(covariant K key, V value);
-  void clear() => bits = const Bits.allZeros();
+  void clear();
   V remove(covariant K key);
 
   Iterable<int> get valuesAsBits;
@@ -46,17 +46,15 @@ abstract interface class BitsMap<K, V> with MapBase<K, V>, FixedMap<K, V> {
 }
 
 /// [BitFieldMap]
-/// [BitsMapBase]
+/// BitsMapBase
+/// implementation
+/// with type constrains <BitField, int>
 abstract mixin class BitFieldMap<K extends BitField> implements BitsMap<K, int> {
   const BitFieldMap._();
 
   factory BitFieldMap.of(List<K> keys, [Bits bits]) = MutableBitFieldMap<K>;
 
   const factory BitFieldMap.constant(List<K> keys, Bits bits) = ConstBitFieldMap<K>;
-
-  List<K> get keys;
-  Bits get bits;
-  set bits(Bits value);
 
   // @override
   // int get width => keys.bitmasks.totalWidth;
@@ -67,6 +65,7 @@ abstract mixin class BitFieldMap<K extends BitField> implements BitsMap<K, int> 
   void operator []=(covariant K key, int value) => bits = bits.withBits(key.bitmask, value);
   @override
   void clear() => bits = const Bits.allZeros();
+
   @override
   int remove(K key) {
     final value = this[key];
@@ -99,22 +98,3 @@ class ConstBitFieldMap<K extends BitField> extends BitsMap<K, int> with BitField
   @override
   set bits(Bits value) => throw UnsupportedError('ConstBitFieldMap.bits is read-only');
 }
-
-// abstract interface class BitFieldEnum implements BitField, Enum {}
-
-// extension BitFieldEnumMap on Map<BitFieldEnum, int> {
-//   Map<String, Object> toJson() {
-//     // by default returns keyed fields
-//     // {
-//     //   'fix': fix,
-//     //   'minor': minor,
-//     //   'major': major,
-//     //   'optional': optional,
-//     // }
-//     return <String, Object>{
-//       'name': name,
-//       'value': bits,
-//       'description': toStringAsVersion(),
-//     };
-//   }
-// }

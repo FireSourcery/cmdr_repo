@@ -11,35 +11,21 @@ export 'typed_field.dart';
 export 'typed_data_buffer.dart';
 
 /// [TypedData] + [] Map operators returning [int]
-/// ffi.Struct cannot access with OrNull methods
-///   Union with Array functions, combines keyed access with array access
-///
-/// Exists only as an definition, extend to instantiate
-///   alternatively `TypedStruct`
-///
-// the contents are not directly memory mapped, as this is only possible with ffi.Struct
-// included is only the meta contents of ByteData,
-/// extension type on ByteData cannot contain abstract methods. subclasses may contain additional abstract methods
-///  or implement class interfaces
-// cannot directly implement ByteData due to final class
-extension type ByteStruct<K extends ByteField<NativeType>>(ByteData byteData) implements StructView<K, int>, ByteData {
-  // List<K> get keys
+///   mixin keyed access for serilization map
+abstract mixin class ByteStruct_<K extends ByteField<NativeType>> implements Structure<K, int> {
+  // ByteStruct with ByteField keys
+  // ByteStruct with ByteField keys, immutable
+  // ByteStruct with ByteField keys, mutable
+  // ByteStruct with ByteField keys, unmodifiable
+  // ByteStruct with ByteField keys, fixed length
 
-  int get lengthMax => length; // in the immutable case
-  int get length => byteData.lengthInBytes;
-
-  int? endOf(int offset, int? length) => (length != null) ? length + offset : null;
-
-  ByteData dataAt(int offset, [int? length]) => ByteData.sublistView(byteData, offset, endOf(offset, length));
-
-  T arrayAt<T extends TypedData>(int offset, [int? length]) => byteData.asTypedArray<T>(offset, endOf(offset, length));
-  T? arrayOrNullAt<T extends TypedData>(int offset, [int? length]) => byteData.asTypedArrayOrNull<T>(offset, endOf(offset, length));
-
-  List<int> intArrayAt<T extends TypedData>(int offset, [int? length]) => byteData.asIntList<T>(offset, endOf(offset, length));
-  List<int> intArrayOrEmptyAt<T extends TypedData>(int offset, [int? length]) => byteData.asIntListOrEmpty<T>(offset, endOf(offset, length));
-}
-
-// abstract mixin class ByteStruct<K extends ByteField> {
+  /// [ByteStruct] is a [TypedData] backed by [ByteData] with [ByteField] keys.
+  /// It provides a structure for accessing and manipulating byte-level data.
+  ///
+  /// The [ByteStruct] can be used to create structured data representations,
+  /// allowing for efficient access and modification of byte-level fields.
+  ///
+  /// This class is intended
 // //   const ByteStruct();
 //   const ByteConstruct._(this.structData);
 //   ByteConstruct.origin(ByteBuffer bytesBuffer, [int offset = 0, int? length]) : structData = ByteStruct(bytesBuffer.asByteData(offset, length));
@@ -94,7 +80,7 @@ extension type ByteStruct<K extends ByteField<NativeType>>(ByteData byteData) im
 //   // V getAs<R extends ByteStruct, V>(ByteStructCaster<R> caster, [dynamic  stateMeta]) => caster(byteData).parse(this, stateMeta);
 
 //   // ByteStruct copyWith(TypedData typedData) => caster(typedData);
-// }
+}
 
 abstract mixin class ByteField<V extends NativeType> implements TypedField<V>, Field<int> {
   const factory ByteField(int offset) = _ByteField<V>;
@@ -105,6 +91,7 @@ abstract mixin class ByteField<V extends NativeType> implements TypedField<V>, F
   int getIn(ByteData byteData) => byteData.wordAt<V>(offset);
   @override
   void setIn(ByteData byteData, int value) => byteData.setWordAt<V>(offset, value);
+
   // not yet replaceable
   @override
   bool testBoundsOf(ByteData byteData) => end <= byteData.lengthInBytes;
@@ -153,7 +140,6 @@ class ByteStructClass<T, K extends ByteField<NativeType>> {
   // Map<K, int> mapOf(ByteStruct<K> struct) => {for (var key in keys) key: struct[key]};
 }
 
-// ignore: missing_override_of_must_be_overridden
 abstract class ByteConstruct<T> {
   const ByteConstruct._(this.structData);
   ByteConstruct.origin(ByteBuffer bytesBuffer, [int offset = 0, int? length]) : structData = ByteStruct(bytesBuffer.asByteData(offset, length));

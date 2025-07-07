@@ -7,14 +7,16 @@ import 'index_map.dart';
 export 'index_map.dart';
 
 /// [EnumMap]
-///   A [Map] with the additional constraint that Keys are a `fixed set`, via [Enum].
-///   implements [FixedMap]/[IndexMap] constraints
-///   factory constructors build [IndexMap] by default
+/// A [Map] with the additional constraint that Keys are a `fixed set`, via [Enum].
+/// implements [FixedMap]/[IndexMap] constraints
+/// factory constructors build [IndexMap] by default
+
+/// Adds Serialization using Enum.name to a [Map],
+/// Keys inherit from Enum -
+///   index via Enum.index -> create a parallel array map by default
+///   String name via Enum.name -> directly use for serialization
 ///
-///   Adds Serialization using Enum.name to a [Map],
-///   Keys inherit from Enum -
-///     index via Enum.index -> create a parallel array map by default
-///     String name via Enum.name -> directly use for serialization
+/// effectively mixin [List<K> keys] for serialization
 ///
 /// `abstract mixin class` combines interface and implemented methods
 abstract mixin class EnumMap<K extends Enum, V> implements FixedMap<K, V> {
@@ -27,20 +29,11 @@ abstract mixin class EnumMap<K extends Enum, V> implements FixedMap<K, V> {
     return EnumIndexMap<K, V>.fromBase(EnumIndexMap<K, V?>.filled(keys, null)..addJson(json));
   }
 
-  static Map<V, K> buildReverse<K extends Enum, V>(List<K> keys, [V Function(K)? valueOf]) {
-    if (valueOf != null) {
-      return keys.asReverseMap(valueOf);
-    } else {
-      assert(V == int, 'EnumMap: $V must be defined for reverseMap');
-      return keys.asMap() as Map<V, K>; // index by default
-    }
-  }
-
   List<K> get keys; // Enum.values
-  V operator [](covariant K key);
-  void operator []=(covariant K key, V value);
-  void clear();
-  V remove(covariant K key);
+  // V operator [](covariant K key);
+  // void operator []=(covariant K key, V value);
+  // void clear();
+  // V remove(covariant K key);
 }
 
 /// Apply to [EnumMap<K, V>] as well as [Map<Enum, V>]
@@ -67,11 +60,21 @@ extension EnumMapByName<K extends Enum, V> on Map<K, V> {
   // fill values from json
   void addJson(Map<String, Object?> json) => addAllByName(validateJson(json));
 
+  // handle mixed types case, V is defined as Object?
+  bool _validateTypes(Map<String, V> json) {
+    if (keys case List<TypeKey> typedKeys) {
+      for (final key in typedKeys) {
+        if (!key.compareType(json[(key as Enum).name])) return false;
+      }
+    }
+    return true;
+  }
+
   Map<String, V> validateJson(Map<String, Object?> json) {
     if (json is Map<String, V>) {
       // handle mixed types case, V is defined as Object?
       if (keys case List<TypeKey> typedKeys) {
-        // can types be implemented separately?
+        // typedKeys.compareTypes(json.values)
         for (final key in typedKeys) {
           if (!key.compareType(json[(key as Enum).name])) throw FormatException('$runtimeType: ${(key as Enum).name} is not of type ${key.type}');
         }
@@ -83,8 +86,8 @@ extension EnumMapByName<K extends Enum, V> on Map<K, V> {
 }
 
 extension EnumNamedValues<K extends Enum, V> on Iterable<MapEntry<K, V>> {
-  Iterable<(String name, V value)> get named => map((e) => (e.key.name, e.value));
-  // Iterable<(String name, MapEntry<K, V> entry)> get named => map((e) => (e.key.name, e));
+  Iterable<(String name, MapEntry<K, V> entry)> get named => map((e) => (e.key.name, e));
+  Iterable<(String name, V value)> get namedValues => map((e) => (e.key.name, e.value));
 }
 
 // only necessary for mixed V type keys
@@ -96,11 +99,15 @@ class EnumProxyMap<K extends Enum, V> = ProxyIndexMap<K, V> with EnumMap<K, V>;
 // extension type const EnumIdFactory<K extends Enum, V>._(Map<V, K> reverseMap) {
 //   EnumIdFactory.of(List<K> keys) : reverseMap = EnumMap.buildReverseMap<K, V>(keys);
 //   K? idOf(V mappedValue) => reverseMap[mappedValue];
-// }
 
-// if inheriting factory constructors is needed
-// extension type const EnumMapFactory<K extends Enum, V>(List<K> keys) {
-//   // EnumMap fromJson(Map<String, Object?> json) {
-//   //   return EnumIndexMap<K, V>.castBase(EnumIndexMap<K, V?>.filled(keys, null)..addJson(json));
-//   // }
+  // static Map<V, K> buildReverse<K extends Enum, V>(List<K> keys, [V Function(K)? valueOf]) {
+  //   if (valueOf != null) {
+  //     return keys.asReverseMap(valueOf);
+  //   } else if (V == int) {
+  //     return keys.asMap() as Map<V, K>; // index by default
+  //   } else {
+  //     throw ArgumentError('EnumMap: $V must be defined for reverseMap');
+  //   }
+  //   // assert(V == int, 'EnumMap: $V must be defined for reverseMap');
+  // }
 // }

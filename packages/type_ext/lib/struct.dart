@@ -26,7 +26,6 @@ abstract mixin class Structure<K extends Field, V> /* with MapBase<K, V>, FixedM
 
   // @override
   List<K> get keys; // a method that is the meta contents, fieldsList
-  // List<K> get fields;
 
   // Map
   // void clear();
@@ -51,11 +50,14 @@ abstract mixin class Structure<K extends Field, V> /* with MapBase<K, V>, FixedM
     return true;
   }
 
+  // with type contraint
   // `field` referring to the field value
   V field(K key) => get(key);
   void setField(K key, V value) => set(key, value);
+
   V? fieldOrNull(K key) => getOrNull(key);
   bool setFieldOrNot(K key, V value) => setOrNot(key, value);
+
   FieldEntry<K, V> fieldEntry(K key) => (key: key, value: field(key));
 
   Iterable<V> valuesOf(Iterable<K> keys) => keys.map((key) => field(key));
@@ -81,7 +83,8 @@ abstract mixin class Structure<K extends Field, V> /* with MapBase<K, V>, FixedM
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is Structure<K, V>) {
-      if (keys.length != other.keys.length) return false;
+      if (keys != other.keys) return false; // keys are fixed, so compare with ==
+      // if (keys.length != other.keys.length) return false;
       for (var i = 0; i < keys.length; i++) {
         if (field(keys[i]) != other.field(keys[i])) return false;
       }
@@ -118,8 +121,7 @@ mixin StructAsSubtype<S extends Structure<K, V>, K extends Field, V> on Structur
 }
 
 /// [Field] - key to a value in a [StructView], with type
-/// although implementation of operators may be preferable in the containing class
-/// with full context of relationships between fields
+/// although implementation of operators may be preferable in the containing class with full context of relationships between fields
 /// define accessors on the struct within key, to keep type withing local scope
 /// the key maintains scope of V
 ///
@@ -128,7 +130,7 @@ abstract mixin class Field<V> {
   int get index;
 
   @protected
-  V getIn(covariant Object struct); // valueOf(covariant Object struct);
+  V getIn(covariant Object struct);
   @protected
   void setIn(covariant Object struct, V value);
 
@@ -157,17 +159,12 @@ abstract mixin class Field<V> {
 typedef FieldEntry<K, V> = ({K key, V value});
 // abstract interface class EnumField<V> implements Enum, Field<V> {}
 
-/// Struct Class/Type/Factory
-/// create S using constructor, or Structure<K, V> using keys
-class StructFactory<S extends Structure<K, V>, K extends Field, V> {
-  const StructFactory(this.keys, this.constructor);
-  final List<K> keys;
-  final S Function(Structure<K, V>) constructor;
-}
-// extension type const StructureFactory<S extends Structure<K, V>, K extends Field, V>(List<K> keys) {
+//   inheriting factory constructors
+//S extends Structure<K, V>,
+// extension type const StructClass<K extends Field, V>(List<K> keys) {
 //   // only this needs to be redefined in child class
 //   // or castFrom
-//   S castBase(Structure<K, V> state) => state as S;
+//   Structure<K, V> castBase(Structure<K, V> state) => state as S;
 
 //   // alternatively use copyWith.
 //   // or allow user end to maintain 2 separate routines?
@@ -184,11 +181,21 @@ class StructFactory<S extends Structure<K, V>, K extends Field, V> {
 //   // Structure<K, V?> filled(V? fill) => StructureDefault<K, V?>.filled(keys, null);
 //   // Structure<K, V?> fromValues([List<V>? values, V? fill]) => StructureDefault<K, V?>._fromValues(keys, values);
 
-//   Structure<K, V> _fromEntries(Iterable<MapEntry<K, V>> entries) => EnumIndexMap<K, V>.fromEntries(keys, entries);
+//   Structure<K, V> _fromEntries(Iterable<MapEntry<K, V>> entries) => StructMap<K, V>.fromEntries(keys, entries);
 //   // assert all keys are present
 //   S fromEntries(Iterable<MapEntry<K, V>> entries) => castBase(_fromEntries(entries));
 //   S fromMap(Map<K, V> map) => castBase(_fromEntries(map.entries));
 // }
+
+/// Struct Class/Type/Factory
+/// create S using constructor, or Structure<K, V> using keys
+class StructFactory<S extends Structure<K, V>, K extends Field, V> {
+  const StructFactory(this.keys, this.constructor);
+  final List<K> keys;
+  final S Function(Structure<K, V>) constructor;
+  // final S Function(Structure<K, V>) caster;
+  // final S Function() constructor;
+}
 
 /// [Construct]
 ///   keys + meta as a data member. library side create a structview
@@ -307,64 +314,65 @@ class Construct<T extends Structure<K, V>, K extends Field, V> with MapBase<K, V
   // }
 }
 
+///   remove for now, Structure is better suited for interface
 /// extension type version
 // extension type cannot include abstract methods, or implement interfaces
 // cannot define copyWith without context of Keys
-extension type StructView<K extends Field, V>(Object _this) {
-  List<K> get keys => throw UnimplementedError(); // override in child class
+// extension type StructView<K extends Field, V>(Object _this) {
+//   List<K> get keys => throw UnimplementedError(); // override in child class
 
-  @protected
-  V get(Field key) => key.getIn(_this); // valueOf(Field key);
-  @protected
-  void set(Field key, V value) => key.setIn(_this, value);
-  @protected
-  //containsField
-  bool testBounds(Field key) => key.testBoundsOf(_this);
+//   @protected
+//   V get(Field key) => key.getIn(_this); // valueOf(Field key);
+//   @protected
+//   void set(Field key, V value) => key.setIn(_this, value);
+//   @protected
+//   //containsField
+//   bool testBounds(Field key) => key.testBoundsOf(_this);
 
-  @protected
-  V? getOrNull(Field key) => testBounds(key) ? get(key) : null;
-  @protected
-  bool setOrNot(Field key, V value) {
-    if (!testBounds(key)) return false;
-    set(key, value);
-    return true;
-  }
+//   @protected
+//   V? getOrNull(Field key) => testBounds(key) ? get(key) : null;
+//   @protected
+//   bool setOrNot(Field key, V value) {
+//     if (!testBounds(key)) return false;
+//     set(key, value);
+//     return true;
+//   }
 
-  V operator [](K key) => get(key);
-  void operator []=(K key, V value) => set(key, value);
+//   V operator [](K key) => get(key);
+//   void operator []=(K key, V value) => set(key, value);
 
-  // `field` referring to the field value
-  V field(K key) => get(key);
-  void setField(K key, V value) => set(key, value);
-  V? fieldOrNull(K key) => getOrNull(key);
-  bool setFieldOrNot(K key, V value) => setOrNot(key, value);
+//   // `field` referring to the field value
+//   V field(K key) => get(key);
+//   void setField(K key, V value) => set(key, value);
+//   V? fieldOrNull(K key) => getOrNull(key);
+//   bool setFieldOrNot(K key, V value) => setOrNot(key, value);
 
-  FieldEntry<K, V> fieldEntry(K key) => (key: key, value: field(key));
+//   FieldEntry<K, V> fieldEntry(K key) => (key: key, value: field(key));
 
-  Iterable<V> fieldValues(Iterable<K> keys) => keys.map((key) => field(key));
-  Iterable<FieldEntry<K, V>> fieldEntries(Iterable<K> keys) => keys.map((key) => fieldEntry(key));
+//   Iterable<V> fieldValues(Iterable<K> keys) => keys.map((key) => field(key));
+//   Iterable<FieldEntry<K, V>> fieldEntries(Iterable<K> keys) => keys.map((key) => fieldEntry(key));
 
-  // Construct< K, V> withKeys(List<K> keys) => Construct< K, V>(struct: this, keys: keys);
-  // Construct<K, V> asConstruct(List<K> keys, {dynamic meta}) => Construct<MapStruct,K, V>(structData: this, keys: keys);
+//   // Construct< K, V> withKeys(List<K> keys) => Construct< K, V>(struct: this, keys: keys);
+//   // Construct<K, V> asConstruct(List<K> keys, {dynamic meta}) => Construct<MapStruct,K, V>(structData: this, keys: keys);
 
-  //  copy operations need context of keys
-}
+//   //  copy operations need context of keys
+// }
 
-// effectively extends StructView with FixedMap
-extension type MapStruct<K extends Field, V>(FixedMap<K, V> _this) implements StructView<K, V> {
-  MapStruct.cast(List<K> keys, StructView<K, V> struct) : _this = IndexMap.of(keys, struct.fieldValues(keys));
-  // MapStruct.of(List<K> keys, Iterable<V> values) : _this = IndexMap.of(keys, values);
+// // effectively extends StructView with FixedMap
+// extension type MapStruct<K extends Field, V>(FixedMap<K, V> _this) implements StructView<K, V> {
+//   MapStruct.cast(List<K> keys, StructView<K, V> struct) : _this = IndexMap.of(keys, struct.fieldValues(keys));
+//   // MapStruct.of(List<K> keys, Iterable<V> values) : _this = IndexMap.of(keys, values);
 
-  @protected
-  V get(Field key) => _this[key as K]; // valueOf(Field key); // by map[index]
-  @protected
-  void set(Field key, V value) => _this[key as K] = value;
+//   @protected
+//   V get(Field key) => _this[key as K]; // valueOf(Field key); // by map[index]
+//   @protected
+//   void set(Field key, V value) => _this[key as K] = value;
 
-  // immutable `with` copy operations, via IndexMap
-  // analogous to operator []=, but returns a new instance
-  StructView<K, V> withField(K key, V value) => (IndexMap<K, V>.fromBase(_this)..[key] = value) as StructView<K, V>;
-  //
-  StructView<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => (IndexMap<K, V>.fromBase(_this)..addEntries(newEntries)) as StructView<K, V>;
-  // A general values map representing external input, may be a partial map
-  StructView<K, V> withAll(Map<K, V> map) => (IndexMap<K, V>.fromBase(_this)..addAll(map)) as StructView<K, V>;
-}
+//   // immutable `with` copy operations, via IndexMap
+//   // analogous to operator []=, but returns a new instance
+//   StructView<K, V> withField(K key, V value) => (IndexMap<K, V>.fromBase(_this)..[key] = value) as StructView<K, V>;
+//   //
+//   StructView<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => (IndexMap<K, V>.fromBase(_this)..addEntries(newEntries)) as StructView<K, V>;
+//   // A general values map representing external input, may be a partial map
+//   StructView<K, V> withAll(Map<K, V> map) => (IndexMap<K, V>.fromBase(_this)..addAll(map)) as StructView<K, V>;
+// }

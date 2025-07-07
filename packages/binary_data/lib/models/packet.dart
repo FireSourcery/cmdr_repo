@@ -29,8 +29,6 @@ abstract interface class PacketClass<T extends Packet> {
 
   PacketId? idOf(int intId);
 
-  List<ByteField> get keys => [startFieldDef, idFieldDef, lengthFieldDef, checksumFieldDef];
-
   /// Header Definition
   /// defined position, relative to `packet`.
   /// header fields for buildHeader/parseHeader
@@ -40,6 +38,8 @@ abstract interface class PacketClass<T extends Packet> {
   ByteField get idFieldDef;
   ByteField get lengthFieldDef;
   ByteField get checksumFieldDef;
+
+  List<ByteField> get keys => [startFieldDef, idFieldDef, lengthFieldDef, checksumFieldDef];
 
   // at least one header type must be implemented, with fields able to determine completion
   // TypedDataCaster<PacketHeader> get headerCaster;

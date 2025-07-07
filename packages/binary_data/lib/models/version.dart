@@ -8,10 +8,11 @@ import '../word/word_struct.dart';
 abstract class Version<T extends WordField> extends WordStruct<T> with BitStructAsSubtype<Version<T>, T> {
   // uses VersionFieldStandard keys when no keys AND type parameter is specified
   factory Version(int optional, int major, int minor, int fix, {String? name}) => VersionStandard(optional, major, minor, fix, name: name) as Version<T>;
-  // factory Version(int optional, int major, int minor, int fix, {String? name}) = VersionStandard  ;
 
   // prototype object that can be copied
   const factory Version.withType(List<T> keys, {int value, String? name}) = VersionConstruct<T>;
+
+  // factory Version.view(List<WordField> keys, {int value, String? name}) => VersionConstruct<WordField>(optional, major, minor, fix, name: name);
 
   // user must manually ensure keys match the width of the constructor. this is the only way to define as compile time const
   const Version.word(super.value) : super(); // e.g. a stored value
@@ -20,21 +21,17 @@ abstract class Version<T extends WordField> extends WordStruct<T> with BitStruct
 
   // Version.values(List<T> keys, Iterable<int> values, {String? name}) : this.word(Bits.ofIterables(keys.bitmasks, values), name: name);
 
-  Version.castBase(super.state) : super.castBase();
+  // Version.castBase(super.state) : super.castBase();
 
   @override
   List<T> get keys;
-  String? get name;
-  // String? get typeName => T.toString().;
 
-  // @override
-  // Version<T> copyWith() => VersionConstruct(this.keys, name: this.name, value: bits);
+  String? get name => runtimeType.toString();
 
   @override
   Version<T> copyWithBits(Bits value) => VersionConstruct(this.keys, name: this.name, value: value);
 
   // defaults to 4 fields. alternatively leave undefined
-  // @override
   Version<T> copyWithFields({int? optional, int? major, int? minor, int? fix, String? name}) {
     return VersionConstruct(
       keys,
@@ -68,6 +65,10 @@ abstract class Version<T extends WordField> extends WordStruct<T> with BitStruct
           ..writeAll([optional, major, minor, fix], separator)
           ..write(right))
         .toString();
+  }
+
+  MapEntry<String, String> toStringAsVersionEntry([String left = '', String right = '', String separator = '.']) {
+    return MapEntry<String, String>(name ?? 'version', toStringAsVersion(left, right, separator));
   }
 
   /// Json
@@ -142,7 +143,7 @@ abstract class Version<T extends WordField> extends WordStruct<T> with BitStruct
 
 // ignore: missing_override_of_must_be_overridden
 class VersionConstruct<T extends WordField> extends Version<T> {
-  const VersionConstruct(this.keys, {this.name, int value = 0}) : super.word(value);
+  const VersionConstruct(this.keys, {this.name, int value = 0}) : super.word(value as Bits);
   // _VersionWithKeys.castBase(this.keys, super.state, {super.name}) : super.castBase();
   // _VersionWithKeys.fromValues(List<T> keys, Iterable<int> values, {String? name}) : this(keys, value: Bits.ofIterables(keys.bitmasks, values), name: name);
   // _VersionWithKeys.fromFields(this.keys, int optional, int major, int minor, int fix, {super.name}) : super.castBase();
