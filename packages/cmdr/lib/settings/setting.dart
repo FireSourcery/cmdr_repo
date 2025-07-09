@@ -13,7 +13,7 @@ abstract interface class Setting<V> {
   String? get tip;
 
   Type get type;
-  V? get value;
+  V? get value; //alternatively return default on no load
   set value(V? value);
   Future<bool> update(V value);
   Future<V?> load();

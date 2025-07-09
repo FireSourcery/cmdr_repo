@@ -63,8 +63,18 @@ abstract mixin class Structure<K extends Field, V> /* with MapBase<K, V>, FixedM
   Iterable<V> valuesOf(Iterable<K> keys) => keys.map((key) => field(key));
   Iterable<FieldEntry<K, V>> entriesOf(Iterable<K> keys) => keys.map((key) => fieldEntry(key));
 
-  // Structure<K, V> copyWith() => StructMap(this);
-  // Structure<K, V> copyWithBase(Structure<K, V> base) => StructMap(base);
+  /// with context of this.keys
+  /// override in child class, using index map by default
+  // Structure<K, V> copyWith()
+  Structure<K, V> withFields(Structure<K, V?> fields) {
+    // return StructMap.ofMap({for (var key in keys) key: fields.field(key) ?? field(key)} as FixedMap<K, V?>);
+    return StructMap<K, V>(this)
+      ..forEach((key, value) {
+        if (fields.field(key) case V newValue) {
+          this[key] = newValue;
+        }
+      });
+  }
 
   // user may overwrite once a subclass constructor is defined
   // immutable `with` copy operations, via IndexMap
@@ -75,7 +85,6 @@ abstract mixin class Structure<K extends Field, V> /* with MapBase<K, V>, FixedM
   // A general values map representing external input, may be a partial map
   Structure<K, V> withAll(Map<K, V> map) => StructMap<K, V>(this)..addAll(map);
 
-  /// with context of keys
   @override
   int get hashCode => keys.fold(0, (prev, key) => prev ^ field(key).hashCode);
 
@@ -97,7 +106,7 @@ abstract mixin class Structure<K extends Field, V> /* with MapBase<K, V>, FixedM
 /// implement Structure using parallel arrays
 class StructMap<K extends Field, V> extends IndexMap<K, V> with Structure<K, V> {
   StructMap(Structure<K, V> struct) : super.of(struct.keys, struct.valuesOf(struct.keys));
-  // StructMap.ofMap(super.map) : super.castBase();
+  StructMap.ofMap(super.map) : super.fromBase();
 }
 
 /// default implementation of immutable copy as subtype
@@ -157,6 +166,7 @@ abstract mixin class Field<V> {
 }
 
 typedef FieldEntry<K, V> = ({K key, V value});
+
 // abstract interface class EnumField<V> implements Enum, Field<V> {}
 
 //   inheriting factory constructors
@@ -189,130 +199,130 @@ typedef FieldEntry<K, V> = ({K key, V value});
 
 /// Struct Class/Type/Factory
 /// create S using constructor, or Structure<K, V> using keys
-class StructFactory<S extends Structure<K, V>, K extends Field, V> {
-  const StructFactory(this.keys, this.constructor);
-  final List<K> keys;
-  final S Function(Structure<K, V>) constructor;
-  // final S Function(Structure<K, V>) caster;
-  // final S Function() constructor;
-}
+// class StructFactory<S extends Structure<K, V>, K extends Field, V> {
+//   const StructFactory(this.keys, this.constructor);
+//   final List<K> keys;
+//   final S Function(Structure<K, V>) constructor;
+//   // final S Function(Structure<K, V>) caster;
+//   // final S Function() constructor;
+// }
 
-/// [Construct]
-///   keys + meta as a data member. library side create a structview
-// can be created without extending
-// Scope with T so copyWith can return a consistent type
-// handler with class variables,
-// wrapper around struct with Map and handler
-//
-//  - Map interface
-//    - Enum keys auto implement EnumMap and
-//  - StructBase interface
-//  - Factory
-//  - StructView interface
-//  - withX copy methods
-// // T as StrutBase or StructView
-@immutable
-// class Construct<T extends Structure<K, V>, K extends Field, V> extends Structure<K, V> {
-// class Construct<K extends Field, V> with MapBase<K, V>, FixedMap<K, V> {
-class Construct<T extends Structure<K, V>, K extends Field, V> with MapBase<K, V>, FixedMap<K, V>, Structure<K, V> {
-  Construct({
-    required this.keys,
-    required this.structData,
-    this.constructor,
-  });
+// /// [Construct]
+// ///   keys + meta as a data member. library side create a structview
+// // can be created without extending
+// // Scope with T so copyWith can return a consistent type
+// // handler with class variables,
+// // wrapper around struct with Map and handler
+// //
+// //  - Map interface
+// //    - Enum keys auto implement EnumMap and
+// //  - StructBase interface
+// //  - Factory
+// //  - StructView interface
+// //  - withX copy methods
+// // // T as StrutBase or StructView
+// @immutable
+// // class Construct<T extends Structure<K, V>, K extends Field, V> extends Structure<K, V> {
+// // class Construct<K extends Field, V> with MapBase<K, V>, FixedMap<K, V> {
+// class Construct<T extends Structure<K, V>, K extends Field, V> with MapBase<K, V>, FixedMap<K, V>, Structure<K, V> {
+//   Construct({
+//     required this.keys,
+//     required this.structData,
+//     this.constructor,
+//   });
 
-  // Construct.generic({
-  //   required this.keys,
-  //   required this.structData,
-  // }); // T is Structure<K, V> base
+//   // Construct.generic({
+//   //   required this.keys,
+//   //   required this.structData,
+//   // }); // T is Structure<K, V> base
 
-  // Construct.t({
-  //   required this.keys,
-  //   required this.structData,
-  //   this.constructor,
-  // });
+//   // Construct.t({
+//   //   required this.keys,
+//   //   required this.structData,
+//   //   this.constructor,
+//   // });
 
-  // Construct.fromKeys({
-  //   required this.keys,
-  // }) : structData = StructMap<K, V>( EnumIndexMap<K, V>.filled(keys, null));
+//   // Construct.fromKeys({
+//   //   required this.keys,
+//   // }) : structData = StructMap<K, V>( EnumIndexMap<K, V>.filled(keys, null));
 
-  // a signature for user override
-  // Construct.castBase(StructBase<K, V> base) : this(struct: base, keys: const []);
+//   // a signature for user override
+//   // Construct.castBase(StructBase<K, V> base) : this(struct: base, keys: const []);
 
-  Construct.castBase(Structure<K, V> base)
-      : this(
-          structData: base,
-          keys: base.keys,
-        );
+//   Construct.castBase(Structure<K, V> base)
+//       : this(
+//           structData: base,
+//           keys: base.keys,
+//         );
 
-  Construct.copyFrom(Structure<K, V> base)
-      : this(
-          structData: StructMap<K, V>(base),
-          keys: base.keys,
-        );
+//   Construct.copyFrom(Structure<K, V> base)
+//       : this(
+//           structData: StructMap<K, V>(base),
+//           keys: base.keys,
+//         );
 
-  // factory Construct.fromJson(List<K> keys, Map<String, Object?> json) {
-  //   // if (keys is List<EnumField<V>>) {
-  //   //   return Construct<K, V>(
-  //   //     keys: keys,
-  //   //     struct: MapStruct(EnumMap<K, V>.fromJson(keys, json)),
-  //   //   );
-  //   // }
-  //   // throw UnsupportedError('Only EnumField is supported');
-  // }
+//   // factory Construct.fromJson(List<K> keys, Map<String, Object?> json) {
+//   //   // if (keys is List<EnumField<V>>) {
+//   //   //   return Construct<K, V>(
+//   //   //     keys: keys,
+//   //   //     struct: MapStruct(EnumMap<K, V>.fromJson(keys, json)),
+//   //   //   );
+//   //   // }
+//   //   // throw UnsupportedError('Only EnumField is supported');
+//   // }
 
-  final List<K> keys;
-  final Structure<K, V> structData; // or object
-  final T Function(Structure<K, V>)? constructor;
-  // dynamic classVariables;
-  // final int lengthMax;
+//   final List<K> keys;
+//   final Structure<K, V> structData; // or object
+//   final T Function(Structure<K, V>)? constructor;
+//   // dynamic classVariables;
+//   // final int lengthMax;
 
-  // T create() =>
+//   // T create() =>
 
-  // T constructor() => IndexMap<K, V>. of(keys, values);
-  // T constructor() => StructMap<K, V>(this);
-  // Structure<K, V> _constructor(Structure<K, V> base) => Construct<Structure<K, V>, K, V>(keys: keys, structData: base);
+//   // T constructor() => IndexMap<K, V>. of(keys, values);
+//   // T constructor() => StructMap<K, V>(this);
+//   // Structure<K, V> _constructor(Structure<K, V> base) => Construct<Structure<K, V>, K, V>(keys: keys, structData: base);
 
-  // T construct(Structure<K, V> base) => constructor?.call(base) ?? Construct<Structure<K, V>, K, V>.castBase(base) as T;
-  // T construct(Structure<K, V> base) => constructor?.call(base) ?? StructMap<K, V>(base) as T;
+//   // T construct(Structure<K, V> base) => constructor?.call(base) ?? Construct<Structure<K, V>, K, V>.castBase(base) as T;
+//   // T construct(Structure<K, V> base) => constructor?.call(base) ?? StructMap<K, V>(base) as T;
 
-  // Construct<T, K, V> copyWithBase(Structure<K, V> base) => Construct<T, K, V>.castBase(constructor?.call(base) ?? StructMap<K, V>(base));
+//   // Construct<T, K, V> copyWithBase(Structure<K, V> base) => Construct<T, K, V>.castBase(constructor?.call(base) ?? StructMap<K, V>(base));
 
-  Type get structType => T;
+//   Type get structType => T;
 
-  // @override
-  // String toString() => MapBase.mapToString(this);
+//   // @override
+//   // String toString() => MapBase.mapToString(this);
 
-  @override
-  V operator [](K key) => structData[key];
-  // V operator [](K key) => key.getIn(structData as Object);
-  @override
-  void operator []=(K key, V value) => structData[key] = value;
-  // void operator []=(K key, V value) => key.setIn(structData as Object, value);
+//   @override
+//   V operator [](K key) => structData[key];
+//   // V operator [](K key) => key.getIn(structData as Object);
+//   @override
+//   void operator []=(K key, V value) => structData[key] = value;
+//   // void operator []=(K key, V value) => key.setIn(structData as Object, value);
 
-  @override
-  void clear() {
-    throw UnimplementedError();
-  }
+//   @override
+//   void clear() {
+//     throw UnimplementedError();
+//   }
 
-  @override
-  V remove(K key) {
-    throw UnimplementedError();
-  }
+//   @override
+//   V remove(K key) {
+//     throw UnimplementedError();
+//   }
 
-  // @override
-  // Construct<T, K, V> copyWith() => Construct<T, K, V>.castBase(this);
+//   // @override
+//   // Construct<T, K, V> copyWith() => Construct<T, K, V>.castBase(this);
 
-  // Construct<T, K, V> copyWithBase(base) => Construct<T, K, V>.castBase(base);
-  // Construct<T, K, V> withField(K key, V value) => Construct<T, K, V>.castBase(StructMap<K, V>(this)..[key] = value);
-  // Construct<T, K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => Construct<T, K, V>.castBase(StructMap<K, V>(this)..addEntries(newEntries));
-  // Construct<T, K, V> withAll(Map<K, V> map) => Construct<T, K, V>.castBase(StructMap<K, V>(this)..addAll(map));
+//   // Construct<T, K, V> copyWithBase(base) => Construct<T, K, V>.castBase(base);
+//   // Construct<T, K, V> withField(K key, V value) => Construct<T, K, V>.castBase(StructMap<K, V>(this)..[key] = value);
+//   // Construct<T, K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => Construct<T, K, V>.castBase(StructMap<K, V>(this)..addEntries(newEntries));
+//   // Construct<T, K, V> withAll(Map<K, V> map) => Construct<T, K, V>.castBase(StructMap<K, V>(this)..addAll(map));
 
-  // Map<K, V> toMap() {
-  //   assert(keys.first.index == keys.first.index); // ensure if index does not throw
-  //   return IndexMap.of(keys, keys.map((key) => key.getIn(struct._this)));
-  // }
-}
+//   // Map<K, V> toMap() {
+//   //   assert(keys.first.index == keys.first.index); // ensure if index does not throw
+//   //   return IndexMap.of(keys, keys.map((key) => key.getIn(struct._this)));
+//   // }
+// }
 
 ///   remove for now, Structure is better suited for interface
 /// extension type version

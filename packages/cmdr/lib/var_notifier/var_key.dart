@@ -1,16 +1,17 @@
 part of 'var_notifier.dart';
 
-//remove valuekey if mixin unionkey
+/// == and hash from ValueKey
 @immutable
 abstract mixin class VarKey implements ValueKey<int> {
   const VarKey();
 
   @override
   int get value; // int id of the key, NOT the value of associated Var
+  int get id => value; // alias for value, for compatibility with ValueKey
 
-  // BinaryFormat? get binaryFormat; // can depreciate
   // the varNotifier type parameter
   TypeKey<dynamic> get viewType; // binaryFormat!.viewType; // override if binaryFormat is null
+  // BinaryFormat? get binaryFormat; // can depreciate
 
   int Function(int binary)? get signExtension;
   ViewOfData? get viewOfData;
@@ -26,10 +27,11 @@ abstract mixin class VarKey implements ValueKey<int> {
   T subtypeOf<T>(num value) => throw UnsupportedError('valueAsSubtype: $T');
   num valueOfSubtype<T>(T value) => throw UnsupportedError('viewOfSubtype: $T');
 
+  // optionally override with subtype
   VarStatus varStatusOf(int code); // should only be one. instances shared
 
   /// Service properties
-  // should not be both, that would incur real-time loopback
+  // should not be both, that would be real-time loopback
   bool get isPolling; // polling, all readable. Processed by read stream
   bool get isPushing; // pushing, selected writable, other writable updated on change, processed by write stream
 
@@ -41,6 +43,7 @@ abstract mixin class VarKey implements ValueKey<int> {
 
   List<VarKey>? get dependents;
 
+  /// View Widgets properties
   // value stringifier
   String stringify<V>(V value);
   // String stringify<V>(V? value);
@@ -50,15 +53,18 @@ abstract mixin class VarKey implements ValueKey<int> {
   String get label;
   String? get suffix;
   String? get tip;
-  // Units get units;
-  // primaryCategory, secondaryCategory, tertiaryCategory
-
-  /// View Widgets properties
 
   @override
-  String toString() {
-    return '$runtimeType<${viewType.type}>(`$label` $value)';
+  String toString() => '$runtimeType<${viewType.type}><$value>("$label")';
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType) return false;
+    return other is VarKey && other.value == value;
   }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, value);
 }
 
 enum VarReadWriteAccess {

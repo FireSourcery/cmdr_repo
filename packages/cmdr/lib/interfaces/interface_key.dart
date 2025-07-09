@@ -1,3 +1,4 @@
+import 'package:cmdr/var_notifier.dart';
 import 'package:type_ext/basic_types.dart';
 
 /// Union of generic types
@@ -36,38 +37,46 @@ abstract mixin class UnionValueKey<V> implements TypeKey<V> {
   // move check limits here
 }
 
+// abstract mixin class NumValue {
+//   List<Enum>? get valueEnumRange;
+//   ({num min, num max})? get valueNumLimits;
+//   List<BitField>? get bitsKeys;
+
+//   num _value = 0;
+// }
+
 // ServiceKey for retrieving data of dynamic type from external source and casting
 // IdKey, EntityKey, DataKey, FieldKey, VarKey,
-abstract mixin class ServiceKey<K, V> implements UnionValueKey<V> {
-  K get key;
-  String get label;
-  // Stringifier? get valueStringifier;
+// abstract mixin class ServiceKey<K, V> implements UnionValueKey<V> {
+//   K get key;
+//   String get label;
+//   // Stringifier? get valueStringifier;
 
-  // a serviceKey can directly access the value with a provided reference to service
-  // ServiceIO? get service;
-  // V? get value => service?.get(keyValue);
-  // alternatively as V always return a cached value
-  // V? get value;
-  // set value(V? newValue);
+//   // a serviceKey can directly access the value with a provided reference to service
+//   // ServiceIO? get service;
+//   // V? get value => service?.get(keyValue);
+//   // alternatively as V always return a cached value
+//   // V? get value;
+//   // set value(V? newValue);
 
-  Future<V?> loadValue();
-  Future<void> updateValue(V value);
-  // Future<bool> updateValue(V value);
-  String get valueString;
+//   Future<V?> loadValue();
+//   Future<void> updateValue(V value);
+//   // Future<bool> updateValue(V value);
+//   String get valueString;
 
-  // void setValueAsNum(num newValue) {
-  //   if (valueNumLimits != null) {
-  //     // assert(V == int || V == double, 'Only num types are supported');
-  //     value = newValue.clamp(valueNumLimits!.min, valueNumLimits!.max) as V;
-  //   }
-  // }
+//   // void setValueAsNum(num newValue) {
+//   //   if (valueNumLimits != null) {
+//   //     // assert(V == int || V == double, 'Only num types are supported');
+//   //     value = newValue.clamp(valueNumLimits!.min, valueNumLimits!.max) as V;
+//   //   }
+//   // }
 
-  // void setValueAsEnum(Enum newValue) {
-  //   if (valueEnumRange != null) {
-  //     value = valueEnumRange!.contains(newValue) ? newValue as V : valueDefault;
-  //   }
-  // }
+//   // void setValueAsEnum(Enum newValue) {
+//   //   if (valueEnumRange != null) {
+//   //     value = valueEnumRange!.contains(newValue) ? newValue as V : valueDefault;
+//   //   }
+//   // }
 
-  // Type get type;
-  // TypeKey<V> get valueType => TypeKey<V>();
-}
+//   // Type get type;
+//   // TypeKey<V> get valueType => TypeKey<V>();
+// }

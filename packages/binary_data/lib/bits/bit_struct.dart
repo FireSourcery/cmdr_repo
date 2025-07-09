@@ -30,6 +30,7 @@ abstract mixin class BitStruct<K extends BitField> implements BitsBase, BitsMap<
   Iterable<K> get keys; // effectively the BitStruct type
   Bits get bits;
   set bits(Bits value);
+  // List<K> get fields; keep keys as Iterable for compatibility with const map initializer
 
   // Map operators common
   int operator [](covariant K key);
@@ -100,7 +101,8 @@ abstract mixin class BitStruct<K extends BitField> implements BitsBase, BitsMap<
     if (identical(this, other)) return true;
     if (other is! BitStruct<K>) return false;
     // keys are not copied, so they must match
-    return ((other.keys == keys) && (other.bits == bits));
+    // (other.keys == keys) || other is BitsInitializer<K>
+    return ((other.bits == bits));
   }
 
   @override

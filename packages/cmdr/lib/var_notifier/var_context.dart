@@ -51,7 +51,7 @@ class VarRealTimeContext extends VarContext {
 // }
 
 /// Maps VarKey to VarController or sub-VarContext which contains VarCacheController
-/// There can only be 1 KeyContext Type. Any number of instances can exist in the Widget tree.
+/// For Library side interfaces: There can only be 1 KeyContext Type. Any number of instances can exist in the Widget tree.
 ///
 /// this way VarKey does not need to include context as dependency
 final class VarKeyContext extends InheritedWidget {

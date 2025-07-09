@@ -11,7 +11,9 @@ extension type const Bits(int _bits) implements int {
   /// general case
   Bits.ofPairs(Iterable<(Bitmask, int)> pairs) : _bits = const Bits.allZeros().withEach(pairs);
 
-  Bits.ofIterables(Iterable<Bitmask> keys, Iterable<int> values) : this.ofPairs(Iterable.generate(keys.length, (index) => (keys.elementAt(index), values.elementAt(index))));
+  // Bits.ofIterables(Iterable<Bitmask> keys, Iterable<int> values) : this.ofPairs(Iterable.generate(keys.length, (index) => (keys.elementAt(index), values.elementAt(index))));
+
+  Bits.ofLists(List<Bitmask> keys, List<int> values) : this.ofPairs(Iterable.generate(keys.length, (index) => (keys.elementAt(index), values.elementAt(index))));
   // Iterable.generate assert(keys.length == values.length),
   Bits.ofEntries(Iterable<MapEntry<Bitmask, int>> entries) : this.ofPairs(entries.map((e) => (e.key, e.value)));
   Bits.ofMap(Map<Bitmask, int> map) : this.ofEntries(map.entries);
@@ -20,7 +22,8 @@ extension type const Bits(int _bits) implements int {
   // Bits.ofBitsMap(Map<BitsKey, int> map) : this.ofEntries(map.bitsEntries);
 
   // width value pairs
-  Bits.ofWidthPairs(Iterable<(int width, int value)> pairs) : this.ofIterables(Bitmasks.fromWidths(pairs.map((e) => e.$1)), pairs.map((e) => e.$2));
+  // Indexed waith pairs
+  // Bits.ofWidthPairs(List<(int width, int value)> pairs) : this.ofIterables(Bitmasks.fromWidths(pairs.map((e) => e.$1)), pairs.map((e) => e.$2));
 
   // general bool case
   Bits.ofIndexPairs(Iterable<(int index, bool value)> pairs) : _bits = const Bits.allZeros().withEachBool(pairs);
@@ -86,7 +89,7 @@ class Bitmask {
   const Bitmask.bit(int index) : this(index, 1);
   const Bitmask.bytes(int shift, int size) : this(shift * 8, size * 8);
   const Bitmask.byte(int index) : this(index * 8, 8);
-  const Bitmask.index(int index) : this._(1 << index, index, 1); // can this optimize unused assignments?
+  const Bitmask.index(int index) : this._(1 << index, index, 1); // ideally inline unused assignments
 
   final int bitmask; // store compile time derived value
   final int shift;
@@ -132,7 +135,7 @@ abstract mixin class BitsBase {
   // int operator [](Bitmask index) => bitAt(index);
   // void operator []=(Bitmask index, int value) => setBitAt(index, value);
 
-  int getBits(Bitmask mask) => bits.getBits(mask);
+  // int getBits(Bitmask mask) => bits.getBits(mask);
 
   void setBits(Bitmask mask, int value) => bits = bits.withBits(mask, value);
   void setBitsAt(int offset, int width, int value) => bits = bits.withBitsAt(offset, width, value);

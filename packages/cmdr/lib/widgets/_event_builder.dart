@@ -1,25 +1,5 @@
 import 'package:flutter/material.dart';
 
-class EventNotifier<T> with ChangeNotifier implements ValueNotifier<T?> {
-  EventNotifier();
-
-  T? _value;
-
-  @override
-  T? get value => _value;
-
-  // always notify on set
-  @override
-  set value(T? newValue) {
-    _value = newValue;
-    notifyListeners();
-  }
-
-  void notify(T? event) {
-    value = event;
-  }
-}
-
 /// same as ValueListenableBuilder, but matches event before setState
 class EventBuilder<T> extends StatelessWidget {
   const EventBuilder({

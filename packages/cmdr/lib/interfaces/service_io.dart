@@ -72,8 +72,8 @@ abstract mixin class ServiceIO<K, V, S> {
   Stream<ServiceGetSlice<K, V>> pollFixed(Iterable<K> keys, {Duration delay = const Duration(milliseconds: 1)}) async* {
     if (keys.isEmpty) return; // input does not change
     while (true) {
-      yield* getAll(keys, delay: delay);
-      // await Future.delayed(); // an additional delay after each round
+      yield* getAll(keys, delay: delay); // todo check slices allocation
+      // await Future.delayed(perIterationDelay); // an additional delay after each round
     }
   }
 

@@ -116,7 +116,7 @@ class VarCache {
   void setValueOf(VarKey varKey, num value) => _cache[varKey.value]?.numValue = value;
 
   /// Single updateByView can call from VarNotifier ref
-  void updateByViewAs<T>(VarKey key, T varValue) => this[key]?.updateByViewAs<T>(varValue);
+  VarNotifier? updateByViewAs<T>(VarKey key, T varValue) => this[key]?..updateByViewAs<T>(varValue);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Collective App View
@@ -145,19 +145,33 @@ class VarCache {
   ////////////////////////////////////////////////////////////////////////////////
   /// Collective Data Read Response - Update by Packet
   ////////////////////////////////////////////////////////////////////////////////
-  // calling function checks packet length, data
-  // returned values should be lists
-  void updateByData(Iterable<int> ids, Iterable<int> valuesIn) {
-    /* [bool overwriteUpdateByView = false] */
-    assert(valuesIn.length == ids.length);
-    for (final (id, value) in Iterable.generate(ids.length, (i) => (ids.elementAt(i), valuesIn.elementAt(i)))) {
-      if (_cache[id] case VarNotifier varNotifier) {
-        // Prevent sending results of fetch/poll, updateByData is blocked by isUpdatedByView,
-        // handle case where value is polling response is received in between mark updateByView and send
-        // relevant only when var is read/write; periodic polling AND calls updateByView
-        if (varNotifier.lastUpdate != VarLastUpdate.byView) varNotifier.updateByData(value); // only update if not updatedByView pending
-      }
+  // caller clear varNotifier.lastUpdate to overwrite
+  void _updateByData(int id, int value) {
+    // _cache[id]?.updateByData(value);
+    if (_cache[id] case VarNotifier varNotifier) {
+      // Prevent sending results of fetch/poll, updateByData is blocked by isUpdatedByView,
+      // handle case where value is polling response is received in between mark updateByView and send
+      // relevant only when var is read/write; periodic polling AND calls updateByView
+      if (varNotifier.lastUpdate != VarLastUpdate.byView) varNotifier.updateByData(value); // only update if not updatedByView pending
     }
+  }
+
+  // returned values should be lists
+  /* [bool overwriteUpdateByView = false] */
+  void updateByData(Iterable<int> ids, Iterable<int> valuesIn) {
+    assert(valuesIn.length == ids.length); // caller checks packet length, data
+    // if (valuesIn case List<int> valuesList) {
+    //   for (final (id, value) in ids.mapIndexed((index, id) => (id, valuesList[index]))) {
+    //     _updateByData(id, value);
+    //   }
+    // } else {
+    final iterIds = ids.iterator;
+    final iterValues = valuesIn.iterator;
+    while (iterIds.moveNext() && iterValues.moveNext()) {
+      _updateByData(iterIds.current, iterValues.current);
+    }
+    // }
+    assert(!iterIds.moveNext() && !iterValues.moveNext(), 'Length mismatch detected');
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -167,29 +181,37 @@ class VarCache {
   Iterable<VarNotifier> get varsUpdatedByView => varEntries.where((e) => e.lastUpdate == VarLastUpdate.byView);
   Iterable<(int, int)> get dataPairsUpdatedByView => varsUpdatedByView.map((e) => e.dataPair);
 
+  void _updateByDataResponse(int id, int value, int status) {
+    if (_cache[id] case VarNotifier varNotifier) {
+      varNotifier.updateStatusByData(status);
+      // handle case where value is updatedByView again in between send and response
+      // isUpdatedByView should not clear on getdataids to block updateByData
+      // sync note:
+      //  there is a small window for error, if updateByDataResponse does not run to completion.
+      //   ...
+      //   if (value == varNotifier.dataValue)
+      //   -> user function interrupt: set value, set pushPending
+      //   clear pushPending
+      if (value == varNotifier.dataValue) varNotifier.lastUpdate = VarLastUpdate.clear; // clear push pending unless value has changed since send
+    }
+  }
+
   /// Update Status by mot response to view initiated write, per var status
   void updateByDataResponse(Iterable<(int id, int value)> pairs, Iterable<int> statusesIn) {
     assert(statusesIn.length == pairs.length);
-    for (final ((id, value), status) in Iterable.generate(pairs.length, (i) => (pairs.elementAt(i), statusesIn.elementAt(i)))) {
-      if (_cache[id] case VarNotifier varNotifier) {
-        varNotifier.updateStatusByData(status);
-        // handle case where value is updatedByView again in between send and response
-        // isUpdatedByView should not clear on getdataids to block updateByData
-        // sync note:
-        //  there is a small window for error, if updateByDataResponse does not run to completion.
-        //   ...
-        //   if (value == varNotifier.dataValue)
-        //   -> user function interrupt: set value, set pushPending
-        //   clear pushPending
-        if (value == varNotifier.dataValue) varNotifier.lastUpdate = VarLastUpdate.clear; // clear push pending unless value has changed since send
-      }
+    final iterPairs = pairs.iterator;
+    final iterStatuses = statusesIn.iterator;
+    while (iterPairs.moveNext() && iterStatuses.moveNext()) {
+      _updateByDataResponse(iterPairs.current.$1, iterPairs.current.$2, iterStatuses.current);
     }
+    assert(!iterPairs.moveNext() && !iterStatuses.moveNext(), 'Length mismatch detected');
   }
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Json
   ////////////////////////////////////////////////////////////////////////////////
   /// load from json
+  /// existing ids only
   void loadFromJson(List<Map<String, Object?>> json) {
     for (final entry in json) {
       if (entry
@@ -270,6 +292,7 @@ abstract mixin class VarCacheNotifier implements VarCache, ValueNotifier<VarView
     this[key]?.updateByViewAs<T>(varValue);
     updateDependents(key);
     value = VarViewEvent.submit;
+    //return this[key]
   }
 
   // ValueSetter<T> valueSetterOf<T>(VarKey key) => ((T value) => submitEntryAs<T>(key, value));

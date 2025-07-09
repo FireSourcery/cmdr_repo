@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+
 /// Mixin for methods
 /// Instantiate temporary object for type checking
 // TypeCarrier, TypeHost, TypeKey
@@ -11,6 +13,7 @@ mixin class TypeKey<T> {
   bool get isNullable => null is T;
 
   bool compareType(Object? object) => object is T;
+  // bool isThisType(Object? object) => object is T;
 
   // call passing type
   R call<R>(R Function<G>() callback) => callback<T>();
@@ -19,12 +22,12 @@ mixin class TypeKey<T> {
   // R callAsKey<R>(R Function<G>(TypeKey key) callback) => callback<T>(this);
 }
 
-// extension TypeKeysValidate on List<TypeKey> {
-//   bool compareTypes(Iterable<Object?> objects) {
-//     for (final key in this) {
-//       if (!key.compareType(objects.elementAt(index) ))
-//     }
-//   }
+extension TypeKeysValidate on List<TypeKey> {
+  bool compareTypes(Iterable<Object?> objects) => objects.indexed.every((e) => elementAt(e.$1).compareType(e.$2));
+}
+
+// mixin TypeKeyFactory<T> on TypeKey<T> {
+//   T constructor() => throw UnimplementedError('TypeKeyFactory.create() must be implemented in subclass');
 // }
 
 // workaround for calling generic methods with type restrictions

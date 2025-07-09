@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:collection/collection.dart';
 import 'package:type_ext/struct.dart';
 
@@ -20,6 +22,7 @@ export 'bits.dart';
 abstract mixin class BitField /* implements Field<int> */ {
   Bitmask get bitmask;
 
+  // implements Bitmask maintains all masks as as list
   // int get shift => bitmask.shift; // index of the first bit
   // int get width => bitmask.width; // number of bits in the field
 
@@ -57,6 +60,13 @@ typedef BitFieldEntry<K extends BitField> = FieldEntry<K, int>;
 extension BitKeysMethods on Iterable<BitField> {
   Bitmasks get bitmasks => map((e) => e.bitmask) as Bitmasks;
   int get totalWidth => bitmasks.totalWidth;
+
+  Bits withValues(List<int> values) {
+    if (length != values.length) {
+      throw ArgumentError('Values length ${values.length} does not match BitFields length $length');
+    }
+    return Bits.ofPairs(mapIndexed((index, e) => (e.bitmask, values[index])));
+  }
 }
 
 extension BitsMapMethods on Map<BitField, int> {

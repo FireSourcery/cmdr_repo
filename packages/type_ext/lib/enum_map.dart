@@ -36,7 +36,7 @@ abstract mixin class EnumMap<K extends Enum, V> implements FixedMap<K, V> {
   // V remove(covariant K key);
 }
 
-/// Apply to [EnumMap<K, V>] as well as [Map<Enum, V>]
+/// Apply to all types of [Map<Enum, V>]
 /// Enum.name base methods are applicable regardless of EnumMap FixedMap constraints
 extension EnumMapByName<K extends Enum, V> on Map<K, V> {
   ////////////////////////////////////////////////////////////////////////////////
@@ -90,24 +90,13 @@ extension EnumNamedValues<K extends Enum, V> on Iterable<MapEntry<K, V>> {
   Iterable<(String name, V value)> get namedValues => map((e) => (e.key.name, e.value));
 }
 
-// only necessary for mixed V type keys
-// abstract interface class TypedEnumKey<V> implements Enum, TypeKey<V> {}
-
 class EnumIndexMap<K extends Enum, V> = IndexMap<K, V> with EnumMap<K, V>;
 class EnumProxyMap<K extends Enum, V> = ProxyIndexMap<K, V> with EnumMap<K, V>;
 
-// extension type const EnumIdFactory<K extends Enum, V>._(Map<V, K> reverseMap) {
-//   EnumIdFactory.of(List<K> keys) : reverseMap = EnumMap.buildReverseMap<K, V>(keys);
-//   K? idOf(V mappedValue) => reverseMap[mappedValue];
+// homogeneous fields
+// typedef Serializable<V> = Map<Enum, V>;
 
-  // static Map<V, K> buildReverse<K extends Enum, V>(List<K> keys, [V Function(K)? valueOf]) {
-  //   if (valueOf != null) {
-  //     return keys.asReverseMap(valueOf);
-  //   } else if (V == int) {
-  //     return keys.asMap() as Map<V, K>; // index by default
-  //   } else {
-  //     throw ArgumentError('EnumMap: $V must be defined for reverseMap');
-  //   }
-  //   // assert(V == int, 'EnumMap: $V must be defined for reverseMap');
-  // }
-// }
+// only necessary for mixed V type keys
+// abstract interface class SerializableKey<V> implements Enum, TypeKey<V> {}
+
+// typedef SerializableData = Map<SerializableKey<dynamic>, Object?>;

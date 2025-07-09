@@ -99,6 +99,7 @@ class VarCacheController {
     return write(key);
   }
 
+  // MapCache interface
   // return num or object of key V type
   // Future<num?> operator [](VarKey key) async {
   //   if (await protocolService.get(key.value) case int value) {

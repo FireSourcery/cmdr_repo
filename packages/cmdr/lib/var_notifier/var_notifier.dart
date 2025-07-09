@@ -50,8 +50,11 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   late final int dataKey = varKey.value; // compute once and cache
   // final ValueNotifier? eventNotifier = ValueNotifier(null); //optional for user submit
 
-  // final VarReferences references;
+  // alternatively as notifier can update stream
+  // num outputValue = 0; // for output value, not used in VarNotifier
+  // VarLastUpdate lastUpdate = VarLastUpdate.clear;
 
+  // final VarReferences references;
   /// Derived from [VarKey] and cached
   /// reinit on VarKey update
   void initReferences(/* optionally pass */) {
@@ -156,13 +159,17 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
       // assert((varKey.binaryFormat?.min != null) ? (dataValue >= varKey.binaryFormat!.min) : true);
     }
   }
+
+  // for set before loading num limits
+  void updateByFile(num newValue) => _viewValue = newValue;
 }
 
 /// [VarValueNotifier<V>]
 /// A notifier combining a ValueNotifier with support for conversion between view types and data values.
 /// It be can further combined with a status notifier.
 ///
-/// alternatively as ValueNotifier<num> with conversion methods
+/// alternatively as
+/// UnionValueNotifier implements ValueNotifier<num> with conversion methods
 abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // int get dataMin;
   // int get dataMax;
@@ -179,6 +186,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   int Function(int binary)? signExtension;
   ViewOfData? viewOfData; // num conversion only, null for Enum and Bits
   DataOfView? dataOfView;
+
   ({num min, num max})? numLimits; //  view base limits, still effective for non-num V, if set
   List<Enum>? enumRange; // for enum conversion only. other range bound types, e.g String, provide by enum.
   List<BitField>? bitsKeys; // for bits conversion only.
@@ -209,9 +217,6 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   Enum enumOf(int value) => enumRange?.elementAtOrNull(value) ?? VarValueEnum.unknown;
   BitStruct bitFieldsOf(int value) => BitStruct.view(bitsKeys ?? const <BitField>[], value as Bits);
 
-  // R? enumCast<R extends Enum>(int value) => enumRange?.elementAtOrNull(value);
-  // R? valueAsEnumCast<R extends Enum>() => enumRange?.elementAtOrNull(valueAsInt) as R?;
-
   /// User defined subtypes
   /// Returns the as the exact type, to account for user defined method on that type
   T subtypeOf<T>(num value) => throw UnsupportedError(' : $T');
@@ -219,8 +224,19 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
 
   ////////////////////////////////////////////////////////////////////////////////
   /// runtime variables
-  ///
   ////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////
+  /// Typed [value]
+  /// superclass implementation
+  /// typed view value
+  ////////////////////////////////////////////////////////////////////////////////
+  @override
+  V get value => valueAs<V>();
+  @override
+  set value(V newValue) => updateByViewAs<V>(newValue);
+
+  // V valueGetter() => valueAs<V>();
+
   ////////////////////////////////////////////////////////////////////////////////
   /// [_viewValue] The base representation of the value as a num. "view side base"
   ///   since it is the base for all generic types that can be converted to and from,
@@ -246,6 +262,8 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // }
 
   // alternatively mvoe to VarNotifer and wrap update fns
+  // or separate output value
+  // num outputValue = 0; // for output value, not used in VarNotifier
   VarLastUpdate lastUpdate = VarLastUpdate.clear;
 
   bool hasIndirectListeners = false;
@@ -260,13 +278,13 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   /// value over view boundaries handle by UI
   ////////////////////////////////////////////////////////////////////////////////
   int get dataValue => dataOf(_viewValue);
-  @protected
-  set dataValue(int value) => _viewValue = viewOf(dataValue);
+
+  set _dataValue(int value) => _viewValue = viewOf(dataValue);
 
   // before sign extension
   // updatedByView wait for push
   void updateByData(int bytesValue) {
-    dataValue = dataOfBinary(bytesValue);
+    _dataValue = dataOfBinary(bytesValue);
     lastUpdate = VarLastUpdate.byData;
 
     // if (numValue != _clampedNumValue) statusCode = 1;
@@ -274,25 +292,18 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
 
   ////////////////////////////////////////////////////////////////////////////////
   /// [viewValue] from widgets
-  /// The value in real world units and constraints. as seen by the user
+  /// The value seen by the user
   ////////////////////////////////////////////////////////////////////////////////
-  /// superclass implementation
-  /// typed view value
-  @override
-  V get value => valueAs<V>();
-  @override
-  set value(V newValue) => updateByViewAs<V>(newValue);
-
-  // V valueGetter() => valueAs<V>();
-
-  /// num storage value, viewValue, viewBase
-  @protected
+  /// num storage value, viewValue, baseValue
   num get numValue => _viewValue;
-  @protected
   set numValue(num newValue) {
     _viewValue = clamp(newValue);
     lastUpdate = VarLastUpdate.byView;
   }
+  // void updateByView(num numValue) {
+  //   _viewValue = clamp(numValue);
+  //   lastUpdate = VarLastUpdate.byView;
+  // }
 
   ///
   @protected
@@ -308,13 +319,9 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   @protected
   BitStruct get valueAsBitFields => bitFieldsOf(valueAsInt);
   @protected
-  Uint8List get valueAsBytes => Uint8List(8)..buffer.asByteData().setUint64(0, valueAsInt, Endian.big);
-  @protected
   String get valueAsString => String.fromCharCodes(valueAsBytes);
-
-  // returns as the subtype, must be nullable
   @protected
-  R? valueAsEnumCast<R extends Enum>() => enumRange?.elementAtOrNull(valueAsInt) as R?;
+  Uint8List get valueAsBytes => Uint8List(8)..buffer.asByteData().setUint64(0, valueAsInt, Endian.big);
 
   /// viewAs
   /// caller determines type after accounting for VarKey
@@ -333,11 +340,10 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
     } as R;
   }
 
-  // void updateByView(num numValue) {
-  //   _viewValue = clamp(numValue);
-  //   lastUpdate = VarLastUpdate.byView;
-  // }
+  R? valueAsEnumWith<R extends Enum>(List<R> enumValues) => enumValues.elementAtOrNull(valueAsInt);
+  BitStruct<K> valueAsBitStructWith<K extends BitField>(List<K> bitsKeys) => BitStruct<K>.view(bitsKeys, valueAsInt as Bits);
 
+  /// update
   // @protected
   // set valueAsEnum(Enum newValue) => _numValue = newValue.index;
   // @protected
@@ -359,22 +365,25 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
     };
 
     lastUpdate = VarLastUpdate.byView;
-
     // if (typedValue case num input when input != numValue) statusCode = 1;
   }
-
-  // for set before loading num limits
-  void updateByFile(num newValue) => _viewValue = newValue;
 }
 
+/// alternatively seperate
 enum VarLastUpdate { clear, byData, byView }
 
-// default for over bounds
+// replace null for over bounds
 enum VarValueEnum { unknown }
+
+// enum BitFieldDefault with BitField {
+//   unknown(Bitmask(0,64));
+// }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// [VarStatus]
-/// Optionally mixin or compose for multiple status
+/// implement as mixin
+///   optionally mixin to share notifier
+///   or compose for seperated value/status, multiple status
 /// generally for status from client side
 ///
 /// alternatively, include code value only, caller handling Enum mapping
