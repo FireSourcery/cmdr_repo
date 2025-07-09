@@ -89,7 +89,7 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   String valueStringAs<T>() => varKey.stringify<T>(valueAs<T>());
 
   @override
-  String toString() => '${describeIdentity(this)}(`${varKey.label}`)($value = $_viewValue)';
+  String toString() => '${describeIdentity(this)}(<$V>$value)($_viewValue)';
 
   ////////////////////////////////////////////////////////////////////////////////
   ///

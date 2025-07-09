@@ -90,7 +90,7 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
 
   void exit() {
     if (selectedBottomSheet == null) return;
-    bottomSheetController.close();
+    bottomSheetController.close(); //todo check
     bottomSheetController.closed.whenComplete(onExit);
   }
 

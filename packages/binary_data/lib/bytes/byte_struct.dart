@@ -1,5 +1,3 @@
-import 'package:type_ext/basic_ext.dart';
-import 'package:type_ext/enum_map.dart';
 import 'package:type_ext/struct.dart';
 import 'package:meta/meta.dart';
 

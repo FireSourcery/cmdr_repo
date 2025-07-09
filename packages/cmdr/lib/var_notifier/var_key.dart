@@ -55,7 +55,7 @@ abstract mixin class VarKey implements ValueKey<int> {
   String? get tip;
 
   @override
-  String toString() => '$runtimeType<${viewType.type}><$value>("$label")';
+  String toString() => '[$runtimeType<$value>]$label<${viewType.type}>';
 
   @override
   bool operator ==(Object other) {

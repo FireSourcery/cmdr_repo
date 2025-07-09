@@ -20,6 +20,7 @@ abstract interface class VarIOField extends StatelessWidget {
     VarNotifier<dynamic> varNotifier, {
     VarEventNotifier? eventNotifier,
     VarSingleController? controller,
+    // bool? readOnly,
     bool showLabel = true,
     bool showPrefix = true,
     bool showSuffix = true,

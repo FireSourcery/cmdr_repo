@@ -6,6 +6,8 @@ export 'widgets/io_field.dart';
 export 'widgets/logo.dart';
 export 'widgets/dialog/dialog_anchor.dart';
 
+export 'var_notifier/widgets/var_io_field.dart';
+
 // export 'widgets/binary_data/string_view.dart';
 export 'widgets/map_form_fields.dart';
 

@@ -90,9 +90,10 @@ class VarCache {
   //   }
   //   return false;
   // }
-  // void allocateAll(Iterable<VarKey> varKeys, [VarNotifier Function(VarKey)? constructor]) {
-  //   _cache.addEntries(varKeys.map((varKey) => MapEntry(varKey.value, constructor(varKey))));
-  // }
+
+  void allocateAll(Iterable<VarKey> varKeys, [VarNotifier Function(VarKey)? constructor]) {
+    _cache.addEntries(varKeys.map((varKey) => MapEntry(varKey.value, constructor?.call(varKey) ?? VarNotifier.of(varKey))));
+  }
 
   bool get isEmpty => _cache.isEmpty;
   bool contains(VarKey varKey) => _cache.containsKey(varKey.value);

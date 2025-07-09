@@ -1,12 +1,9 @@
-import '../../settings/settings_view.dart';
 import 'package:flutter/material.dart';
 import 'package:recase/recase.dart';
 
 /// is expanded and selecct are on the same notifier
 class MainMenuController with ChangeNotifier {
-  MainMenuController(this.initialMenuList, {GlobalKey<NavigatorState>? navigatorKey, bool createNavigatorKey = false})
-      : assert(!(navigatorKey != null && createNavigatorKey == true)),
-        navigatorKey = createNavigatorKey ? GlobalKey() : navigatorKey;
+  MainMenuController(this.initialMenuList, {this.navigatorKey});
 
   final List<MenuEntry> initialMenuList;
   final GlobalKey<NavigatorState>? navigatorKey;
@@ -49,8 +46,8 @@ class MainMenuController with ChangeNotifier {
 
 class LinkedMenuController {
   LinkedMenuController(List<MenuEntry> menuListMain, List<MenuEntry> menuListAux)
-      : mainMenu = MainMenuController(menuListMain, createNavigatorKey: true),
-        auxMenu = MainMenuController(menuListAux, createNavigatorKey: false);
+      : mainMenu = MainMenuController(menuListMain, navigatorKey: GlobalKey()),
+        auxMenu = MainMenuController(menuListAux, navigatorKey: null);
 
   final MainMenuController mainMenu;
   final MainMenuController auxMenu;
