@@ -34,7 +34,7 @@ class BottomSheetButton extends StatefulWidget {
 class BottomSheetButtonState extends State<BottomSheetButton> {
   late final double appBarHeight = Scaffold.of(context).appBarMaxHeight ?? 137;
   late final BottomSheetThemeData theme = Theme.of(context).bottomSheetTheme;
-  late final Color color = Theme.of(context).colorScheme.surface;
+  late final Color color = Theme.of(context).bottomAppBarTheme.color ?? Theme.of(context).colorScheme.surface;
 
   late final ShapeBorder? shape = widget.shape ?? theme.shape ?? const BeveledRectangleBorder();
 
@@ -47,7 +47,7 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
   late final FloatingActionButton fabClose = FloatingActionButton(onPressed: collapse, child: widget.iconClose); // null to hide
   late final FloatingActionButton fabNull = FloatingActionButton(onPressed: collapse, child: widget.iconInactive); // null to hide
 
-  late PersistentBottomSheetController bottomSheetController;
+  PersistentBottomSheetController? bottomSheetController;
   // mutable
   late Widget? fab = fabOpen;
   late Widget? selectedBottomSheet = widget.child;
@@ -65,9 +65,12 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
 
   // close and detach, on closed will still run
   void onExit() {
-    if (mounted) setState(() {});
-    fab = fabNull ?? fabOpen;
-    selectedBottomSheet = null;
+    if (mounted) {
+      setState(() {
+        fab = fabNull ?? fabOpen;
+        selectedBottomSheet = null;
+      });
+    }
   }
 
   Widget _bottomSheetBuilder(BuildContext context) => Padding(padding: EdgeInsets.only(top: (widget.iconClose.size ?? 0) / 2), child: selectedBottomSheet ?? widget.child);
@@ -79,25 +82,24 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
     setState(() {
       fab = fabClose;
     });
-    bottomSheetController = Scaffold.of(context).showBottomSheet(_bottomSheetBuilder, enableDrag: true, constraints: BoxConstraints.expand(height: sheetHeight));
-    bottomSheetController.closed.whenComplete(onClosed); // on drag close
+    bottomSheetController = Scaffold.of(context).showBottomSheet(
+      _bottomSheetBuilder,
+      enableDrag: true,
+      constraints: BoxConstraints.expand(height: sheetHeight),
+    );
+    bottomSheetController?.closed.whenComplete(onClosed); // on drag close
   }
 
   void collapse() {
-    bottomSheetController.close();
-    bottomSheetController.closed.whenComplete(onClosed);
+    bottomSheetController?.close();
+    bottomSheetController?.closed.whenComplete(onClosed);
   }
 
-  void exit() {
-    if (selectedBottomSheet == null) return;
-    bottomSheetController.close(); //todo check
-    bottomSheetController.closed.whenComplete(onExit);
-  }
+  /// call from global state
+  ///
+  void show([Widget? child]) => WidgetsBinding.instance.addPostFrameCallback((_) => expand(child));
 
-  // Material? materialWrapOpen(Widget child) => Material(type: MaterialType.card, shadowColor: shadowOpen, elevation: elevationOpen, shape: shape, child: Center(child: child));
-  // Material? materialWrapClose(Widget child) => Material(type: MaterialType.card, shadowColor: shadowClosed, elevation: elevationClosed, shape: shape, child: Center(child: child));
-  Material materialWrap(Widget? child) =>
-      Material(type: MaterialType.canvas, color: color, shadowColor: theme.shadowColor, elevation: theme.elevation ?? 10, shape: shape, child: Center(child: child));
+  void exit() => WidgetsBinding.instance.addPostFrameCallback((_) => collapse());
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +107,36 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
       alignment: Alignment.bottomCenter,
       height: appBarHeight,
       decoration: BoxDecoration(image: DecorationImage(image: widget.backgroundImage, fit: BoxFit.fill)),
-      child: materialWrap(fab),
+      child: _MaterialWrap(color: color, theme: theme, shape: shape, child: fab),
+    );
+  }
+}
+
+class _MaterialWrap extends StatelessWidget {
+  const _MaterialWrap({
+    super.key,
+    required this.color,
+    required this.theme,
+    required this.shape,
+    required this.child,
+  });
+
+  final Color color;
+  final BottomSheetThemeData theme;
+  final ShapeBorder? shape;
+  final Widget? child;
+  // Material? materialWrapOpen(Widget child) => Material(type: MaterialType.card, shadowColor: shadowOpen, elevation: elevationOpen, shape: shape, child: Center(child: child));
+  // Material? materialWrapClose(Widget child) => Material(type: MaterialType.card, shadowColor: shadowClosed, elevation: elevationClosed, shape: shape, child: Center(child: child));
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      type: MaterialType.canvas,
+      color: color,
+      shadowColor: theme.shadowColor,
+      elevation: theme.elevation ?? 10,
+      shape: shape,
+      child: Center(child: child),
     );
   }
 }

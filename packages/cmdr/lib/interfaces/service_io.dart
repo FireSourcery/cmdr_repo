@@ -143,6 +143,9 @@ class ServicePushStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceSetS
 abstract class ServiceStreamHandler<T> {
   ServiceStreamHandler(this.onDataSlice);
 
+  // final ServiceIO protocolService;
+  // final Iterable<T> Function() inputGetter;
+
   // createStream()
   @protected
   Stream<T> get stream; // creates a new stream, call from begin() only

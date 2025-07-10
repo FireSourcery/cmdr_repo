@@ -40,9 +40,6 @@ abstract interface class BitsMap<K, V> with MapBase<K, V> implements Map<K, V> /
   Iterable<bool> get valuesAsBools;
   Iterable<MapEntry<K, int>> get entriesAsBits;
   Iterable<MapEntry<K, bool>> get entriesAsBools;
-
-  // Iterable<({K key, bool value})> get fieldsAsBool;
-  // Iterable<({K key, int value})> get fieldsAsBits;
 }
 
 /// [BitFieldMap]

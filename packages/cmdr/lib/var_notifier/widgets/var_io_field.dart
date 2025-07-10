@@ -5,7 +5,7 @@ import 'package:cmdr/var_notifier/widgets/var_menu.dart';
 
 import '../../widgets/flyweight_menu/flyweight_menu.dart';
 import '../../widgets/flyweight_menu/flyweight_menu_widgets.dart';
-import '../../widgets/io_field.dart';
+import '../../widgets/io_field/io_field.dart';
 import '../var_notifier.dart';
 import 'var_widget.dart';
 import 'var_input_dialog.dart';

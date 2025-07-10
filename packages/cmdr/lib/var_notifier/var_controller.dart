@@ -1,10 +1,7 @@
 part of 'var_notifier.dart';
 
 /// [VarCache] with [Serivce]
-///
-/// implements Cache
 class VarCacheController {
-  // alternatively extend cache
   const VarCacheController({required this.cache, required this.protocolService});
 
   final VarCache cache;
@@ -144,7 +141,7 @@ class VarRealTimeController extends VarCacheController {
 
   late final ServicePollStreamHandler<int, int, int> pollHandler = ServicePollStreamHandler(protocolService, _readKeysGetter, _onReadSlice);
   late final ServicePushStreamHandler<int, int, int> pushHandler = ServicePushStreamHandler(protocolService, _writePairsGetter, _onWriteSlice);
-  // Stream<(ServiceGetSlice> get _readStream => protocolService.pollFlex(_readKeysGetter, delay: const Duration(milliseconds: 5));
+  Stream get _readStream => protocolService.pollFlex(_readKeysGetter, delay: const Duration(milliseconds: 5));
   // Stream<(ServiceSetSlice> get _writeStream => protocolService.push(_writePairsGetter, delay: const Duration(milliseconds: 5));
 
   // stream will call slices creating a new list, at the beginning of each multi-batch operation
@@ -153,7 +150,7 @@ class VarRealTimeController extends VarCacheController {
 
   // hasListeners check is regularly updated.
   // (e.lastUpdate == VarLastUpdate.clear) read all once.
-  Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListenersCombined /* || (e.lastUpdate == VarLastUpdate.clear) */).map((e) => e.varKey);
+  Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListenersCombined).map((e) => e.varKey);
   Iterable<int> _readKeysGetter() => _readKeys.map((e) => e.value);
 
   // polling stream setters, optionally implement local <Set>

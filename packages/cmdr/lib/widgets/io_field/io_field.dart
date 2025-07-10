@@ -182,10 +182,6 @@ class IOFieldConfig<T> {
   }
 }
 
-extension on num {
-  R to<R>() => switch (R) { const (int) => toInt(), const (double) => toDouble(), const (num) => this, _ => throw TypeError() } as R;
-}
-
 // utility for stateless views to rebuild the decorator accounting for error. optional for case of textfield
 class IODecorator extends StatelessWidget {
   const IODecorator({required this.decoration, this.isError = false, required this.child, super.key});
@@ -260,6 +256,10 @@ class IOFieldReader<T> extends StatelessWidget with _IOFieldStringBox<T> impleme
 }
 
 typedef IOFieldNum = IOFieldText<num>;
+
+extension on num {
+  R to<R>() => switch (R) { const (int) => toInt(), const (double) => toDouble(), const (num) => this, _ => throw TypeError() } as R;
+}
 
 /// T == num or String
 // split sub types requires the default constructor to be a sub factory
@@ -622,45 +622,6 @@ enum IOFieldBoolStyle {
 ////////////////////////////////////////////////////////////////////////////////
 /// Composites
 ////////////////////////////////////////////////////////////////////////////////
-// class SelectableIOField<T> extends StatefulWidget {
-//   const SelectableIOField({this.initialItem, super.key, required this.menuSource, required this.builder});
-
-//   final FlyweightMenuSource<T> menuSource;
-//   final T? initialItem;
-//   // final ValueWidgetBuilder<T> builder;
-//   // final ValueWidgetBuilder<T> builder;
-//   final IOFieldConfig Function(T key) configBuilder;
-//   // final Widget? child;
-
-//   Widget effectiveBuilder(BuildContext context, T key, Widget? child) {
-//     return IOField(configBuilder(key));
-//   }
-
-//   @override
-//   State<SelectableIOField<T>> createState() => _SelectableIOFieldState<T>();
-// }
-
-// class _SelectableIOFieldState<T> extends State<SelectableIOField<T>> {
-//   late final FlyweightMenu<T> menu = widget.menuSource.create(initialValue: widget.initialItem /*  onPressed: widget.onPressed */);
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Row(
-//       children: [
-//         FlyweightMenuButton<T>(menu: menu),
-//         const VerticalDivider(thickness: 0, color: Colors.transparent),
-//         // config rebuilds on varNotifier select update
-//         Expanded(child: FlyweightMenuListenableBuilder<T>(menu: menu, builder: widget.effectiveBuilder)),
-//       ],
-//     );
-
-//     // return ListTile(
-//     //   // dense: true,
-//     //   leading: menuSource.toButton(),
-//     //   title: menuSource.contain((_, __) => _VarIOFieldBuilder.options(selectController.varNotifier, showLabel: true, isDense: false, showPrefix: true, showSuffix: true)),
-//     // );
-//   }
-// }
 
 // convenience for attaching the same config
 class IOFieldWithSlider<T extends num> extends StatelessWidget implements IOField<T> {
@@ -683,6 +644,9 @@ class IOFieldWithSlider<T extends num> extends StatelessWidget implements IOFiel
   }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+///
+////////////////////////////////////////////////////////////////////////////////
 extension InputDecorationHide on InputDecoration {
   InputDecoration copyWithHide({
     bool showLabel = true,

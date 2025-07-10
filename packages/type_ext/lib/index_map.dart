@@ -10,8 +10,9 @@ abstract mixin class FixedMap<K, V> implements Map<K, V> {
   const FixedMap();
 
   @override
-  List<K> get keys;
-  // Iterable<K> get keys;
+  Iterable<K> get keys; // for implementation with const map literal
+  // List<K> get keys;
+
   @override
   V operator [](covariant K key);
   @override
@@ -21,7 +22,7 @@ abstract mixin class FixedMap<K, V> implements Map<K, V> {
   @override
   V remove(covariant K key);
 
-  //   // List<V>? get defaultValues;
+//   // List<V>? get defaultValues;
 //   // FixedMap<K, V> clone() => IndexMap<K, V>(this);
 }
 
@@ -30,14 +31,14 @@ abstract mixin class FixedMap<K, V> implements Map<K, V> {
 //   final List<K> keys;
 // }
 
-mixin FixedMapWith<K, V> on FixedMap<K, V> {
-  // analogous to operator []=, but returns a new instance
-  // FixedMap<K, V> withField(K key, V value) => (IndexMap<K, V>.fromBase(this)..[key] = value);
-  //
-  FixedMap<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => IndexMap<K, V>.fromBase(this)..addEntries(newEntries);
-  // A general values map representing external input, may be a partial map
-  FixedMap<K, V> withAll(Map<K, V> map) => IndexMap<K, V>.fromBase(this)..addAll(map);
-}
+// mixin FixedMapWith<K, V> on FixedMap<K, V> {
+//   // analogous to operator []=, but returns a new instance
+//   FixedMap<K, V> withField(K key, V value) => (IndexMap<K, V>.fromBase(this)..[key] = value);
+//   //
+//   FixedMap<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => IndexMap<K, V>.fromBase(this)..addEntries(newEntries);
+//   // A general values map representing external input, may be a partial map
+//   FixedMap<K, V> withAll(Map<K, V> map) => IndexMap<K, V>.fromBase(this)..addAll(map);
+// }
 
 /// [IndexMap]
 /// Default implementation using parallel arrays
@@ -67,7 +68,7 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
         _valuesBuffer = List.from((IndexMap<K, V?>.filled(keys, null)..addEntries(entries))._valuesBuffer);
 
   // default copyFrom implementation
-  IndexMap.fromBase(FixedMap<K, V?> state) : this._(state.keys, List<V>.from(state.values, growable: false));
+  IndexMap.fromBase(List<K> keys, IndexMap<K, V?> state) : this._(state.keys, List<V>.from(state.values, growable: false));
 
   // IndexMap.castBase(IndexMap<K, V> state) : this._(state._keysReference, state._valuesBuffer);
 
@@ -107,8 +108,6 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
     // {}
     throw UnsupportedError('IndexMap default remove operation not defined');
   }
-
-  // IndexMap<K, V> toMap() => IndexMap<K, V>.castBase(this);
 }
 
 /// IndexMap With -
@@ -123,14 +122,14 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
 ///
 class ProxyIndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
   const ProxyIndexMap._(this._source, this._modified);
-  ProxyIndexMap(FixedMap<K, V> source) : this._(source, IndexMap<K, V?>.filled(source.keys, null));
+  ProxyIndexMap(IndexMap<K, V> source) : this._(source, IndexMap<K, V?>.filled(source.keys, null));
 
   // express synchronous creation before returning the new instance
-  ProxyIndexMap.field(FixedMap<K, V> source, K key, V value) : this._(source, IndexMap<K, V?>.filled(source.keys, null)..[key] = value);
-  ProxyIndexMap.entry(FixedMap<K, V> source, MapEntry<K, V> modified) : this._(source, IndexMap<K, V?>.filled(source.keys, null)..addEntries([modified]));
-  ProxyIndexMap.entries(FixedMap<K, V> source, Iterable<MapEntry<K, V>> modified) : this._(source, IndexMap<K, V?>.filled(source.keys, null)..addEntries(modified));
+  ProxyIndexMap.field(IndexMap<K, V> source, K key, V value) : this._(source, IndexMap<K, V?>.filled(source.keys, null)..[key] = value);
+  ProxyIndexMap.entry(IndexMap<K, V> source, MapEntry<K, V> modified) : this._(source, IndexMap<K, V?>.filled(source.keys, null)..addEntries([modified]));
+  ProxyIndexMap.entries(IndexMap<K, V> source, Iterable<MapEntry<K, V>> modified) : this._(source, IndexMap<K, V?>.filled(source.keys, null)..addEntries(modified));
 
-  final FixedMap<K, V> _source;
+  final IndexMap<K, V> _source;
 
   // a new IndexMap is optimized over a searchable List<MapEntry<K, V>>
   //   equal to preemptively allocating a fixed size _modified list

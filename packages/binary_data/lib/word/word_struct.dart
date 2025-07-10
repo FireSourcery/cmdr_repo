@@ -55,11 +55,7 @@ abstract class WordStruct<T extends WordField> extends ConstBitStruct<T> {
   Word get word => Word(bits);
 
   // WordStruct<T> withBytes(int lsb, [int lsb1 = 0, int lsb2 = 0, int lsb3 = 0, int msb3 = 0, int msb2 = 0, int msb1 = 0, int msb = 0]) {
-  //   return WordStruct._of(Bits.of8s(lsb, lsb1, lsb2, lsb3, msb3, msb2, msb1, msb));
-  // }
-
-  // WordFieldsBase.values(List<T> keys, Iterable<int> values, [bool mutable = true]) {
-  //   return WordFieldsBaseWithKeys(keys, keys.bitmasks.apply(values), mutable);
+  //   return  ;
   // }
 }
 

@@ -203,7 +203,7 @@ typedef VarReadResponseValues = (int respCode, List<int> values);
 
 @Packed(1)
 final class VarReadRequest extends Struct implements Payload<VarReadRequestValues> {
-  // Struct is useful for defining a region of memory, giving a name to each field.
+  // Struct for defining a region of memory, giving a name to each field.
   @Array(16)
   external Array<Uint16> ids;
 
@@ -224,10 +224,9 @@ final class VarReadRequest extends Struct implements Payload<VarReadRequestValue
     return PayloadMeta(args.length * 2, (idSum, 0));
   }
 
-  // Access may require a workaround, since the boundary must the the full extent.
+  // Access may require a workaround, since the ffi.Struct boundary must the the full extent.
   @override
   VarReadRequestValues parse(MotPacket header, void stateMeta) {
-    // return Iterable.generate(header.payloadLength ~/ 2, (index) => ids[index]);
     return header.payloadAt<Uint16List>(0);
   }
 }
@@ -242,8 +241,8 @@ final class VarReadResponse extends Struct implements Payload<VarReadResponseVal
   @override
   VarReadResponseValues parse(MotPacket header, PayloadMeta? stateMeta) {
     // under length packet will be reject at parser
-    // return (0, values.asTypedList(16));
-    //  values.address.asTypedList(header.parsePayloadLength);
+    // values.elements.buffer.asUint16List(values.elements.offsetInBytes, header.parsePayloadLength ~/ 2);
+    // assert(values.elements.lengthInBytes == header.parsePayloadLength, 'Payload length mismatch: ${values.elements.lengthInBytes} != ${header.parsePayloadLength}');
 
     return (0, header.payloadAt<Uint16List>(0, header.parsePayloadLength)); //todo resp code
   }

@@ -69,7 +69,7 @@ abstract interface class PacketClass<T extends Packet> {
 /// ffi.Struct current does not allow length < full struct length, or mixin
 /// alternatively, use extension type on TypedData
 abstract class Packet {
-  Packet(TypedData typedData) : packetData = ByteStruct(ByteData.sublistView(typedData));
+  Packet(TypedData typedData) : packetData = (ByteData.sublistView(typedData));
 
   /// Class variables per subtype class, or should this be mixin
   PacketClass get packetClass;
@@ -125,7 +125,8 @@ abstract class Packet {
   /// using ffi NativeType for signature types only
   /// with range check
   List<int> payloadAt<R extends TypedData>(int byteOffset, [int? end]) => payload.asIntListOrEmpty<R>(byteOffset, end);
-  // List<int> payloadAt<R extends TypedData>(int byteOffset, [int? end]) => packetData.intArrayAt<R>(byteOffset + payloadIndex);
+
+  // List<int> payloadAt1<R extends TypedDataList<int>>([int byteOffset = 0, int? length]) => packetData.arrayOrEmptyAt<R>(byteOffset + payloadIndex);
 
   int payloadWordAt<R extends NativeType>(int byteOffset) => payloadWords.wordAt<R>(byteOffset, packetClass.endian);
   // throws if header parser fails, length reports lesser value, while checksum passes

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:type_ext/basic_types.dart';
-
 import 'var_notifier.dart';
 
 /// Get [VarCacheController] via Context

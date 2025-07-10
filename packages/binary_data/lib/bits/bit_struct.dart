@@ -23,6 +23,7 @@ export 'bits_map.dart';
 /// [BitsMap] - a version of Map with [Bits] as source. Does not need to be extended in most cases
 ////////////////////////////////////////////////////////////////////////////////
 abstract mixin class BitStruct<K extends BitField> implements BitsBase, BitsMap<K, int> {
+  // const BitStruct();
   const factory BitStruct.view(List<K> keys, Bits bits) = _BitStruct<K>;
   // factory BitStruct.of(List<K> keys, [int bits = 0, bool mutable = true])= _BitStruct<K>;
 
@@ -72,6 +73,7 @@ abstract mixin class BitStruct<K extends BitField> implements BitsBase, BitsMap<
   Iterable<({K key, int value})> get fieldsAsBits => keys.map((e) => (key: e, value: this[e]));
 
   /// returned instance is immutable
+  /// override to return a subtype
   BitStruct<K> copyWithBits(Bits value) => _BitStruct(keys, value);
   // @override
   // BitStruct<K> copyWith() => copyWithBits(bits);
@@ -129,7 +131,7 @@ mixin BitStructAsSubtype<S extends BitStruct<K>, K extends BitField> on BitStruc
 
   // @mustBeOverridden
   // S copyWith();
-  // S withField(K key, int value) => withField(key, value).copyWith();
+  // S withField(K key, int value) => (super.withField(key, value) as BitStructAsSubtype).copyWith();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -165,6 +167,32 @@ abstract class ConstBitStruct<K extends BitField> extends BitStructBase<K> {
   @override
   set bits(Bits value) => throw UnsupportedError('Cannot modify unmodifiable');
 }
+
+// alternatively, wrap for combined const and mutable
+// abstract class BitStructBase1<K extends BitField> extends BitsBase with MapBase<K, int>, BitFieldMap<K>, BitStruct<K> implements BitStruct<K> {
+//   const BitStructBase1(this.bitData);
+//   const BitStructBase1.initalizer(BitsInitializer this.bitData);
+
+//   BitStructBase1.mutable(Bits bits) : bitData = MutableBits(bits);
+
+//   Iterable<K> get keys;
+//   final BitsBase bitData;
+
+//   @override
+//   Bits get bits => bitData.bits;
+//   @override
+//   set bits(Bits value) => bitData.bits = value;
+// }
+
+// class BitStructBaseTest<K extends BitField> extends BitStructBase1<K> {
+//   const BitStructBaseTest.init(BitsInitializer super.bitData);
+//   const BitStructBaseTest(super.bits);
+
+//   @override
+//   Iterable<K> get keys => [];
+// }
+
+// const BitStructBaseTest<BitField> empty = BitStructBaseTest<BitField>(ConstBits.value(1));
 
 /// [BitsInitializer]
 /// compile time const definition using map literal
@@ -203,8 +231,6 @@ class _BitStruct<K extends BitField> extends ConstBitStruct<K> implements BitStr
   final Iterable<K> keys;
 }
 
-/// concrete pair return
-/// passing keys
 // Keys list effectively define type and act as factory
 // Separates subtype `class variables` from instance
 // extension type const BitStructType<S extends BitStruct<T>, T extends BitField>(List<T> keys) {
@@ -244,37 +270,60 @@ class _BitStruct<K extends BitField> extends ConstBitStruct<K> implements BitStr
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Wrapper with all interfaces, factory, return as subtype
+/// prototype object which can return a subtype
+///
+/// keys with buffer
+/// extends for mutiple view types
+///
 /// passing keys
 /// castBase returning S
 ////////////////////////////////////////////////////////////////////////////////
-// class BitConstruct<S extends BitStruct<K>, K extends BitField> extends ConstBitStruct<K> implements BitStruct<K> {
-//   const BitConstruct.view(this.keys, super.bits);
+class BitConstruct<S extends BitStruct<K>, K extends BitField> with BitsBase, MapBase<K, int>, BitFieldMap<K>, BitStruct<K> implements BitStruct<K> {
+  const BitConstruct({required this.keys, required this.constructor, required this.buffer});
 
-//   // BitConstruct.initWith(this.keys, Map<K, int> initializer) : super(Bits.ofEntries(initializer.bitsEntries));
+  BitConstruct.withConstructor(this.constructor, [Bits initialValue = const Bits.allZeros()])
+      : keys = constructor(initialValue).keys,
+        buffer = constructor(initialValue);
 
-//   // BitConstruct.of(BitStruct<K> super.struct)
-//   //     : keys = struct.keys,
-//   //       super.castBase();
+  BitConstruct.withPrototype(S prototype)
+      : keys = prototype.keys,
+        buffer = prototype,
+        constructor = prototype.copyWithBits as S Function(Bits);
 
-//   // const BitConstruct.typed({this.keys, S Function(value) constructor = BitConstruct.generic, super.bits});
-//   // BitConstruct.generic(bitsKeys ?? const <BitField>[], value as Bits);
-//   // const BitConstruct.generic(super.bits) : keys = const [];
+  // S is dynamic or BitStruct<K>, return base type
+  // BitConstruct.generic(this.keys, this.bits) : constructor = ((Bits bits) => BitStruct<K>.view(const [], bits) as S);
 
-//   @override
-//   final Iterable<K> keys;
-//   // final S Function(Bits) constructor;
-//   S constructor(Bits bits) => BitConstruct<S, K>(keys, bits);
-//   // final S struct;
+  @override
+  final Iterable<K> keys;
+  final S Function(Bits) constructor;
+  final S buffer;
 
-//   @override
-//   BitStruct<K> copyWithBits(Bits value) => BitConstruct<BitStruct<K>, K>(keys, value);
-//   @override
-//   BitConstruct<S, K> copyWith() => BitConstruct<S, K>(keys, bits);
+  // optionally as const object or as typed buffer
+  // final S Function(BitsBase) caster;
+  // final BitsBase buffer;
 
-//   // @override
-//   // BitConstruct<S, K> withField(K key, int value);
-//   // @override
-//   // BitConstruct<S, K> withEntries(Iterable<MapEntry<K, int>> entries) =>
-//   // @override
-//   // BitConstruct<S, K> withAll(Map<K, int> map) =>
-// }
+  @override
+  Bits get bits => buffer.bits;
+  @override
+  set bits(Bits value) => buffer.bits = value; // mutable if base is mutable
+
+  S createBuffer() {
+    return constructor(bits);
+    // return caster(MutableBits(bits)) ;
+  }
+
+  S castView(BitsBase base) => constructor(base.bits);
+
+  @override
+  S copyWithBits(Bits value) => constructor(value);
+
+  // @override
+  // BitConstruct<S, K> copyWith() => BitConstruct<S, K>(keys, bits);
+
+  // @override
+  // S withField(K key, int value) => copyWithBits(bits.withBits(key.bitmask, value));
+  // @override
+  // BitConstruct<S, K> withEntries(Iterable<MapEntry<K, int>> entries) =>
+  // @override
+  // BitConstruct<S, K> withAll(Map<K, int> map) =>
+}

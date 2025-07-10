@@ -180,6 +180,6 @@ class DialogButtonTheme extends ThemeExtension<DialogButtonTheme> {
 
   @override
   ThemeExtension<DialogButtonTheme> lerp(covariant ThemeExtension<DialogButtonTheme>? other, double t) {
-    throw UnimplementedError();
+    return this;
   }
 }

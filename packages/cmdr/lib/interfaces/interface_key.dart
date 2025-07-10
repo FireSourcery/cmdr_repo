@@ -6,36 +6,36 @@ import 'package:type_ext/basic_types.dart';
 // Key `to` a generic value
 // boundary depending on type
 // GenericRetriverKey
-abstract mixin class UnionValueKey<V> implements TypeKey<V> {
-  const UnionValueKey();
+// abstract mixin class UnionValueKey<V> implements TypeKey<V> {
+//   const UnionValueKey();
 
-  List<Enum>? get valueEnumRange; // EnumSubtype.values must be non-null for Enum types
-  // Iterable<V>? get valuEnumRange;
-  // Limits as the values the num can take, inclusive, compare with >= and <=
-  ({num min, num max})? get valueNumLimits; // must be null for non-num types
+//   List<Enum>? get valueEnumRange; // EnumSubtype.values must be non-null for Enum types
+//   // Iterable<V>? get valuEnumRange;
+//   // Limits as the values the num can take, inclusive, compare with >= and <=
+//   ({num min, num max})? get valueNumLimits; // must be null for non-num types
 
-  V? get valueDefault;
+//   V? get valueDefault;
 
-  V get value;
-  set value(V newValue);
+//   V get value;
+//   set value(V newValue);
 
-  // num get valueAsNum;
+//   // num get valueAsNum;
 
-  // set valueAsNum(num newValue) {
-  //   // assert(V == int || V == double, 'Only num types are supported');
-  //   if (valueNumLimits != null) {
-  //     value = newValue.clamp(valueNumLimits!.min, valueNumLimits!.max) as V;
-  //   }
-  // }
+//   // set valueAsNum(num newValue) {
+//   //   // assert(V == int || V == double, 'Only num types are supported');
+//   //   if (valueNumLimits != null) {
+//   //     value = newValue.clamp(valueNumLimits!.min, valueNumLimits!.max) as V;
+//   //   }
+//   // }
 
-  // set valueAsEnum(Enum newValue) {
-  //   if (valueEnumRange != null) {
-  //     if (valueEnumRange!.contains(newValue)) value = newValue as V;
-  //   }
-  // }
+//   // set valueAsEnum(Enum newValue) {
+//   //   if (valueEnumRange != null) {
+//   //     if (valueEnumRange!.contains(newValue)) value = newValue as V;
+//   //   }
+//   // }
 
-  // move check limits here
-}
+//   // move check limits here
+// }
 
 // abstract mixin class NumValue {
 //   List<Enum>? get valueEnumRange;

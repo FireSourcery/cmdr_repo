@@ -4,7 +4,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../enum_chips.dart';
+import '../data_views/enum_chips.dart';
 
 class ConfirmationDialog<T> extends StatelessWidget {
   const ConfirmationDialog({super.key, this.onCancel, this.onConfirm, this.title, this.icon, this.iconColor, this.content});

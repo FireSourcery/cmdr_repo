@@ -37,8 +37,13 @@ extension type const Bits(int _bits) implements int {
   bool get isNotZero => (_bits != 0);
   bool get isZero => (_bits == 0);
 
-  // int read(Bitmask mask) => (this & mask._bitmask) >>> mask.shift;
-  // int modify(Bitmask mask, int value) => clear(mask) | mask.apply(value);
+  int _clear(int bitmask) => this & ~bitmask; // clear bits
+  int _fill(int bitmask) => this | bitmask; // fill bits
+  int _applyOff(int bitmask, int shift) => (this & bitmask) >>> shift; // get as shifted back
+  int _applyOn(int bitmask, int shift, int value) => (value << shift) & bitmask; // get as masked
+  int _modify(int bitmask, int shift, int value) => _clear(this) | _applyOn(bitmask, shift, value); // ready for write back
+  // int read(Bitmask mask) => _applyOff;
+  // int modify(Bitmask mask, int value) => _modify ;
 
   int getBits(Bitmask mask) => mask.applyOff(this);
   Bits withBits(Bitmask mask, int value) => mask.modify(this, value) as Bits;
@@ -129,13 +134,12 @@ abstract mixin class BitsBase {
   set bits(Bits value); // only dependency for unmodifiable
 
   int get width;
-
   int get value => bits;
 
   // int operator [](Bitmask index) => bitAt(index);
   // void operator []=(Bitmask index, int value) => setBitAt(index, value);
 
-  // int getBits(Bitmask mask) => bits.getBits(mask);
+  int getBits(Bitmask mask) => bits.getBits(mask);
 
   void setBits(Bitmask mask, int value) => bits = bits.withBits(mask, value);
   void setBitsAt(int offset, int width, int value) => bits = bits.withBitsAt(offset, width, value);
@@ -144,7 +148,6 @@ abstract mixin class BitsBase {
   void setByteAt(int index, int value) => bits = bits.withByteAt(index, value);
   void setBytesAt(int index, int size, int value) => bits = bits.withBytesAt(index, size, value);
   void setEach(Iterable<(Bitmask mask, int value)> entries) => bits = bits.withEach(entries);
-
   void reset([bool fill = false]) => bits = fill ? const Bits.allOnes() : const Bits.allZeros();
 
   String toStringAsBinary() => bits.toStringAsBinary(); // 0b000
@@ -163,7 +166,7 @@ abstract mixin class BitsBase {
 /// base for Map or Struct
 class MutableBits with BitsBase {
   MutableBits([this.bits = const Bits.allZeros()]);
-  MutableBits.castBase(BitsBase state) : this(state.bits);
+  // MutableBits.castBase(BitsBase state) : this(state.bits);
 
   @override
   Bits bits;
@@ -175,8 +178,9 @@ class MutableBits with BitsBase {
 @immutable
 class ConstBits with BitsBase {
   const ConstBits(this.bits);
+  // const ConstBits.value(int bits) : this(bits as Bits);
   // ConstBits(int value) : this( );
-  ConstBits.castBase(BitsBase state) : this(state.bits);
+  // ConstBits.castBase(BitsBase state) : this(state.bits);
 
   @override
   final Bits bits;
@@ -186,20 +190,17 @@ class ConstBits with BitsBase {
   int get width => bits.bitLength;
 }
 
-// typedef _BitsInitializer = Map<Bitmask, int>;
+// @immutable
+// class BitsInitializer<K> with BitsBase {
+//   const BitsInitializer(this._init);
 
-// class ConstBitsInitializer with BitsBase implements ConstBits {
-//   const ConstBitsInitializer(this._init);
-
-//   final _BitsInitializer _init;
-
-//   Iterable<Bitmask> get keys => _init.keys;
+//   final Map<Bitmask, int> _init;
 
 //   @override
-//   Bits get bits => Bits.ofEntries(_init.entries); // in order to init using const Map, bits must be derived at run time
+//   Bits get bits => Bits.ofMap(_init); // in order to init using const Map, bits must be derived at run time
 //   @override
 //   set bits(Bits value) => throw UnsupportedError('Cannot modify unmodifiable');
 
 //   @override
-//   int get width => throw UnimplementedError();
+//   int get width => _init.keys.map((e) => e.width).sum;
 // }

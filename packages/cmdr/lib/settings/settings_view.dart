@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:recase/recase.dart';
 
-import '../widgets/io_field.dart';
+import '../widgets/io_field/io_field.dart';
 import 'setting.dart';
 import 'settings_controller.dart';
 

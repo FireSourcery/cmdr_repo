@@ -1,8 +1,6 @@
 import 'dart:ffi';
 import 'dart:typed_data';
 
-import 'package:type_ext/struct.dart';
-
 export 'dart:ffi';
 export 'dart:typed_data';
 
@@ -22,12 +20,12 @@ abstract mixin class TypedField<T extends NativeType> {
 
   int get offset; // index of the first byte
 
-  int get size => sizeOf<T>();
+  int get size => _sizeOf<T>();
   int get end => offset + size; // index of the last byte + 1
-  // int get valueMax => (1 << width) - 1);
 
   /// [WordStruct/BitStruct]
   // Bitmask asBitmask() => Bitmask.bytes(offset, size);
+  // Bitmask bitmaskOf<T extends NativeType>(int offset) => Bitmask.bytes(offset, _sizeOf<T>());
 
   /// [ByteStruct]
   // call passing T
@@ -37,8 +35,9 @@ abstract mixin class TypedField<T extends NativeType> {
   void setWord(ByteData byteData, int value) => byteData.setWordAt<T>(offset, value);
   bool testWordBoundsOf(ByteData byteData) => end <= byteData.lengthInBytes;
 
-  int? getWordOrNull(ByteData byteData) => byteData.wordOrNullAt<T>(offset);
-  bool setWordOrNot(ByteData byteData, int value) => byteData.setWordOrNotAt<T>(offset, value);
+//
+  // int? getWordOrNull(ByteData byteData) => byteData.wordOrNullAt<T>(offset);
+  // bool setWordOrNot(ByteData byteData, int value) => byteData.setWordOrNotAt<T>(offset, value);
 
   @override
   int get defaultValue => 0;
@@ -53,7 +52,7 @@ abstract mixin class TypedField<T extends NativeType> {
 ////////////////////////////////////////////////////////////////////////////////
 /// Word value
 ////////////////////////////////////////////////////////////////////////////////
-int sizeOf<T extends NativeType>() {
+int _sizeOf<T extends NativeType>() {
   return switch (T) {
     const (Int8) => 1,
     const (Int16) => 2,
@@ -64,8 +63,6 @@ int sizeOf<T extends NativeType>() {
     _ => throw UnimplementedError(),
   };
 }
-
-// Bitmask bitmaskOf<T extends NativeType>(int offset) => Bitmask.bytes(offset, sizeOf<T>());
 
 extension GenericTypedWord on ByteData {
   /// valueAt by type, alternatively specify sign and size
@@ -83,7 +80,7 @@ extension GenericTypedWord on ByteData {
   }
 
   int? wordOrNullAt<R extends NativeType>(int byteOffset, [Endian endian = Endian.little]) {
-    return (byteOffset + sizeOf<R>() <= lengthInBytes) ? wordAt<R>(byteOffset, endian) : null;
+    return (byteOffset + _sizeOf<R>() <= lengthInBytes) ? wordAt<R>(byteOffset, endian) : null;
   }
 
   void setWordAt<R extends NativeType>(int byteOffset, int value, [Endian endian = Endian.little]) {
@@ -99,7 +96,7 @@ extension GenericTypedWord on ByteData {
   }
 
   bool setWordOrNotAt<R extends NativeType>(int byteOffset, int value, [Endian endian = Endian.little]) {
-    if (byteOffset + sizeOf<R>() <= lengthInBytes) {
+    if (byteOffset + _sizeOf<R>() <= lengthInBytes) {
       setWordAt(byteOffset, value, endian);
       return true;
     }

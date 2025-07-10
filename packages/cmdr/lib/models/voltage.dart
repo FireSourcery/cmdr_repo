@@ -1,4 +1,4 @@
-import 'package:cmdr/binary_data.dart';
+import 'binary_format.dart';
 
 class VDivider {
   const VDivider(this.r1, this.r2);

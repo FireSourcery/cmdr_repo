@@ -1,7 +1,5 @@
 library binary_data;
 
-export "binary_format/binary_format.dart";
-
 export "bits/bits.dart";
 export "bits/bit_struct.dart";
 

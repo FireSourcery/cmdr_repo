@@ -2,13 +2,11 @@ import 'dart:collection';
 import 'dart:math';
 
 import 'package:async/async.dart';
-import 'package:cmdr/connection/base/_socket_io.dart';
-import 'package:cmdr/widgets/time_chart/chart_style.dart';
-import 'package:collection/collection.dart';
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
+import 'chart_style.dart';
 import 'chart_data.dart';
 
 // notifies on every data update, caller handle selection update

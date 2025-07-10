@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // SharedPreference Service
 // Wrap with type parameter get/set and init
+// class SettingsService with ChangeNotifier {
 class SettingsService {
   SettingsService._();
   static final SettingsService main = SettingsService._();

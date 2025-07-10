@@ -90,6 +90,6 @@ class LogoTheme extends ThemeExtension<LogoTheme> {
 
   @override
   ThemeExtension<LogoTheme> lerp(covariant ThemeExtension<LogoTheme>? other, double t) {
-    throw UnimplementedError();
+    return this;
   }
 }

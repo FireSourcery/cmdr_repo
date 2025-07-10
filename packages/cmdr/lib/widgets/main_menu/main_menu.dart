@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-import '../logo.dart';
+import '../app_general/logo.dart';
 import 'main_menu_controller.dart';
 
 class MainMenu extends StatelessWidget {

@@ -21,9 +21,7 @@ class VarCache {
     this.lengthMax,
   }) : _cache = Map.unmodifiable({for (final varKey in varKeys) varKey.value: constructor(varKey)});
 
-  // VarCache.preallocate1(Iterable<VarKey> varKeys, {this.lengthMax}) {
-  //   _cache = Map.unmodifiable({for (final varKey in varKeys) varKey.value: constructor(varKey)});
-  // }
+  VarCache.fixed(Iterable<VarKey> varKeys, {this.lengthMax}) : _cache = Map.unmodifiable({for (final varKey in varKeys) varKey.value: VarNotifier.of(varKey)});
 
   /// "It is generally not allowed to modify the map (add or remove keys) while
   /// an operation is being performed on the map."
@@ -42,8 +40,10 @@ class VarCache {
   final int? lengthMax;
   // final VarNotifier? undefined ;
 
-  // final Map<VarKey, VarNotifier> _cache; // this way keys are retained, access without going through var
-  // final Set<VarKey>? preallocatedKeys; // retain if generated,
+  // final Map<int, int> valuesOut; alternative to sync variable
+  // final Map<VarKey, VarNotifier> _cache; // this way keys are retained local after gen. access without going through var
+
+  // final Map<VarKey, ValueSetter<VarCache>>? onUpdate; // (onUpdate callbacks for dependent keys, if any)
 
   // override for subtype
   @mustBeOverridden
@@ -58,10 +58,9 @@ class VarCache {
   }
 
   VarNotifier allocate(VarKey varKey) {
-    return _cache.putIfAbsent(varKey.value, () {
-      if (lengthMax case int max when _cache.length >= max) _cache.remove(_cache.entries.first.key)?.dispose();
-      return constructor(varKey);
-    });
+    if (_cache is UnmodifiableMapView) return this[varKey] ?? constructor(varKey); // unmapped instance or throw
+    // if (lengthMax case int max when _cache.length >= max) _cache.remove(_cache.entries.first.key)?.dispose();
+    return _cache.putIfAbsent(varKey.value, () => constructor(varKey));
   }
 
   /// current listeners would need to reattach to the new VarNotifier
@@ -112,9 +111,9 @@ class VarCache {
 
   // directely return value. useful for sync update
   @protected
-  num valueOf(VarKey varKey) => _cache[varKey.value]?.numValue ?? 0;
+  num valueOf(VarKey varKey) => _cache[varKey.value]?.viewValue ?? 0;
   @protected
-  void setValueOf(VarKey varKey, num value) => _cache[varKey.value]?.numValue = value;
+  void setValueOf(VarKey varKey, num value) => _cache[varKey.value]?.viewValue = value;
 
   /// Single updateByView can call from VarNotifier ref
   VarNotifier? updateByViewAs<T>(VarKey key, T varValue) => this[key]?..updateByViewAs<T>(varValue);
@@ -161,18 +160,19 @@ class VarCache {
   /* [bool overwriteUpdateByView = false] */
   void updateByData(Iterable<int> ids, Iterable<int> valuesIn) {
     assert(valuesIn.length == ids.length); // caller checks packet length, data
-    // if (valuesIn case List<int> valuesList) {
-    //   for (final (id, value) in ids.mapIndexed((index, id) => (id, valuesList[index]))) {
-    //     _updateByData(id, value);
-    //   }
-    // } else {
-    final iterIds = ids.iterator;
-    final iterValues = valuesIn.iterator;
-    while (iterIds.moveNext() && iterValues.moveNext()) {
-      _updateByData(iterIds.current, iterValues.current);
+
+    if (valuesIn case List<int> valuesList) {
+      for (final (id, value) in ids.mapIndexed((index, id) => (id, valuesList[index]))) {
+        _updateByData(id, value);
+      }
+    } else {
+      final iterIds = ids.iterator;
+      final iterValues = valuesIn.iterator;
+      while (iterIds.moveNext() && iterValues.moveNext()) {
+        _updateByData(iterIds.current, iterValues.current);
+      }
+      assert(!iterIds.moveNext() && !iterValues.moveNext(), 'Length mismatch detected');
     }
-    // }
-    assert(!iterIds.moveNext() && !iterValues.moveNext(), 'Length mismatch detected');
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -266,44 +266,44 @@ extension VarNotifiers on Iterable<VarNotifier> {
 // /    Submit notifier - e.g. generating dialog
 // /    Updating dependents residing in the same VarCache
 ////////////////////////////////////////////////////////////////////////////////
-abstract mixin class VarCacheNotifier implements VarCache, ValueNotifier<VarViewEvent> {
-  // propagateSet
-  // caller provides function via switch case
-  // updateHook
-  void updateDependents(covariant VarKey key);
-  // void syncDependents(VarKey key);
+// abstract mixin class VarCacheNotifier implements VarCache, ValueNotifier<VarViewEvent> {
+//   // propagateSet
+//   // caller provides function via switch case
+//   // updateHook
+//   void updateDependents(covariant VarKey key);
+//   // void syncDependents(VarKey key);
 
-  // single listener table, notify with id. this way invokes extra notifications
-  //  separate changeNotifier, separate tables for different types of events
-  VarViewEvent _value = VarViewEvent.none;
-  @override
-  VarViewEvent get value => _value;
-  // always update value, even if the same
+//   // single listener table, notify with id. this way invokes extra notifications
+//   //  separate changeNotifier, separate tables for different types of events
+//   VarViewEvent _value = VarViewEvent.none;
+//   @override
+//   VarViewEvent get value => _value;
+//   // always update value, even if the same
 
-  // VarKey get value => _value; alternatively last key
+//   // VarKey get value => _value; alternatively last key
 
-  @override
-  set value(VarViewEvent newValue) {
-    _value = newValue;
-    notifyListeners();
-  }
+//   @override
+//   set value(VarViewEvent newValue) {
+//     _value = newValue;
+//     notifyListeners();
+//   }
 
-  // passing key
-  void submitEntryAs<T>(VarKey key, T varValue) {
-    this[key]?.updateByViewAs<T>(varValue);
-    updateDependents(key);
-    value = VarViewEvent.submit;
-    //return this[key]
-  }
+//   // passing key
+//   void submitEntryAs<T>(VarKey key, T varValue) {
+//     this[key]?.updateByViewAs<T>(varValue);
+//     updateDependents(key);
+//     value = VarViewEvent.submit;
+//     //return this[key]
+//   }
 
-  // ValueSetter<T> valueSetterOf<T>(VarKey key) => ((T value) => submitEntryAs<T>(key, value));
-}
+//   // ValueSetter<T> valueSetterOf<T>(VarKey key) => ((T value) => submitEntryAs<T>(key, value));
+// }
 
-enum VarViewEvent {
-  select,
-  submit,
-  // update,
-  // error,
-  // clear,
-  none
-}
+// enum VarViewEvent {
+//   select,
+//   submit,
+//   // update,
+//   // error,
+//   // clear,
+//   none
+// }

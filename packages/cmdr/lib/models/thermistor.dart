@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:binary_data/binary_format/binary_format.dart';
+import 'binary_format.dart';
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Math

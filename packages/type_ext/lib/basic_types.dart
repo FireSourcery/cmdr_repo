@@ -31,6 +31,7 @@ extension TypeKeysValidate on List<TypeKey> {
 // }
 
 // workaround for calling generic methods with type restrictions
+// SubtypeKey
 mixin class TypeRestrictedKey<T extends S, S> {
   const TypeRestrictedKey();
   R callWithRestrictedType<R>(R Function<G extends S>() callback) => callback<T>();

@@ -1,9 +1,15 @@
 import 'package:meta/meta.dart';
 
-import 'enum_map.dart';
 import 'index_map.dart';
-export 'enum_map.dart';
+
 export 'index_map.dart';
+
+/// typedefs
+typedef FieldEntry<K, V> = ({K key, V value});
+
+/// General mixin for keyed data structures
+/// K extends Enum for serialization
+typedef DataStruct<K extends Field> = Structure<K, Object?>;
 
 /// [Structure]
 /// Similar to a [Map]
@@ -11,6 +17,7 @@ export 'index_map.dart';
 ///   getOrNull/setOrNot
 ///
 /// Provides Key interface to an Object
+/// mixin for withX and serialization
 ///
 /// subclass determines mutability
 /// interface and implementation
@@ -18,28 +25,29 @@ export 'index_map.dart';
 // extend to fill class variables.
 // Field may use a type parameter other than V, used to determine the value of V
 // always wrap a single Object, can implement as extension type when better support of abstract methods/override is available
-// must be a mixin if it is to be included after Map
-abstract mixin class Structure<K extends Field, V> /* with MapBase<K, V>, FixedMap<K, V>  */ {
-  // const Structure(this.data);
-  // @protected
-  // final Object data; // effectively a void pointer.
+// paste map mixin for 1 part mixin
+abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>  */ {
+  const Structure();
 
   // @override
   List<K> get keys; // a method that is the meta contents, fieldsList
+  // Iterable<K> get keys;
+  // List<K> get fields;
 
   // Map
   // void clear();
   // V remove(covariant K key);
-  V operator [](covariant K key) => get(key);
-  void operator []=(covariant K key, V value) => set(key, value);
 
-  //Struct
+  // Struct - implemented by Field key
   @protected
   V get(Field key) => key.getIn(this); // valueOf(Field key);
   @protected
   void set(Field key, V value) => key.setIn(this, value);
   @protected
   bool testBounds(Field key) => key.testBoundsOf(this);
+
+  V operator [](covariant K key) => get(key);
+  void operator []=(covariant K key, V value) => set(key, value);
 
   @protected
   V? getOrNull(Field key) => testBounds(key) ? get(key) : null;
@@ -65,6 +73,7 @@ abstract mixin class Structure<K extends Field, V> /* with MapBase<K, V>, FixedM
 
   /// with context of this.keys
   /// override in child class, using index map by default
+
   // Structure<K, V> copyWith()
   Structure<K, V> withFields(Structure<K, V?> fields) {
     // return StructMap.ofMap({for (var key in keys) key: fields.field(key) ?? field(key)} as FixedMap<K, V?>);
@@ -83,7 +92,7 @@ abstract mixin class Structure<K extends Field, V> /* with MapBase<K, V>, FixedM
   //
   Structure<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => StructMap<K, V>(this)..addEntries(newEntries);
   // A general values map representing external input, may be a partial map
-  Structure<K, V> withAll(Map<K, V> map) => StructMap<K, V>(this)..addAll(map);
+  Structure<K, V> withMap(Map<K, V> map) => StructMap<K, V>(this)..addAll(map);
 
   @override
   int get hashCode => keys.fold(0, (prev, key) => prev ^ field(key).hashCode);
@@ -103,45 +112,21 @@ abstract mixin class Structure<K extends Field, V> /* with MapBase<K, V>, FixedM
   }
 }
 
-/// implement Structure using parallel arrays
-class StructMap<K extends Field, V> extends IndexMap<K, V> with Structure<K, V> {
-  StructMap(Structure<K, V> struct) : super.of(struct.keys, struct.valuesOf(struct.keys));
-  StructMap.ofMap(super.map) : super.fromBase();
-}
-
-/// default implementation of immutable copy as subtype
-/// auto typing return as Subtype class.
-/// copy references to a new buffer, then pass to child constructor
-mixin StructAsSubtype<S extends Structure<K, V>, K extends Field, V> on Structure<K, V> {
-  // Overridden the in child class
-  //  calls the child class constructor
-  //  return an instance of the child class type
-  //  passing empty parameters always copies all values
-  @override
-  @mustBeOverridden
-  S copyWith();
-
-  @override
-  S withField(K key, V value) => (super.withField(key, value) as StructAsSubtype<S, K, V>).copyWith();
-  @override
-  S withEntries(Iterable<MapEntry<K, V>> newEntries) => (super.withEntries(newEntries) as StructAsSubtype<S, K, V>).copyWith();
-  @override
-  S withAll(Map<K, V> map) => (super.withAll(map) as StructAsSubtype<S, K, V>).copyWith();
-}
-
 /// [Field] - key to a value in a [StructView], with type
 /// although implementation of operators may be preferable in the containing class with full context of relationships between fields
 /// define accessors on the struct within key, to keep type withing local scope
 /// the key maintains scope of V
 ///
+/// K as Enum for serialization
+///
 /// effectively allows StructView to be abstract
 abstract mixin class Field<V> {
-  int get index;
+  // int get index;
 
   @protected
-  V getIn(covariant Object struct);
+  V getIn(covariant Object struct); // valueOf(covariant Object struct);
   @protected
-  void setIn(covariant Object struct, V value);
+  void setIn(covariant Object struct, V value); // setValueOf(covariant Object struct, V value);
 
   // not yet replaceable
   // @protected
@@ -165,10 +150,33 @@ abstract mixin class Field<V> {
   V? get defaultValue => null; // allows additional handling of Map<K, V?>
 }
 
-typedef FieldEntry<K, V> = ({K key, V value});
+/// implement Structure using parallel arrays
+class StructMap<K extends Field, V> extends IndexMap<K, V> with Structure<K, V> {
+  StructMap(Structure<K, V> struct) : super.of(struct.keys, struct.valuesOf(struct.keys));
+  // StructMap.ofMap(super.map) : super.fromBase();
+}
 
-// abstract interface class EnumField<V> implements Enum, Field<V> {}
+/// default implementation of immutable copy as subtype
+/// auto typing return as Subtype class.
+/// copy references to a new buffer, then pass to child constructor
+mixin StructAsSubtype<S extends Structure<K, V>, K extends Field, V> on Structure<K, V> {
+  // Overridden the in child class
+  //  calls the child class constructor
+  //  return an instance of the child class type
+  //  passing empty parameters always copies all values
+  @override
+  @mustBeOverridden
+  S copyWith();
 
+  @override
+  S withField(K key, V value) => (super.withField(key, value) as StructAsSubtype<S, K, V>).copyWith();
+  @override
+  S withEntries(Iterable<MapEntry<K, V>> newEntries) => (super.withEntries(newEntries) as StructAsSubtype<S, K, V>).copyWith();
+  @override
+  S withMap(Map<K, V> map) => (super.withMap(map) as StructAsSubtype<S, K, V>).copyWith();
+}
+
+///
 //   inheriting factory constructors
 //S extends Structure<K, V>,
 // extension type const StructClass<K extends Field, V>(List<K> keys) {
@@ -324,7 +332,7 @@ typedef FieldEntry<K, V> = ({K key, V value});
 //   // }
 // }
 
-///   remove for now, Structure is better suited for interface
+/// remove for now, Structure is better suited for interface
 /// extension type version
 // extension type cannot include abstract methods, or implement interfaces
 // cannot define copyWith without context of Keys

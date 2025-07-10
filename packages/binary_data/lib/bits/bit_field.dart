@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:collection/collection.dart';
 import 'package:type_ext/struct.dart';
 
@@ -26,11 +24,7 @@ abstract mixin class BitField /* implements Field<int> */ {
   // int get shift => bitmask.shift; // index of the first bit
   // int get width => bitmask.width; // number of bits in the field
 
-  // int clear(int source) => bitmask.clear(source); // clear bits
-  // int fill(int source) => bitmask.fill(source); // fill bits with ones
-  // int applyOn(int value) => bitmask.applyOn(value); // get as masked
-  // int applyOff(int source) => bitmask.applyOff(source); // get as shifted back
-  // int modify(int source, int value) => bitmask.modify(source, value); // ready for write back
+  // int get valueMax => (1 << width) - 1);
 
   /* implements Field<int> */
   // @override

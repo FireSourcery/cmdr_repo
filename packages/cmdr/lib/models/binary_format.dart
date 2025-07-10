@@ -2,7 +2,7 @@ import 'dart:ffi';
 
 import 'package:type_ext/basic_types.dart';
 
-import '../bits/bits.dart';
+import 'package:binary_data/binary_data.dart';
 
 /// Data/number format
 /// ffi marker constrains type, only use as marker

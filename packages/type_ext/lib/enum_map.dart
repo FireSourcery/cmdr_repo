@@ -1,6 +1,7 @@
 import 'package:meta/meta.dart';
 
 import 'package:type_ext/type_ext.dart';
+
 import 'basic_types.dart';
 export 'basic_types.dart';
 import 'index_map.dart';
@@ -26,7 +27,7 @@ abstract mixin class EnumMap<K extends Enum, V> implements FixedMap<K, V> {
 
   /// keys => Enum.values which implement byName(String name)
   factory EnumMap.fromJson(List<K> keys, Map<String, Object?> json) {
-    return EnumIndexMap<K, V>.fromBase(EnumIndexMap<K, V?>.filled(keys, null)..addJson(json));
+    return EnumIndexMap<K, V>.fromBase(keys, EnumIndexMap<K, V?>.filled(keys, null)..addJson(json));
   }
 
   List<K> get keys; // Enum.values
@@ -57,6 +58,7 @@ extension EnumMapByName<K extends Enum, V> on Map<K, V> {
   ///   i.e. []= is defined
   ////////////////////////////////////////////////////////////////////////////////
   Map<String, Object?> toJson() => toMapByName();
+  // loadFromJson
   // fill values from json
   void addJson(Map<String, Object?> json) => addAllByName(validateJson(json));
 
