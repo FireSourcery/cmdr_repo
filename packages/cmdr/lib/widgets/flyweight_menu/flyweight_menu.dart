@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:cmdr/type_ext.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +11,7 @@ class FlyweightMenuSource<T> {
   FlyweightMenuSource._ofBase(FlyweightMenuSource<T> menuSource) : this(menuItems: menuSource.menuItems, defaultKey: menuSource.defaultKey);
 
   // defaultKey is required if T is not nullable. T must be nullable if defaultValue is not provided
-  FlyweightMenuSource({required this.menuItems, this.defaultKey}) : assert(defaultKey is T); // (null is T) || (defaultKey != null)
+  const FlyweightMenuSource({required this.menuItems, this.defaultKey}) : assert(defaultKey is T); // (null is T) || (defaultKey != null)
 
   FlyweightMenuSource.itemBuilder({
     required Iterable<T> itemKeys,
@@ -39,7 +40,8 @@ class FlyweightMenuSource<T> {
   }
 }
 
-/// A `Flyweight copy` of the source. [FlyweightMenuInstance]
+/// [FlyweightMenuInstance]
+/// A `Flyweight copy` of the source.
 ///    - Original values by reference, including the view widgets
 ///    - A unique [ValueNotifier<T>], for widgets below the menu
 ///    - original values, including callbacks can be overridden
@@ -62,6 +64,10 @@ class FlyweightMenu<T> extends FlyweightMenuSource<T> with ChangeNotifier implem
   }
 
   final ValueSetter<T>? onPressed; // additional onPressed
+
+  //  final List<FlyweightMenuContextItem<T>> keyItems;
+  //  final List<widget> showItems = builder(keyItems._onPressed, keyItems.itemkey  )
+  //  final List<widget> showItems = [MenuItemButton(keyItems._onPressed, keyItems.itemkey  )]
 
   T _value;
   @override
@@ -86,6 +92,19 @@ class FlyweightMenu<T> extends FlyweightMenuSource<T> with ChangeNotifier implem
   // @protected
   // @override
   // Never create({ValueSetter<T>? onPressed, ValueSetter<({T newValue, T oldValue})>? onPressedExt}) => throw UnsupportedError('FlyweightMenu cannot be copied');
+}
+
+class FlyweightMenuContextItem<T> {
+  const FlyweightMenuContextItem({
+    required this.context,
+    required this.itemKey,
+  });
+
+  final BuildContext context;
+  final T? itemKey;
+  void _onPressed() => FlyweightMenuContext.of<T>(context).value = itemKey as T; // calls attached callbacks
+  // FlyweightMenu<S> findMenu(BuildContext context) => FlyweightMenuContext.of<T>(context);
+  // void onPressed(BuildContext context) => findMenu(context).value = this as T; // calls attached callbacks
 }
 
 /// [FlyweightMenuItem<T>] - Wrapper around MenuItemButton, replacing onPressed with a callback to the notifier
@@ -114,15 +133,16 @@ class FlyweightMenuItem<T> extends StatelessWidget {
   //   required this.child,
   // });
 
-  final Widget child; // the already built MenuItem
   final T? itemKey; // if key is null, the item appears as a static image
+  final Widget child; // the already built MenuItem
+
+  // void _onPressed(BuildContext context) => FlyweightMenuContext.of<T>(context).value = itemKey as T; // calls attached callbacks
 
   @override
   Widget build(BuildContext context) {
-    final FlyweightMenu<T> notifier = FlyweightMenuContext.of<T>(context);
-    void onPressed() => notifier.value = itemKey as T; // calls attached callbacks
-
-    // use MenuItemButton as a simple button wih callback around the MenuItem already built
+    final FlyweightMenu<T> menu = FlyweightMenuContext.of<T>(context);
+    void onPressed() => menu.value = itemKey as T; // calls attached callbacks
+    // use MenuItemButton as a simple button wih callback around the MenuItem already defined
     return MenuItemButton(
       onPressed: (itemKey != null) ? onPressed : null,
       child: child,
@@ -153,24 +173,6 @@ final class FlyweightMenuContext<T> extends InheritedNotifier<FlyweightMenu<T>> 
   // }
 }
 
-/// not used by library layer
-/// a context for MenuSource. Does not hold a notifier.
-/// use cases where a number of view widgets do not need to recreate a MenuSource.
-// class FlyweightMenuSourceContext<T extends FlyweightMenuSourceContext<dynamic>> extends InheritedWidget {
-//   const FlyweightMenuSourceContext({super.key, required this.menuSource, required super.child});
-
-//   final FlyweightMenuSource menuSource;
-
-//   static FlyweightMenuSourceContext of<T extends FlyweightMenuSourceContext<dynamic>>(BuildContext context) {
-//     return context.dependOnInheritedWidgetOfExactType<T>()! as FlyweightMenuSourceContext;
-//   }
-
-//   @override
-//   bool updateShouldNotify(covariant FlyweightMenuSourceContext<T> oldWidget) {
-//     return oldWidget.menuSource != menuSource;
-//   }
-// }
-
 class FlyweightMenuTheme extends ThemeExtension<FlyweightMenuTheme> {
   const FlyweightMenuTheme({this.trailingImage});
 
@@ -187,6 +189,7 @@ class FlyweightMenuTheme extends ThemeExtension<FlyweightMenuTheme> {
   }
 }
 
+/// Builders
 typedef MenuWidgetBuilder<T> = Widget Function(BuildContext context, FlyweightMenu<T> menu, Widget keyWidget);
 
 // resolves source to instance notifier
@@ -207,7 +210,7 @@ class MenuAnchorBuilder<T> extends StatefulWidget {
   // final FlyweightMenu<T> menuInstance;  // provide one of either
   final T? initialItem;
   final MenuWidgetBuilder<T> menuAnchorBuilder; // builds the outer wrap
-  final ValueWidgetBuilder<T> keyBuilder; // builds the inner widget under the menu, passed to menuAnchorBuilder
+  final ValueWidgetBuilder<T> keyBuilder; // itemBuilder builds the inner widget under the menu, passed to menuAnchorBuilder
   final Widget? child; // passed to keyBuilder
 
   @override
@@ -217,6 +220,8 @@ class MenuAnchorBuilder<T> extends StatefulWidget {
 class _MenuAnchorBuilderState<T> extends State<MenuAnchorBuilder<T>> {
   // late final FlyweightMenuSource<T> menuSource = widget.menuSource ?? FlyweightMenuSourceContext<T>.of(context).menuSource; // if including find by context
   late final FlyweightMenu<T> menu = widget.menuSource.create(initialValue: widget.initialItem /*  onPressed: widget.onPressed */);
+
+  // listens to menu for changes
   late final Widget keyListener = ValueListenableBuilder<T>(valueListenable: menu, builder: widget.keyBuilder, child: widget.child);
 
   @override
@@ -226,6 +231,12 @@ class _MenuAnchorBuilderState<T> extends State<MenuAnchorBuilder<T>> {
       child: widget.menuAnchorBuilder(context, menu, keyListener),
     );
   }
+
+  @override
+  void dispose() {
+    menu.dispose(); // dispose notifier
+    super.dispose();
+  }
 }
 
 // case where child depends on menu without displaying the menu
@@ -233,3 +244,23 @@ class _MenuAnchorBuilderState<T> extends State<MenuAnchorBuilder<T>> {
 class MenuListenableBuilder<T> extends ValueListenableBuilder<T> {
   const MenuListenableBuilder({super.key, required super.builder, super.child, required FlyweightMenu<T> menu}) : super(valueListenable: menu);
 }
+
+
+////
+/// not used by library layer
+/// a context for MenuSource. Does not hold a notifier.
+/// use cases where a number of view widgets do not need to recreate a MenuSource.
+// class FlyweightMenuSourceContext<T extends FlyweightMenuSourceContext<dynamic>> extends InheritedWidget {
+//   const FlyweightMenuSourceContext({super.key, required this.menuSource, required super.child});
+
+//   final FlyweightMenuSource menuSource;
+
+//   static FlyweightMenuSourceContext of<T extends FlyweightMenuSourceContext<dynamic>>(BuildContext context) {
+//     return context.dependOnInheritedWidgetOfExactType<T>()! as FlyweightMenuSourceContext;
+//   }
+
+//   @override
+//   bool updateShouldNotify(covariant FlyweightMenuSourceContext<T> oldWidget) {
+//     return oldWidget.menuSource != menuSource;
+//   }
+// }

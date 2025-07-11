@@ -12,16 +12,13 @@ part of 'var_notifier.dart';
 ////////////////////////////////////////////////////////////////////////////////
 // class VarCache<K extends VarKey, V extends VarNotifier> {
 class VarCache {
-  VarCache([this.lengthMax]) : _cache = {};
+  VarCache() : _cache = {};
 
   // stores key in value when using dynamically generated iterable
-  VarCache.preallocate(
-    Iterable<VarKey> varKeys, {
-    VarNotifier Function(VarKey) constructor = VarNotifier.of, // if notifiers are of a subtype
-    this.lengthMax,
-  }) : _cache = Map.unmodifiable({for (final varKey in varKeys) varKey.value: constructor(varKey)});
+  VarCache.preallocate(Iterable<VarKey> varKeys) : _cache = {for (final varKey in varKeys) varKey.value: VarNotifier.of(varKey)};
+  // VarNotifier Function(VarKey) constructor = VarNotifier.of, // if notifiers are of a subtype
 
-  VarCache.fixed(Iterable<VarKey> varKeys, {this.lengthMax}) : _cache = Map.unmodifiable({for (final varKey in varKeys) varKey.value: VarNotifier.of(varKey)});
+  VarCache.fixed(Iterable<VarKey> varKeys) : _cache = Map.unmodifiable({for (final varKey in varKeys) varKey.value: VarNotifier.of(varKey)});
 
   /// "It is generally not allowed to modify the map (add or remove keys) while
   /// an operation is being performed on the map."
@@ -37,23 +34,22 @@ class VarCache {
   ///
   // <int, VarNotifier> allows direct access by updateByData
   final Map<int, VarNotifier> _cache; // map key to entire state containing the key
-  final int? lengthMax;
-  // final VarNotifier? undefined ;
-
-  // final Map<int, int> valuesOut; alternative to sync variable
-  // final Map<VarKey, VarNotifier> _cache; // this way keys are retained local after gen. access without going through var
-
+  // final int? lengthMax;
+  // final VarNotifier? undefined;
   // final Map<VarKey, ValueSetter<VarCache>>? onUpdate; // (onUpdate callbacks for dependent keys, if any)
 
+  // VarEvent lastEvent
+  // final ValueNotifier _eventNotifier = ValueNotifier(null);
+  // ValueListenable get eventNotifier => _eventNotifier; // for listeners to subscribe to events
+
   // override for subtype
-  @mustBeOverridden
   VarNotifier<dynamic> constructor(covariant VarKey varKey) => VarNotifier.of(varKey);
 
   /// Maps VarKey to VarNotifier
   /// `allocate` the same VarNotifier storage if found. `create if not found`
   ///
   VarNotifier resolve(VarKey varKey) {
-    if (_cache is UnmodifiableMapView) return this[varKey]!; // preallocated
+    if (_cache is UnmodifiableMapView) return this[varKey]!; // fixed, throw if not found
     return allocate(varKey);
   }
 
@@ -103,7 +99,6 @@ class VarCache {
   ////////////////////////////////////////////////////////////////////////////////
   /// Per Instance
   ////////////////////////////////////////////////////////////////////////////////
-  // would it be faster to use VarKey hash as base key?
   VarNotifier? operator [](VarKey varKey) => _cache[varKey.value]; // alternatively ?? undefined;
 
   // @protected

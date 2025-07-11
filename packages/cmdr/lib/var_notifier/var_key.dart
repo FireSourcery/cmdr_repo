@@ -7,12 +7,13 @@ abstract mixin class VarKey implements ValueKey<int> {
 
   @override
   int get value; // int id of the key, NOT the value of associated Var
-  int get id => value; // alias for value, for compatibility with ValueKey
+  int get id => value;
 
   // the varNotifier type parameter
   TypeKey<dynamic> get viewType; // binaryFormat!.viewType; // override if binaryFormat is null
   // BinaryFormat? get binaryFormat; // can depreciate
 
+  /// Data numeric conversion
   int Function(int binary)? get signExtension;
   ViewOfData? get viewOfData;
   DataOfView? get dataOfView;
@@ -21,6 +22,7 @@ abstract mixin class VarKey implements ValueKey<int> {
   ({num min, num max})? get valueNumLimits;
   List<Enum>? get valueEnumRange;
   List<BitField>? get valueBitsKeys;
+
   int? get valueStringDigits;
   // num? get valueDefault;
 
@@ -118,6 +120,12 @@ enum VarStatusUnknown with VarStatus, VarEnumStatus {
 
   @override
   int get code => -1;
+}
+
+enum VarHandlerStatus with VarStatus, VarEnumStatus {
+  unknownId,
+  outOfRange,
+  ;
 }
 
 // optional properties

@@ -10,7 +10,7 @@ import 'packet_transformer.dart';
 class Protocol {
   Protocol(this.link, this.packetInterface) : headerParser = HeaderParser(packetInterface, packetInterface.lengthMax * 4);
 
-  final Link link;
+  final Link link; // optionally mutable for inert state
   final PacketClass packetInterface;
   final HeaderParser headerParser;
   final Map<PacketId, ProtocolSocket> respSocketMap = {}; // map response id to socket, listeners
@@ -19,33 +19,32 @@ class Protocol {
   ProtocolException status = ProtocolException.ok;
   Stream<Packet>? packetStream; // rx complete packets, pre sockets
 
-  /// beginSocketRx
-  /// central distributor for socket streams
-  /// limitations:
-  ///   packet responseId matches to single most recent socket, unless it is implemented with socket id
+  /// begin Socket Rx
+
   StreamSubscription<Packet>? begin() {
     if (!link.isConnected) return null;
     if (packetStream != null) return null; // return if already set, alternatively listen on single subscription stream terminates, todo reset function
+
     packetStream = link.streamIn.transform(PacketTransformer(parserBuffer: headerParser)); // creates a new stream, if streamIn is a getter
+    return packetStream!.listen(_demux, onError: onError);
+    // status = ProtocolException.ok;
+  }
 
-    status = ProtocolException.ok;
-
-    // if sockets implements listen on the transformed stream,
-    //  although the observer pattern is still implemented,
-    //  the check id routine must still run for each socket. but a map would not be necessary.
-    return packetStream!.listen(
-      (packet) {
-        print("RX ${packet.bytes.take(4)} ${packet.bytes.skip(4).take(4)} ${packet.bytes.skip(8)}");
-        // optionally handle sync to all sockets, or 2 levels of keys
-        if (respSocketMap[packet.packetId] case ProtocolSocket socket) {
-          socket.add(packet);
-          print("Socket [${socket.hashCode}] Time: ${socket.timer.elapsedMilliseconds}");
-        } else {
-          handleProtocolException(const ProtocolException('No matching socket'));
-        }
-      },
-      onError: onError,
-    );
+  /// central distributor for socket streams
+  /// limitations:
+  ///     packet responseId matches to single most recent socket, unless it is implemented with socket id
+  //  if sockets implements listen on the transformed stream,
+  //  although the observer pattern is still implemented,
+  //  the check id routine must run for each socket. but a map would not be necessary.
+  //  sync ids is passed to all sockets, alternatively 2 levels of keys
+  void _demux(Packet packet) {
+    print("RX ${packet.bytes.take(4)} ${packet.bytes.skip(4).take(4)} ${packet.bytes.skip(8)}");
+    if (respSocketMap[packet.packetId] case ProtocolSocket socket) {
+      socket.add(packet);
+      print("Socket [${socket.hashCode}] Time: ${socket.timer.elapsedMilliseconds}");
+    } else {
+      handleProtocolException(const ProtocolException('No matching socket'));
+    }
   }
 
   Future<void> trySend(Packet packet) async {
@@ -315,12 +314,12 @@ class ProtocolSocket implements Sink<Packet> {
       // payload parser may throw if invalid packet passes header parser as valid
     } finally {
       // mark input as empty
-      _recved = Completer.sync();
+      _recved = Completer.sync(); // sync completer call parse as soon as complete is called
     }
     return null;
   }
 
-  // pass Packet pointer, ephemeral
+  // pass Packet pointer, ephemeral, full packet view of shared buffer.
   @override
   void add(Packet event) {
     timer.stop();
@@ -330,7 +329,7 @@ class ProtocolSocket implements Sink<Packet> {
     if (!_recved.isCompleted) {
       _recved.complete();
     } else {
-      print('Unexpected Rx');
+      throw const ProtocolException('Unexpected Rx');
     }
   }
 
@@ -375,6 +374,14 @@ class ProtocolSocket implements Sink<Packet> {
   //     await Future.delayed(delay);
   //   }
   // }
+
+  // @visibleForTesting
+  // Stream<(Iterable<int> segmentIds, int? respCode, List<int> values)> streamDebug(Iterable<int> segmentIds) {
+  //   Stopwatch debugStopwatch = Stopwatch()..start();
+  //   final stream = periodicRequest(id, segmentIds, delay: const Duration(milliseconds: 5));
+  //   return stream.map((event) => (event.$1, 0, <int>[for (var i = 0; i < event.$1.length; i++) ((debugStopwatch.elapsedMilliseconds / 1000) * 32767).toInt()]));
+  //   //  (cos(debugStopwatch.elapsedMilliseconds / 1000) * 32767).toInt(),
+  // }
 }
 
 enum ProtocolSyncOptions {
@@ -406,4 +413,105 @@ class ProtocolException implements Exception {
 // abstract interface class ProtocolRequest<T, R> {
 //   PacketIdPayload<T>? get requestId;
 //   PacketIdPayload<R>? get responseId;
+// }
+// pre connected
+// class ProtocolSocketInert implements ProtocolSocket {
+//   ProtocolSocketInert(this.protocol) : packetBufferIn = PacketBuffer(protocol.packetInterface), packetBufferOut = PacketBuffer(protocol.packetInterface);
+
+//   @override
+//   final Protocol protocol;
+//   @override
+//   final PacketBuffer packetBufferIn;
+//   @override
+//   final PacketBuffer packetBufferOut;
+
+//   @override
+//   void add(Packet event) {
+//     // do nothing, inert socket
+//   }
+
+//   @override
+//   void close() {
+//     // do nothing, inert socket
+//   }
+
+//   @override
+//   Stopwatch timer;
+
+//   @override
+//   int waitingOnLockCount;
+
+//   @override
+//   Stream  iterativeRequest<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> requestSlices, {Duration delay = datagramDelay}) {
+
+//   }
+
+//   @override
+//   PacketClass<Packet> get packetInterface => throw UnimplementedError();
+
+//   @override
+//   Stream<(, )> periodicIterativeRequest<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> requestSlices, {Duration delay = datagramDelay}) {
+//     // TODO: implement periodicIterativeRequest
+//     throw UnimplementedError();
+//   }
+
+//   @override
+//   Stream<R?> periodicRequest<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration delay = datagramDelay}) {
+//     // TODO: implement periodicRequest
+//     throw UnimplementedError();
+//   }
+
+//   @override
+//   Stream<R?> periodicUpdate<T, R>(PacketIdRequest<T, R> requestId, T Function() requestArgsGetter, {Duration delay = datagramDelay}) {
+//     // TODO: implement periodicUpdate
+//     throw UnimplementedError();
+//   }
+
+//   @override
+//   Future<PacketSyncId?> ping(covariant PacketSyncId id, [covariant PacketSyncId? respId, Duration timeout = timeoutDefault]) {
+//     // TODO: implement ping
+//     throw UnimplementedError();
+//   }
+
+//   @override
+//   Future<V?> recvResponse<V>(PacketIdRequest<dynamic, V> packetId, {PayloadMeta? reqStateMeta, Duration timeout = rxTimeoutDefault}) {
+//     // TODO: implement recvResponse
+//     throw UnimplementedError();
+//   }
+
+//   @override
+//   Future<PacketSyncId?> recvSync([Duration timeout = rxTimeoutDefault]) {
+//     // TODO: implement recvSync
+//     throw UnimplementedError();
+//   }
+
+//   @override
+//   Future<R?> requestResponse<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration timeout = reqRespTimeoutDefault, ProtocolSyncOptions syncOptions = ProtocolSyncOptions.none}) {
+//     // TODO: implement requestResponse
+//     throw UnimplementedError();
+//   }
+
+//   @override
+//   Future<R?> requestResponseShort<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration? timeout = reqRespTimeoutDefault}) {
+//     // TODO: implement requestResponseShort
+//     throw UnimplementedError();
+//   }
+
+//   @override
+//   Future<PayloadMeta> sendRequest<V>(PacketIdRequest<V, dynamic> packetId, V requestArgs) {
+//     // TODO: implement sendRequest
+//     throw UnimplementedError();
+//   }
+
+//   @override
+//   Future<void> sendSync(PacketSyncId syncId) {
+//     // TODO: implement sendSync
+//     throw UnimplementedError();
+//   }
+
+//   @override
+//   Future<R?> tryRecv<R>(R? Function() parse, [Duration timeout = rxTimeoutDefault]) {
+//     // TODO: implement tryRecv
+//     throw UnimplementedError();
+//   }
 // }

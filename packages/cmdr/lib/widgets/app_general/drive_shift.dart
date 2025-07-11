@@ -3,14 +3,11 @@ import "dart:async";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 
-typedef AsyncValueSetterWithStatus<T> = Future<bool> Function(T value);
-
 class DriveShift extends StatefulWidget {
   const DriveShift({this.onSelect, this.confirmSelected, this.initialSelect = DriveShiftSelect.park, super.key});
 
   final AsyncValueSetter<DriveShiftSelect>? onSelect;
   final AsyncValueGetter<DriveShiftSelect>? confirmSelected; //or use listener
-  // final FutureOr<T> Function()? confirmSelected;
   final DriveShiftSelect initialSelect;
   final Radius radius = const Radius.circular(10.0);
   final double size = 25;

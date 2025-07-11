@@ -94,12 +94,7 @@ class MotProtocolSocket extends ProtocolSocket {
 // Future<int> requestReadVar(int id) => procRequestResponse(MotPacketPayloadId.MOT_PACKET_READ_VAR);
 // Future<int> requestWriteVar(int id, int value) => procRequestResponse(MotPacketPayloadId.MOT_PACKET_WRITE_VAR, {id: value});
 
-// Stream<(Iterable<int> segmentIds, int? respCode, List<int> values)> readVarsStreamDebug(VarReadRequestPayload ids) {
-//   Stopwatch debugStopwatch = Stopwatch()..start();
-//   final stream = periodicRequestSegmented(MotPacketPayloadId.MOT_PACKET_VAR_READ, ids.slices(16), delay: const Duration(milliseconds: 5));
-//   return stream.map((event) => (event.$1, 0, <int>[for (var i = 0; i < event.$1.length; i++) (sin(debugStopwatch.elapsedMilliseconds / 1000) * 32767).toInt()]));
-//   //  (cos(debugStopwatch.elapsedMilliseconds / 1000) * 32767).toInt(),
-// }
+
 
   /// Slices
   /// same input signature, but is not the content sent to the packet

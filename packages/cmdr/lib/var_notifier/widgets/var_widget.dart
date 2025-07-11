@@ -40,86 +40,9 @@ abstract mixin class VarNotifierViewer<V> {
   Stringifier<V> get valueStringifier => varNotifier.varKey.stringify<V>; // can be used to generate value labels for values other than the current value
   bool get isReadOnly => varNotifier.varKey.isReadOnly;
   String? get tip => varNotifier.varKey.tip;
+
+  // ValueSetter<V> get valueSubmitted => cache.eventController.submitByViewAs<V>; // onSubmit. only for updates requesting write and/or indicating user confirmation. using scheduled write
 }
-
-// abstract mixin class VarEventViewer<V> /* implements VarNotifierViewer<V> */ {
-//   const VarEventViewer();
-
-//   VarCacheNotifier get eventController;
-
-//   // VarNotifier<V>? get varNotifier => eventController.varNotifier;
-
-//   void _submitWithCache<V>(V value) => eventController!.submitEntryAs<V>(varNotifier.varKey, value);
-
-//   @protected
-//   ValueNotifier<VarViewEvent?> get eventNotifier => eventController; // for UI triggered updates
-//   ValueSetter<V> get valueSubmitted => eventController.submitByViewAs<V>; // onSubmit. only for updates requesting write and/or indicating user confirmation. using scheduled write
-
-//   // directly return response
-//   // ValueSetter<V> get valueSetter => isConnected ? submitAndWrite : submitByView; // non scheduled
-//   // Future<Null> _asyncSubmitByView(V value) async {
-//   //   submitByView(value);
-//   //   return null;
-//   // }
-//   // // AsyncValueSetter<V> get asyncValueSetter => isConnected ? setAndSend : _setAsFuture;
-//   // Future<S?> Function(V value) get valueResponseSetter => isConnected ? submitAndWrite : _asyncSubmitByView;
-// }
-
-/// resolve if the builder is a generic builder
-///
-// abstract interface class VarBuilder implements StatelessWidget {
-//   factory VarBuilder(VarNotifier varNotifier, Widget Function(VarNotifier) builder) = VarBaseBuilder;
-//   factory VarBuilder.byKey(VarKey varKey, Widget Function(VarNotifier) builder) = VarKeyContextBuilder;
-// }
-
-// class VarBaseBuilder extends StatelessWidget {
-//   VarBaseBuilder(this.varNotifier, this.builder, {super.key});
-//   // const VarBaseBuilder.typed(this.varNotifier, Widget Function<G>(VarNotifier<G>) builder, {super.key}) : builder = builder;
-
-//   final VarNotifier<dynamic> varNotifier;
-
-//   /// May be of type Widget Function<G>(VarNotifier value)
-//   final Widget Function(VarNotifier) builder;
-
-//   // // handle union of Function<G>(VarNotifier) and Function(VarNotifier)
-//   Widget _buildAsGeneric() => varNotifier.varKey.viewType.callWithType(<G>() => (builder as Widget Function<G>(VarNotifier))<G>(varNotifier as VarNotifier<G>));
-//   Widget _build() => builder(varNotifier);
-
-//   Widget Function() get _effectiveBuilder => switch (builder) { Widget Function<G>(VarNotifier) _ => _buildAsGeneric, Widget Function(VarNotifier) _ => _build };
-
-//   late final Widget Function() effectiveBuilder = _effectiveBuilder;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     // return effectiveBuilder();
-//     if (builder case Widget Function<G>(VarNotifier) genericBuilder) {
-//       return varNotifier.varKey.viewType.callWithType(<G>() => genericBuilder<G>(varNotifier as VarNotifier<G>));
-//     } else {
-//       return builder(varNotifier);
-//     }
-//   }
-// }
-
-// class VarBaseBuilder extends StatelessWidget {
-//   VarBaseBuilder(this.varNotifier, this.builder, {super.key});
-
-//   final VarNotifier<dynamic> varNotifier;
-//   final Widget Function(VarNotifier) builder;
-//   @override
-//   Widget build(BuildContext context) => builder(varNotifier);
-// }
-
-// class VarBaseBuilderWithType extends StatelessWidget {
-//   const VarBaseBuilderWithType(this.varNotifier, this.builder, {super.key});
-
-//   final VarNotifier<dynamic> varNotifier;
-//   final Widget Function<G>(VarNotifier value) builder;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return varNotifier.varKey.viewType.callWithType(<G>() => builder<G>(varNotifier as VarNotifier<G>));
-//   }
-// }
 
 class VarKeyBuilder extends StatelessWidget {
   const VarKeyBuilder(this.varKey, this.builder, {this.varCache, super.key});
@@ -130,7 +53,7 @@ class VarKeyBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final varNotifier = varCache?.resolve(varKey) ?? VarContext.ofKey(context, varKey).cacheController.cache.resolve(varKey);
+    final varNotifier = varCache?.resolve(varKey) ?? VarContext.ofKey(context, varKey).repo.cache.resolve(varKey);
     return builder(varNotifier);
   }
 }
@@ -148,7 +71,7 @@ class VarKeyContextBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final varNotifier = VarContext.ofKey(context, varKey).cacheController.cache.resolve(varKey);
+    final varNotifier = VarContext.ofKey(context, varKey).repo.cache.resolve(varKey);
     return builder(varNotifier);
   }
 }
@@ -161,34 +84,22 @@ class VarKeyContextBuilderWithType extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final varNotifier = VarContext.ofKey(context, varKey).cacheController.cache.resolve(varKey);
+    final varNotifier = VarContext.ofKey(context, varKey).repo.cache.resolve(varKey);
     return varKey.viewType.callWithType(<G>() => builder<G>(varNotifier as VarNotifier<G>));
     // return VarBaseBuilderWithType(VarContext.ofKey(context, varKey).cacheController.cache.allocate(varKey), builder);
   }
 }
 
-// combining logic by deferring until build
-// alternatively, use a interface Widget.
-// class VarSuperBuilder extends StatelessWidget {
-//   const VarSuperBuilder({super.key, required this.varNotifier, required this.builder}) : varKey = null;
-//   const VarSuperBuilder.byKey({super.key, required this.varKey, required this.builder}) : varNotifier = null;
-
-//   final VarKey? varKey;
-//   final VarNotifier<dynamic>? varNotifier;
-//   final Widget Function(VarNotifier) builder;
-// //   final VarEventController? eventController;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final effectiveVarNotifier = varNotifier ?? VarContext.ofKey(context, varKey!).cacheController.cache.allocate(varKey!);
-//     return VarBaseBuilder(effectiveVarNotifier, builder);
-//   }
-// }
-
+// generialzed input dialog
 // rebuild on event match, if not included in the target widget
 // allocate Var Controller
 // class VarEventBuilder extends StatelessWidget {
 //   const VarEventBuilder({super.key, required this.eventNotifier, required this.builder, this.child, required this.eventMatch});
+
+//   // final VarNotifier varNotifier;
+//   // final VarCache varCache;
+//   // final VarEventNotifier? eventNotifier; // make this required
+//   // final ValueSetter<VarNotifier>? onSubmitted;
 
 //   // final VarKey varKey;
 //   final VarEventController eventNotifier;
@@ -214,5 +125,65 @@ class VarKeyContextBuilderWithType extends StatelessWidget {
 //       builder: _eventBuilder,
 //       child: builder(context, child), // initialBuild
 //     );
+//   }
+// }
+
+/// resolve if the builder is a generic builder
+class VarBaseBuilder extends StatelessWidget {
+  const VarBaseBuilder(this.varNotifier, this.builder, {super.key});
+  const VarBaseBuilder.typed(this.varNotifier, Widget Function<G>(VarNotifier) builder, {super.key}) : builder = builder;
+
+  final VarNotifier<dynamic> varNotifier;
+
+  /// May be of type Widget Function<G>(VarNotifier value)
+  final Widget Function(VarNotifier) builder;
+
+  @override
+  Widget build(BuildContext context) {
+    if (builder case Widget Function<G>(VarNotifier) builder) {
+      return varNotifier.varKey.viewType.callWithType(<G>() => builder<G>(varNotifier));
+    } else {
+      return builder(varNotifier);
+    }
+  }
+}
+
+// class VarBaseBuilder extends StatelessWidget {
+//   VarBaseBuilder(this.varNotifier, this.builder, {super.key});
+
+//   final VarNotifier<dynamic> varNotifier;
+//   final Widget Function(VarNotifier) builder;
+//   @override
+//   Widget build(BuildContext context) => builder(varNotifier);
+// }
+
+// class VarBaseBuilderWithType extends StatelessWidget {
+//   const VarBaseBuilderWithType(this.varNotifier, this.builder, {super.key});
+
+//   final VarNotifier<dynamic> varNotifier;
+//   final Widget Function<G>(VarNotifier value) builder;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return varNotifier.varKey.viewType.callWithType(<G>() => builder<G>(varNotifier as VarNotifier<G>));
+//   }
+// }
+
+// combining logic by deferring until build
+// alternatively, use a interface Widget.
+// class VarSuperBuilder extends StatelessWidget {
+//   const VarSuperBuilder({super.key, required this.varNotifier, required this.builder}) : varKey = null;
+//   const VarSuperBuilder.byKey({super.key, required this.varKey, required this.builder}) : varNotifier = null;
+//   const VarSuperBuilder.resolve({super.key, required this.varKey, required this.builder}) : varNotifier = null;
+
+//   final VarKey? varKey;
+//   final VarNotifier<dynamic>? varNotifier;
+//   final Widget Function(VarNotifier) builder;
+// //   final VarEventController? eventController;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final effectiveVarNotifier = varNotifier ?? VarContext.ofKey(context, varKey!).cacheController.cache.allocate(varKey!);
+//     return VarBaseBuilder(effectiveVarNotifier, builder);
 //   }
 // }

@@ -13,11 +13,15 @@ export 'package:binary_data/binary_data.dart';
 export '../interfaces/service_io.dart';
 
 part 'var_key.dart';
+// repo
 part 'var_cache.dart';
 part 'var_controller.dart';
 
+///
+///
+/// each retrievable value as a View Model
 // only default status ids need to be overridden
-class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier {
+class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier implements ValueNotifier<V> {
   VarNotifier({
     required this.varKey,
     int Function(int binary)? signExtension,
@@ -27,6 +31,7 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
     List<Enum>? enumRange,
     List<BitField>? bitsKeys,
   }) {
+    // this.signExtension = varKey.signExtension ?? signExtension;
     this.signExtension = signExtension;
     this.viewOfData = viewOfData;
     this.dataOfView = dataOfView;
@@ -35,14 +40,15 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
     this.bitsKeys = bitsKeys;
   }
 
-  //
+  // withType
+  @protected
   VarNotifier.ofKey(this.varKey) : assert(V != dynamic) {
     initReferences();
   }
 
   // derive type from [VarKey]
   factory VarNotifier.of(VarKey varKey) {
-    assert(V == dynamic, 'V must be dynamic');
+    assert(V == dynamic, 'V is determined by VarKey.viewType');
     return varKey.viewType(<G>() => VarNotifier<G>.ofKey(varKey) as VarNotifier<V>);
   }
 
@@ -57,11 +63,6 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   /// as outbound data depending on [dataKey]
   MapEntry<int, int> get dataEntry => MapEntry(dataKey, dataValue);
   (int key, int value) get dataPair => (dataKey, dataValue);
-
-//
-  // alternatively as notifier can update stream
-  // num outputValue = 0; // for output value, not used in VarNotifier
-  // VarLastUpdate lastUpdate = VarLastUpdate.clear;
 
   // final VarReferences references;
   /// Derived from [VarKey] and cached
@@ -85,10 +86,10 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   ////////////////////////////////////////////////////////////////////////////////
   /// Stringify
   ////////////////////////////////////////////////////////////////////////////////
-  String get valueString => valueStringAs<V>();
-
   // stringifyAs
   String valueStringAs<T>() => varKey.stringify<T>(valueAs<T>());
+
+  String get valueString => valueStringAs<V>();
 
   @override
   String toString() => '${describeIdentity(this)}(<$V>$value)($_viewValue)';
@@ -105,12 +106,13 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   // @override
   // void updateStatusByData(int status) {
   //   super.updateStatusByData(status);
+  //    super.commitUserChanges();
   //   isUpdatedByView = false;
   // }
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Proxy with different view conversion
-  // VarNotifier<V1> cloneWith<V1 extends V>({
+  // VarNotifier<V1> proxyWith<V1 extends V>({
   //   int Function(int binary)? signExtension,
   //   ViewOfData? viewOfData,
   //   DataOfView? dataOfView,
@@ -118,18 +120,7 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   //   List<Enum>? enumRange,
   //   List<BitField>? bitsKeys,
   // }) {
-  //   return VarNotifier<V1>(
-  //     varKey: this.varKey,
-  //     signExtension: signExtension ?? this.signExtension,
-  //     viewOfData: viewOfData ?? this.viewOfData,
-  //     dataOfView: dataOfView ?? this.dataOfView,
-  //     numLimits: numLimits ?? this.numLimits,
-  //     enumRange: enumRange ?? this.enumRange,
-  //     bitsKeys: bitsKeys ?? this.bitsKeys,
-  //   ).._viewValue = viewOfData?.call(dataValue) ?? 0; // copy current value
-  //   // ..mergeListeners(this) // copy listeners;
-
-  //   // addListener(listener)
+  //   return VarProxyNotifier<V1>(
   // }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -180,7 +171,6 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // int get dataMin;
   // int get dataMax;
   // final ValueNotifier<num> _valueNotifier;
-  // int get dataKey;
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Config
@@ -237,6 +227,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
 
   // if separating internal and external status
   // bool outOfRange; // value from client out of range
+  // Enum localStatus;
 
   ////////////////////////////////////////////////////////////////////////////////
   /// runtime variables
@@ -282,16 +273,12 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // alternatively mvoe to VarNotifer and wrap update fns
   // or separate output value
   VarLastUpdate lastUpdate = VarLastUpdate.clear;
-
+  //todo
   // num _serverValue = 0;     // Source of truth from server
   // num? _pendingValue;       // User changes (null = synchronized), optionally notifyListeners
   // // Single source of truth: pending takes precedence
   // num get _viewValue => _pendingValue ?? _serverValue;
-
-  // void updateByView(num numValue) {
-  //   _pendingValue = clamp(numValue);
-  //   notifyListeners();
-  // }
+  // set _viewValue(num value) _serverValue = value; update view without outputting to server
 
   // // Inbound data from server/packets
   // void updateByData(int bytesValue) {
@@ -301,6 +288,12 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   //   if (_pendingValue == viewIn)  _pendingValue = null;
   //   // Only notify if effective value changed
   //   if (_pendingValue == null)   notifyListeners();
+  // }
+
+  // by user for output
+  // void updateByViewUser(num numValue) {
+  //   _pendingValue = clamp(numValue);
+  //   notifyListeners();
   // }
 
   // also clear on updateByDataStatus
@@ -329,6 +322,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
 
   set _dataValue(int value) => _viewValue = viewOf(dataValue);
 
+  // performs common conversion on update
   // before sign extension
   void updateByData(int bytesValue) {
     _dataValue = dataOfBinary(bytesValue);
@@ -370,6 +364,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
       const (Enum) => valueAsEnum,
       const (BitStruct) => valueAsBitFields,
       const (String) => valueAsString,
+      // _ when TypeKey<R>().isSubtype<Enum>() => valueAsEnum,
       _ => subtypeOf<R>(_viewValue),
     } as R;
   }
@@ -410,6 +405,13 @@ enum VarLastUpdate { clear, byData, byView }
 
 // replace null for over bounds
 enum VarValueEnum { unknown }
+
+enum VarValueStatus {
+  outOfRange,
+  outOfRangeView,
+  outOfRangeData,
+  // add more as needed
+}
 
 // enum BitFieldDefault with BitField {
 //   unknown(Bitmask(0,64));
@@ -498,23 +500,15 @@ class VarEventNotifier extends ChangeNotifier {
 }
 
 class VarNotifierProxy<V> extends VarNotifier<V> {
-  VarNotifierProxy({
-    required this.source,
-    required super.varKey,
-    int Function(int binary)? signExtension,
-    ViewOfData? viewOfData,
-    DataOfView? dataOfView,
-    ({num min, num max})? numLimits,
-    List<Enum>? enumRange,
-    List<BitField>? bitsKeys,
-  }) : super(
-          signExtension: signExtension,
-          viewOfData: viewOfData,
-          dataOfView: dataOfView,
-          numLimits: numLimits,
-          enumRange: enumRange,
-          bitsKeys: bitsKeys,
-        ) {
+  VarNotifierProxy(
+    this.source, {
+    super.signExtension,
+    super.viewOfData,
+    super.dataOfView,
+    super.numLimits,
+    super.enumRange,
+    super.bitsKeys,
+  }) : super(varKey: source.varKey) {
     source.addListener(onSourceUpdate);
   }
 
@@ -532,6 +526,11 @@ class VarNotifierProxy<V> extends VarNotifier<V> {
   @override
   void addListener(VoidCallback listener) {
     source.addListener(listener);
+  }
+
+  @override
+  void removeListener(VoidCallback listener) {
+    source.removeListener(listener);
   }
 
   @override

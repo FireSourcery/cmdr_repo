@@ -32,6 +32,7 @@ class SerialLink implements Link {
   String? portConfigName;
 
   /// returns true on success, last exception still buffered
+  /// LinkStatus?
   bool connect({String? name, int? baudRate, SerialPortConfig? config}) {
     portConfigName = name ?? portConfigName;
     portConfig = config ?? portConfig;

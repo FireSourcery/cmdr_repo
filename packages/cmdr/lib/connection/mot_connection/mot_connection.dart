@@ -23,11 +23,16 @@ class MotConnection {
   final SerialLink serialLink = SerialLink();
   // final BluetoothLink bluetoothLink = BluetoothLink();
   late final Protocol protocol = Protocol(serialLink, const MotPacketInterface()); //todo empty link for state, nullcheck/isconnected
-  late final MotProtocolSocket general = MotProtocolSocket(protocol);
-  late final MotProtocolSocket stop = MotProtocolSocket(protocol);
-  late final MotProtocolSocket varRead = MotProtocolSocket(protocol);
-  late final MotProtocolSocket varWrite = MotProtocolSocket(protocol);
+  late final MotProtocolSocket _general = MotProtocolSocket(protocol);
+  late final MotProtocolSocket _stop = MotProtocolSocket(protocol);
+  late final MotProtocolSocket _varRead = MotProtocolSocket(protocol);
+  late final MotProtocolSocket _varWrite = MotProtocolSocket(protocol);
   //   final MotProtocolSocket events = MotProtocolSocket(protocol);
+
+  late MotProtocolSocket general = _general;
+  late MotProtocolSocket stop = _stop;
+  late MotProtocolSocket varRead = _varRead;
+  late MotProtocolSocket varWrite = _varWrite;
 
   Link get activeLink => protocol.link;
   bool get isConnected => protocol.link.isConnected;
@@ -36,6 +41,12 @@ class MotConnection {
     serialLink.connect(name: name, baudRate: baudRate);
 
     if (isConnected) protocol.begin();
+
+    // todo no connect state
+    // general = _general;
+    // stop = _stop;
+    // varRead = _varRead;
+    // varWrite = _varWrite;
     return isConnected;
   }
 }

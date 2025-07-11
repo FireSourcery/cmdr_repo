@@ -42,7 +42,7 @@ class VarSelectableBuilder<T extends VarKey> extends StatelessWidget {
 
   static Widget _menuWidgetBuilder(BuildContext context, FlyweightMenu menu, Widget keyWidget) => MenuAnchorOverlay(menuItems: menu.menuItems, child: keyWidget);
 
-  // Widget keyWidgetBuilder(BuildContext _, VarKey value, Widget? __) => VarKeyBuilder(value, builder, varCache: varCache);
+  Widget keyWidgetBuilder(BuildContext _, VarKey value, Widget? __) => VarKeyBuilder(value, builder, varCache: varCache);
 
   final FlyweightMenuSource<T> menuSource;
   final MenuWidgetBuilder<T> menuWidgetBuilder;
@@ -57,7 +57,7 @@ class VarSelectableBuilder<T extends VarKey> extends StatelessWidget {
     return MenuAnchorBuilder(
       menuSource: menuSource,
       initialItem: initialVarKey,
-      menuAnchorBuilder: _menuWidgetBuilder,
+      menuAnchorBuilder: menuWidgetBuilder,
       keyBuilder: keyBuilder.asValueWidgetBuilder,
     );
   }

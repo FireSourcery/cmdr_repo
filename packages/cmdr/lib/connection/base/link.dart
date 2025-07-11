@@ -12,7 +12,7 @@ abstract interface class Link {
   String? get portActiveName;
   Stream<Uint8List> get streamIn;
 
-  // bool connect();
+  // LinkStatus? connect();
   // void disconnect();
 
   /// Protocol Interface

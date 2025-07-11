@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'flyweight_menu.dart';
 
-// Widgets not fully parameterized, defaults/examples, are denoted as _widgets.dart
-
+/// General
 // Menu 'hosts' must wrap MenuAnchor (with menu.menuItems) under MenuSourceContext -> menuItems access menu and its notifier via context
 class FlyweightMenuOverlay<T> extends StatelessWidget {
   const FlyweightMenuOverlay({super.key, required this.menu, this.child, required this.builder});
@@ -41,7 +40,7 @@ class FlyweightMenuButton<T> extends StatelessWidget {
   }
 }
 
-/// Base
+/// Default Widgets
 class MenuAnchorButton extends StatelessWidget {
   const MenuAnchorButton({required this.menuItems, this.icon = const Icon(Icons.more_horiz), super.key});
 
