@@ -94,18 +94,18 @@ class FlyweightMenu<T> extends FlyweightMenuSource<T> with ChangeNotifier implem
   // Never create({ValueSetter<T>? onPressed, ValueSetter<({T newValue, T oldValue})>? onPressedExt}) => throw UnsupportedError('FlyweightMenu cannot be copied');
 }
 
-class FlyweightMenuContextItem<T> {
-  const FlyweightMenuContextItem({
-    required this.context,
-    required this.itemKey,
-  });
+// class FlyweightMenuContextItem<T> {
+//   const FlyweightMenuContextItem({
+//     required this.context,
+//     required this.itemKey,
+//   });
 
-  final BuildContext context;
-  final T? itemKey;
-  void _onPressed() => FlyweightMenuContext.of<T>(context).value = itemKey as T; // calls attached callbacks
-  // FlyweightMenu<S> findMenu(BuildContext context) => FlyweightMenuContext.of<T>(context);
-  // void onPressed(BuildContext context) => findMenu(context).value = this as T; // calls attached callbacks
-}
+//   final BuildContext context;
+//   final T? itemKey;
+//   void _onPressed() => FlyweightMenuContext.of<T>(context).value = itemKey as T; // calls attached callbacks
+//   // FlyweightMenu<S> findMenu(BuildContext context) => FlyweightMenuContext.of<T>(context);
+//   // void onPressed(BuildContext context) => findMenu(context).value = this as T; // calls attached callbacks
+// }
 
 /// [FlyweightMenuItem<T>] - Wrapper around MenuItemButton, replacing onPressed with a callback to the notifier
 /// The callback is unique to each [FlyweightMenu] instance, while the view contents are shared.

@@ -20,7 +20,7 @@ abstract interface class VarIOField extends StatelessWidget {
     VarNotifier<dynamic> varNotifier, {
     VarEventNotifier? eventNotifier,
     VarSingleController? controller,
-    // bool? readOnly,
+    bool? readOnly,
     bool showLabel = true,
     bool showPrefix = true,
     bool showSuffix = true,
@@ -33,6 +33,7 @@ abstract interface class VarIOField extends StatelessWidget {
         varNotifier,
         eventNotifier: eventNotifier,
         controller: controller,
+        readOnly: readOnly,
         showLabel: showLabel,
         showPrefix: showPrefix,
         showSuffix: showSuffix,
@@ -43,11 +44,13 @@ abstract interface class VarIOField extends StatelessWidget {
 
     return varNotifier.varKey.viewType.callWithType(local);
   }
+  // factory VarIOField.withReplacements(IOFieldConfig<V>
 
   factory VarIOField.compact(
     VarNotifier varNotifier, {
     VarEventNotifier? eventNotifier,
     VarSingleController? controller,
+    bool? readOnly,
     bool showLabel = false,
     bool showPrefix = false,
     bool showSuffix = false,
@@ -57,6 +60,7 @@ abstract interface class VarIOField extends StatelessWidget {
     return VarIOField(
       varNotifier,
       eventNotifier: eventNotifier,
+      readOnly: readOnly,
       showLabel: showLabel,
       isDense: isDense,
       showPrefix: showPrefix,
@@ -87,7 +91,14 @@ class _VarIOField<V> extends StatelessWidget implements VarIOField {
 ///
 ///
 class VarIOFieldWithMenu<T extends VarKey> extends StatelessWidget {
-  const VarIOFieldWithMenu({this.initialVarKey, this.varCache, this.eventNotifier, super.key, required this.menuSource});
+  const VarIOFieldWithMenu({
+    this.initialVarKey,
+    this.varCache,
+    this.eventNotifier,
+    super.key,
+    required this.menuSource,
+    // IOFieldConfig ? config,
+  });
 
   final FlyweightMenuSource<T> menuSource;
   final T? initialVarKey;
@@ -149,6 +160,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
     this.varNotifier, {
     this.eventNotifier,
     this.controller,
+    this.readOnly,
     //disableConversion = false,
     this.labelAlignment = FloatingLabelAlignment.start,
     this.showLabel = true,
@@ -168,20 +180,21 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   final bool showPrefix;
   final bool showSuffix;
   final bool? isDense;
+  final bool? readOnly;
 
   // control over whether the parameters from VarNotifier are passed
   @override
   InputDecoration get idDecoration {
     return InputDecoration(
       labelText: (showLabel) ? varNotifier.varKey.label : null,
-      prefixIcon: (showPrefix) ? (!varNotifier.varKey.isReadOnly ? const Icon(Icons.input) : null) : null,
+      prefixIcon: (showPrefix) ? (!isReadOnly ? const Icon(Icons.input) : null) : null,
       suffixText: (showSuffix) ? varNotifier.varKey.suffix : null,
       isDense: isDense,
     );
 
     // return InputDecoration(
     //   labelText: varNotifier.varKey.label,
-    //   prefixIcon: !varNotifier.varKey.isReadOnly ? const Icon(Icons.input) : null,
+    //   prefixIcon: !isReadOnly ? const Icon(Icons.input) : null,
     //   suffixText: varNotifier.varKey.suffix,
     //   isDense: isDense,
     // ).copyWithHide(
@@ -192,7 +205,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   }
 
   @override
-  bool get isReadOnly => varNotifier.varKey.isReadOnly;
+  bool get isReadOnly => readOnly ?? varNotifier.varKey.isReadOnly;
   @override
   Listenable get valueListenable => varNotifier;
   @override
