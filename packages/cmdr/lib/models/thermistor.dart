@@ -64,7 +64,7 @@ class Thermistor {
       : t0 = t0 ?? roomTemperatureKelvin, // passing null inits to default
         rParallel = (rParallel == 0) ? null : rParallel; // passing 0 inits to null
 
-  const Thermistor.detached({required this.rSeries, this.rParallel})
+  const Thermistor.board({required this.rSeries, this.rParallel})
       : b = 0,
         r0 = 0,
         t0 = roomTemperatureKelvin;
@@ -143,7 +143,7 @@ class Thermistor {
   // Thermistor asDetached() => Thermistor.detached(rSeries: rSeries, rParallel: rParallel);
   // Thermistor updateAsDetached({int? r0, double? t0, int? b}) => copyWith(r0: r0, t0: t0, b: b);
 
-  Thermistor copyWithoutCoeffcients() => Thermistor.detached(rSeries: rSeries, rParallel: rParallel);
+  Thermistor copyWithoutCoeffcients() => Thermistor.board(rSeries: rSeries, rParallel: rParallel);
   Thermistor copyWithCoeffcients({int? r0, double? t0, int? b}) => copyWith(r0: r0, t0: t0, b: b);
 
   @override

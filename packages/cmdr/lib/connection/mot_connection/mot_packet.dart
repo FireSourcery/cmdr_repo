@@ -91,7 +91,7 @@ base class MotPacketHeader extends Struct implements PacketHeader {
   @override
   external int lengthField;
   @Uint8()
-  external int flex0Field;
+  external int sequenceField;
   @Uint8()
   external int flex1Field;
   @Uint8()
@@ -107,7 +107,7 @@ base class MotPacketHeader extends Struct implements PacketHeader {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/// SyncHeader
+/// Id/SyncHeader
 /// `[Start, Id]`
 ////////////////////////////////////////////////////////////////////////////////
 @Packed(1)
@@ -229,6 +229,10 @@ final class VarReadRequest extends Struct implements Payload<VarReadRequestValue
   VarReadRequestValues parse(MotPacket header, void stateMeta) {
     return header.payloadAt<Uint16List>(0);
   }
+
+  // VarReadRequestValues parseWithMeta(MotPacket header, void stateMeta) {
+  //   return header.payloadAt<Uint16List>(0);
+  // }
 }
 
 @Packed(1)

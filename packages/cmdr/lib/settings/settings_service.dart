@@ -1,7 +1,8 @@
 import 'setting.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// SharedPreference Service
+// SharedPreferences Service
+// SharedPreferencesRepository
 // Wrap with type parameter get/set and init
 // class SettingsService with ChangeNotifier {
 class SettingsService {
@@ -11,6 +12,7 @@ class SettingsService {
 
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance(); // loads the SharedPreferences cache
   late final SharedPreferences prefs;
+  // final ValueNotifier<Setting> notifier = ValueNotifier<Setting>( );
 
   Future<void> init(/* {String? prefix} */) async => (prefs = await _prefs);
 

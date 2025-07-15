@@ -134,12 +134,13 @@ class FlyweightMenuItem<T> extends StatelessWidget {
   // });
 
   final T? itemKey; // if key is null, the item appears as a static image
-  final Widget child; // the already built MenuItem
+  final Widget child; // the MenuItem from FlyweightMenuSource<T>
 
   // void _onPressed(BuildContext context) => FlyweightMenuContext.of<T>(context).value = itemKey as T; // calls attached callbacks
 
   @override
   Widget build(BuildContext context) {
+    //todo
     final FlyweightMenu<T> menu = FlyweightMenuContext.of<T>(context);
     void onPressed() => menu.value = itemKey as T; // calls attached callbacks
     // use MenuItemButton as a simple button wih callback around the MenuItem already defined

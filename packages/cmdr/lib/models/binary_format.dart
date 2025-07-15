@@ -36,7 +36,7 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
   sign16<Int16, int>(reference: null),
 
   /// keyed types, has per type dependencies
-  // /// alternatively int
+  /// alternatively int
   bits16<Uint16, BitsBase>(reference: null),
   enum16<Uint16, Enum>(reference: null),
   // bits16<Uint16, int>(reference: null),

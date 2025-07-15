@@ -73,7 +73,6 @@ abstract class SettingTypedWidget extends StatelessWidget {
     // }
     // return setting.callWithType(<G>() => SettingTextField<G>(setting: setting as Setting<G>, settingsController: settingsController) as SettingTextField<T>);
 
-    // convenience for passing parameters
     _SettingTypedWidget<V> local<V>() {
       final config = IOFieldConfig<V>(
         valueListenable: settingsController,
