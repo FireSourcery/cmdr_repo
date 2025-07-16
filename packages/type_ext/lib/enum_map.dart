@@ -1,10 +1,7 @@
-import 'package:meta/meta.dart';
-
-import 'package:type_ext/type_ext.dart';
-
 import 'basic_types.dart';
-export 'basic_types.dart';
 import 'index_map.dart';
+
+export 'basic_types.dart';
 export 'index_map.dart';
 
 /// [EnumMap]

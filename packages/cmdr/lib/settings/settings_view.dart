@@ -60,7 +60,7 @@ class SettingWidgetsList extends StatelessWidget {
   }
 }
 
-// auto typed IOField
+// auto typed IOField + others
 abstract class SettingTypedWidget extends StatelessWidget {
   // const SettingTypedWidget._({required this.setting, required this.settingsController, super.key});
   // final Setting setting;
@@ -194,6 +194,7 @@ class _SettingTypedWidget<V> extends StatelessWidget implements SettingTypedWidg
 //   }
 // }
 
+/// move to io field
 // class SettingRadioTile extends SettingTypedWidget<Enum> {
 //   const SettingRadioTile({required super.setting, required super.settingsController, super.key}) : super._();
 

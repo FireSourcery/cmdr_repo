@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 /// select based on provided functions
-mixin StringifierMixin<T> {
+mixin StringifierSelect<T> {
   // ValueGetter<T?> get valueGetter;
   // ValueGetter<String>? get valueStringGetter;
   // Stringifier<T>? get valueStringifier;

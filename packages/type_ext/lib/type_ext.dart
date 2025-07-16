@@ -4,3 +4,5 @@ export "enum_map.dart";
 export "enum_types.dart";
 export "index_map.dart";
 export "struct.dart";
+export "slice.dart";
+export "property.dart";

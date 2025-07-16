@@ -1,5 +1,4 @@
 import 'package:type_ext/enum_map.dart';
-export 'package:type_ext/enum_map.dart';
 
 import '../word/word_struct.dart';
 

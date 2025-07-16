@@ -6,6 +6,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' hide BitField;
 
 import 'package:binary_data/binary_data.dart';
+import 'package:type_ext/basic_types.dart';
 import '../interfaces/service_io.dart';
 import '../models/binary_format.dart';
 

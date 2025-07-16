@@ -54,7 +54,11 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
   // default by assignment, initialize const using list literal
   const IndexMap._(this._keysReference, this._valuesBuffer) : assert(_keysReference.length == _valuesBuffer.length);
 
-  /// constructors pass original keys, concrete class cannot use getter, do not derive from Map.keys
+  IndexMap._assert(this._keysReference, this._valuesBuffer)
+      : assert(_keysReference.indexed.every((e) => e.$1 == e.$2.index), 'Keys must have index property'),
+        assert(_valuesBuffer.length == _keysReference.length, 'Values buffer must match keys length');
+
+  /// constructors pass original keys, do not derive from Map.keys
   // a new values buffer list is allocated for a new map
 
   IndexMap.of(List<K> keys, Iterable<V> values) : this._(keys, List<V>.of(values, growable: false));
@@ -68,7 +72,7 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
         _valuesBuffer = List.from((IndexMap<K, V?>.filled(keys, null)..addEntries(entries))._valuesBuffer);
 
   // default copyFrom implementation
-  IndexMap.fromBase(List<K> keys, IndexMap<K, V?> state) : this._(state.keys, List<V>.from(state.values, growable: false));
+  IndexMap.fromBase(List<K> keys, FixedMap<K, V?> state) : this._(keys, List<V>.from(state.values, growable: false));
 
   // IndexMap.castBase(IndexMap<K, V> state) : this._(state._keysReference, state._valuesBuffer);
 
@@ -78,6 +82,9 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
 
   @override
   List<K> get keys => _keysReference;
+  @override
+  List<V> get values => _valuesBuffer;
+
   @override
   V operator [](covariant K key) => _valuesBuffer[key.index]!;
   @override

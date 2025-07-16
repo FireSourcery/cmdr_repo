@@ -1,13 +1,12 @@
-import 'dart:collection';
-
 import 'basic_types.dart';
 
+// callIfNotNull
 extension CallOnNullAsNull on Function {
-  // callIfNotNull
-  // R? callOrNull<T, R>(T? arg) => switch (arg) { T value => this(value), null => null };
+  // callOnNullable
   R? callOrNull<R>(Object? input, [R Function()? onNull]) => (input != null) ? this(input) : null;
 }
 
+// existsThen, isThen
 extension IsThen<T extends Object?> on T? {
   /// Executes the given function if the value is non-null.
   ///
@@ -40,18 +39,17 @@ extension IterableIntExtensions on Iterable<int> {
   int indexOfSequence(Iterable<int> match) => String.fromCharCodes(this).indexOf(String.fromCharCodes(match));
 }
 
-extension RecordSlices<T extends Record> on T {
-  Iterable<T> slices(T Function(int start, int end) slicer, int totalLength, int sliceLength) => Slicer(slicer, totalLength).slices(sliceLength);
-}
+// extension ReverseMap<T> on Iterable<T> {
+//   // Map<V, T> asMapWith<V>(V Function(T) mappedValueOf) {
+//   Map<V, T> _asReverseMap<V>(V Function(T) mappedValueOf) {
+//     return Map.unmodifiable(<V, T>{for (var value in this) mappedValueOf(value): value});
+//   }
 
-extension MapExt<K, V extends Object> on Map<K, V> {
-  Iterable<V> eachOf(Iterable<K> keys) => keys.map<V?>((e) => this[e]).nonNulls;
-  Iterable<V> having(PropertyFilter<K>? property) => eachOf(keys.havingProperty(property));
-}
-
-extension ReverseMap<T> on Iterable<T> {
-  // Map<V, T> asMapWith<V>(V Function(T) mappedValueOf) {
-  Map<V, T> asReverseMap<V>(V Function(T) mappedValueOf) {
-    return Map.unmodifiable(<V, T>{for (var value in this) mappedValueOf(value): value});
-  }
-}
+//   Map<V, T> asReverseMap<V>([V Function(T)? mappedValueOf]) {
+//     if (mappedValueOf == null) {
+//       return (this as List<T>).asMap();
+//     } else {
+//       return _asReverseMap(mappedValueOf);
+//     }
+//   }
+// }

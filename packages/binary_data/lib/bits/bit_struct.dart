@@ -168,7 +168,7 @@ abstract class ConstBitStruct<K extends BitField> extends BitStructBase<K> {
   set bits(Bits value) => throw UnsupportedError('Cannot modify unmodifiable');
 }
 
-// alternatively, wrap for combined const and mutable
+/// alternatively, wrap for combined const and mutable
 // abstract class BitStructBase1<K extends BitField> extends BitsBase with MapBase<K, int>, BitFieldMap<K>, BitStruct<K> implements BitStruct<K> {
 //   const BitStructBase1(this.bitData);
 //   const BitStructBase1.initalizer(BitsInitializer this.bitData);
