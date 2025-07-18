@@ -1,13 +1,13 @@
 name: cmdr_monorepo
 description: "Monorepo for the cmdr package and its dependencies."
 version: 0.0.1
-homepage:
+homepage: https://github.com/FireSourcery/cmdr
 
 # publish_to: 'none'
 
 environment:
-  sdk: ^3.4.0
-  flutter: ">=1.17.0"
+  sdk: ^3.8.0
+  flutter: ^3.32.0
 
 dependencies:
   flutter:

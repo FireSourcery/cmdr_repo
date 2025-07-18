@@ -26,7 +26,7 @@ Handling files - config, firmware...
 
 ## Usage
 
-Widgets not fully parameterized, defaults/examples, are denoted as _widgets.dart
+Widgets partially parameterized, defaults/examples, are denoted as _widgets.dart
  
  
 

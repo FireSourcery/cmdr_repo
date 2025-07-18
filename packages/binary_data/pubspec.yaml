@@ -6,7 +6,7 @@ homepage: https://github.com/FireSourcery/cmdr/tree/main/packages/binary_data
 publish_to: "none"
 
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.8.0
 
 dependencies:
   collection: ^1.18.0
