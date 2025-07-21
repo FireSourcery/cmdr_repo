@@ -1,6 +1,5 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
-export 'package:meta/meta.dart';
 
 /// Bits - Bitwise operations on [int]
 /// function of a single number, object methods over top level math functions
@@ -11,7 +10,7 @@ extension type const Bits(int _bits) implements int {
   /// general case
   Bits.ofPairs(Iterable<(Bitmask, int)> pairs) : _bits = const Bits.allZeros().withEach(pairs);
 
-  // Bits.ofIterables(Iterable<Bitmask> keys, Iterable<int> values) : this.ofPairs(Iterable.generate(keys.length, (index) => (keys.elementAt(index), values.elementAt(index))));
+  // Bits.ofIterables(Iterable<Bitmask> keys, Iterable<int> values)
 
   Bits.ofLists(List<Bitmask> keys, List<int> values) : this.ofPairs(Iterable.generate(keys.length, (index) => (keys.elementAt(index), values.elementAt(index))));
   // Iterable.generate assert(keys.length == values.length),
@@ -37,13 +36,14 @@ extension type const Bits(int _bits) implements int {
   bool get isNotZero => (_bits != 0);
   bool get isZero => (_bits == 0);
 
-  int _clear(int bitmask) => this & ~bitmask; // clear bits
-  int _fill(int bitmask) => this | bitmask; // fill bits
-  int _applyOff(int bitmask, int shift) => (this & bitmask) >>> shift; // get as shifted back
-  int _applyOn(int bitmask, int shift, int value) => (value << shift) & bitmask; // get as masked
-  int _modify(int bitmask, int shift, int value) => _clear(this) | _applyOn(bitmask, shift, value); // ready for write back
-  // int read(Bitmask mask) => _applyOff;
-  // int modify(Bitmask mask, int value) => _modify ;
+  // int _clear(int bitmask) => this & ~bitmask; // clear bits
+  // int _fill(int bitmask) => this | bitmask; // fill bits
+  // int _applyOff(int bitmask, int shift) => (this & bitmask) >>> shift; // get as shifted back
+  // int _applyOn(int bitmask, int shift, int value) => (value << shift) & bitmask; // get as masked
+  // int _modify(int bitmask, int shift, int value) => _clear(this) | _applyOn(bitmask, shift, value); // ready for write back
+
+  // // int read(Bitmask mask) => _applyOff;
+  // // int modify(Bitmask mask, int value) => _modify ;
 
   int getBits(Bitmask mask) => mask.applyOff(this);
   Bits withBits(Bitmask mask, int value) => mask.modify(this, value) as Bits;
@@ -88,7 +88,7 @@ extension BitsOfInt on int {
 class Bitmask {
   const Bitmask._(this.bitmask, this.shift, this.width);
   const Bitmask(this.shift, this.width) : bitmask = ((1 << width) - 1) << shift;
-// int bitmask(int shift, int width) => ((1 << width) - 1) << shift;
+  // int bitmask(int shift, int width) => ((1 << width) - 1) << shift;
 
   const Bitmask.bits(int shift, int width) : this(shift, width);
   const Bitmask.bit(int index) : this(index, 1);
@@ -114,7 +114,7 @@ class Bitmask {
 }
 
 extension type const Bitmasks(Iterable<Bitmask> bitmasks) implements Iterable<Bitmask> {
-  Bitmasks.fromWidths(Iterable<int> widths) : bitmasks = Iterable.generate(widths.length, (index) => Bitmask(widths.take(index).sum, widths.elementAt(index)));
+  Bitmasks.fromWidths(Iterable<int> widths) : bitmasks = widths.mapIndexed((index, width) => Bitmask(widths.take(index).sum, width));
 }
 
 extension BitmasksMethods on Iterable<Bitmask> {

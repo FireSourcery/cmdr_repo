@@ -31,3 +31,6 @@ dev_dependencies:
   melos: ^6.2.0
   lints: ^4.0.0
 # flutter:
+
+formatter:
+  trailing_commas: preserve

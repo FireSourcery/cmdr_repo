@@ -41,7 +41,7 @@ extension EnumMapByName<K extends Enum, V> on Map<K, V> {
   /// Named Values
   ////////////////////////////////////////////////////////////////////////////////
   // String name, value pairs
-  Iterable<(String name, V value)> get namedValues => keys.map((e) => (e.name, this[e] as V));
+  // Iterable<(String name, V value)> get namedValues => keys.map((e) => (e.name, this[e] as V));
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Buffer Case -
@@ -85,6 +85,7 @@ extension EnumMapByName<K extends Enum, V> on Map<K, V> {
 }
 
 extension EnumNamedValues<K extends Enum, V> on Iterable<MapEntry<K, V>> {
+  // on entries better fit after selection
   Iterable<(String name, MapEntry<K, V> entry)> get named => map((e) => (e.key.name, e));
   Iterable<(String name, V value)> get namedValues => map((e) => (e.key.name, e.value));
 }
@@ -99,3 +100,10 @@ class EnumProxyMap<K extends Enum, V> = ProxyIndexMap<K, V> with EnumMap<K, V>;
 // abstract interface class SerializableKey<V> implements Enum, TypeKey<V> {}
 
 // typedef SerializableData = Map<SerializableKey<dynamic>, Object?>;
+
+// abstract mixin class Serializable<V> implements Map<Enum, V> {
+//   const Serializable();
+  // List<K> get keys; // Enum.values
+//    V operator [](covariant K key);
+//   void operator []=(covariant K key, V value);
+// }

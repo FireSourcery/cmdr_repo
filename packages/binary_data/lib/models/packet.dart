@@ -10,7 +10,7 @@ export '../bytes/byte_struct.dart';
 // Abstract factory pattern
 // effectively Packet subtype encapsulated
 //  values available without a Packet instance, over prototype object
-// abstract mixin class PacketClass<T extends Packet> implements ByteStructClass<T, ByteField>  {
+// abstract mixin class PacketClass<T extends Packet> implements ByteStruct <T, ByteField>  {
 abstract interface class PacketClass<T extends Packet> {
   // const for each packet instance
   // can implement in PacketId for per packet behavior
@@ -28,6 +28,7 @@ abstract interface class PacketClass<T extends Packet> {
   PacketSyncId get abort;
 
   PacketId? idOf(int intId);
+  // PacketIdCaster get idClass;
 
   /// Header Definition
   /// defined position, relative to `packet`.
@@ -77,8 +78,7 @@ abstract class Packet {
   // per instance
   // pointer to a buffer, immutable view/length
   // mutable view use PacketBuffer
-  // Holds offset, not directly retain ByteBuffer, to allow packets parts to be defined relatively
-  final ByteStruct packetData;
+  final ByteData packetData;
 
   Uint8List get bytes => Uint8List.sublistView(packetData);
 
@@ -124,9 +124,8 @@ abstract class Packet {
 
   /// using ffi NativeType for signature types only
   /// with range check
-  List<int> payloadAt<R extends TypedData>(int byteOffset, [int? end]) => payload.asIntListOrEmpty<R>(byteOffset, end);
-
-  // List<int> payloadAt1<R extends TypedDataList<int>>([int byteOffset = 0, int? length]) => packetData.arrayOrEmptyAt<R>(byteOffset + payloadIndex);
+  // List<int> payloadAt<R extends TypedData>(int byteOffset) => payload.asIntListOrEmpty<R>(byteOffset );
+  List<int> payloadAt<R extends TypedDataList<int>>([int byteOffset = 0, int? length]) => packetData.arrayOrEmptyAt<R>(byteOffset + payloadIndex);
 
   int payloadWordAt<R extends NativeType>(int byteOffset) => payloadWords.wordAt<R>(byteOffset, packetClass.endian);
   // throws if header parser fails, length reports lesser value, while checksum passes
@@ -219,7 +218,10 @@ abstract class Packet {
   ////////////////////////////////////////////////////////////////////////////////
   // use shorter type, casting as longer header on smaller bytes will throw. optionally use field offset
   PacketId? get packetId => packetClass.idOf(asSync.idField); // idOf(idFieldPart.fieldValue(headerWords));
-  PacketSyncId? parseSyncId() => switch (packetId) { PacketSyncId syncId => syncId, _ => null };
+  PacketSyncId? parseSyncId() => switch (packetId) {
+    PacketSyncId syncId => syncId,
+    _ => null,
+  };
   int get parsePayloadLength => asHeader.lengthField - packetClass.headerLength; // until casting is available
 
   /// for valueOrNull from header status
@@ -251,10 +253,22 @@ abstract class Packet {
   bool? get isChecksumFieldValid => checksumFieldOrNull.ifNonNull(isValidChecksum); // assert(length == lengthFieldOrNull), isPacketComplete == true
 
   /// derived values using field offset + size
-  PacketId? get packetIdOrNull => switch (idFieldOrNull) { int value => packetClass.idOf(value), null => null }; // null if not found or invalid..
-  int? get packetLengthOrNull => switch (packetIdOrNull) { PacketSyncId() => packetClass.syncHeaderLength, PacketId() => lengthFieldOrNull, null => null };
+  // null if not found or invalid..
+  PacketId? get packetIdOrNull => switch (idFieldOrNull) {
+    int value => packetClass.idOf(value),
+    null => null,
+  };
 
-  bool get isPacketComplete => switch (packetLengthOrNull) { int value => (length >= value), null => false };
+  int? get packetLengthOrNull => switch (packetIdOrNull) {
+    PacketSyncId() => packetClass.syncHeaderLength,
+    PacketId() => lengthFieldOrNull,
+    null => null,
+  };
+
+  bool get isPacketComplete => switch (packetLengthOrNull) {
+    int value => (length >= value),
+    null => false,
+  };
 
   ////////////////////////////////////////////////////////////////////////////////
   /// [Payload]
@@ -299,6 +313,7 @@ typedef PacketHeaderCaster = PacketHeader Function(TypedData typedData);
 // typedef PacketHeaderCaster<P extends PacketHeader> = P Function(TypedData typedData);
 
 /// Minimal header
+/// ControlChar
 abstract interface class PacketIdHeader {
   int get startField;
   int get idField;
@@ -439,10 +454,10 @@ class PacketBuffer<T extends Packet> extends ByteStructBuffer<T> {
 /// PacketIdFactory
 class PacketIdCaster {
   PacketIdCaster({required Iterable<List<PacketId>> idLists, required List<PacketSyncId> syncIds})
-      : _lookUpMap = Map<int, PacketId>.unmodifiable({
-          for (final idList in idLists)
-            for (final id in idList) id.intId: id,
-        });
+    : _lookUpMap = Map<int, PacketId>.unmodifiable({
+        for (final idList in idLists)
+          for (final id in idList) id.intId: id,
+      });
 
   final Map<int, PacketId> _lookUpMap;
 

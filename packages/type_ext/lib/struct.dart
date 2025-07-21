@@ -27,6 +27,9 @@ typedef DataStruct<K extends Field, V extends Object?> = Structure<K, V>;
 // Field may use a type parameter other than V, used to determine the value of V
 // always wrap a single Object, can implement as extension type when better support of abstract methods/override is available
 // paste map mixin for 1 part mixin
+
+// notes: extension type StructView<K extends Field, V>(Object _this) more closely resembles direct memory mapping with associated methods,
+// but does not allow implementation of additional interfaces, redeclare keys rather then override may cause complications.
 abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>  */ {
   const Structure();
 

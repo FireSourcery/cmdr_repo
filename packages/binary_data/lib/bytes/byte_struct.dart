@@ -12,14 +12,14 @@ export 'typed_data_buffer.dart';
 /// [ByteStruct] is a [TypedData] with keyed access to fields.
 /// [TypedData] + [] Map operators returning [int]
 /// keyed view
-///   mixin keyed access for serilization map
-typedef ByteStruct = ByteData; // temp
-
-abstract mixin class _ByteStruct<K extends ByteField<NativeType>> implements Structure<K, int> {
-  const _ByteStruct();
-//  factory _ByteStruct._(this.structData);
-//  factory _ByteStruct.origin(ByteBuffer bytesBuffer, [int offset = 0, int? length]) : structData = ByteStruct(bytesBuffer.asByteData(offset, length));
-//  factory _ByteStruct(TypedData typedData, [int offset = 0, int? length]) : structData = ByteStruct(ByteData.sublistView(typedData, offset, offset + (length ?? 0)));
+///   mixin keyed access for serialization map
+///
+/// Wrapper over extension type. see [Structure]
+abstract mixin class ByteStruct<K extends ByteField<NativeType>> implements Structure<K, int> {
+  const ByteStruct();
+  //  factory _ByteStruct._(this.structData);
+  //  factory _ByteStruct.origin(ByteBuffer bytesBuffer, [int offset = 0, int? length]) : structData = ByteStruct(bytesBuffer.asByteData(offset, length));
+  //  factory _ByteStruct(TypedData typedData, [int offset = 0, int? length]) : structData = ByteStruct(ByteData.sublistView(typedData, offset, offset + (length ?? 0)));
 
   // field access implemented by Structure
   List<K> get keys;
@@ -27,9 +27,11 @@ abstract mixin class _ByteStruct<K extends ByteField<NativeType>> implements Str
   // List<K> get fields;
 
   // handle Array access
-  // only primitive types are keyed (and included in String serialization). array sizes individual define by subclass. e.g. payload
+  // only primitive types are keyed (and included in serialization). array sizes individual define by subclass. e.g. payload
   // handled with extension on bytedata
   ByteData get byteData; // ByteData as base type of TypedData for immediate keyed access
+
+  // final ByteData byteData;
 
   int get length => byteData.lengthInBytes;
 
@@ -40,6 +42,7 @@ abstract mixin class _ByteStruct<K extends ByteField<NativeType>> implements Str
   // V getAs<R extends ByteStruct, V>(ByteStructCaster<R> caster, [dynamic  stateMeta]) => caster(byteData).parse(this, stateMeta);
 }
 
+/// Typed Offset
 abstract mixin class ByteField<V extends NativeType> implements TypedField<V>, Field<int> {
   const factory ByteField(int offset) = _ByteField<V>;
 
@@ -48,6 +51,11 @@ abstract mixin class ByteField<V extends NativeType> implements TypedField<V>, F
   int getIn(ByteData byteData) => byteData.wordAt<V>(offset);
   @override
   void setIn(ByteData byteData, int value) => byteData.setWordAt<V>(offset, value);
+
+  // @override
+  // int getIn(ByteStruct struct) => struct.byteData.wordAt<V>(offset);
+  // @override
+  // void setIn(ByteStruct struct, int value) => struct.byteData.setWordAt<V>(offset, value);
 
   // not yet replaceable
   @override
@@ -63,21 +71,19 @@ class _ByteField<V extends NativeType> with TypedField<V>, ByteField<V> {
 
   @override
   final int offset;
-
-  @override
-  int get index => throw UnimplementedError();
 }
 
+/// T is [ByteStruct] or [ffi.Struct]
+typedef TypedDataCaster<T> = T Function(TypedData typedData);
 // typedef StructCaster<T> = T Function(TypedData typedData);
+// typedef StructCreator<T> = T Function([TypedData typedData]);
 
 /// buffer type
 /// for partial view
 // T as ffi.Struct caster or ByteStruct caster
 // wrapper around ffi.Struct or extend ByteStructBase
 class ByteStructBuffer<T> extends TypedDataBuffer {
-  ByteStructBuffer._(super._bufferView, this.structCaster)
-      : bufferAsStruct = structCaster(_bufferView),
-        super.of();
+  ByteStructBuffer._(super._bufferView, this.structCaster) : bufferAsStruct = structCaster(_bufferView), super.of();
 
   // caster for persistent view
   ByteStructBuffer.caster(TypedDataCaster<T> structCaster, int size) : this._(Uint8List(size), structCaster);
@@ -92,7 +98,8 @@ class ByteStructBuffer<T> extends TypedDataBuffer {
   final TypedDataCaster<T> structCaster; // need to retain this?
 
   // check bounds with struct class
-  T get viewAsStruct => structCaster(viewAsBytes); // try partial view
+  // try partial view
+  T get viewAsStruct => structCaster(viewAsBytes);
 
   /// `view as ByteStruct`
   /// view as `length available` in buffer, maybe a partial or incomplete view
@@ -111,8 +118,6 @@ class ByteStructBuffer<T> extends TypedDataBuffer {
 ////////////////////////////////////////////////////////////////////////////////
 ///
 ////////////////////////////////////////////////////////////////////////////////
-// typedef ByteStructCreator<T> = T Function([TypedData typedData]);
-// typedef ByteStructCaster<T> = T Function(TypedData typedData);
 
 // Factory
 // class variables, handler, config

@@ -26,16 +26,17 @@ abstract mixin class TypedField<T extends NativeType> {
   /// [WordStruct/BitStruct]
   // Bitmask asBitmask() => Bitmask.bytes(offset, size);
   // Bitmask bitmaskOf<T extends NativeType>(int offset) => Bitmask.bytes(offset, _sizeOf<T>());
+  //  int ofBits(Bits bits) =>  bits.getInt(offset, size);
 
   /// [ByteStruct]
   // call passing T
   // Although handling of keyed access is preferable in the data source class.
   // T must handled in it's local scope. No type inference when passing `Field` to ByteData
-  int getWord(ByteData byteData) => byteData.wordAt<T>(offset);
-  void setWord(ByteData byteData, int value) => byteData.setWordAt<T>(offset, value);
-  bool testWordBoundsOf(ByteData byteData) => end <= byteData.lengthInBytes;
+  // int getWord(ByteData byteData) => byteData.wordAt<T>(offset);
+  // void setWord(ByteData byteData, int value) => byteData.setWordAt<T>(offset, value);
+  // bool testWordBoundsOf(ByteData byteData) => end <= byteData.lengthInBytes;
 
-//
+  //
   // int? getWordOrNull(ByteData byteData) => byteData.wordOrNullAt<T>(offset);
   // bool setWordOrNot(ByteData byteData, int value) => byteData.setWordOrNotAt<T>(offset, value);
 
@@ -64,7 +65,7 @@ int _sizeOf<T extends NativeType>() {
   };
 }
 
-extension GenericTypedWord on ByteData {
+extension ByteDataTypedWord on ByteData {
   /// valueAt by type, alternatively specify sign and size
   /// throws range error
   int wordAt<R extends NativeType>(int byteOffset, [Endian endian = Endian.little]) {
@@ -113,8 +114,6 @@ extension GenericTypedWord on ByteData {
 //   int get offset;
 //   int get size;
 //   int get end => offset + size;
-
-//   // List<int> arrayOf<R extends TypedData>(TypedData typedList) => typedList.asIntListOrEmpty<R>(offset, size);
 // }
 
 // class Part {

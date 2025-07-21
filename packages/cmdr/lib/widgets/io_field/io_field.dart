@@ -14,10 +14,10 @@ abstract mixin class IOField<T> implements Widget {
       IOFieldConfig<Enum>() => IOFieldMenu<T>.config(config),
       IOFieldConfig<String>(valueEnumRange: null) => IOFieldText<T>.config(config),
       IOFieldConfig<bool>(:final boolStyle) => switch (boolStyle) {
-          IOFieldBoolStyle.textMenu => IOFieldMenu<T>.config(config),
-          IOFieldBoolStyle.latchingSwitch => IOFieldSwitch(config as IOFieldConfig<bool>) as IOField<T>,
-          IOFieldBoolStyle.momentaryButton => IOFieldButton(config as IOFieldConfig<bool>) as IOField<T>,
-        },
+        IOFieldBoolStyle.textMenu => IOFieldMenu<T>.config(config),
+        IOFieldBoolStyle.latchingSwitch => IOFieldSwitch(config as IOFieldConfig<bool>) as IOField<T>,
+        IOFieldBoolStyle.momentaryButton => IOFieldButton(config as IOFieldConfig<bool>) as IOField<T>,
+      },
       _ => IOFieldReader<T>.config(config),
     };
   }
@@ -33,11 +33,12 @@ abstract mixin class IOField<T> implements Widget {
   factory IOField.withSlider(IOFieldConfig<T> config, {Key? key}) {
     assert(config.valueNumLimits != null);
     return switch (T) {
-      const (int) => IOFieldWithSlider<int>(config as IOFieldConfig<int>),
-      const (double) => IOFieldWithSlider<double>(config as IOFieldConfig<double>),
-      const (num) => IOFieldWithSlider<num>(config as IOFieldConfig<num>),
-      _ => throw TypeError(),
-    } as IOField<T>;
+          const (int) => IOFieldWithSlider<int>(config as IOFieldConfig<int>),
+          const (double) => IOFieldWithSlider<double>(config as IOFieldConfig<double>),
+          const (num) => IOFieldWithSlider<num>(config as IOFieldConfig<num>),
+          _ => throw TypeError(),
+        }
+        as IOField<T>;
   }
 
   // factory IOField.withToggle(IOFieldConfig<bool> config, {Key? key}) {
@@ -123,7 +124,7 @@ class IOFieldConfig<T> {
     this.boolStyle = IOFieldBoolStyle.latchingSwitch,
   }) : assert(!((T == num || T == int || T == double) && (valueNumLimits == null && valueEnumRange == null)));
 
-  final InputDecoration idDecoration;
+  final InputDecoration idDecoration; // using input decoration to hold label fields
   final bool isReadOnly;
   final String tip;
 
@@ -192,7 +193,7 @@ class IODecorator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var effectiveDecoration = decoration;
+    InputDecoration effectiveDecoration = decoration;
 
     if (isError) {
       final theme = Theme.of(context).inputDecorationTheme;
@@ -212,25 +213,16 @@ class IODecorator extends StatelessWidget {
 
 /// Updates on listenable change only, no user input
 class IOFieldReader<T> extends StatelessWidget with _IOFieldStringBox<T> implements IOField<T> {
-  const IOFieldReader({
-    super.key,
-    required this.decoration,
-    required this.listenable,
-    required this.valueGetter,
-    this.valueStringGetter,
-    this.valueStringifier,
-    this.errorGetter,
-    this.tip = '',
-  });
+  const IOFieldReader({super.key, required this.decoration, required this.listenable, required this.valueGetter, this.valueStringGetter, this.valueStringifier, this.errorGetter, this.tip = ''});
 
   IOFieldReader.config(IOFieldConfig<T> config, {super.key})
-      : listenable = config.valueListenable,
-        decoration = config.idDecoration,
-        valueGetter = config.valueGetter,
-        tip = config.tip,
-        errorGetter = config.errorGetter,
-        valueStringGetter = config.valueStringGetter,
-        valueStringifier = config.valueStringifier;
+    : listenable = config.valueListenable,
+      decoration = config.idDecoration,
+      valueGetter = config.valueGetter,
+      tip = config.tip,
+      errorGetter = config.errorGetter,
+      valueStringGetter = config.valueStringGetter,
+      valueStringifier = config.valueStringifier;
 
   final Listenable listenable;
   final ValueGetter<T?> valueGetter;
@@ -241,11 +233,7 @@ class IOFieldReader<T> extends StatelessWidget with _IOFieldStringBox<T> impleme
   final Stringifier<T>? valueStringifier;
 
   Widget builder(BuildContext context, Widget? child) {
-    return IODecorator(
-      decoration: decoration,
-      isError: errorGetter?.call() ?? false,
-      child: Text(_effectiveValueStringGetter(), maxLines: 1),
-    );
+    return IODecorator(decoration: decoration, isError: errorGetter?.call() ?? false, child: Text(_effectiveValueStringGetter(), maxLines: 1));
   }
 
   @override
@@ -258,7 +246,14 @@ class IOFieldReader<T> extends StatelessWidget with _IOFieldStringBox<T> impleme
 typedef IOFieldNum = IOFieldText<num>;
 
 extension on num {
-  R to<R>() => switch (R) { const (int) => toInt(), const (double) => toDouble(), const (num) => this, _ => throw TypeError() } as R;
+  R to<R>() =>
+      switch (R) {
+            const (int) => toInt(),
+            const (double) => toDouble(),
+            const (num) => this,
+            _ => throw TypeError(),
+          }
+          as R;
 }
 
 /// T == num or String
@@ -278,15 +273,15 @@ class IOFieldText<T> extends StatefulWidget with _IOFieldStringBox<T> implements
   }) : assert(!((T == num || T == int || T == double) && (numLimits == null)));
 
   IOFieldText.config(IOFieldConfig<T> config, {super.key})
-      : listenable = config.valueListenable,
-        decoration = config.idDecoration,
-        valueGetter = config.valueGetter,
-        valueSetter = config.valueSetter,
-        tip = config.tip,
-        numLimits = config.valueNumLimits,
-        errorGetter = config.errorGetter,
-        valueStringifier = config.valueStringifier,
-        valueStringGetter = config.valueStringGetter;
+    : listenable = config.valueListenable,
+      decoration = config.idDecoration,
+      valueGetter = config.valueGetter,
+      valueSetter = config.valueSetter,
+      tip = config.tip,
+      numLimits = config.valueNumLimits,
+      errorGetter = config.errorGetter,
+      valueStringifier = config.valueStringifier,
+      valueStringGetter = config.valueStringGetter;
 
   final Listenable listenable;
   final InputDecoration? decoration;
@@ -329,7 +324,11 @@ class _IOFieldTextState<T> extends State<IOFieldText<T>> {
   final WidgetStatesController materialStates = WidgetStatesController();
   final FocusNode focusNode = FocusNode();
 
-  late final ValueSetter<String> submitText = switch (T) { const (int) || const (double) || const (num) => submitTextNum, const (String) => submitTextString, _ => throw TypeError() };
+  late final ValueSetter<String> submitText = switch (T) {
+    const (int) || const (double) || const (num) => submitTextNum,
+    const (String) => submitTextString,
+    _ => throw TypeError(),
+  };
 
   // num? validNum(String numString) {
   // if (num.tryParse(numString) case num numValue when numValue.clamp(widget.numMin, widget.numMax) == numValue) return numValue;
@@ -394,8 +393,8 @@ class _IOFieldTextState<T> extends State<IOFieldText<T>> {
     return child!;
   }
 
-// TextField update based on user input
-// TextController update based on valueGetter, and propagates to TextField partial rebuild
+  // TextField update based on user input
+  // TextController update based on valueGetter, and propagates to TextField partial rebuild
   @override
   Widget build(BuildContext context) {
     final textField = ListenableBuilder(
@@ -453,16 +452,16 @@ class IOFieldMenu<T> extends StatelessWidget with _IOFieldStringBox<T> implement
   });
 
   IOFieldMenu.config(IOFieldConfig<T> config, {super.key})
-      : listenable = config.valueListenable,
-        decoration = config.idDecoration,
-        valueGetter = config.valueGetter,
-        valueSetter = config.valueSetter,
-        errorGetter = config.errorGetter,
-        valueEnumRange = config.valueEnumRange!,
-        valueStringifier = config.valueStringifier,
-        valueStringGetter = config.valueStringGetter,
-        initialValue = null,
-        tip = config.tip;
+    : listenable = config.valueListenable,
+      decoration = config.idDecoration,
+      valueGetter = config.valueGetter,
+      valueSetter = config.valueSetter,
+      errorGetter = config.errorGetter,
+      valueEnumRange = config.valueEnumRange!,
+      valueStringifier = config.valueStringifier,
+      valueStringGetter = config.valueStringGetter,
+      initialValue = null,
+      tip = config.tip;
 
   final Listenable listenable;
   final InputDecoration decoration;
@@ -491,15 +490,7 @@ class IOFieldMenu<T> extends StatelessWidget with _IOFieldStringBox<T> implement
       enabled: true,
       onSelected: valueSetter,
       clipBehavior: Clip.hardEdge,
-      child: IOFieldReader<T>(
-        key: key,
-        listenable: listenable,
-        decoration: decoration,
-        tip: tip,
-        valueGetter: valueGetter,
-        valueStringGetter: valueString,
-        errorGetter: errorGetter,
-      ),
+      child: IOFieldReader<T>(key: key, listenable: listenable, decoration: decoration, tip: tip, valueGetter: valueGetter, valueStringGetter: valueString, errorGetter: errorGetter),
     );
 
     return Tooltip(message: tip, child: widget);
@@ -513,16 +504,17 @@ class IOFieldMenu<T> extends StatelessWidget with _IOFieldStringBox<T> implement
 abstract interface class IOFieldVisual<T> extends IOField<T> {
   factory IOFieldVisual(IOFieldConfig<T> config, {Key? key}) {
     return switch (T) {
-      const (int) => IOFieldSlider<int>(config as IOFieldConfig<int>),
-      const (double) => IOFieldSlider<double>(config as IOFieldConfig<double>),
-      const (num) => IOFieldSlider<num>(config as IOFieldConfig<num>),
-      const (bool) => switch (config.boolStyle) {
-          IOFieldBoolStyle.textMenu => IOFieldMenu<T>.config(config),
-          IOFieldBoolStyle.latchingSwitch => IOFieldSwitch(config as IOFieldConfig<bool>) as IOField<T>,
-          IOFieldBoolStyle.momentaryButton => IOFieldButton(config as IOFieldConfig<bool>) as IOField<T>,
-        },
-      _ => throw TypeError(),
-    } as IOFieldVisual<T>;
+          const (int) => IOFieldSlider<int>(config as IOFieldConfig<int>),
+          const (double) => IOFieldSlider<double>(config as IOFieldConfig<double>),
+          const (num) => IOFieldSlider<num>(config as IOFieldConfig<num>),
+          const (bool) => switch (config.boolStyle) {
+            IOFieldBoolStyle.textMenu => IOFieldMenu<T>.config(config),
+            IOFieldBoolStyle.latchingSwitch => IOFieldSwitch(config as IOFieldConfig<bool>) as IOField<T>,
+            IOFieldBoolStyle.momentaryButton => IOFieldButton(config as IOFieldConfig<bool>) as IOField<T>,
+          },
+          _ => throw TypeError(),
+        }
+        as IOFieldVisual<T>;
   }
 }
 
@@ -541,14 +533,7 @@ class IOFieldSlider<T extends num> extends StatelessWidget implements IOField<T>
     final value = config.valueGetter()?.toDouble().clamp(min, max);
     if (value == null) return const Text('Error');
 
-    return Slider.adaptive(
-      label: config.idDecoration.labelText,
-      min: min,
-      max: max,
-      value: value,
-      onChanged: onChanged,
-      onChangeEnd: onChangeEnd,
-    );
+    return Slider.adaptive(label: config.idDecoration.labelText, min: min, max: max, value: value, onChanged: onChanged, onChangeEnd: onChangeEnd);
   }
 
   @override
@@ -568,11 +553,7 @@ class IOFieldSwitch extends StatelessWidget implements IOField<bool>, IOFieldVis
     final widget = Switch.adaptive(value: value, onChanged: config.valueSetter);
 
     if (config.useSwitchBorder) {
-      return IODecorator(
-        decoration: config.idDecoration,
-        isError: config.errorGetter?.call() ?? false,
-        child: widget,
-      );
+      return IODecorator(decoration: config.idDecoration, isError: config.errorGetter?.call() ?? false, child: widget);
     }
 
     return widget;
@@ -597,11 +578,7 @@ class IOFieldButton extends StatelessWidget implements IOField<bool>, IOFieldVis
     final widget = ElevatedButton(onPressed: () => config.valueSetter?.call(true), child: Text(config.idDecoration.labelText ?? ''));
 
     if (config.useSwitchBorder) {
-      return IODecorator(
-        decoration: config.idDecoration,
-        isError: config.errorGetter?.call() ?? false,
-        child: widget,
-      );
+      return IODecorator(decoration: config.idDecoration, isError: config.errorGetter?.call() ?? false, child: widget);
     }
     return widget;
   }
@@ -638,7 +615,14 @@ class IOFieldWithSlider<T extends num> extends StatelessWidget implements IOFiel
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return (constraints.maxWidth > breakWidth) ? Row(children: [Expanded(child: ioField), Expanded(flex: 2, child: slider)]) : OverflowBar(children: [ioField, slider]);
+        return (constraints.maxWidth > breakWidth)
+            ? Row(
+                children: [
+                  Expanded(child: ioField),
+                  Expanded(flex: 2, child: slider),
+                ],
+              )
+            : OverflowBar(children: [ioField, slider]);
       },
     );
   }
@@ -648,11 +632,7 @@ class IOFieldWithSlider<T extends num> extends StatelessWidget implements IOFiel
 ///
 ////////////////////////////////////////////////////////////////////////////////
 extension InputDecorationHide on InputDecoration {
-  InputDecoration copyWithHide({
-    bool showLabel = true,
-    bool showPrefix = true,
-    bool showSuffix = true,
-  }) {
+  InputDecoration copyWithHide({bool showLabel = true, bool showPrefix = true, bool showSuffix = true}) {
     return InputDecoration(
       labelText: showLabel ? labelText : null,
       prefixIcon: showPrefix ? prefixIcon : null,

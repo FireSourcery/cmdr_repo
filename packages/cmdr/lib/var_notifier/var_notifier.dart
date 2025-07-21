@@ -6,6 +6,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' hide BitField;
 
 import 'package:binary_data/binary_data.dart';
+import 'package:meta/meta.dart';
 import 'package:type_ext/basic_types.dart';
 import '../interfaces/service_io.dart';
 import '../models/binary_format.dart';
@@ -56,9 +57,7 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   final VarKey varKey;
   // final ValueNotifier? eventNotifier = ValueNotifier(null); //optional for user submit
 
-  ////////////////////////////////////////////////////////////////////////////////
   ///
-  ////////////////////////////////////////////////////////////////////////////////
   late final int dataKey = varKey.value; // compute once and cache
 
   /// as outbound data depending on [dataKey]
@@ -87,7 +86,6 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   ////////////////////////////////////////////////////////////////////////////////
   /// Stringify
   ////////////////////////////////////////////////////////////////////////////////
-  // stringifyAs
   String valueStringAs<T>() => varKey.stringify<T>(valueAs<T>());
 
   String get valueString => valueStringAs<V>();
@@ -128,24 +126,14 @@ class VarNotifier<V> with ChangeNotifier, VarValueNotifier<V>, VarStatusNotifier
   /// Json
   ////////////////////////////////////////////////////////////////////////////////
   Map<String, Object?> toJson() {
-    return {
-      'varId': dataKey,
-      'varValue': _viewValue,
-      'dataValue': dataValue,
-      'description': varKey.label,
-    };
+    return {'varId': dataKey, 'varValue': _viewValue, 'dataValue': dataValue, 'description': varKey.label};
   }
 
   /// init values from json config file, no new/allocation.
+  /// caller may need to reinit references
   void loadFromJson(Map<String, Object?> json) {
-    if (json
-        case {
-          'varId': int dataKey,
-          'varValue': num viewValue,
-          'dataValue': int _,
-          'description': String _,
-        }) {
-      updateByViewAs<num>(viewValue);
+    if (json case {'varId': int dataKey, 'varValue': num viewValue, 'dataValue': int _, 'description': String _}) {
+      updateByFile(viewValue);
 
       assert(dataKey == this.dataKey, 'VarKey mismatch: $dataKey != ${this.dataKey}'); // handled by caller
       // viewValue bound should keep dataValue within format bounds after conversion
@@ -248,7 +236,7 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // V valueGetter() => valueAs<V>();
 
   ////////////////////////////////////////////////////////////////////////////////
-  /// [_viewValue] The base representation of the value as a num. "view side base"
+  /// [_viewValue]/[numValue] The base representation of the value as a num. "view side base"
   ///   since it is the base for all generic types that can be converted to and from,
   ///     [valueAs<R>()] can always return a value without throwing; the closest representation possible.
   ///   primitive/register sized only for now
@@ -256,6 +244,8 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   ///   multiple view on the same value will require conversion anyway
   ///   using view side num as notifier,
   ///   notify view side listener on all updates, not all changes are pushed to client
+  ///
+  /// int for Enum and BitStruct
   ////////////////////////////////////////////////////////////////////////////////
   num _numValue = 0;
   num get _viewValue => _numValue;
@@ -278,8 +268,8 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   // num _serverValue = 0;     // Source of truth from server
   // num? _pendingValue;       // User changes (null = synchronized), optionally notifyListeners
   // // Single source of truth: pending takes precedence
-  // num get _viewValue => _pendingValue ?? _serverValue;
-  // set _viewValue(num value) _serverValue = value; update view without outputting to server
+  // num get viewValue => _pendingValue ?? _serverValue;
+  // set viewValue(num value) _serverValue = value; update view without outputting to server
 
   // // Inbound data from server/packets
   // void updateByData(int bytesValue) {
@@ -318,15 +308,15 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   /// Always accept client data. correction is handled at client side.
   /// value over view boundaries handle by UI
   ////////////////////////////////////////////////////////////////////////////////
-  // int? get pendingDataValue => dataOf(_viewValue);
   int get dataValue => dataOf(_viewValue);
-
-  set _dataValue(int value) => _viewValue = viewOf(dataValue);
+  set _dataValue(int newValue) => _viewValue = viewOf(newValue);
+  // int? get pendingDataValue => dataOf(_viewValue);
 
   // performs common conversion on update
   // before sign extension
   void updateByData(int bytesValue) {
-    _dataValue = dataOfBinary(bytesValue);
+    // _dataValue = dataOfBinary(bytesValue);
+    _viewValue = viewOf(dataOfBinary(bytesValue));
     lastUpdate = VarLastUpdate.byData;
     // if (numValue != _clampedNumValue) statusCode = 1;
   }
@@ -357,19 +347,21 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
   /// generic getter use switch on type literal, and require extension to account for subtypes
   R valueAs<R>() {
     return switch (R) {
-      const (int) => valueAsInt,
-      const (double) => valueAsDouble,
-      const (num) => valueAsNum,
-      const (bool) => valueAsBool,
-      // match by type literal cannot be subtype
-      const (Enum) => valueAsEnum,
-      const (BitStruct) => valueAsBitFields,
-      const (String) => valueAsString,
-      // _ when TypeKey<R>().isSubtype<Enum>() => valueAsEnum,
-      _ => subtypeOf<R>(_viewValue),
-    } as R;
+          const (int) => valueAsInt,
+          const (double) => valueAsDouble,
+          const (num) => valueAsNum,
+          const (bool) => valueAsBool,
+          // match by type literal cannot be subtype
+          const (Enum) => valueAsEnum,
+          const (BitStruct) => valueAsBitFields,
+          const (String) => valueAsString,
+          // _ when TypeKey<R>().isSubtype<Enum>() => valueAsEnum,
+          _ => subtypeOf<R>(_viewValue),
+        }
+        as R;
   }
 
+  R? valueAsEnumSubtype<R extends Enum>() => valueAsEnum as R?;
   R? valueAsEnumWith<R extends Enum>(List<R> enumValues) => enumValues.elementAtOrNull(valueAsInt);
   // BitStruct<K> valueAsBitStructWith<K extends BitField>(List<K> bitsKeys) => BitStruct<K>.view(bitsKeys, valueAsInt as Bits);
   // BitConstruct valueAsBitStructWith<R extends BitStruct>(BitConstruct prototype) => prototype.copyWith(valueAsInt as Bits);
@@ -399,6 +391,11 @@ abstract mixin class VarValueNotifier<V> implements ValueNotifier<V> {
     lastUpdate = VarLastUpdate.byView;
     // if (typedValue case num input when input != numValue) statusCode = 1;
   }
+
+  void submitByViewAs<T>(T typedValue) {
+    updateByViewAs<T>(typedValue);
+    // lastUpdate = _viewValue;
+  }
 }
 
 /// alternatively seperate
@@ -419,7 +416,7 @@ enum VarValueStatus {
 // }
 
 ////////////////////////////////////////////////////////////////////////////////
-/// [VarStatus]
+/// [VarStatusNotifier]
 /// implement as mixin
 ///   optionally mixin to share notifier
 ///   or compose for seperated value/status, multiple status
@@ -430,6 +427,8 @@ enum VarValueStatus {
 ///
 /// Does not mixin ValueNotifier<VarStatus> to not take up single inheritance
 /// S does not have to be generic if all vars share the same status type
+///
+/// alternatively ValueNotifier<VarStatus>, let VarStatus handle union
 ////////////////////////////////////////////////////////////////////////////////
 abstract mixin class VarStatusNotifier implements ChangeNotifier {
   int _statusCode = 0;
@@ -458,14 +457,15 @@ abstract mixin class VarStatusNotifier implements ChangeNotifier {
 
   R statusAs<R>() {
     return switch (R) {
-      const (int) => statusCode,
-      const (bool) => statusIsSuccess,
-      const (Enum) => status.enumId ?? VarStatusUnknown.unknown,
-      const (VarStatus) => status,
-      // _ when TypeKey<R>().isSubtype<VarStatus>() => statusId, // statusOf must have been overridden for R
-      // _ when TypeKey<R>().isSubtype<Enum>() => statusId.enumId,
-      _ => throw UnsupportedError('statusAs: $R'),
-    } as R;
+          const (int) => statusCode,
+          const (bool) => statusIsSuccess,
+          const (Enum) => status.enumId ?? VarStatusUnknown.unknown,
+          const (VarStatus) => status,
+          // _ when TypeKey<R>().isSubtype<VarStatus>() => statusId, // statusOf must have been overridden for R
+          // _ when TypeKey<R>().isSubtype<Enum>() => statusId.enumId,
+          _ => throw UnsupportedError('statusAs: $R'),
+        }
+        as R;
   }
 
   void updateStatusByViewAs<T>(T status) {
@@ -501,27 +501,24 @@ class VarEventNotifier extends ChangeNotifier {
 }
 
 class VarNotifierProxy<V> extends VarNotifier<V> {
-  VarNotifierProxy(
-    this.source, {
-    super.signExtension,
-    super.viewOfData,
-    super.dataOfView,
-    super.numLimits,
-    super.enumRange,
-    super.bitsKeys,
-  }) : super(varKey: source.varKey) {
+  VarNotifierProxy(this.source, {super.signExtension, super.viewOfData, super.dataOfView, super.numLimits, super.enumRange, super.bitsKeys}) : super(varKey: source.varKey) {
     source.addListener(onSourceUpdate);
   }
 
-  VarNotifierProxy.ofKey(this.source, super.proxyKey) : super.ofKey() {
+  VarNotifierProxy._of(this.source, super.proxyKey) : super.ofKey() {
     source.addListener(onSourceUpdate);
   }
 
-  final VarNotifier<V> source;
+  factory VarNotifierProxy.of(VarNotifier source, VarKey varKey) {
+    assert(V == dynamic, 'V is determined by VarKey.viewType');
+    return varKey.viewType(<G>() => VarNotifierProxy<G>._of(source, varKey) as VarNotifierProxy<V>);
+  }
+
+  final VarNotifier source;
 
   void onSourceUpdate() {
-    _dataValue = source.dataValue;
-    notifyListeners();
+    _dataValue = source.dataValue; // sync by data value
+    // notifyListeners(); on dataValue change
   }
 
   @override
@@ -534,9 +531,9 @@ class VarNotifierProxy<V> extends VarNotifier<V> {
     source.removeListener(listener);
   }
 
-  @override
-  VarStatus statusOf(int statusCode) {
-    // throw UnimplementedError();
-    return VarStatus.defaultOf(statusCode);
-  }
+  // @override
+  // VarStatus statusOf(int statusCode) {
+  //   // throw UnimplementedError();
+  //   return VarStatus.defaultOf(statusCode);
+  // }
 }

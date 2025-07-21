@@ -8,42 +8,6 @@ import '../var_notifier.dart';
 
 /// Widget tools
 
-////////////////////////////////////////////////////////////////////////////////
-/// Widget Interface
-/// convenience interface for mapping widget callbacks
-////////////////////////////////////////////////////////////////////////////////
-/// implicitly casts the VarNotifier
-///
-/// getters preferred over config object, as the widget can select which callbacks are retained
-/// as a mixin allows for use as interface
-abstract mixin class VarNotifierViewer<V> {
-  const VarNotifierViewer();
-//   _VarWidgetSource.assertType(this.eventNotifier) : assert(eventNotifier.varNotifier.varKey.viewType.isExactType<T>());
-
-  @protected
-  VarNotifier<dynamic> get varNotifier;
-  // VarEventController? get eventController;
-
-  ValueNotifier<dynamic> get valueNotifier => varNotifier; // for value updates
-  ValueChanged<V> get valueChanged => varNotifier.updateByViewAs<V>; // onChange. call for all updates to update UI
-
-  // Anonymous functions defined this way should not be reallocated
-  ValueGetter<V> get valueGetter => varNotifier.valueAs<V>;
-  ValueGetter<String> get valueStringGetter => varNotifier.valueStringAs<V>; // default valueStringifier
-  ValueGetter<bool> get statusErrorGetter => () => varNotifier.statusIsError;
-  ValueGetter<Enum?> get statusEnumGetter => () => varNotifier.status.enumId;
-  ValueGetter<VarStatus> get statusGetter => () => varNotifier.status;
-
-  V get viewValue => varNotifier.valueAs<V>();
-  ({num max, num min})? get valueNumLimits => varNotifier.varKey.valueNumLimits;
-
-  Stringifier<V> get valueStringifier => varNotifier.varKey.stringify<V>; // can be used to generate value labels for values other than the current value
-  bool get isReadOnly => varNotifier.varKey.isReadOnly;
-  String? get tip => varNotifier.varKey.tip;
-
-  // ValueSetter<V> get valueSubmitted => cache.eventController.submitByViewAs<V>; // onSubmit. only for updates requesting write and/or indicating user confirmation. using scheduled write
-}
-
 class VarKeyBuilder extends StatelessWidget {
   const VarKeyBuilder(this.varKey, this.builder, {this.varCache, super.key});
 
@@ -186,4 +150,37 @@ class VarBaseBuilder extends StatelessWidget {
 //     final effectiveVarNotifier = varNotifier ?? VarContext.ofKey(context, varKey!).cacheController.cache.allocate(varKey!);
 //     return VarBaseBuilder(effectiveVarNotifier, builder);
 //   }
+// }
+
+////////////////////////////////////////////////////////////////////////////////
+/// convenience interface for mapping widget callbacks
+////////////////////////////////////////////////////////////////////////////////
+/// implicitly casts the VarNotifier
+/// getters preferred over config object, as the widget can select which callbacks are retained
+// extension VarNotifierViewer<V> on VarNotifier {
+//   // const VarNotifierViewer();
+//   //   _VarWidgetSource.assertType(this.eventNotifier) : assert(eventNotifier.varNotifier.varKey.viewType.isExactType<T>());
+
+//   @protected
+//   VarNotifier<dynamic> get varNotifier => this;
+//   // VarEventController? get eventController;
+
+//   ValueNotifier<dynamic> get valueNotifier => varNotifier; // for value updates
+//   ValueChanged<V> get valueChanged => varNotifier.updateByViewAs<V>; // onChange. call for all updates to update UI
+
+//   // Anonymous functions defined this way should not be reallocated
+//   ValueGetter<V> get valueGetter => varNotifier.valueAs<V>;
+//   ValueGetter<String> get valueStringGetter => varNotifier.valueStringAs<V>; // default valueStringifier
+//   ValueGetter<bool> get statusErrorGetter => (() => varNotifier.statusIsError);
+//   ValueGetter<Enum?> get statusEnumGetter => (() => varNotifier.status.enumId);
+//   ValueGetter<VarStatus> get statusGetter => (() => varNotifier.status);
+
+//   V get viewValue => varNotifier.valueAs<V>();
+//   ({num max, num min})? get valueNumLimits => varNotifier.varKey.valueNumLimits;
+
+//   Stringifier<V> get valueStringifier => varNotifier.varKey.stringify<V>; // can be used to generate value labels for values other than the current value
+//   bool get isReadOnly => varNotifier.varKey.isReadOnly;
+//   String? get tip => varNotifier.varKey.tip;
+
+//   // ValueSetter<V> get valueSubmitted => cache.eventController.submitByViewAs<V>; // onSubmit. only for updates requesting write and/or indicating user confirmation. using scheduled write
 // }

@@ -3,6 +3,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:binary_data/bytes/typed_data_ext.dart';
 import 'package:collection/collection.dart';
 
 import '../base/protocol.dart';
@@ -75,9 +76,9 @@ class MotProtocolSocket extends ProtocolSocket {
   Future<void> writeDataModeData(Uint8List data) async => sendRequest(MotPacketRequestId.MOT_PACKET_DATA_MODE_DATA, data);
   Future<Uint8List?> readDataModeData() async => recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_DATA);
 
-// return length written
+  // return length written
   Stream<int> writeDataModeStream(Uint8List data) async* {
-    for (final slice in data.typedSlices<Uint8List>(DataModeData.sizeMax)) {
+    for (final slice in data.typedSlices(DataModeData.sizeMax)) {
       await writeDataModeData(slice);
       yield await recvSync().then((value) => (value == MotPacketSyncId.MOT_PACKET_SYNC_ACK) ? slice.length : 0);
       await Future.delayed(ProtocolSocket.datagramDelay);

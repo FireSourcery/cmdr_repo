@@ -1,6 +1,8 @@
 part of 'var_notifier.dart';
 
 /// [VarCache] with [Serivce]
+///
+// todo addtional status mappings
 class VarCacheController {
   const VarCacheController({required this.cache, required this.protocolService});
 
@@ -34,7 +36,7 @@ class VarCacheController {
     return VarStatusDefault.success;
   }
 
-  // todo depreciate
+  // todo depreciate, var use 2nd outbound value
   Future<VarStatus?> readAllOverwrite([Iterable<VarKey>? keys]) async {
     for (final element in cache.varEntries) {
       element.lastUpdate = VarLastUpdate.clear; // updateByData rejects when updated by view by default
@@ -190,6 +192,8 @@ class VarRealTimeController extends VarCacheController {
     await pushHandler.end();
   }
 
+  // Future<void> get isStopped async =>  pollHandler.isStopped && pushHandler.isStopped;
+
   // wait for an user initiated write to resolve
   Future<void> writeBatchCompleted(VarKey varKey) async {
     await Future.doWhile(() async {
@@ -217,7 +221,7 @@ class VarRealTimeController extends VarCacheController {
 class VarSingleController<V> {
   const VarSingleController({required this.varNotifier, required this.protocolService});
 
-  const VarSingleController.inline(this.varNotifier, this.protocolService); //VarIO
+  const VarSingleController.inline(this.varNotifier, this.protocolService);
 
   final ServiceIO<int, int, int> protocolService; // alternatively abstract as getter common per type
   final VarNotifier<V> varNotifier;

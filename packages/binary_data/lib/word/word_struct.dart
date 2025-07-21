@@ -28,20 +28,11 @@ abstract class WordStruct<T extends WordField> extends ConstBitStruct<T> {
 
   const WordStruct.of32s(int ls32, [int ms32 = 0]) : this._of((ms32 << 32) | (ls32 & _mask32));
 
-  const WordStruct.of16s(int ls16, [int upperLs16 = 0, int lowerMs16 = 0, int ms16 = 0])
-      : this.of32s(
-          (upperLs16 << 16) | (ls16 & _mask16),
-          (ms16 << 16) | (lowerMs16 & _mask16),
-        );
+  const WordStruct.of16s(int ls16, [int upperLs16 = 0, int lowerMs16 = 0, int ms16 = 0]) : this.of32s((upperLs16 << 16) | (ls16 & _mask16), (ms16 << 16) | (lowerMs16 & _mask16));
 
   // assign with parameters in little endian order for byteLength
   const WordStruct.of8s(int lsb, [int lsb1 = 0, int lsb2 = 0, int lsb3 = 0, int msb3 = 0, int msb2 = 0, int msb1 = 0, int msb = 0])
-      : this.of16s(
-          (lsb1 << 8) | (lsb & _mask8),
-          (lsb3 << 8) | (lsb2 & _mask8),
-          (msb2 << 8) | (msb3 & _mask8),
-          (msb << 8) | (msb1 & _mask8),
-        );
+    : this.of16s((lsb1 << 8) | (lsb & _mask8), (lsb3 << 8) | (lsb2 & _mask8), (msb2 << 8) | (msb3 & _mask8), (msb << 8) | (msb1 & _mask8));
 
   static const int _mask8 = 0xFF;
   static const int _mask16 = 0xFFFF;

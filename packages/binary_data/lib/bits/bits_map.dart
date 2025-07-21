@@ -15,19 +15,20 @@ abstract interface class BitsMap<K, V> with MapBase<K, V> implements Map<K, V> /
 
   factory BitsMap.of(List<K> keys, [int bits = 0, bool mutable = true]) {
     return switch (keys) {
-      List<BitIndexField> keys => mutable ? MutableBoolMap(keys, Bits(bits)) : ConstBoolMap(keys, Bits(bits)),
-      List<BitField> keys => mutable ? MutableBitFieldMap(keys, Bits(bits)) : ConstBitFieldMap(keys, Bits(bits)),
-      List<Enum> keys => mutable ? MutableBoolMap(keys, Bits(bits)) : ConstBoolMap(keys, Bits(bits)),
-      List<dynamic> keys when (keys.first.index == keys.first.index) => mutable ? MutableBoolMap(keys, Bits(bits)) : ConstBoolMap(keys, Bits(bits)),
-      [...] => throw UnimplementedError(),
-    } as BitsMap<K, V>;
+          List<BitIndexField> keys => mutable ? MutableBoolMap(keys, Bits(bits)) : ConstBoolMap(keys, Bits(bits)),
+          List<BitField> keys => mutable ? MutableBitFieldMap(keys, Bits(bits)) : ConstBitFieldMap(keys, Bits(bits)),
+          List<Enum> keys => mutable ? MutableBoolMap(keys, Bits(bits)) : ConstBoolMap(keys, Bits(bits)),
+          List<dynamic> keys when (keys.first.index == keys.first.index) => mutable ? MutableBoolMap(keys, Bits(bits)) : ConstBoolMap(keys, Bits(bits)),
+          [...] => throw UnimplementedError(),
+        }
+        as BitsMap<K, V>;
   }
 
   @override
   final Iterable<K> keys;
 
   Bits get bits;
-  set bits(Bits value); // only dependency for unmodifiable
+  set bits(Bits value);
 
   // int get width;
 

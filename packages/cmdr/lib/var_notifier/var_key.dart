@@ -1,5 +1,7 @@
 part of 'var_notifier.dart';
 
+/// [VarKey] is an immutable key for [VarNotifier].
+/// immutable properties of a VarNotifier
 /// == and hash from ValueKey
 @immutable
 abstract mixin class VarKey implements ValueKey<int> {
@@ -72,8 +74,7 @@ abstract mixin class VarKey implements ValueKey<int> {
 enum VarReadWriteAccess {
   readOnly,
   writeOnly,
-  readWrite,
-  ;
+  readWrite;
 
   bool get isWritable => this != readOnly;
   bool get isReadable => this != writeOnly;
@@ -109,11 +110,7 @@ abstract mixin class VarEnumStatus implements VarStatus, Enum {
   Enum get enumId => this;
 }
 
-enum VarStatusDefault with VarStatus, VarEnumStatus {
-  success,
-  error,
-  ;
-}
+enum VarStatusDefault with VarStatus, VarEnumStatus { success, error }
 
 enum VarStatusUnknown with VarStatus, VarEnumStatus {
   unknown;
@@ -122,11 +119,7 @@ enum VarStatusUnknown with VarStatus, VarEnumStatus {
   int get code => -1;
 }
 
-enum VarHandlerStatus with VarStatus, VarEnumStatus {
-  unknownId,
-  outOfRange,
-  ;
-}
+enum VarHandlerStatus with VarStatus, VarEnumStatus { unknownId, outOfRange }
 
 // optional properties
 // class VarTag {

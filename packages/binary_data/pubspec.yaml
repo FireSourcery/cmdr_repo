@@ -17,3 +17,5 @@ dev_dependencies:
   lints: ^4.0.0
   flutter_lints: ^4.0.0
   test: ^1.25.8
+# formatter:
+#   trailing_commas: false

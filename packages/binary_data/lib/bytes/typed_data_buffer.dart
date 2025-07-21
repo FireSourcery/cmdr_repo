@@ -35,7 +35,7 @@ class TypedDataBuffer implements BytesBuilder {
   void clear() => viewLength = 0;
 
   /// start at offset, or 0
-  // throw if dataIn.length > lengthMax
+  // throws if dataIn.length > lengthMax
   // a buffer backing larger than all potential calls is expected to be allocated at initialization
   // does not need length checking of Uint8List.copy
   void copy(Uint8List bytes, [int offset = 0]) {
@@ -64,16 +64,3 @@ class TypedDataBuffer implements BytesBuilder {
   @override
   Uint8List toBytes() => bufferAsBytes.sublist(0);
 }
-
-// alternative implementation for fragmented trailing buffer
-// disallow changing dataView as pointer directly, caller use length
-// int get viewLength => dataView.lengthInBytes;
-// @protected
-// set viewLength(int value) {
-//   // runtime assertion is handled by parser
-//   assert(value <= lengthMax); // minus offset if view does not start at buffer 0, case of inheritance
-//   dataView = _byteBuffer.asUint8List(0, value);
-//   // _bytesView = _byteBuffer.asUint8List(0, value); // need Uint8List.view. sublistView will not exceed current length
-// }
-
-typedef TypedDataCaster<T> = T Function(TypedData typedData);

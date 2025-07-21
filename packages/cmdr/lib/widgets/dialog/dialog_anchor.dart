@@ -1,37 +1,25 @@
 import 'package:flutter/material.dart';
 
-typedef EventWidgetBuilder<T> = Widget Function(BuildContext context, T event);
-// typedef EventWidgetBuilder1<T> = ValueWidgetBuilder<T>;
-
 ////////////////////////////////////////////////////////////////////////////////
 /// [DialogAnchor] - Wraps a widget with a dialog that is shown on focus or event.
 ///
 /// e.g. warning dialog before editing a field, and a dialog after submitting a field
 ////////////////////////////////////////////////////////////////////////////////
 class DialogAnchor<T> extends StatefulWidget {
-  const DialogAnchor({
-    super.key,
-    this.initialDialogBuilder,
-    this.eventNotifier,
-    this.eventGetter,
-    this.eventDialogBuilder,
-    this.eventMatch,
-    this.notificationMatch,
-    required this.child,
-  });
+  const DialogAnchor({super.key, this.initialDialogBuilder, this.eventNotifier, this.eventGetter, this.eventDialogBuilder, /*  this.eventMatch, */ this.notificationMatch, required this.child});
 
   final WidgetBuilder? initialDialogBuilder;
   // allow a more general interface, instead of ValueListenable<T?>? eventNotifier;
   final Listenable? eventNotifier; // controls opening of dialog
   final ValueGetter<T?>? eventGetter;
   // returns on notification match
-  final T? eventMatch;
+  // final T? eventMatch;
 
   // additional way to match event
   final Notification? notificationMatch;
 
   // user match widget built to the notification event
-  final EventWidgetBuilder<T?>? eventDialogBuilder;
+  final ValueWidgetBuilder<T?>? eventDialogBuilder;
   final Widget child;
 
   @override
@@ -75,10 +63,7 @@ class _DialogAnchorState<T> extends State<DialogAnchor<T>> {
 
   // eventDialogBuilder not null, checked on init
   void _showEventDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => widget.eventDialogBuilder!(context, widget.eventGetter?.call()),
-    );
+    showDialog(context: context, builder: (context) => widget.eventDialogBuilder!(context, widget.eventGetter?.call(), null));
   }
 
   void _showEventDialogAsListener() {
@@ -111,16 +96,7 @@ class _DialogAnchorState<T> extends State<DialogAnchor<T>> {
 /// [DialogButton] is a button that opens a dialog when pressed.
 ////////////////////////////////////////////////////////////////////////////////
 class DialogButton<T> extends StatelessWidget {
-  const DialogButton({
-    super.key,
-    required this.dialogBuilder,
-    this.child,
-    this.onPressed,
-    this.onPop,
-    this.useRootNavigator = true,
-    this.styleId,
-    this.barrierDismissible = false,
-  });
+  const DialogButton({super.key, required this.dialogBuilder, this.child, this.onPressed, this.onPop, this.useRootNavigator = true, this.styleId, this.barrierDismissible = false});
   // use the warning theme
   // const DialogButton.warning({super.key, required this.dialogBuilder, this.useRootNavigator = true, this.child, this.onPop, this.onPressed}) : themeStyle = DialogButtonStyle.warning;
 
@@ -152,10 +128,7 @@ class DialogButton<T> extends StatelessWidget {
   }
 }
 
-enum DialogButtonStyle {
-  normal,
-  warning,
-}
+enum DialogButtonStyle { normal, warning }
 
 //DialogExtensionTheme
 class DialogButtonTheme extends ThemeExtension<DialogButtonTheme> {
@@ -168,14 +141,8 @@ class DialogButtonTheme extends ThemeExtension<DialogButtonTheme> {
   // Color? get warningBackgroundColor => buttonStyle?.backgroundColor?.resolve({});
 
   @override
-  DialogButtonTheme copyWith({
-    ButtonStyle? buttonStyle,
-    ButtonStyle? warningButtonStyle,
-  }) {
-    return DialogButtonTheme(
-      buttonStyle: buttonStyle ?? this.buttonStyle,
-      warningButtonStyle: warningButtonStyle ?? this.warningButtonStyle,
-    );
+  DialogButtonTheme copyWith({ButtonStyle? buttonStyle, ButtonStyle? warningButtonStyle}) {
+    return DialogButtonTheme(buttonStyle: buttonStyle ?? this.buttonStyle, warningButtonStyle: warningButtonStyle ?? this.warningButtonStyle);
   }
 
   @override

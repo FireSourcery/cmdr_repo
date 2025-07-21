@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:binary_data/binary_data.dart';
 import 'package:binary_data/models/packet.dart';
 import 'package:meta/meta.dart';
 
@@ -32,7 +33,14 @@ class HeaderParser extends PacketBuffer {
     }
   }
 
-  void seekStart() => switch (viewAsBytes.seekChar(startId)) { Uint8List view => copy(view), null => clear() };
+  void seekStart() {
+    if (viewAsBytes.seekChar(startId) case Uint8List view) {
+      copy(view);
+    } else {
+      clear(); // no startId found, clear buffer
+    }
+  }
+
   void seekTrailing() => copy(trailing);
 
   // trim trailing before checking checksum
@@ -46,6 +54,17 @@ class HeaderParser extends PacketBuffer {
 
   // alternatively as caster
   // headerParser need caster to shift view packet.cast
+
+  // alternative implementation for fragmented trailing buffer
+  // disallow changing dataView as pointer directly, caller use length
+  // int get viewLength => dataView.lengthInBytes;
+  // @protected
+  // set viewLength(int value) {
+  //   // runtime assertion is handled by parser
+  //   assert(value <= lengthMax); // minus offset if view does not start at buffer 0, case of inheritance
+  //   dataView = _byteBuffer.asUint8List(0, value);
+  //   // _bytesView = _byteBuffer.asUint8List(0, value); // need Uint8List.view. sublistView will not exceed current length
+  // }
 }
 
 /// determine complete, error, or wait for more data

@@ -49,16 +49,16 @@ typedef BitFieldEntry<K extends BitField> = FieldEntry<K, int>;
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Bitmask accessors
+////////////////////////////////////////////////////////////////////////////////
 // alternatively BitField implements Bitmask,
 // this way, less mixin redundancy, for now
 extension BitKeysMethods on Iterable<BitField> {
   Bitmasks get bitmasks => map((e) => e.bitmask) as Bitmasks;
   int get totalWidth => bitmasks.totalWidth;
 
-  Bits withValues(List<int> values) {
-    if (length != values.length) {
-      throw ArgumentError('Values length ${values.length} does not match BitFields length $length');
-    }
+  Bits mapValues(List<int> values) {
+    if (length != values.length) throw ArgumentError('Values length ${values.length} does not match BitFields length $length');
+
     return Bits.ofPairs(mapIndexed((index, e) => (e.bitmask, values[index])));
   }
 }
@@ -75,10 +75,11 @@ extension BitIndexKeysMethods on Iterable<BitIndexField> {
   int get totalWidth => length;
 }
 
-// abstract mixin class EnumBitField {
-//   int get width;
-
-//   // alternatively derive at runtime from only width defined at compile time
+// alternatively derive at runtime from only width defined at compile time
+// abstract mixin class EnumBitField implements BitField, Enum {
+//   int get width; 
+//   int get index; 
 //   List<BitField> get bitFields; // Enum.values
-//   Bitmask get bitmask => Bitmask.bits(bitFields.map((e) => e.bitmask.width).take(bitFields.indexOf(this)).sum, width);
+//   Bitmasks get bitmasks =>  bitFields.map((e) => Bitmask.bits(e.index, e. width)); 
+//   Bitmask get bitmask => bitmasks.take(index).sum, width ;
 // }

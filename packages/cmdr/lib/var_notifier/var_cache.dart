@@ -16,9 +16,11 @@ class VarCache {
 
   // stores key in value when using dynamically generated iterable
   VarCache.preallocate(Iterable<VarKey> varKeys) : _cache = {for (final varKey in varKeys) varKey.value: VarNotifier.of(varKey)};
-  // VarNotifier Function(VarKey) constructor = VarNotifier.of, // if notifiers are of a subtype
 
   VarCache.fixed(Iterable<VarKey> varKeys) : _cache = Map.unmodifiable({for (final varKey in varKeys) varKey.value: VarNotifier.of(varKey)});
+
+  // // notifiers are of a subtype
+  // VarCache.subtype(Iterable<VarKey> varKeys, VarNotifier Function(VarKey) constructor) : _cache = {for (final varKey in varKeys) varKey.value: constructor(varKey)};
 
   /// "It is generally not allowed to modify the map (add or remove keys) while
   /// an operation is being performed on the map."
@@ -36,8 +38,9 @@ class VarCache {
   final Map<int, VarNotifier> _cache; // map key to entire state containing the key
   // final int? lengthMax;
   // final VarNotifier? undefined;
-  // final Map<VarKey, ValueSetter<VarCache>>? onUpdate; // (onUpdate callbacks for dependent keys, if any)
 
+  // final Map<VarKey, ValueSetter<VarCache>>? onUpdate; // (onUpdate callbacks for dependent keys, if any)
+  // final Map<VarKey, ValueSetter<Iterable<VarNotifier>>>? onUpdate; // (onUpdate callbacks for dependent keys, if any)
   // VarEvent lastEvent
   // final ValueNotifier _eventNotifier = ValueNotifier(null);
   // ValueListenable get eventNotifier => _eventNotifier; // for listeners to subscribe to events
@@ -50,11 +53,11 @@ class VarCache {
   ///
   VarNotifier resolve(VarKey varKey) {
     if (_cache is UnmodifiableMapView) return this[varKey]!; // fixed, throw if not found
-    return allocate(varKey);
+    return _cache.putIfAbsent(varKey.value, () => constructor(varKey));
   }
 
   VarNotifier allocate(VarKey varKey) {
-    if (_cache is UnmodifiableMapView) return this[varKey] ?? constructor(varKey); // unmapped instance or throw
+    // if (_cache is UnmodifiableMapView) return this[varKey] ?? constructor(varKey); // unmapped instance or throw
     // if (lengthMax case int max when _cache.length >= max) _cache.remove(_cache.entries.first.key)?.dispose();
     return _cache.putIfAbsent(varKey.value, () => constructor(varKey));
   }
@@ -67,24 +70,14 @@ class VarCache {
     });
   }
 
-  /// re run to update VarNotifier reference values
-  void reinitAll() => _cache.forEach((_, varEntry) => varEntry.initReferences());
-
   // in preallocated case, where size is not constrained. deallocate and replace is not necessary
   // remove viewer
-  // bool deallocate(VarKey? varKey) {
-  //   if (_cache[varKey?.value] case VarNotifier varEntry) {
-  //     print('deallocate: ${varKey?.value} ${varEntry.varKey}');
-  //     print('deallocate: ${varEntry.viewerCount}');
-  //     print('varEntry.hasListeners: ${varEntry.hasListeners}');
-  //     // caller removes itself as listener first
-  //     if (!varEntry.hasListeners) {
-  //       _cache.remove(varKey?.value);
-  //       return true;
-  //     }
-  //   }
-  //   return false;
-  // }
+  bool deallocate(VarKey varKey) {
+    return ((_cache.remove(varKey.value)?..dispose()) == null); // dispose and remove from cache
+  }
+
+  /// re run to update VarNotifier reference values
+  void reinitAll() => _cache.forEach((_, varEntry) => varEntry.initReferences());
 
   void allocateAll(Iterable<VarKey> varKeys, [VarNotifier Function(VarKey)? constructor]) {
     _cache.addEntries(varKeys.map((varKey) => MapEntry(varKey.value, constructor?.call(varKey) ?? VarNotifier.of(varKey))));
@@ -166,7 +159,6 @@ class VarCache {
       while (iterIds.moveNext() && iterValues.moveNext()) {
         _updateByData(iterIds.current, iterValues.current);
       }
-      assert(!iterIds.moveNext() && !iterValues.moveNext(), 'Length mismatch detected');
     }
   }
 
@@ -195,13 +187,18 @@ class VarCache {
   /// Update Status by mot response to view initiated write, per var status
   void updateByDataResponse(Iterable<(int id, int value)> pairs, Iterable<int> statusesIn) {
     assert(statusesIn.length == pairs.length);
+
     final iterPairs = pairs.iterator;
     final iterStatuses = statusesIn.iterator;
     while (iterPairs.moveNext() && iterStatuses.moveNext()) {
       _updateByDataResponse(iterPairs.current.$1, iterPairs.current.$2, iterStatuses.current);
     }
-    assert(!iterPairs.moveNext() && !iterStatuses.moveNext(), 'Length mismatch detected');
   }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /// Assigned by VarKey
+  ////////////////////////////////////////////////////////////////////////////////
+  Iterable<VarNotifier> dependentsOf(VarKey key) => varsOf(key.dependents ?? []);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Json
@@ -210,13 +207,7 @@ class VarCache {
   /// existing ids only
   void loadFromJson(List<Map<String, Object?>> json) {
     for (final entry in json) {
-      if (entry
-          case {
-            'varId': int motVarId,
-            'varValue': num _,
-            'dataValue': int _,
-            'description': String _,
-          }) {
+      if (entry case {'varId': int motVarId, 'varValue': num _, 'dataValue': int _, 'description': String _}) {
         _cache[motVarId]?.loadFromJson(entry);
       } else {
         throw const FormatException('Unexpected JSON');
@@ -228,11 +219,6 @@ class VarCache {
 
   @override
   String toString() => describeIdentity(this);
-
-  ////////////////////////////////////////////////////////////////////////////////
-  ///
-  ////////////////////////////////////////////////////////////////////////////////
-  Iterable<VarNotifier> dependentsOf(VarKey key) => varsOf(key.dependents ?? []);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// debug
@@ -248,8 +234,8 @@ extension VarNotifiers on Iterable<VarNotifier> {
   Iterable<(String, num)> get namedValues => map((e) => (e.varKey.label, e.valueAsNum));
   Iterable<(VarKey, VarNotifier)> get keyed => map((e) => (e.varKey, e));
 
-  Iterable<String> toStringsAsNamedValues([String divider = ': ', int precision = 2]) {
-    return namedValues.map((kv) => '${kv.$1}$divider${kv.$2.toStringAsFixed(precision)}');
+  Iterable<String> toNamedValueStrings([String divider = ': ', int precision = 2]) {
+    return namedValues.map((e) => '${e.$1}$divider${e.$2.toStringAsFixed(precision)}');
   }
 }
 

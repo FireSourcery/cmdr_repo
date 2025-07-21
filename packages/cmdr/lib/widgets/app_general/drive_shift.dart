@@ -7,7 +7,7 @@ class DriveShift extends StatefulWidget {
   const DriveShift({this.onSelect, this.confirmSelected, this.initialSelect = DriveShiftSelect.park, super.key});
 
   final AsyncValueSetter<DriveShiftSelect>? onSelect;
-  final AsyncValueGetter<DriveShiftSelect>? confirmSelected; //or use listener
+  final AsyncValueGetter<DriveShiftSelect?>? confirmSelected; // or use listener
   final DriveShiftSelect initialSelect;
   final Radius radius = const Radius.circular(10.0);
   final double size = 25;
@@ -23,7 +23,6 @@ class _DriveShiftState extends State<DriveShift> {
   late final Color borderColor = Theme.of(context).colorScheme.outline;
   late final ButtonStyle buttonStyle = Theme.of(context).elevatedButtonTheme.style ?? const ButtonStyle();
   late final TextStyle? letterStyle = Theme.of(context).textTheme.displaySmall;
-  // late final TextStyle letterStyle = GoogleFonts.audiowide(fontWeight: FontWeight.bold, fontSize: size);
 
   // Theme buttonStyle/OutlineBorder does not contain shape with radius
   Radius get radius => widget.radius;
@@ -52,37 +51,31 @@ class _DriveShiftState extends State<DriveShift> {
   late final WidgetStatesController controllerR = WidgetStatesController({if (widget.initialSelect == DriveShiftSelect.reverse) WidgetState.selected});
   late final WidgetStatesController controllerP = WidgetStatesController({if (widget.initialSelect == DriveShiftSelect.park) WidgetState.selected});
 
-  FutureOr<bool> _confirmSelected(DriveShiftSelect select) async {
-    if (widget.confirmSelected != null) return (await widget.confirmSelected!() == select);
-    return true;
-  }
-
   Future<void> handleSelect(DriveShiftSelect select) async {
-    DriveShiftSelect? errorSelect;
     await widget.onSelect?.call(select);
-    if (await _confirmSelected(select)) {
-      if (mounted) {
-        controllerF.update(WidgetState.selected, (select == DriveShiftSelect.forward));
-        controllerN.update(WidgetState.selected, (select == DriveShiftSelect.neutral));
-        controllerR.update(WidgetState.selected, (select == DriveShiftSelect.reverse));
-        controllerP.update(WidgetState.selected, (select == DriveShiftSelect.park));
-      }
-    } else {
-      errorSelect = select;
-    }
+    // handle returning null as null, null function use the selected value directly
+    DriveShiftSelect? confirmedSelect = (widget.confirmSelected != null) ? await widget.confirmSelected!() : select;
+    DriveShiftSelect? errorSelect = confirmedSelect != select ? select : null;
+    if (!mounted) return;
 
-    if (mounted) {
-      controllerF.update(WidgetState.error, (errorSelect == DriveShiftSelect.forward));
-      controllerN.update(WidgetState.error, (errorSelect == DriveShiftSelect.neutral));
-      controllerR.update(WidgetState.error, (errorSelect == DriveShiftSelect.reverse));
-      controllerP.update(WidgetState.error, (errorSelect == DriveShiftSelect.park));
-    }
-    // setState(() {});
+    controllerF.update(WidgetState.selected, (confirmedSelect == DriveShiftSelect.forward));
+    controllerN.update(WidgetState.selected, (confirmedSelect == DriveShiftSelect.neutral));
+    controllerR.update(WidgetState.selected, (confirmedSelect == DriveShiftSelect.reverse));
+    controllerP.update(WidgetState.selected, (confirmedSelect == DriveShiftSelect.park));
+    controllerF.update(WidgetState.error, (errorSelect == DriveShiftSelect.forward));
+    controllerN.update(WidgetState.error, (errorSelect == DriveShiftSelect.neutral));
+    controllerR.update(WidgetState.error, (errorSelect == DriveShiftSelect.reverse));
+    controllerP.update(WidgetState.error, (errorSelect == DriveShiftSelect.park));
   }
 
   // short hand wrapper
   ElevatedButton button(DriveShiftSelect id, String label, ButtonStyle style, WidgetStatesController controller) {
-    return ElevatedButton(onPressed: () => handleSelect(id), style: style, statesController: controller, child: Text(label, textAlign: TextAlign.center, style: letterStyle));
+    return ElevatedButton(
+      onPressed: () => handleSelect(id),
+      style: style,
+      statesController: controller,
+      child: Text(label, textAlign: TextAlign.center, style: letterStyle),
+    );
   }
 
   late final ElevatedButton forward = button(DriveShiftSelect.forward, "F", styleForward, controllerF);
@@ -104,7 +97,13 @@ class _DriveShiftState extends State<DriveShift> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [park, const Divider(height: 0, color: Colors.transparent), forward, neutral, reverse],
+          children: [
+            park,
+            const Divider(height: 0, color: Colors.transparent),
+            forward,
+            neutral,
+            reverse,
+          ],
         ),
       ),
     );

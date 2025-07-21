@@ -4,7 +4,7 @@
 extension type const EnumType<T extends Enum>(List<T> enumValues) implements List<T> {
   // EnumType.inUnion(Set<List<Enum>> enumValues) : this(enumValues.whereType<List<T>>().single);
 
-  T? resolve(int? index) => (index != null) ? enumValues.elementAtOrNull(index) : null;
+  // T? resolve(int? index) => (index != null) ? enumValues.elementAtOrNull(index) : null;
 }
 
 extension EnumByNullable<T extends Enum> on List<T> {
@@ -21,6 +21,7 @@ extension type const EnumUnionType<T extends Enum>(Set<List<T>> valuesUnion) imp
   List<S>? subtypeOrNull<S extends Enum>() => valuesUnion.whereType<List<S>>().singleOrNull;
   S? resolve<S extends Enum>(int? index) => subtypeOrNull<S>()?.resolve(index);
 
+  // alternatively as status unions
   // pass any type, return nullable
   // without extends Enum, for work around subtype issues
   List<S>? _resolveSubtype<S>() => valuesUnion.whereType<List<S>>().singleOrNull;

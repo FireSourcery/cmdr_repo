@@ -57,15 +57,7 @@ abstract interface class VarIOField extends StatelessWidget {
     bool isDense = false,
     Key? key,
   }) {
-    return VarIOField(
-      varNotifier,
-      eventNotifier: eventNotifier,
-      readOnly: readOnly,
-      showLabel: showLabel,
-      isDense: isDense,
-      showPrefix: showPrefix,
-      showSuffix: showSuffix,
-    );
+    return VarIOField(varNotifier, eventNotifier: eventNotifier, readOnly: readOnly, showLabel: showLabel, isDense: isDense, showPrefix: showPrefix, showSuffix: showSuffix);
   }
 
   // factory VarIOField.withMenu(VarNotifier varNotifier, {bool showLabel, bool isDense, bool showPrefix, bool showSuffix, Key? key}) =  ;
@@ -124,12 +116,7 @@ class VarIOFieldWithMenu<T extends VarKey> extends StatelessWidget {
   Widget build(BuildContext context) {
     final ValueWidgetBuilder<T> keyWidgetBuilder = VarKeyWidgetBuilder(builder: _varWidgetBuilder, varCache: varCache).asValueWidgetBuilder;
 
-    return MenuAnchorBuilder(
-      menuSource: menuSource,
-      initialItem: initialVarKey,
-      menuAnchorBuilder: _menuAnchorBuilder,
-      keyBuilder: keyWidgetBuilder,
-    );
+    return MenuAnchorBuilder(menuSource: menuSource, initialItem: initialVarKey, menuAnchorBuilder: _menuAnchorBuilder, keyBuilder: keyWidgetBuilder);
   }
 }
 
@@ -160,14 +147,13 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
     this.varNotifier, {
     this.eventNotifier,
     this.controller,
-    this.readOnly,
     //disableConversion = false,
     this.labelAlignment = FloatingLabelAlignment.start,
     this.showLabel = true,
     this.showPrefix = true,
     this.showSuffix = true,
     this.isDense = false,
-    //readonly
+    this.readOnly,
   });
 
   final VarNotifier<dynamic> varNotifier; //should this be cast here?
@@ -190,6 +176,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
       prefixIcon: (showPrefix) ? (!isReadOnly ? const Icon(Icons.input) : null) : null,
       suffixText: (showSuffix) ? varNotifier.varKey.suffix : null,
       isDense: isDense,
+      // floatingLabelAlignment: labelAlignment,
     );
 
     // return InputDecoration(
@@ -213,7 +200,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   @override
   ValueGetter<String> get valueStringGetter => varNotifier.valueStringAs<V>;
   @override
-  ValueGetter<bool> get errorGetter => () => varNotifier.statusIsError;
+  ValueGetter<bool> get errorGetter => (() => varNotifier.statusIsError);
   @override
   ValueSetter<V> get valueSetter => (eventNotifier != null) ? eventNotifier!.submitByViewAs<V> : varNotifier.updateByViewAs<V>;
 
