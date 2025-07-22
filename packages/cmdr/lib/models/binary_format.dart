@@ -44,8 +44,7 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
 
   /// Not a number format but a value relative to the client platform.
   /// Included here as marker for special handling, simplifies caller defs
-  adcu<Uint16, double>(reference: null),
-
+  adcu<Uint16, double>(reference: null)
   // never<Void, Never>(reference: null),
   ;
 
@@ -101,12 +100,21 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
     };
   }
 
-//const (double) when (this != adcu),  ref > 0
-  bool get isFixedPoint => switch (this) { fract16 || ufract16 || ufixed16 || percent16 || uaccum16 || accum16 => true, _ => false };
-  bool get isScalarBase10 => switch (this) { scalar10 || scalarInv10 => true, _ => false };
+  //const (double) when (this != adcu),  ref > 0
+  bool get isFixedPoint => switch (this) {
+    fract16 || ufract16 || ufixed16 || percent16 || uaccum16 || accum16 => true,
+    _ => false,
+  };
+  bool get isScalarBase10 => switch (this) {
+    scalar10 || scalarInv10 => true,
+    _ => false,
+  };
 
   // reference != null || adcu
-  bool get isNumeric => switch (V) { const (int) || const (double) when (this != bits16) => true, _ => false }; // !isEnum && !isBits && !isBoolean;
+  bool get isNumeric => switch (V) {
+    const (int) || const (double) when (this != bits16) => true,
+    _ => false,
+  }; // !isEnum && !isBits && !isBoolean;
 
   // bool get isInteger => switch (this) { int16 || uint16 => true, _ => false };
   // bool get isFraction => isFixedPoint || isScalar || (this == adcu || this == cycles);
@@ -120,7 +128,7 @@ typedef ViewOfData = num Function(int data);
 typedef DataOfView = int Function(num view);
 typedef DataOfBytes = int Function(int bytes);
 
-/// BinaryConverter
+///
 // signExtension/dataOfBytes optionally seperate from viewOfData
 typedef BinaryConversionCodec = ({ViewOfData viewOfData, DataOfView dataOfView});
 
@@ -128,8 +136,8 @@ typedef BinaryConversionCodec = ({ViewOfData viewOfData, DataOfView dataOfView})
 // const BinaryConversion({this.viewOfData, this.dataOfView})
 extension type const BinaryConversion(num coefficient) {
   //   BinaryConversion.of(num coefficient)
-//       : viewOfData = BinaryConversion(coefficient).viewOfData,
-//         dataOfView = BinaryConversion(coefficient).dataOfView;
+  //       : viewOfData = BinaryConversion(coefficient).viewOfData,
+  //         dataOfView = BinaryConversion(coefficient).dataOfView;
 
   BinaryConversion.unitRef(BinaryFormat format, num unitRef) : coefficient = unitRef / format.reference!;
 

@@ -1,8 +1,7 @@
 import 'dart:async';
+import 'package:meta/meta.dart';
 
 import 'package:binary_data/binary_data.dart';
-import 'package:binary_data/models/packet.dart';
-import 'package:meta/meta.dart';
 
 import 'protocol.dart'; // or move status
 
@@ -18,7 +17,7 @@ class HeaderParser extends PacketBuffer {
 
   HeaderStatus get status => HeaderStatus(viewAsPacket);
 
-  /// todo track length before parsing: RangeError (typedData.lengthInBytes): The typed list is not large enough: Not greater than or equal to 8: 3
+  // td check length before parsing: RangeError (typedData.lengthInBytes): The typed list is not large enough: Not greater than or equal to 8: 3
 
   // cannot cast struct without full length
   // always copies remainder, double buffers.

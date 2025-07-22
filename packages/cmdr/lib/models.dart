@@ -23,10 +23,8 @@ library cmdr.models;
 
 // Core models
 export 'models/adc_config.dart';
-export 'models/conversion.dart';
 export 'models/direction.dart';
 export 'models/linear.dart';
 export 'models/surface_speed.dart';
 export 'models/thermistor.dart';
-export 'models/type_models.dart';
 export 'models/voltage.dart';

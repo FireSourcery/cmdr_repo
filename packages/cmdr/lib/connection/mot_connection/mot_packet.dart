@@ -126,10 +126,7 @@ sealed class MotPacketId implements PacketId {
   // @override
   // ByteStructCaster<Packet> get caster => MotPacket.cast;
 
-  static final Map<int, MotPacketId> _lookUpMap = Map<int, MotPacketId>.unmodifiable({
-    for (final id in MotPacketSyncId.values) id.intId: id,
-    for (final id in MotPacketRequestId.values) id.intId: id,
-  });
+  static final Map<int, MotPacketId> _lookUpMap = Map<int, MotPacketId>.unmodifiable({for (final id in MotPacketSyncId.values) id.intId: id, for (final id in MotPacketRequestId.values) id.intId: id});
 }
 
 enum MotPacketSyncId implements PacketSyncId, MotPacketId {
@@ -140,7 +137,7 @@ enum MotPacketSyncId implements PacketSyncId, MotPacketId {
   MOT_PACKET_SYNC_ABORT(0xA4),
   MOT_PACKET_SYNC_RESV(0xA5),
   MOT_PACKET_PING_ALT(0xAA),
-  MOT_PACKET_PING_BOOT(0xAB),
+  MOT_PACKET_PING_BOOT(0xAB)
   // MOT_PACKET_FEED_WATCHDOG(0xAA),
   // MOT_PACKET_ID_RESERVED_255(0xFF),
   ;
@@ -174,8 +171,7 @@ enum MotPacketRequestId<T, R> implements PacketIdRequest<T, R>, MotPacketId {
   MOT_PACKET_DATA_MODE_WRITE(0xDB, requestCaster: DataModeInitRequest.cast, responseCaster: DataModeInitResponse.cast),
   MOT_PACKET_DATA_MODE_DATA(0xDD, requestCaster: DataModeData.cast, responseCaster: DataModeData.cast),
 
-  MOT_PACKET_ID_RESERVED_255(0xFF),
-  ;
+  MOT_PACKET_ID_RESERVED_255(0xFF);
 
   const MotPacketRequestId(this.intId, {this.requestCaster, this.responseCaster, this.responseId});
 
@@ -199,6 +195,7 @@ enum MotPacketRequestId<T, R> implements PacketIdRequest<T, R>, MotPacketId {
 ////////////////////////////////////////////////////////////////////////////////
 typedef VarReadRequestValues = Iterable<int>;
 typedef VarReadResponseValues = (int respCode, List<int> values);
+// typedef VarReadResponseValues =   List<int> values ;
 // typedef VarReadResponseValues = ({int respCode, List<int> values}); // pref name for typedef?
 
 @Packed(1)
@@ -510,8 +507,8 @@ extension MemWriteRequestMethods on MemWriteRequestValues {
           address + offset,
           (size - offset).clamp(0, MemWriteRequest.sizeMax),
           config,
-          Uint8List.sublistView(data, offset)
-        ) // not strictly necessary to clamp sublistView end, if write loops on size parameter
+          Uint8List.sublistView(data, offset),
+        ), // not strictly necessary to clamp sublistView end, if write loops on size parameter
     ];
   }
 

@@ -53,7 +53,10 @@ class RightMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(textDirection: TextDirection.rtl, child: MainMenu(background: background, menuController: menuController, useIndicator: false));
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: MainMenu(background: background, menuController: menuController, useIndicator: false),
+    );
   }
 }
 
@@ -75,7 +78,9 @@ class MenuContainer extends StatelessWidget {
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             margin: edgeInsets,
             clipBehavior: Clip.none,
-            decoration: BoxDecoration(image: DecorationImage(image: background, fit: BoxFit.fill)),
+            decoration: BoxDecoration(
+              image: DecorationImage(image: background, fit: BoxFit.fill),
+            ),
             child: IntrinsicHeight(child: child),
           ),
         );
@@ -105,8 +110,10 @@ class MenuLeading extends StatelessWidget {
               : Align(
                   alignment: alignment,
                   widthFactor: animation.value,
-                  child: Padding(padding: EdgeInsetsDirectional.only(start: lerpDouble(0, inset, animation.value)!), child: expandedButton), // shift towards center
-                  // child: Padding(padding: const EdgeInsetsDirectional.only(start: 10), child: expandedButton), // shift towards center
+                  child: Padding(
+                    padding: EdgeInsetsDirectional.only(start: lerpDouble(0, inset, animation.value)!),
+                    child: expandedButton,
+                  ), // shift towards center
                 ),
         );
       },
