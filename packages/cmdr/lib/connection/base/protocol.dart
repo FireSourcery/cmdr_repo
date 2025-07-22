@@ -338,6 +338,14 @@ class ProtocolSocket implements Sink<Packet> {
     print('Socket closed');
   }
 
+  /// Must return as stream, so callback can run following each response. This way eliminates additional buffering. Reducing to Iterable would direct each element to the same packet buffer.
+  Stream<(T segmentArgs, R? segmentResponse)> iterativeRequest<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> requestSlices, {Duration delay = datagramDelay}) async* {
+    for (final segmentArgs in requestSlices) {
+      yield (segmentArgs, await requestResponse<T, R>(requestId, segmentArgs));
+      await Future.delayed(delay);
+    }
+  }
+
   /// extension
   Stream<R?> periodicRequest<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration delay = datagramDelay}) async* {
     while (true) {
@@ -346,13 +354,6 @@ class ProtocolSocket implements Sink<Packet> {
     }
   }
 
-  /// Must return as stream, so callback can run following each response. This way eliminates additional buffering. Reducing to Iterable would direct each element to the same packet buffer.
-  Stream<(T segmentArgs, R? segmentResponse)> iterativeRequest<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> requestSlices, {Duration delay = datagramDelay}) async* {
-    for (final segmentArgs in requestSlices) {
-      yield (segmentArgs, await requestResponse<T, R>(requestId, segmentArgs));
-      await Future.delayed(delay);
-    }
-  }
 
   Stream<(T segmentArgs, R? segmentResponse)> periodicIterativeRequest<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> requestSlices, {Duration delay = datagramDelay}) async* {
     while (true) {
@@ -368,12 +369,7 @@ class ProtocolSocket implements Sink<Packet> {
     }
   }
 
-  // Stream<R?> iterativeUpdate<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> Function() requestArgsGetter, {Duration delay = datagramDelay}) async* {
-  //   for (final segmentArgs in requestArgsGetter()) {
-  //     yield await requestResponse<T, R>(requestId, segmentArgs);
-  //     await Future.delayed(delay);
-  //   }
-  // }
+
 
   // @visibleForTesting
   // Stream<(Iterable<int> segmentIds, int? respCode, List<int> values)> streamDebug(Iterable<int> segmentIds) {

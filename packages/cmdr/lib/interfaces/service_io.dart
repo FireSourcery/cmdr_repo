@@ -20,13 +20,13 @@ abstract mixin class ServiceIO<K, V, S> {
   // FutureOr<S?> disconnect();
 
   FutureOr<V?> get(K key);
-  Future<S?> set(K key, V value);
+  FutureOr<S?> set(K key, V value);
 
   int? get maxGetBatchSize;
   int? get maxSetBatchSize;
 
   FutureOr<Iterable<V>?> getBatch(Iterable<K> keys);
-  Future<Iterable<S>?> setBatch(Iterable<(K, V)> pairs);
+  FutureOr<Iterable<S>?> setBatch(Iterable<(K, V)> pairs);
 
   // for single status response
   // FutureOr<(S?, Iterable<V>?)> getBatchWithMeta(Iterable<K> keys);

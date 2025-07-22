@@ -4,6 +4,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:binary_data/bytes/typed_data_ext.dart';
+import 'package:cmdr/type_ext.dart';
 import 'package:collection/collection.dart';
 
 import '../base/protocol.dart';
@@ -21,7 +22,8 @@ class MotProtocolSocket extends ProtocolSocket {
   Future<int?> stopMotors() async => requestResponse(MotPacketRequestId.MOT_PACKET_STOP_ALL, null);
   Future<VersionResponseValues?> version() async => await requestResponse(MotPacketRequestId.MOT_PACKET_VERSION, null);
 
-  Future<CallResponseValues?> call(int id, int? arg, [Duration timeout = const Duration(milliseconds: 500)]) async => requestResponse(MotPacketRequestId.MOT_PACKET_CALL, (id, arg), timeout: timeout);
+  Future<CallResponseValues?> call(int id, int? arg, [Duration timeout = const Duration(milliseconds: 500)]) async =>
+      requestResponse(MotPacketRequestId.MOT_PACKET_CALL, (id: id, arg: arg), timeout: timeout);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Vars by Key
@@ -35,20 +37,20 @@ class MotProtocolSocket extends ProtocolSocket {
   ////////////////////////////////////////////////////////////////////////////////
   Future<MemReadResponseValues?> readMem(int address, int size, int config) async {
     assert(size <= MemReadRequest.sizeMax);
-    return await requestResponse(MotPacketRequestId.MOT_PACKET_MEM_READ, (address, size, config));
+    return await requestResponse(MotPacketRequestId.MOT_PACKET_MEM_READ, (address: address, size: size, config: config));
   }
 
   Future<MemWriteResponseValues?> writeMem(int address, int size, int config, Uint8List data) async {
     assert(size <= MemWriteRequest.sizeMax);
-    return await requestResponse(MotPacketRequestId.MOT_PACKET_MEM_WRITE, (address, size, config, data));
+    return await requestResponse(MotPacketRequestId.MOT_PACKET_MEM_WRITE, (address: address, size: size, config: config, data: data));
   }
 
   Stream<(MemReadRequestValues sliceArgs, MemReadResponseValues?)> readMemSlices(int address, int size, int config) {
-    return iterativeRequest(MotPacketRequestId.MOT_PACKET_MEM_READ, (address, size, config).slices);
+    return iterativeRequest(MotPacketRequestId.MOT_PACKET_MEM_READ, (address: address, size: size, config: config).slices);
   }
 
   Stream<(MemWriteRequestValues sliceArgs, MemWriteResponseValues?)> writeMemSlices(int address, int size, int config, Uint8List data) {
-    return iterativeRequest(MotPacketRequestId.MOT_PACKET_MEM_WRITE, (address, size, config, data).slices);
+    return iterativeRequest(MotPacketRequestId.MOT_PACKET_MEM_WRITE, (address: address, size: size, config: config, data: data).slices);
   }
 
   Future<MemWriteResponseValues?> writeMemSlicesRecursive(int address, int size, int config, Uint8List data, [int successCode = 0]) async {
@@ -95,24 +97,22 @@ class MotProtocolSocket extends ProtocolSocket {
 // Future<int> requestReadVar(int id) => procRequestResponse(MotPacketPayloadId.MOT_PACKET_READ_VAR);
 // Future<int> requestWriteVar(int id, int value) => procRequestResponse(MotPacketPayloadId.MOT_PACKET_WRITE_VAR, {id: value});
 
+extension MemReadRequestMethods on MemReadRequestValues {
+  // List should be relatively small, so a new list is likely more efficient than a generator
+  Iterable<MemReadRequestValues> get slices {
+    return [
+      for (var offset = 0; offset < size; offset += MemReadRequest.sizeMax) //
+        (address: address + offset, size: min((size - offset), MemReadRequest.sizeMax), config: config),
+    ];
+  }
+}
 
-
-  /// Slices
-  /// same input signature, but is not the content sent to the packet
-  // Stream<(VarReadRequestValues sliceIds, VarReadResponseValues?)> readVarsSlices(Iterable<int> ids) => iterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, ids.slices(16));
-  // Stream<(VarWriteRequestValues slicePairs, VarWriteResponseValues?)> writeVarsSlices(Iterable<(int id, int value)> ids) => iterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_WRITE, ids.slices(8));
-
-  // /// Periodic Stream
-  // Stream<VarReadResponseValues?> readVarsStream(VarReadRequestValues ids, {Duration delay = const Duration(milliseconds: 50)}) {
-  //   assert(ids.length <= VarReadRequest.idCountMax);
-  //   return periodicRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, ids, delay: delay);
-  // }
-
-  // Stream<(VarReadRequestValues sliceIds, VarReadResponseValues?)> readVarsSlicesStream(Iterable<int> ids, {Duration delay = const Duration(milliseconds: 50)}) {
-  //   return periodicIterativeRequest(MotPacketRequestId.MOT_PACKET_VAR_READ, ids.slices(VarReadRequest.idCountMax), delay: delay);
-  // }
-
-  // Stream<VarWriteResponseValues?> writeVarsStream(VarWriteRequestValues Function() idValuesGetter, {Duration delay = const Duration(milliseconds: 10)}) {
-  //   assert(idValuesGetter().length <= VarWriteRequest.pairCountMax);
-  //   return periodicUpdate(MotPacketRequestId.MOT_PACKET_VAR_WRITE, idValuesGetter, delay: delay);
-  // }
+extension MemWriteRequestMethods on MemWriteRequestValues {
+  Iterable<MemWriteRequestValues> get slices {
+    return [
+      for (var offset = 0; offset < size; offset += MemWriteRequest.sizeMax)
+        (address: address + offset, size: min((size - offset), MemWriteRequest.sizeMax), config: config, data: Uint8List.sublistView(data, offset)),
+      // not strictly necessary to clamp sublistView end, if build packet loops on size parameter
+    ];
+  }
+}

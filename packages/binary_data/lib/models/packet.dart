@@ -124,8 +124,10 @@ abstract class Packet {
 
   /// using ffi NativeType for signature types only
   /// with range check
+  /// under length packet will be reject at parser
+  R payloadAt<R extends TypedDataList<int>>([int byteOffset = 0, int? length]) => packetData.arrayAt<R>(byteOffset + payloadIndex, length);
   // List<int> payloadAt<R extends TypedData>(int byteOffset) => payload.asIntListOrEmpty<R>(byteOffset );
-  List<int> payloadAt<R extends TypedDataList<int>>([int byteOffset = 0, int? length]) => packetData.arrayOrEmptyAt<R>(byteOffset + payloadIndex);
+  // List<int> payloadAt<R extends TypedDataList<int>>([int byteOffset = 0, int? length]) => packetData.arrayOrEmptyAt<R>(byteOffset + payloadIndex);
 
   int payloadWordAt<R extends NativeType>(int byteOffset) => payloadWords.wordAt<R>(byteOffset, packetClass.endian);
   // throws if header parser fails, length reports lesser value, while checksum passes
@@ -307,7 +309,10 @@ typedef PacketCaster<P extends Packet> = P Function(TypedData typedData);
 ////////////////////////////////////////////////////////////////////////////////
 /// Struct Components Header/Payload
 ////////////////////////////////////////////////////////////////////////////////
-/// [Header] Constructor
+
+////////////////////////////////////////////////////////////////////////////////
+/// [Header]
+////////////////////////////////////////////////////////////////////////////////
 typedef PacketHeaderCaster = PacketHeader Function(TypedData typedData);
 // typedef PacketHeaderSyncCaster = PacketHeaderSync Function(TypedData typedData);
 // typedef PacketHeaderCaster<P extends PacketHeader> = P Function(TypedData typedData);
@@ -358,12 +363,20 @@ abstract interface class PacketSyncHeader implements PacketIdHeader {
   set idField(int value);
 }
 
-extension PacketHeaderMethods on PacketHeader {}
+// extension PacketHeaderMethods on PacketHeader {}
 
+////////////////////////////////////////////////////////////////////////////////
+/// [Payload<V>]
+////////////////////////////////////////////////////////////////////////////////
 /// extends Struct and Payload
 /// Payload need to contain a static cast function
 /// factory Child.cast(TypedData target);
 /// convert in place, on allocated buffer
+/// build/parse with a reference to the header, although both are part of a contiguous buffer
+/// payload class without direct context of header
+///   allows stronger encapsulation
+///   does not have to declare filler header fields
+/// for simplicity, the packet header includes all meta parameters, parsing a payload does not need stateMeta
 /// Alternative
 // Codec functions require double buffering, since header and payload is a contiguous list.
 // same as cast, build, asTypedData
@@ -371,25 +384,20 @@ extension PacketHeaderMethods on PacketHeader {}
 // T decodePayload(Uint8List input);
 // Passing buffer same as cast then build
 // encodeOn(Uint8List buffer, T input);
-/// build/parse with a reference to the header, although both are part of a contiguous buffer
-/// payload class without direct context of header allows stronger encapsulation
-/// if Payload is a struct, then it does not have to declare filler header fields
-///
-/// for simplicity, the packet header includes all meta parameters, parsing a payload does not need stateMeta
 abstract interface class Payload<V> {
   PayloadMeta build(V values, covariant Packet header);
   V parse(covariant Packet header, covariant PayloadMeta? stateMeta);
 }
 
-abstract interface class PayloadFixed<V> {
-  V get values;
-  set values(V values);
-}
+//
+// abstract interface class PayloadFixed<V> {
+//   V get values;
+//   set values(V values);
+// }
 
 /// [Payload] Constructor - handler per id
 /// Struct.create<T>
 typedef PayloadCaster<V> = Payload<V> Function(TypedData typedData);
-// typedef PayloadSubTypeCaster<P extends Payload<V>, V> = P Function(TypedData typedData);
 
 /// any additional state not included in the header
 // length state maintained by caller. cannot be included as struct field, that would be a part of the payload data

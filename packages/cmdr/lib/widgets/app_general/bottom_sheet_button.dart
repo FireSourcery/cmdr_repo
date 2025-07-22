@@ -45,81 +45,100 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
 
   late final FloatingActionButton fabOpen = FloatingActionButton(onPressed: expand, child: widget.iconOpen);
   late final FloatingActionButton fabClose = FloatingActionButton(onPressed: collapse, child: widget.iconClose); // null to hide
-  late final FloatingActionButton fabNull = FloatingActionButton(onPressed: collapse, child: widget.iconInactive); // null to hide
+  late final FloatingActionButton fabNull = FloatingActionButton(onPressed: _fabNullPress, child: widget.iconInactive); // null to hide
 
   PersistentBottomSheetController? bottomSheetController;
   // mutable
-  late Widget? fab = fabOpen;
   late Widget? selectedBottomSheet = widget.child;
+  // late Widget? fab = fabOpen;
 
-  // Future<void> get closed => bottomSheetController.closed;
+  bool get isClosed => bottomSheetController == null;
+
+  Widget? get fab {
+    if (selectedBottomSheet == null) return fabNull;
+    return isClosed ? fabOpen : fabClose;
+  }
 
   /// call from Flutter top level showBottomSheet to maintain button consistency
-  void onShow() {
-    if (mounted) setState(() => fab = fabClose);
-  }
+  // void onShow() {
+  //   if (mounted) setState(() => fab = fabClose);
+  // }
 
-  void onClosed() {
-    if (mounted) setState(() => fab = fabOpen);
-  }
+  void _fabNullPress() {}
 
-  // close and detach, on closed will still run
-  void onExit() {
+  Widget _bottomSheetBuilder(BuildContext context) => Padding(
+    padding: EdgeInsets.only(top: (widget.iconClose.size ?? 0) / 2),
+    child: selectedBottomSheet ?? widget.child,
+  );
+
+  void _onClosed() {
+    // if (mounted) setState(() => fab = fabOpen);
     if (mounted) {
       setState(() {
-        fab = fabNull ?? fabOpen;
-        selectedBottomSheet = null;
+        bottomSheetController = null;
       });
     }
   }
-
-  Widget _bottomSheetBuilder(BuildContext context) => Padding(padding: EdgeInsets.only(top: (widget.iconClose.size ?? 0) / 2), child: selectedBottomSheet ?? widget.child);
 
   void expand([Widget? child]) {
     late final sheetHeight = MediaQuery.of(context).size.height * widget.heightScale + appBarHeight; // repeat in case of screen size change
     if (child != null) selectedBottomSheet = child;
     if (selectedBottomSheet == null) return;
-    setState(() {
-      fab = fabClose;
-    });
-    bottomSheetController = Scaffold.of(context).showBottomSheet(
-      _bottomSheetBuilder,
-      enableDrag: true,
-      constraints: BoxConstraints.expand(height: sheetHeight),
-    );
-    bottomSheetController?.closed.whenComplete(onClosed); // on drag close
+    // setState(() {
+    //   fab = fabClose;
+    // });
+    setState(() {});
+    bottomSheetController = Scaffold.of(context).showBottomSheet(_bottomSheetBuilder, enableDrag: true, constraints: BoxConstraints.expand(height: sheetHeight));
+    bottomSheetController?.closed.whenComplete(_onClosed); // for drag close
   }
 
   void collapse() {
     bottomSheetController?.close();
-    bottomSheetController?.closed.whenComplete(onClosed);
+    bottomSheetController?.closed.whenComplete(_onClosed);
   }
 
   /// call from global state
-  ///
-  void show([Widget? child]) => WidgetsBinding.instance.addPostFrameCallback((_) => expand(child));
+  void _show([Widget? child]) {
+    // if (child != null) selectedBottomSheet = child;
+    expand(child);
+    // bottomSheetController?.closed.whenComplete(_onExit);
+  }
 
-  void exit() => WidgetsBinding.instance.addPostFrameCallback((_) => collapse());
+  // close and detach, on closed will still run
+  void _onExit() {
+    if (mounted) {
+      setState(() {
+        // fab = fabNull ?? fabOpen;
+        bottomSheetController = null;
+        selectedBottomSheet = null;
+      });
+    }
+  }
+
+  void _exit() {
+    bottomSheetController?.close();
+    bottomSheetController?.closed.whenComplete(_onExit);
+  }
+
+  void show([Widget? child]) => WidgetsBinding.instance.addPostFrameCallback((_) => _show(child));
+
+  void exit() => WidgetsBinding.instance.addPostFrameCallback((_) => _exit());
 
   @override
   Widget build(BuildContext context) {
     return Container(
       alignment: Alignment.bottomCenter,
       height: appBarHeight,
-      decoration: BoxDecoration(image: DecorationImage(image: widget.backgroundImage, fit: BoxFit.fill)),
+      decoration: BoxDecoration(
+        image: DecorationImage(image: widget.backgroundImage, fit: BoxFit.fill),
+      ),
       child: _MaterialWrap(color: color, theme: theme, shape: shape, child: fab),
     );
   }
 }
 
 class _MaterialWrap extends StatelessWidget {
-  const _MaterialWrap({
-    super.key,
-    required this.color,
-    required this.theme,
-    required this.shape,
-    required this.child,
-  });
+  const _MaterialWrap({super.key, required this.color, required this.theme, required this.shape, required this.child});
 
   final Color color;
   final BottomSheetThemeData theme;

@@ -101,11 +101,10 @@ extension ByteDataTypedArray on ByteData {
   ByteData dataAt(int offset, [int? length]) => asByteData(offset, length);
 
   // let ByteBuffer handle RangeError
-  // intArrayAt
   T arrayAt<T extends TypedDataList<int>>([int offset = 0, int? length]) => asTypedIntList<T>(offset, length);
   T? arrayOrNullAt<T extends TypedDataList<int>>([int offset = 0, int? length]) => testLength(offset, length) ? arrayAt<T>(offset, length) : null;
 
-  List<int> arrayOrEmptyAt<T extends TypedDataList<int>>([int offset = 0, int? length]) => testLength(offset, length) ? arrayAt<T>(offset, length) : <int>[];
+  // List<int> arrayOrEmptyAt<T extends TypedDataList<int>>([int offset = 0, int? length]) => testLength(offset, length) ? arrayAt<T>(offset, length) : <int>[];
   // returning the same type may be more optimal
   // static TypedDataList<int> emptyIntList = Int64List(0);
   // T intListEmpty<T extends TypedDataList<int>>() {

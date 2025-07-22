@@ -87,11 +87,12 @@ base class MotPacketHeader extends Struct implements PacketHeader {
   @Uint16()
   external int checksumField;
 
-  @Uint8()
   @override
+  @Uint8()
   external int lengthField;
   @Uint8()
   external int sequenceField;
+
   @Uint8()
   external int flex1Field;
   @Uint8()
@@ -189,23 +190,23 @@ enum MotPacketRequestId<T, R> implements PacketIdRequest<T, R>, MotPacketId {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+/// Struct for defining a region of memory, giving a name to each field.
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
 /// Read Vars
 /// Req     [Length, Resv, IdSum] /  [MotVarIds][16]
 /// Resp    [Length, Resv, IdSum] /  [Value16][16]
 ////////////////////////////////////////////////////////////////////////////////
 typedef VarReadRequestValues = Iterable<int>;
-typedef VarReadResponseValues = (int respCode, List<int> values);
-// typedef VarReadResponseValues =   List<int> values ;
-// typedef VarReadResponseValues = ({int respCode, List<int> values}); // pref name for typedef?
+typedef VarReadResponseValues = List<int>;
 
 @Packed(1)
 final class VarReadRequest extends Struct implements Payload<VarReadRequestValues> {
-  // Struct for defining a region of memory, giving a name to each field.
   @Array(16)
   external Array<Uint16> ids;
 
   factory VarReadRequest.cast(TypedData typedData) => Struct.create<VarReadRequest>(typedData);
-  // factory VarReadRequest({required Iterable<int> ids}) => Struct.create<VarReadRequest>()..build(ids);
 
   static int get idCountMax => 16;
 
@@ -218,18 +219,11 @@ final class VarReadRequest extends Struct implements Payload<VarReadRequestValue
       idSum += id;
     }
     // flexUpper16FieldValue = idSum;
-    return PayloadMeta(args.length * 2, (idSum, 0));
+    return PayloadMeta(args.length * 2, (idSum,));
   }
 
-  // Access may require a workaround, since the ffi.Struct boundary must the the full extent.
   @override
-  VarReadRequestValues parse(MotPacket header, void stateMeta) {
-    return header.payloadAt<Uint16List>(0);
-  }
-
-  // VarReadRequestValues parseWithMeta(MotPacket header, void stateMeta) {
-  //   return header.payloadAt<Uint16List>(0);
-  // }
+  VarReadRequestValues parse(MotPacket header, void stateMeta) => throw UnimplementedError();
 }
 
 @Packed(1)
@@ -239,14 +233,19 @@ final class VarReadResponse extends Struct implements Payload<VarReadResponseVal
 
   factory VarReadResponse.cast(TypedData typedData) => Struct.create<VarReadResponse>(typedData);
 
+  // Access may require a workaround, since the ffi.Struct boundary must the the full extent.
   @override
   VarReadResponseValues parse(MotPacket header, PayloadMeta? stateMeta) {
     // under length packet will be reject at parser
+    // assert(header.parsePayloadLength == header.payloadLength);
+    return header.payloadAt<Uint16List>(0, header.parsePayloadLength);
     // values.elements.buffer.asUint16List(values.elements.offsetInBytes, header.parsePayloadLength ~/ 2);
     // assert(values.elements.lengthInBytes == header.parsePayloadLength, 'Payload length mismatch: ${values.elements.lengthInBytes} != ${header.parsePayloadLength}');
-
-    return (0, header.payloadAt<Uint16List>(0, header.parsePayloadLength)); //todo resp code
   }
+
+  // VarReadResponseValues parseWithMeta(MotPacket header, void stateMeta) {
+  //   return header.payloadAt<Uint16List>(0);
+  // }
 
   @override
   PayloadMeta build(VarReadResponseValues args, MotPacket header) => throw UnimplementedError();
@@ -362,10 +361,6 @@ base class VersionResponse extends Struct implements Payload<VersionResponseValu
   @Uint32()
   external int firmware;
 
-  // factory VersionResponse({int board = 0, int firmware = 0, int library = 0, int protocol = 0}) {
-  //   return Struct.create<VersionResponse>()..build((board: board, firmware: firmware, library: library, protocol: protocol));
-  // }
-
   factory VersionResponse.cast(TypedData target) => Struct.create<VersionResponse>(target);
 
   @override
@@ -389,8 +384,8 @@ base class VersionResponse extends Struct implements Payload<VersionResponseValu
 ////////////////////////////////////////////////////////////////////////////////
 /// Call
 ////////////////////////////////////////////////////////////////////////////////
-typedef CallRequestValues = (int id, int? arg);
-typedef CallResponseValues = (int id, int status);
+typedef CallRequestValues = ({int id, int? arg});
+typedef CallResponseValues = ({int id, int status});
 
 @Packed(1)
 base class CallRequest extends Struct implements Payload<CallRequestValues> {
@@ -403,27 +398,26 @@ base class CallRequest extends Struct implements Payload<CallRequestValues> {
 
   @override
   PayloadMeta build(CallRequestValues args, MotPacket header) {
-    final (id, arg) = args;
-    this.id = id;
-    this.arg = arg ?? 0;
+    id = args.id;
+    arg = args.arg ?? 0;
     return const PayloadMeta(8);
   }
 
   @override
-  CallRequestValues parse(MotPacket header, void stateMeta) => (id, arg);
+  CallRequestValues parse(MotPacket header, void stateMeta) => (id: id, arg: arg);
 }
 
 @Packed(1)
 base class CallResponse extends Struct implements Payload<CallResponseValues> {
   @Uint32()
-  external int id; //todo move ot header
+  external int id;
   @Uint16()
   external int status;
 
   factory CallResponse.cast(TypedData target) => Struct.create<CallResponse>(target);
 
   @override
-  CallResponseValues parse(MotPacket header, void stateMeta) => (id, status);
+  CallResponseValues parse(MotPacket header, void stateMeta) => (id: id, status: status);
 
   @override
   PayloadMeta build(CallResponseValues args, MotPacket header) => throw UnimplementedError();
@@ -432,22 +426,9 @@ base class CallResponse extends Struct implements Payload<CallResponseValues> {
 ////////////////////////////////////////////////////////////////////////////////
 /// Mem Read
 ////////////////////////////////////////////////////////////////////////////////
-typedef MemReadRequestValues = (int address, int size, int config); // should probably user named parameters for extension
+typedef MemReadRequestValues = ({int address, int size, int config}); // should probably user named parameters for extension
 
-extension MemReadRequestMethods on MemReadRequestValues {
-  // List should be relatively small, so a new list is likely more efficient than a generator
-  Iterable<MemReadRequestValues> get slices {
-    // slices(MemReadRequest.sizeMax, (start, length) => (start, length, config), address, size);
-
-    return [for (var offset = 0; offset < size; offset += MemReadRequest.sizeMax) (address + offset, (size - offset).clamp(0, MemReadRequest.sizeMax), config)];
-  }
-
-  int get address => $1;
-  int get size => $2;
-  int get config => $3;
-}
-
-typedef MemReadResponseValues = (int status, Uint8List data);
+typedef MemReadResponseValues = ({int status, Uint8List data});
 
 @Packed(1)
 base class MemReadRequest extends Struct implements Payload<MemReadRequestValues> {
@@ -466,10 +447,9 @@ base class MemReadRequest extends Struct implements Payload<MemReadRequestValues
 
   @override
   PayloadMeta build(MemReadRequestValues args, MotPacket header) {
-    final (address, size, config) = args;
-    this.address = address;
-    this.size = size;
-    this.config = config;
+    address = args.address;
+    size = args.size;
+    config = args.config;
     return const PayloadMeta(12);
   }
 
@@ -487,7 +467,7 @@ base class MemReadResponse extends Struct implements Payload<MemReadResponseValu
   @override
   MemReadResponseValues parse(MotPacket header, void stateMeta) {
     // return (header.packetHeader.flexUpper16FieldValue, header.payload);
-    return (0, header.payloadAt<Uint8List>(0, header.parsePayloadLength) as Uint8List);
+    return (status: 0, data: header.payloadAt<Uint8List>(0, header.parsePayloadLength));
   }
 
   @override
@@ -497,26 +477,7 @@ base class MemReadResponse extends Struct implements Payload<MemReadResponseValu
 ////////////////////////////////////////////////////////////////////////////////
 /// Mem Write
 ////////////////////////////////////////////////////////////////////////////////
-typedef MemWriteRequestValues = (int address, int size, int config, Uint8List data); // change to List<int>?
-
-extension MemWriteRequestMethods on MemWriteRequestValues {
-  Iterable<MemWriteRequestValues> get slices {
-    return [
-      for (var offset = 0; offset < size; offset += MemWriteRequest.sizeMax)
-        (
-          address + offset,
-          (size - offset).clamp(0, MemWriteRequest.sizeMax),
-          config,
-          Uint8List.sublistView(data, offset),
-        ), // not strictly necessary to clamp sublistView end, if write loops on size parameter
-    ];
-  }
-
-  int get address => $1;
-  int get size => $2;
-  int get config => $3;
-  Uint8List get data => $4;
-}
+typedef MemWriteRequestValues = ({int address, int size, int config, Uint8List data}); // change to List<int>?
 
 typedef MemWriteResponseValues = int;
 
@@ -539,14 +500,13 @@ base class MemWriteRequest extends Struct implements Payload<MemWriteRequestValu
 
   @override
   PayloadMeta build(MemWriteRequestValues args, MotPacket header) {
-    final (address, size, config, data) = args;
     if (size > sizeMax) throw ArgumentError('Max Length $sizeMax: $size');
-    this.address = address;
-    this.size = size;
-    this.config = config;
-    // loops on size. data.length may be greater
+    address = args.address;
+    size = args.size;
+    config = args.config;
+    // loops on size. args.data.length may be greater
     for (var index = 0; index < size; index++) {
-      this.data[index] = data[index];
+      data[index] = args.data[index];
     }
     return PayloadMeta(size + 8);
   }
@@ -572,9 +532,8 @@ base class MemWriteResponse extends Struct implements Payload<MemWriteResponseVa
 ////////////////////////////////////////////////////////////////////////////////
 /// MOT_PACKET_DATA_MODE_WRITE
 /// MOT_PACKET_DATA_MODE_READ
-/// typedef struct MotPacket_DataModeReq_Payload { uint32_t AddressStart; uint32_t SizeBytes; uint32_t ConfigFlags; }       MotPacket_DataModeReq_Payload_T;
 ////////////////////////////////////////////////////////////////////////////////
-typedef DataModeRequestValues = (int address, int size, int flags);
+typedef DataModeRequestValues = ({int address, int size, int flags});
 
 @Packed(1)
 base class DataModeInitRequest extends Struct implements Payload<DataModeRequestValues> {
@@ -589,10 +548,9 @@ base class DataModeInitRequest extends Struct implements Payload<DataModeRequest
 
   @override
   PayloadMeta build(DataModeRequestValues args, MotPacket header) {
-    final (address, size, configFlags) = args;
-    this.address = address;
-    this.size = size;
-    this.configFlags = configFlags;
+    address = args.address;
+    size = args.size;
+    configFlags = args.flags;
     return const PayloadMeta(12);
   }
 
@@ -633,5 +591,5 @@ base class DataModeData extends Struct implements Payload<Uint8List> {
   }
 
   @override
-  Uint8List parse(MotPacket header, void stateMeta) => header.payloadAt<Uint8List>(0, header.parsePayloadLength) as Uint8List;
+  Uint8List parse(MotPacket header, void stateMeta) => header.payloadAt<Uint8List>(0, header.parsePayloadLength);
 }
