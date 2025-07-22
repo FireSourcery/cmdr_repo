@@ -120,9 +120,7 @@ class Protocol {
 // a thread of messaging with buffers
 class ProtocolSocket implements Sink<Packet> {
   ProtocolSocket._(this.protocol, this.packetBufferIn, this.packetBufferOut);
-  ProtocolSocket(this.protocol)
-      : packetBufferIn = PacketBuffer(protocol.packetInterface),
-        packetBufferOut = PacketBuffer(protocol.packetInterface);
+  ProtocolSocket(this.protocol) : packetBufferIn = PacketBuffer(protocol.packetInterface), packetBufferOut = PacketBuffer(protocol.packetInterface);
 
   @protected
   final Protocol protocol;
@@ -138,7 +136,7 @@ class ProtocolSocket implements Sink<Packet> {
 
   // ProtocolException status = ProtocolException.ok; // todo with eventSink
 
-  Stopwatch timer = Stopwatch()..start();
+  final Stopwatch timer = Stopwatch()..start();
 
   static const Duration timeoutDefault = Duration(milliseconds: 500);
   static const Duration rxTimeoutDefault = Duration(milliseconds: 500);
@@ -162,34 +160,31 @@ class ProtocolSocket implements Sink<Packet> {
   Future<R?> requestResponse<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration timeout = reqRespTimeoutDefault, ProtocolSyncOptions syncOptions = ProtocolSyncOptions.none}) async {
     waitingOnLockCount++;
     try {
-      return await _lock.synchronized<R?>(
-        () async {
-          print('');
-          print('--- New Request');
-          print('Socket [$hashCode] Request [$requestId] | waiting on lock [$waitingOnLockCount]');
-          packetBufferIn.clear();
+      return await _lock.synchronized<R?>(() async {
+        print('');
+        print('--- New Request');
+        print('Socket [$hashCode] Request [$requestId] | waiting on lock [$waitingOnLockCount]');
+        packetBufferIn.clear();
 
-          _recved = Completer.sync();
-          if (syncOptions.recvSync) protocol.mapSync(this); // map sync before sending request
-          protocol.mapRequestResponse(requestId, this); //move to send request?
+        _recved = Completer.sync();
+        if (syncOptions.recvSync) protocol.mapSync(this); // map sync before sending request
+        protocol.mapRequestResponse(requestId, this); //move to send request?
 
-          final PayloadMeta requestMeta = await sendRequest(requestId, requestArgs); //alternatively without waiting
+        final PayloadMeta requestMeta = await sendRequest(requestId, requestArgs); //alternatively without waiting
 
-          if (syncOptions.recvSync) {
-            if (await recvSync(timeout) != packetInterface.ack) return null; // handle nack?
-            // if (await recvSync() case PacketSyncId? id when id != packetInterface.ack) {
-            //   return Future.error(id ?? TimeoutException());
-            // }
-          }
-          final R? response = await recvResponse(requestId, reqStateMeta: requestMeta, timeout: timeout);
+        if (syncOptions.recvSync) {
+          if (await recvSync(timeout) != packetInterface.ack) return null; // handle nack?
+          // if (await recvSync() case PacketSyncId? id when id != packetInterface.ack) {
+          //   return Future.error(id ?? TimeoutException());
+          // }
+        }
+        final R? response = await recvResponse(requestId, reqStateMeta: requestMeta, timeout: timeout);
 
-          if (response == null) return null;
+        if (response == null) return null;
 
-          if (syncOptions.sendSync) await sendSync(packetInterface.ack);
-          return response;
-        },
-        timeout: timeout,
-      );
+        if (syncOptions.sendSync) await sendSync(packetInterface.ack);
+        return response;
+      }, timeout: timeout);
     } on TimeoutException catch (e) {
       print("Socket lock requestResponse Timeout");
       print(e);
@@ -209,14 +204,11 @@ class ProtocolSocket implements Sink<Packet> {
   // without options
   Future<R?> requestResponseShort<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration? timeout = reqRespTimeoutDefault}) async {
     try {
-      return await _lock.synchronized<R?>(
-        () async {
-          packetBufferIn.clear();
-          protocol.mapRequestResponse(requestId, this); //move to send request?
-          return await sendRequest(requestId, requestArgs).then((value) async => await recvResponse(requestId, reqStateMeta: value));
-        },
-        timeout: timeout,
-      );
+      return await _lock.synchronized<R?>(() async {
+        packetBufferIn.clear();
+        protocol.mapRequestResponse(requestId, this); //move to send request?
+        return await sendRequest(requestId, requestArgs).then((value) async => await recvResponse(requestId, reqStateMeta: value));
+      }, timeout: timeout);
     } on TimeoutException {
     } catch (e) {
     } finally {}
@@ -354,7 +346,6 @@ class ProtocolSocket implements Sink<Packet> {
     }
   }
 
-
   Stream<(T segmentArgs, R? segmentResponse)> periodicIterativeRequest<T, R>(PacketIdRequest<T, R> requestId, Iterable<T> requestSlices, {Duration delay = datagramDelay}) async* {
     while (true) {
       yield* iterativeRequest<T, R>(requestId, requestSlices, delay: delay);
@@ -369,8 +360,6 @@ class ProtocolSocket implements Sink<Packet> {
     }
   }
 
-
-
   // @visibleForTesting
   // Stream<(Iterable<int> segmentIds, int? respCode, List<int> values)> streamDebug(Iterable<int> segmentIds) {
   //   Stopwatch debugStopwatch = Stopwatch()..start();
@@ -384,11 +373,20 @@ enum ProtocolSyncOptions {
   none,
   sendOnly,
   recvOnly,
-  sendAndRecv,
-  ;
+  sendAndRecv;
 
-  bool get sendSync => switch (this) { none => false, sendOnly => true, recvOnly => false, sendAndRecv => true };
-  bool get recvSync => switch (this) { none => false, sendOnly => false, recvOnly => true, sendAndRecv => true };
+  bool get sendSync => switch (this) {
+    none => false,
+    sendOnly => true,
+    recvOnly => false,
+    sendAndRecv => true,
+  };
+  bool get recvSync => switch (this) {
+    none => false,
+    sendOnly => false,
+    recvOnly => true,
+    sendAndRecv => true,
+  };
 }
 
 class ProtocolException implements Exception {
