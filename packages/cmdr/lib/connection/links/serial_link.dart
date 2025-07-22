@@ -31,53 +31,6 @@ class SerialLink implements Link {
   /// view hovered selection name, SerialPort(portName) changes active pointer
   String? portConfigName;
 
-  /// returns true on success, last exception still buffered
-  /// LinkStatus?
-  bool connect({String? name, int? baudRate, SerialPortConfig? config}) {
-    portConfigName = name ?? portConfigName;
-    portConfig = config ?? portConfig;
-    portConfig.baudRate = baudRate ?? portConfig.baudRate;
-
-    if (isConnected) {
-      lastStatus = LinkStatus.connect('Already Connected $portActiveName', SerialLink);
-      return false;
-    }
-
-    if (portConfigName == null) {
-      lastStatus = const LinkStatus.connect('No Port Selected', SerialLink);
-      return false;
-    }
-
-    try {
-      _serialPort = SerialPort(portConfigName!);
-      if (_serialPort!.openReadWrite()) {
-        _serialPort!.config = portConfig;
-        _serialPortReader = SerialPortReader(_serialPort!);
-        streamIn = _serialPortReader!.stream.asBroadcastStream().handleError(onStreamError);
-        lastStatus = LinkStatus.connect('$portActiveName', SerialLink);
-        return true;
-      } else {
-        lastStatus = LinkStatus.connect('Cannot Open $portConfigName', SerialLink);
-        return false;
-      }
-    } on SerialPortError catch (e) {
-      lastStatus = LinkStatus.connect('Driver $e', SerialLink, e);
-      return false;
-    }
-  }
-
-  void disconnect() {
-    if (isConnected) {
-      try {
-        _serialPort!.close();
-        _serialPort!.dispose();
-      } on SerialPortError catch (e) {
-        lastStatus = LinkStatus.connect('Driver $e', SerialLink, e);
-        print(e);
-      }
-    }
-  }
-
   @override
   String? get portActiveName => _serialPort?.name;
 
@@ -86,19 +39,56 @@ class SerialLink implements Link {
   Stream<Uint8List> streamIn = const Stream.empty();
 
   @override
+  bool get isConnected => (_serialPort?.isOpen ?? false); // ensures null values are initialized
+
+  @override
   LinkStatus? lastStatus;
   @override
   Exception? lastException;
 
   @override
-  bool get isConnected => (_serialPort?.isOpen ?? false); // ensures null values are initialized
+  LinkConnectionStatus connect({String? name, int? baudRate, SerialPortConfig? config}) {
+    portConfigName = name ?? portConfigName;
+    portConfig = config ?? portConfig;
+    portConfig.baudRate = baudRate ?? portConfig.baudRate;
 
-  @protected
-  void onStreamError(Object object, StackTrace stackTrace) {
-    lastStatus = LinkStatus('Link Rx Stream Error: $object', SerialLink);
+    if (isConnected) return lastStatus = LinkConnectionStatus.success('Already Connected $portActiveName', linkType: SerialLink);
+
+    if (portConfigName == null) return lastStatus = const LinkConnectionStatus.error('No Port Selected', linkType: SerialLink);
+
+    try {
+      _serialPort = SerialPort(portConfigName!);
+      if (_serialPort!.openReadWrite()) {
+        _serialPort!.config = portConfig;
+        _serialPortReader = SerialPortReader(_serialPort!);
+        streamIn = _serialPortReader!.stream.asBroadcastStream().handleError(_onStreamError);
+        return lastStatus = LinkConnectionStatus.success('$portActiveName', linkType: SerialLink);
+      } else {
+        return lastStatus = LinkConnectionStatus.error('Cannot Open $portConfigName', linkType: SerialLink);
+      }
+    } on SerialPortError catch (e) {
+      return lastStatus = LinkConnectionStatus.error('Driver ${e.message}', linkType: SerialLink);
+    }
+  }
+
+  @override
+  void disconnect() {
+    if (isConnected) {
+      try {
+        _serialPort!.close();
+        _serialPort!.dispose();
+      } on SerialPortError catch (e) {
+        lastStatus = LinkConnectionStatus.error('Driver ${e.message}', linkType: SerialLink);
+      }
+    }
+  }
+
+  void _onStreamError(Object object, StackTrace stackTrace) {
+    lastStatus = LinkStatus('Link Rx Stream Error: $object', linkType: SerialLink);
     flushInput();
   }
 
+  @override
   void dispose() {
     _serialPort?.dispose();
   }
@@ -109,11 +99,11 @@ class SerialLink implements Link {
       return await streamIn.first.timeout(const Duration(milliseconds: 1000));
     } on TimeoutException {
       flushInput();
-      lastStatus = const LinkStatus('Link Rx Timeout', SerialLink);
+      lastStatus = const LinkStatus('Link Rx Timeout', linkType: SerialLink);
       rethrow;
     } catch (e) {
       flushInput();
-      lastStatus = LinkStatus('Link Rx: $e', SerialLink);
+      lastStatus = LinkStatus('Link Rx: $e', linkType: SerialLink);
       rethrow;
     } finally {}
   }
@@ -128,10 +118,10 @@ class SerialLink implements Link {
       // if (await Future(() => serialPort!.write(bytes, timeout: 500)).timeout(const Duration(milliseconds: 1000)) < bytes.length) throw TimeoutException('SerialPort Tx Timeout');
     } on TimeoutException {
       flushOutput();
-      lastStatus = const LinkStatus('Link Tx Timeout', SerialLink);
+      lastStatus = const LinkStatus('Link Tx Timeout', linkType: SerialLink);
       rethrow;
     } catch (e) {
-      lastStatus = LinkStatus('Link Tx: $e', SerialLink);
+      lastStatus = LinkStatus('Link Tx: $e', linkType: SerialLink);
       flushOutput();
       rethrow;
     } finally {}

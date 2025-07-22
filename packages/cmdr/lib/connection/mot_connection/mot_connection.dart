@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../base/link.dart';
 import '../base/protocol.dart';
 import '../links/serial_link.dart';
@@ -22,31 +24,43 @@ class MotConnection {
 
   final SerialLink serialLink = SerialLink();
   // final BluetoothLink bluetoothLink = BluetoothLink();
-  late final Protocol protocol = Protocol(serialLink, const MotPacketInterface()); //todo empty link for state, nullcheck/isconnected
-  late final MotProtocolSocket _general = MotProtocolSocket(protocol);
-  late final MotProtocolSocket _stop = MotProtocolSocket(protocol);
-  late final MotProtocolSocket _varRead = MotProtocolSocket(protocol);
-  late final MotProtocolSocket _varWrite = MotProtocolSocket(protocol);
+
+  static final Protocol _protocolUninit = Protocol(const Link.uninitialized(), const MotPacketInterface());
+  late final Protocol _protocolSerial = Protocol(serialLink, const MotPacketInterface());
+
+  // late final Protocol protocol = Protocol(serialLink, const MotPacketInterface());
+  // late final MotProtocolSocket general = MotProtocolSocket(protocol);
+  // late final MotProtocolSocket stop = MotProtocolSocket(protocol);
+  // late final MotProtocolSocket varRead = MotProtocolSocket(protocol);
+  // late final MotProtocolSocket varWrite = MotProtocolSocket(protocol);
   //   final MotProtocolSocket events = MotProtocolSocket(protocol);
+  // Link activeLink = const Link.uninitialized();
+  Link get activeLink => activeProtocol.link;
 
-  late MotProtocolSocket general = _general;
-  late MotProtocolSocket stop = _stop;
-  late MotProtocolSocket varRead = _varRead;
-  late MotProtocolSocket varWrite = _varWrite;
+  Protocol activeProtocol = _protocolUninit;
+  MotProtocolSocket general = MotProtocolSocket(_protocolUninit);
+  MotProtocolSocket stop = MotProtocolSocket(_protocolUninit);
+  MotProtocolSocket varRead = MotProtocolSocket(_protocolUninit);
+  MotProtocolSocket varWrite = MotProtocolSocket(_protocolUninit);
 
-  Link get activeLink => protocol.link;
-  bool get isConnected => protocol.link.isConnected;
+  StreamSubscription<Packet>? packetSubscription;
+
+  bool get isConnected => activeProtocol.link.isConnected;
 
   bool begin({Enum? linkType, String? name, int? baudRate}) {
-    serialLink.connect(name: name, baudRate: baudRate);
+    //  switch on link type
 
-    if (isConnected) protocol.begin();
+    if (serialLink.connect(name: name, baudRate: baudRate).isConnected) {
+      if (packetSubscription != null) packetSubscription!.cancel();
+      packetSubscription = _protocolSerial.begin();
 
-    // todo no connect state
-    // general = _general;
-    // stop = _stop;
-    // varRead = _varRead;
-    // varWrite = _varWrite;
+      activeProtocol = _protocolSerial;
+      general = MotProtocolSocket(_protocolSerial);
+      stop = MotProtocolSocket(_protocolSerial);
+      varRead = MotProtocolSocket(_protocolSerial);
+      varWrite = MotProtocolSocket(_protocolSerial);
+    }
+
     return isConnected;
   }
 }

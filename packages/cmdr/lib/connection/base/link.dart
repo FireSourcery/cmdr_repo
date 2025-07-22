@@ -1,19 +1,12 @@
+import 'dart:async';
 import 'dart:typed_data';
-
-import 'package:flutter/foundation.dart';
 
 abstract interface class Link {
   Link();
   const factory Link.uninitialized() = _LinkUninitialized; // a dummy state, so that send and recv can be called without checking for null
 
-  LinkStatus? lastStatus;
-  Exception? lastException;
-
   String? get portActiveName;
   Stream<Uint8List> get streamIn;
-
-  // LinkStatus? connect();
-  // void disconnect();
 
   /// Protocol Interface
   bool get isConnected;
@@ -21,14 +14,23 @@ abstract interface class Link {
   Future<void> send(Uint8List bytes);
   void flushInput();
   void flushOutput();
+
+  FutureOr<void> dispose();
+
+  LinkConnectionStatus? connect();
+  void disconnect();
+
+  LinkStatus? get lastStatus;
+  Exception? get lastException;
 }
 
 class _LinkUninitialized implements Link {
   const _LinkUninitialized();
+
   @override
-  final LinkStatus? lastStatus = null;
+  LinkStatus? get lastStatus => const LinkStatus('Link Uninitialized', linkType: Link);
   @override
-  final Exception? lastException = null;
+  Exception? get lastException => null;
 
   @override
   String? get portActiveName => null;
@@ -39,30 +41,34 @@ class _LinkUninitialized implements Link {
   @override
   Future<Uint8List?> recv([int? byteCount]) async => null;
   @override
-  Future<void> send(Uint8List bytes) async {
-    if (kDebugMode) {
-      print("TX ${bytes.take(4)} ${bytes.skip(4).take(4)} ${bytes.skip(8)}");
-    }
-  }
+  Future<void> send(Uint8List bytes) async {}
 
   @override
   void flushInput() {}
   @override
   void flushOutput() {}
+  @override
+  FutureOr<void> dispose() {}
 
   @override
-  set lastException(Exception? _) {}
+  LinkConnectionStatus? connect() => null;
+
   @override
-  set lastStatus(LinkStatus? _) {}
+  void disconnect() {}
 }
 
-class LinkStatus implements Exception {
-  const LinkStatus(this.message, [this.linkType = Link, this.subset = '', this.driverException]);
-  const LinkStatus.connect(this.message, [this.linkType = Link, this.driverException]) : subset = "Connect";
-  final String message;
-  final String subset;
-  final Type linkType;
-  final Exception? driverException;
+class LinkStatus {
+  const LinkStatus(this.message, {this.linkType = Link});
+  // LinkStatus.ofException(Exception e) : message = e.message;
 
-  static const LinkStatus ok = LinkStatus('Ok');
+  final String message;
+  final Type linkType;
+  // final Exception? exception;
+}
+
+class LinkConnectionStatus extends LinkStatus {
+  const LinkConnectionStatus.error(super.message, {super.linkType}) : isConnected = false;
+  const LinkConnectionStatus.success(super.message, {super.linkType}) : isConnected = true;
+
+  final bool isConnected;
 }

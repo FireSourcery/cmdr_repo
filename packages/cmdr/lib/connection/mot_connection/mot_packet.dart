@@ -66,6 +66,10 @@ class MotPacket extends Packet {
 
   // @override
   // MotPacketHeader get packetHeader => super.packetHeader as MotPacketHeader;
+
+  @override
+  String toString() => '${bytes.take(4)} ${bytes.skip(4).take(4)} ${bytes.skip(8)}';
+  // return 'MotPacket{startField: $startField, idField: $idField, checksumField: $checksumField, lengthField: $lengthField, sequenceField: $sequenceField, flexUpper16Field: $flexUpper16Field}';
 }
 
 ////////////////////////////////////////////////////////////////////////////////

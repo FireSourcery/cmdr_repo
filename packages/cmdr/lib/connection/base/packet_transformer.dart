@@ -5,11 +5,11 @@ import 'package:binary_data/binary_data.dart';
 
 import 'protocol.dart'; // or move status
 
-/// Packet Rx Meta Parser
+/// [Packet Rx Meta Parser Buffer]
 /// Rx Packet Buffer and the state of the PacketTransformer
 class HeaderParser extends PacketBuffer {
   // HeaderParser(super.packetCaster, super.size) : super.size();
-  HeaderParser(super.packetInterface, super.size) : super();
+  HeaderParser(PacketClass packetInterface, [int? size]) : super(packetInterface, size ?? packetInterface.lengthMax * 4);
 
   late Uint8List trailing = Uint8List.sublistView(viewAsBytes);
 
@@ -53,7 +53,6 @@ class HeaderParser extends PacketBuffer {
 
   // alternatively as caster
   // headerParser need caster to shift view packet.cast
-
   // alternative implementation for fragmented trailing buffer
   // disallow changing dataView as pointer directly, caller use length
   // int get viewLength => dataView.lengthInBytes;
@@ -172,7 +171,6 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
   void close() => _outputSink.close();
 
   EventSink<Uint8List> _mapSink(EventSink<Packet> sink) => this.._outputSink = sink;
-
   @override
   Stream<Packet> bind(Stream<Uint8List> stream) => Stream<Packet>.eventTransformed(stream, _mapSink);
 }
