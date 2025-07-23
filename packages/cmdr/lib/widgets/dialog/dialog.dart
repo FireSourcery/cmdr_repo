@@ -105,16 +105,16 @@ class _AsyncConfirmationDialogState<T> extends State<AsyncConfirmationDialog<T>>
             return switch (snapshot.connectionState) {
               ConnectionState.waiting => TextButton(onPressed: onPressedConfirm, child: const Text('Confirm')),
               ConnectionState.none || ConnectionState.active || ConnectionState.done => FutureBuilder(
-                  future: onConfirmCompleted,
-                  builder: (BuildContext context, AsyncSnapshot<T> snapshot) {
-                    // AsyncSnapshot(hasError: true) =>  ,
-                    return switch (snapshot.connectionState) {
-                      ConnectionState.none => const Text('Initialing...'),
-                      ConnectionState.waiting || ConnectionState.active => const CircularProgressIndicator(),
-                      ConnectionState.done => TextButton(onPressed: () => Navigator.of(context).pop(snapshot.data), child: const Text('Ok')), // done with or without error
-                    };
-                  },
-                ),
+                future: onConfirmCompleted,
+                builder: (BuildContext context, AsyncSnapshot<T> snapshot) {
+                  // AsyncSnapshot(hasError: true) =>  ,
+                  return switch (snapshot.connectionState) {
+                    ConnectionState.none => const Text('Initialing...'),
+                    ConnectionState.waiting || ConnectionState.active => const CircularProgressIndicator(),
+                    ConnectionState.done => TextButton(onPressed: () => Navigator.of(context).pop(snapshot.data), child: const Text('Ok')), // done with or without error
+                  };
+                },
+              ),
             };
           },
         ),
@@ -128,17 +128,7 @@ class _AsyncConfirmationDialogState<T> extends State<AsyncConfirmationDialog<T>>
 ////////////////////////////////////////////////////////////////////////////////
 // state to maintain selected items
 class SelectionDialog<E> extends StatefulWidget {
-  const SelectionDialog({
-    super.key,
-    this.title,
-    this.icon,
-    this.selectMax,
-    this.iconColor,
-    required this.selectable,
-    this.labelBuilder,
-    this.selectionState,
-    this.initialSelected,
-  });
+  const SelectionDialog({super.key, this.title, this.icon, this.selectMax, this.iconColor, required this.selectable, this.labelBuilder, this.selectionState, this.initialSelected});
   final Widget? title;
   final Widget? icon;
   final Color? iconColor;
@@ -156,7 +146,7 @@ class SelectionDialog<E> extends StatefulWidget {
 }
 
 class _SelectionDialogState<E> extends State<SelectionDialog<E>> {
-  late final Set<E> selected = widget.selectionState ?? {};
+  late final selected = widget.selectionState ?? {};
 
   @override
   void initState() {

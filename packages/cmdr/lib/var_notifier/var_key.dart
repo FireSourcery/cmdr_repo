@@ -103,6 +103,8 @@ abstract mixin class VarStatus implements Exception {
   bool get isError => code != 0;
 }
 
+// abstract mixin class VarStatusError implements VarStatus {}
+
 // mixin on enum to implement the Status interface
 abstract mixin class VarEnumStatus implements VarStatus, Enum {
   int get code => index;
