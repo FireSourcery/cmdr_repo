@@ -242,7 +242,7 @@ final class VarReadResponse extends Struct implements Payload<VarReadResponseVal
   VarReadResponseValues parse(MotPacket header, PayloadMeta? stateMeta) {
     // under length packet will be reject at parser
     // assert(header.parsePayloadLength == header.payloadLength);
-    return header.payloadAt<Uint16List>(0, header.parsePayloadLength);
+    return header.payloadAt<Uint16List>(0, header.parsePayloadLength ~/ 2);
     // values.elements.buffer.asUint16List(values.elements.offsetInBytes, header.parsePayloadLength ~/ 2);
     // assert(values.elements.lengthInBytes == header.parsePayloadLength, 'Payload length mismatch: ${values.elements.lengthInBytes} != ${header.parsePayloadLength}');
   }

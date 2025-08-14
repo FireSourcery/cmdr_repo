@@ -281,20 +281,19 @@ class ProtocolSocket implements Sink<Packet> {
       return await _recved.future.timeout(timeout).then((_) => parse());
     } on TimeoutException {
       print("Socket Recv Response Timeout");
-      // } on ProtocolException catch (e) {
-      //   //should be handled by protocol
-      //   print("Unhandled ProtocolException on Socket");
-      //   print(e.message);
-      // } on Exception catch (e) {
-      //   print("Protocol Unnamed Exception");
-      //   print(e);
-      // } on RangeError catch (e) {
-      //   print(packetBufferIn.viewAsBytes);
-      //   print("Protocol Parser Failed");
-      //   print(e);
-      //   return parse();
-      /// todo
+    } on ProtocolException catch (e) {
+      //should be handled by protocol
+      print("Unhandled ProtocolException on Socket");
+      print(e.message);
+    } on Exception catch (e) {
+      print("Protocol Unnamed Exception");
+      print(e);
+    } on RangeError catch (e) {
+      print(packetBufferIn.viewAsBytes);
+      print("Protocol Parser Failed");
+      print(e);
     } catch (e) {
+      print("ProtocolSocket");
       print(e);
       // payload parser may throw if invalid packet passes header parser as valid
     } finally {
