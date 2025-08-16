@@ -38,6 +38,7 @@ export 'widgets/dialog/dialog_anchor.dart';
 
 // Input/Output field widgets
 export 'widgets/io_field/io_field.dart';
+export 'widgets/io_field/io_field_composites.dart';
 
 // Time chart widgets
 export 'widgets/time_chart/chart_controller.dart';

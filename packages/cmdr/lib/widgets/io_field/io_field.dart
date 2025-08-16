@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 /// [IOField] is effectively a view union of IO types styled similar to a [TextField]
-abstract mixin class IOField<T> implements Widget {
+abstract class IOField<T> implements Widget {
   /// Select widget using union config
   /// T functions as generic type, as well as selection parameter, unless explicitly defined
   factory IOField(IOFieldConfig<T> config, {Key? key}) {
@@ -28,42 +28,6 @@ abstract mixin class IOField<T> implements Widget {
   //   Key? key,
   // }) {
   //   return IOField(IOFieldConfig(valueListenable: valueNotifier, valueGetter: valueNotifier.value, valueSetter: valueNotifier.value , key: key);
-  // }
-
-  factory IOField.withSlider(IOFieldConfig<T> config, {Key? key}) {
-    assert(config.valueNumLimits != null);
-    return switch (T) {
-          const (int) => IOFieldWithSlider<int>(config as IOFieldConfig<int>),
-          const (double) => IOFieldWithSlider<double>(config as IOFieldConfig<double>),
-          const (num) => IOFieldWithSlider<num>(config as IOFieldConfig<num>),
-          _ => throw TypeError(),
-        }
-        as IOField<T>;
-  }
-
-  // factory IOField.withToggle(IOFieldConfig<bool> config, {Key? key}) {
-  //   assert(T == bool);
-  //   return _IOFieldDecoratedSwitch(config) as IOField<T>;
-  // }
-
-  // static InputDecoration idDecorationWithDefaults({
-  //   InputDecoration? decorationBase,
-  //   String? labelText,
-  //   FloatingLabelAlignment? labelAlignment = FloatingLabelAlignment.start,
-  //   IconData? prefixIcon,
-  //   String? suffixText,
-  //   String? hintText,
-  // }) {
-  //   return InputDecoration(
-  //     labelText: labelText,
-  //     // prefix: prefixIcon,
-  //     prefixIcon: Icon(prefixIcon),
-  //     prefixText: null,
-  //     // suffix: suffixText,
-  //     suffixIcon: null,
-  //     suffixText: suffixText,
-  //     hintText: hintText,
-  //   );
   // }
 
   // @override
@@ -523,13 +487,12 @@ class IOFieldSlider<T extends num> extends StatelessWidget implements IOField<T>
 
   final IOFieldConfig<T> config;
 
-  double get min => config.valueNumLimits!.min.toDouble();
-  double get max => config.valueNumLimits!.max.toDouble();
-
   void onChanged(double value) => config.sliderChanged?.call(value.to<T>());
   void onChangeEnd(double value) => config.valueSetter?.call(value.to<T>());
 
   Widget builder(BuildContext context, Widget? child) {
+    final min = config.valueNumLimits!.min.toDouble();
+    final max = config.valueNumLimits!.max.toDouble();
     final value = config.valueGetter()?.toDouble().clamp(min, max);
     if (value == null) return const Text('Error');
 
@@ -594,38 +557,6 @@ enum IOFieldBoolStyle {
   textMenu, // true/false, on/off
   latchingSwitch,
   momentaryButton,
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/// Composites
-////////////////////////////////////////////////////////////////////////////////
-
-// convenience for attaching the same config
-class IOFieldWithSlider<T extends num> extends StatelessWidget implements IOField<T> {
-  const IOFieldWithSlider(this.config, {this.breakWidth = 400, super.key});
-  final int breakWidth;
-  final IOFieldConfig<T> config;
-
-  // Widget Function(BuildContext, Widget, Widget) builder;
-
-  @override
-  Widget build(BuildContext context) {
-    final ioField = IOFieldText<T>.config(config);
-    final slider = IOFieldSlider<T>(config);
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return (constraints.maxWidth > breakWidth)
-            ? Row(
-                children: [
-                  Expanded(child: ioField),
-                  Expanded(flex: 2, child: slider),
-                ],
-              )
-            : OverflowBar(children: [ioField, slider]);
-      },
-    );
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

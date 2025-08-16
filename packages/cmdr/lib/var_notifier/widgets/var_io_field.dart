@@ -44,7 +44,6 @@ abstract interface class VarIOField extends StatelessWidget {
 
     return varNotifier.varKey.viewType.callWithType(local);
   }
-  // factory VarIOField.withReplacements(IOFieldConfig<V>
 
   factory VarIOField.compact(
     VarNotifier varNotifier, {
@@ -60,8 +59,7 @@ abstract interface class VarIOField extends StatelessWidget {
     return VarIOField(varNotifier, eventNotifier: eventNotifier, readOnly: readOnly, showLabel: showLabel, isDense: isDense, showPrefix: showPrefix, showSuffix: showSuffix);
   }
 
-  // factory VarIOField.withMenu(VarNotifier varNotifier, {bool showLabel, bool isDense, bool showPrefix, bool showSuffix, Key? key}) =  ;
-  // factory VarIOField.withSlider(VarNotifier varNotifier, {bool showLabel, bool isDense, bool showPrefix, bool showSuffix, Key? key}) =  ;
+  // const factory VarIOField.withConfig(IOFieldConfig config) = _VarIOField._;
 }
 
 /// map [VarNotifier] to [IOFieldConfig] and build
@@ -80,8 +78,6 @@ class _VarIOField<V> extends StatelessWidget implements VarIOField {
 ///
 /// decouple from Var? to
 /// SelectableIOField
-///
-///
 class VarIOFieldWithMenu<T extends VarKey> extends StatelessWidget {
   const VarIOFieldWithMenu({
     this.initialVarKey,
@@ -120,25 +116,6 @@ class VarIOFieldWithMenu<T extends VarKey> extends StatelessWidget {
   }
 }
 
-/// with
-///
-///
-// class VarIOFieldWithSlider<V> extends StatelessWidget implements VarIOField {
-//   const VarIOFieldWithSlider(this.varKey, {super.key});
-//   final VarKey varKey;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return VarKeyContextBuilderWithType(varKey, <G>(varNotifier) => IOField<G>.withSlider(VarIOFieldConfig<G>(varNotifier)));
-
-//     //     return LayoutBuilder(
-//     //   builder: (context, constraints) {
-//     //     return (constraints.maxWidth > breakWidth) ? Row(children: [Expanded(child: ioField), Expanded(flex: 2, child: slider)]) : OverflowBar(children: [ioField, slider]);
-//     //   },
-//     // );
-//   }
-// }
-
 ///
 ///
 ///
@@ -155,6 +132,23 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
     this.isDense = false,
     this.readOnly,
   });
+
+  factory VarIOFieldConfig.of(VarNotifier<dynamic> varNotifier) {
+    VarIOFieldConfig<G> local<G>() {
+      return VarIOFieldConfig<G>(
+        varNotifier,
+        // eventNotifier: eventNotifier,
+        // controller: controller,
+        // readOnly: readOnly,
+        // showLabel: showLabel,
+        // showPrefix: showPrefix,
+        // showSuffix: showSuffix,
+        // isDense: isDense,
+      );
+    }
+
+    return varNotifier.varKey.viewType.callWithType(local) as VarIOFieldConfig<V>;
+  }
 
   final VarNotifier<dynamic> varNotifier; //should this be cast here?
   final VarEventNotifier? eventNotifier;
