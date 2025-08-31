@@ -19,7 +19,7 @@ class VarCache {
 
   VarCache.fixed(Iterable<VarKey> varKeys) : _cache = Map.unmodifiable({for (final varKey in varKeys) varKey.value: VarNotifier.of(varKey)});
 
-  // // notifiers are of a subtype
+  // notifiers are of a subtype
   // VarCache.subtype(Iterable<VarKey> varKeys, VarNotifier Function(VarKey) constructor) : _cache = {for (final varKey in varKeys) varKey.value: constructor(varKey)};
 
   /// "It is generally not allowed to modify the map (add or remove keys) while
@@ -85,7 +85,7 @@ class VarCache {
 
   bool get isEmpty => _cache.isEmpty;
   bool contains(VarKey varKey) => _cache.containsKey(varKey.value);
-  void zero() => _cache.forEach((key, value) => value._viewValue = 0);
+  void zero() => _cache.forEach((key, value) => value.numView = 0);
 
   void dispose() => _cache.forEach((_, value) => value.dispose());
 
@@ -99,9 +99,9 @@ class VarCache {
 
   // directely return value. useful for sync update
   @protected
-  num valueOf(VarKey varKey) => _cache[varKey.value]?.viewValue ?? 0;
+  num valueOf(VarKey varKey) => _cache[varKey.value]?.numView ?? 0;
   @protected
-  void setValueOf(VarKey varKey, num value) => _cache[varKey.value]?.viewValue = value;
+  void setValueOf(VarKey varKey, num value) => _cache[varKey.value]?.numView = value;
 
   /// Single updateByView can call from VarNotifier ref
   VarNotifier? updateByViewAs<T>(VarKey key, T varValue) => this[key]?..updateByViewAs<T>(varValue);
@@ -134,15 +134,11 @@ class VarCache {
   /// Collective Data Read Response - Update by Packet
   ////////////////////////////////////////////////////////////////////////////////
   // caller clear varNotifier.lastUpdate to overwrite
-  void _updateByData(int id, int value) {
-    // _cache[id]?.updateByData(value);
-    if (_cache[id] case VarNotifier varNotifier) {
-      // Prevent sending results of fetch/poll, updateByData is blocked by isUpdatedByView,
-      // handle case where value is polling response is received in between mark updateByView and send
-      // relevant only when var is read/write; periodic polling AND calls updateByView
-      if (varNotifier.lastUpdate != VarLastUpdate.byView) varNotifier.updateByData(value); // only update if not updatedByView pending
-    }
-  }
+  // Prevent sending results of fetch/poll, updateByData is blocked by isUpdatedByView,
+  // handle case where value is polling response is received in between mark updateByView and send
+  // relevant only when var is read/write; periodic polling AND calls updateByView
+  // if (varNotifier.lastUpdate != VarLastUpdate.byView) varNotifier.updateByData(value); // only update if not updatedByView pending
+  void _updateByData(int id, int value) => _cache[id]?.updateByData(value);
 
   // returned values should be lists
   /* [bool overwriteUpdateByView = false] */
@@ -166,21 +162,24 @@ class VarCache {
   /// Collective Data Write
   ////////////////////////////////////////////////////////////////////////////////
   /// awaiting push
-  Iterable<VarNotifier> get varsUpdatedByView => varEntries.where((e) => e.lastUpdate == VarLastUpdate.byView);
+  // Iterable<VarNotifier> get varsUpdatedByView => varEntries.where((e) => e.lastUpdate == VarLastUpdate.byView);
+  Iterable<VarNotifier> get varsUpdatedByView => varEntries.where((e) => e.hasPendingChanges);
   Iterable<(int, int)> get dataPairsUpdatedByView => varsUpdatedByView.map((e) => e.dataPair);
 
+  /// Update by Response Data
+  // handle case where value is updatedByView again in between send and response
+  // isUpdatedByView should not clear on getdataids to block updateByData
+  // sync note:
+  //  there is a small window for error, if updateByDataResponse does not run to completion.
+  //   ...
+  //   if (value == varNotifier.dataValue)
+  //   -> user function interrupt: set value, set pushPending
+  //   clear pushPending
+  // if (value == varNotifier.dataValue) varNotifier.lastUpdate = VarLastUpdate.clear; // clear push pending unless value has changed since send
   void _updateByDataResponse(int id, int value, int status) {
     if (_cache[id] case VarNotifier varNotifier) {
       varNotifier.updateStatusByData(status);
-      // handle case where value is updatedByView again in between send and response
-      // isUpdatedByView should not clear on getdataids to block updateByData
-      // sync note:
-      //  there is a small window for error, if updateByDataResponse does not run to completion.
-      //   ...
-      //   if (value == varNotifier.dataValue)
-      //   -> user function interrupt: set value, set pushPending
-      //   clear pushPending
-      if (value == varNotifier.dataValue) varNotifier.lastUpdate = VarLastUpdate.clear; // clear push pending unless value has changed since send
+      varNotifier.commitUserChanges();
     }
   }
 

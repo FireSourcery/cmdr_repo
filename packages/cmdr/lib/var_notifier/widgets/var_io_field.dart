@@ -152,7 +152,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
 
   final VarNotifier<dynamic> varNotifier; //should this be cast here?
   final VarEventNotifier? eventNotifier;
-  final VarSingleController? controller;
+  final VarSingleController? controller; // unused for now
 
   // alternatively handle in constructor
   final FloatingLabelAlignment? labelAlignment;
@@ -161,6 +161,8 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   final bool showSuffix;
   final bool? isDense;
   final bool? readOnly;
+
+  // InputDecoration? idDecoration
 
   // control over whether the parameters from VarNotifier are passed
   @override
@@ -190,7 +192,8 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   @override
   Listenable get valueListenable => varNotifier;
   @override
-  ValueGetter<V> get valueGetter => varNotifier.valueAs<V>;
+  // ValueGetter<V> get valueGetter => varNotifier.valueAs<V>;
+  ValueGetter<V> get valueGetter => varNotifier.valueGetter as ValueGetter<V>;
   @override
   ValueGetter<String> get valueStringGetter => varNotifier.valueStringAs<V>;
   @override
@@ -200,12 +203,13 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
 
   @override
   ValueChanged<V> get sliderChanged => varNotifier.updateByViewAs<V>;
+
   @override
   String get tip => varNotifier.varKey.tip ?? '';
   @override
-  ({num max, num min})? get valueNumLimits => varNotifier.varKey.valueNumLimits;
+  ({num max, num min})? get valueNumLimits => varNotifier.numLimits;
   @override
-  List<V>? get valueEnumRange => varNotifier.varKey.valueEnumRange as List<V>?;
+  List<V>? get valueEnumRange => varNotifier.enumRange as List<V>?;
   @override
   Stringifier<V>? get valueStringifier => varNotifier.varKey.stringify<V>;
 

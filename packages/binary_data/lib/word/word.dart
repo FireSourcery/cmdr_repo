@@ -31,6 +31,7 @@ extension type const Word(int _value) implements Bits, int {
 
   // 1 unit width for now
   // take first length chars may or may not includ null terminator
+  // optionally -1 to remove null terminator
   Word.string(String string, [int length = 8]) : this.chars(string.runes.take(string.length.clamp(0, 8)), _stringEndian);
   // Word.runes(Runes runes, [int? unitWidth = 1, Endian endian = _stringEndian]) : this();
 

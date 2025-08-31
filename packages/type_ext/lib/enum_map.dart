@@ -34,15 +34,10 @@ abstract mixin class EnumMap<K extends Enum, V> implements FixedMap<K, V> {
   // V remove(covariant K key);
 }
 
+/// Serialization of [Map<Enum, V>] interface
 /// Apply to all types of [Map<Enum, V>]
 /// Enum.name base methods are applicable regardless of EnumMap FixedMap constraints
 extension EnumMapByName<K extends Enum, V> on Map<K, V> {
-  ////////////////////////////////////////////////////////////////////////////////
-  /// Named Values
-  ////////////////////////////////////////////////////////////////////////////////
-  // String name, value pairs
-  // Iterable<(String name, V value)> get namedValues => keys.map((e) => (e.name, this[e] as V));
-
   ////////////////////////////////////////////////////////////////////////////////
   /// Buffer Case -
   ////////////////////////////////////////////////////////////////////////////////
@@ -82,6 +77,12 @@ extension EnumMapByName<K extends Enum, V> on Map<K, V> {
     }
     throw FormatException('$runtimeType: $json is not of type Map<String, $V>');
   }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /// Named Values
+  ////////////////////////////////////////////////////////////////////////////////
+  // String name, value pairs
+  // Iterable<(String name, V value)> get namedValues => keys.map((e) => (e.name, this[e] as V));
 }
 
 extension EnumNamedValues<K extends Enum, V> on Iterable<MapEntry<K, V>> {
@@ -101,7 +102,7 @@ class EnumProxyMap<K extends Enum, V> = ProxyIndexMap<K, V> with EnumMap<K, V>;
 
 // typedef SerializableData = Map<SerializableKey<dynamic>, Object?>;
 
-// abstract mixin class Serializable<V> implements Map<Enum, V> {
+// abstract mixin class SerializableData<V> implements Map<Enum, V> {
 //   const Serializable();
   // List<K> get keys; // Enum.values
 //    V operator [](covariant K key);

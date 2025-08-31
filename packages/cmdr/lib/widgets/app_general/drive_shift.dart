@@ -6,9 +6,11 @@ import "package:flutter/material.dart";
 class DriveShift extends StatefulWidget {
   const DriveShift({this.onSelect, this.confirmSelected, this.initialSelect = DriveShiftSelect.park, super.key});
 
-  final AsyncValueSetter<DriveShiftSelect>? onSelect;
-  final AsyncValueGetter<DriveShiftSelect?>? confirmSelected; // or use listener
+  final ValueSetter<DriveShiftSelect>? onSelect;
+  // final ValueNotifier<DriveShiftSelect>? valueNotifier;
+  final AsyncValueGetter<DriveShiftSelect?>? confirmSelected;
   final DriveShiftSelect initialSelect;
+
   final Radius radius = const Radius.circular(10.0);
   final double size = 25;
 
@@ -51,17 +53,40 @@ class _DriveShiftState extends State<DriveShift> {
   late final WidgetStatesController controllerR = WidgetStatesController({if (widget.initialSelect == DriveShiftSelect.reverse) WidgetState.selected});
   late final WidgetStatesController controllerP = WidgetStatesController({if (widget.initialSelect == DriveShiftSelect.park) WidgetState.selected});
 
+  // late DriveShiftSelect _selected = widget.initialSelect;
+
+  // void _onValueChanged() {
+  //   if (widget.valueNotifier?.value != _selected) {
+  //     setState(() => _selected = widget.valueNotifier!.value);
+  //     _updateControllers();
+  //   }
+  // }
+
+  // void _updateControllers() {
+  //   controllerF.update(WidgetState.selected, (_selected == DriveShiftSelect.forward));
+  //   controllerN.update(WidgetState.selected, (_selected == DriveShiftSelect.neutral));
+  //   controllerR.update(WidgetState.selected, (_selected == DriveShiftSelect.reverse));
+  //   controllerP.update(WidgetState.selected, (_selected == DriveShiftSelect.park));
+  // }
+
+  // Future<void> handleSelect(DriveShiftSelect select) async {
+  //   widget.onSelect?.call(select);
+  //   // widget.valueNotifier?.value = select;
+  //   setState(() => _selected = select);
+  //   _updateControllers();
+  // }
+
   Future<void> handleSelect(DriveShiftSelect select) async {
-    await widget.onSelect?.call(select);
-    // handle returning null as null, null function use the selected value directly
-    DriveShiftSelect? confirmedSelect = (widget.confirmSelected != null) ? await widget.confirmSelected!() : select;
-    DriveShiftSelect? errorSelect = confirmedSelect != select ? select : null;
+    widget.onSelect?.call(select);
+    // handle returning null result as null, null function use the selected value directly
+    DriveShiftSelect? confirmed = (widget.confirmSelected != null) ? await widget.confirmSelected!() : select;
+    DriveShiftSelect? errorSelect = (confirmed != select) ? select : null;
     if (!mounted) return;
 
-    controllerF.update(WidgetState.selected, (confirmedSelect == DriveShiftSelect.forward));
-    controllerN.update(WidgetState.selected, (confirmedSelect == DriveShiftSelect.neutral));
-    controllerR.update(WidgetState.selected, (confirmedSelect == DriveShiftSelect.reverse));
-    controllerP.update(WidgetState.selected, (confirmedSelect == DriveShiftSelect.park));
+    controllerF.update(WidgetState.selected, (select == DriveShiftSelect.forward));
+    controllerN.update(WidgetState.selected, (select == DriveShiftSelect.neutral));
+    controllerR.update(WidgetState.selected, (select == DriveShiftSelect.reverse));
+    controllerP.update(WidgetState.selected, (select == DriveShiftSelect.park));
     controllerF.update(WidgetState.error, (errorSelect == DriveShiftSelect.forward));
     controllerN.update(WidgetState.error, (errorSelect == DriveShiftSelect.neutral));
     controllerR.update(WidgetState.error, (errorSelect == DriveShiftSelect.reverse));
@@ -110,11 +135,18 @@ class _DriveShiftState extends State<DriveShift> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // widget.confirmationNotifier?.addListener(_onConfimation);
+  }
+
+  @override
   void dispose() {
     controllerF.dispose();
     controllerN.dispose();
     controllerR.dispose();
     controllerP.dispose();
+    // widget.confirmationNotifier?.removeListener(_onConfimation);
     super.dispose();
   }
 }
@@ -132,15 +164,9 @@ class _ButtonBackgroundColor implements WidgetStateProperty<Color?> {
     Color selectedColor = baseColor.withAlpha(100);
     Color unselectedColor = baseColor.withAlpha(25);
 
-    Color color = unselectedColor;
-    if (states.contains(WidgetState.selected)) {
-      color = selectedColor;
-    } else if (states.contains(WidgetState.error)) {
-      color = errorColor;
-    } else {
-      color = unselectedColor;
-    }
-    return color;
+    if (states.contains(WidgetState.error)) return errorColor;
+    if (states.contains(WidgetState.selected)) return selectedColor;
+    return unselectedColor;
   }
 }
 
@@ -161,8 +187,7 @@ class _ButtonBorderSide implements WidgetStateProperty<BorderSide?> {
   BorderSide? resolve(Set<WidgetState> states) {
     BorderSide borderSide1 = BorderSide(color: borderColor, width: 1, strokeAlign: BorderSide.strokeAlignOutside);
     BorderSide borderSide2 = BorderSide(color: borderColor, width: 2, strokeAlign: BorderSide.strokeAlignOutside);
-    BorderSide border = borderSide1;
-    if (states.contains(WidgetState.selected) || states.contains(WidgetState.error)) border = borderSide2;
-    return border;
+    if (states.contains(WidgetState.selected) || states.contains(WidgetState.error)) return borderSide2;
+    return borderSide1;
   }
 }

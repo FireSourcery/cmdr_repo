@@ -26,6 +26,7 @@ export 'bits_map.dart';
 abstract mixin class BitStruct<K extends BitField> implements BitsBase, BitsMap<K, int> {
   const BitStruct();
   const factory BitStruct.view(List<K> keys, Bits bits) = _BitStruct<K>;
+  // const factory BitStruct.withType(List<K> keys, Bits bits) = _BitStruct<K>;
 
   // Child class defines fixed keys
   Iterable<K> get keys; // effectively the BitStruct type
@@ -104,7 +105,7 @@ abstract mixin class BitStruct<K extends BitField> implements BitsBase, BitsMap<
     if (other is! BitStruct<K>) return false;
     // keys are not copied, so they must match
     // (other.keys == keys) || other is BitsInitializer<K>
-    return ((other.bits == bits));
+    return (other.bits == bits);
   }
 
   @override
@@ -189,6 +190,8 @@ abstract class ConstBitStruct<K extends BitField> extends BitStructBase<K> {
 ///   EnumType.name1: 2,
 ///   EnumType.name2: 3,
 /// });
+///
+/// UserSubStruct extends BitsInitializer implements UserSuperStruct
 ///
 typedef _BitsInitializer<T extends BitField> = Map<T, int>;
 

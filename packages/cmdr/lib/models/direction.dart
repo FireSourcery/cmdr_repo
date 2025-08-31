@@ -1,30 +1,41 @@
-// abstract interface class Sign {
-//   /// Returns the sign of the value.
-//   /// -1 for negative, 0 for zero, 1 for positive.
-//   factory Sign.of(int value) => Sign.of(value.sign);
+abstract interface class Sign {
+  /// Returns the sign of the value.
+  /// -1 for negative, 0 for zero, 1 for positive.
+  factory Sign.of(int value) = _Sign.of;
 
-//   /// Returns the sign of the value.
-//   int get value;
+  /// Returns the sign of the value.
+  int get value;
 
-//   /// Returns true if the sign is negative.
-//   bool get isNegative;
+  // /// Returns true if the sign is negative.
+  // bool get isNegative;
 
-//   /// Returns true if the sign is zero.
-//   bool get isZero;
+  // /// Returns true if the sign is zero.
+  // bool get isZero;
 
-//   /// Returns true if the sign is positive.
-//   bool get isPositive;
+  // /// Returns true if the sign is positive.
+  // bool get isPositive;
+}
+
+// extension on Sign {
+//   // R asSign<R extends Sign>() {
+//   //   return switch (value) {
+//   //     -1 => _Sign.positive as R,
+//   //     0 => _Sign.zero as R,
+//   //     1 => _Sign.negative as R,
+//   //     _ => throw ArgumentError('Invalid sign: $this'),
+//   //   };
+//   // }
 // }
 
-enum Sign {
+enum _Sign implements Sign {
   negative(-1),
   zero(0),
   positive(1);
 
-  const Sign(this.value);
+  const _Sign(this.value);
   final int value;
 
-  factory Sign.of(int value) {
+  factory _Sign.of(int value) {
     return switch (value.sign) {
       -1 => negative,
       0 => zero,
@@ -35,7 +46,7 @@ enum Sign {
 }
 
 /// enums for alternative labels
-enum Direction {
+enum Direction implements Sign {
   reverse(-1),
   stop(0),
   forward(1);
@@ -62,7 +73,7 @@ enum Direction {
   }
 }
 
-enum RotaryDirection {
+enum RotaryDirection implements Sign {
   stop,
   cw,
   ccw;

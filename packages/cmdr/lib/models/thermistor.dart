@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'binary_format.dart';
+import '../interfaces/binary_format.dart';
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Math
@@ -9,27 +9,26 @@ const double absoluteZeroCelsius = -273.15;
 const double roomTemperatureKelvin = 25 - absoluteZeroCelsius;
 
 /*
-      Thermistor wired as pull-down resistor R2
-      RSeries wired as pull-up resistor R1
+  Thermistor wired as pull-down resistor R2
+  RSeries wired as pull-up resistor R1
 
-      R2 = VOUT*R1/(VIN-VOUT)
-      R2 = (ADC*VREF/ADC_MAX)*R1 / (VIN-(ADC*VREF/ADC_MAX))
-      R2 = R1/(VIN*ADC_MAX/(ADC*VREF)-1)
-      R2 = (R1*ADC*VREF)/(VIN*ADC_MAX - ADC*VREF)
+  R2 = VOUT*R1/(VIN-VOUT)
+  R2 = (ADC*VREF/ADC_MAX)*R1 / (VIN-(ADC*VREF/ADC_MAX))
+  R2 = R1/(VIN*ADC_MAX/(ADC*VREF)-1)
+  R2 = (R1*ADC*VREF)/(VIN*ADC_MAX - ADC*VREF)
 */
-double rPullDownOf(num rPullUp, num vIn, num adcVRef, int adcMax, int adcu) {
-  return (rPullUp * adcVRef * adcu) / (vIn * adcMax - adcVRef * adcu);
-}
+double rPullDownOf(num rPullUp, num vIn, num adcVRef, int adcMax, int adcu) => (rPullUp * adcVRef * adcu) / (vIn * adcMax - adcVRef * adcu);
 
 /* Thermistor as pull-up */
-double rPullUpOf(num rPullDown, double vIn, num adcVRef, int adcMax, int adcu) {
-  return (rPullDown * vIn * adcMax) / (adcVRef * adcu) - rPullDown;
-}
+double rPullUpOf(num rPullDown, num vIn, num adcVRef, int adcMax, int adcu) => (rPullDown * vIn * adcMax) / (adcVRef * adcu) - rPullDown;
 
 /* Resistance [Ohm] to ADCU */
+int _adcuOfR(int adcMax, num adcVRef, num vIn, num rPullUp, num rPullDown) => (vIn * adcMax * rPullDown) ~/ (adcVRef * (rPullUp + rPullDown));
+
 int adcuOfR(int adcMax, num adcVRef, num vIn, num rPullUp, num rPullDown) {
+  assert(adcVRef != 0);
   if ((rPullUp + rPullDown) case num(isFinite: false) || 0) return 0;
-  return (vIn * adcMax * rPullDown) ~/ (adcVRef * (rPullUp + rPullDown));
+  return _adcuOfR(adcMax, adcVRef, vIn, rPullUp, rPullDown);
 }
 
 /* 1 / (1/r1 + 1/r2) */
@@ -61,20 +60,12 @@ class Thermistor {
   const Thermistor({required this.b, required this.r0, this.t0 = roomTemperatureKelvin, required this.rSeries, this.rParallel}) : assert(rParallel != 0);
 
   const Thermistor.passDefaults({required this.b, required this.r0, required this.rSeries, int? rParallel, double? t0})
-      : t0 = t0 ?? roomTemperatureKelvin, // passing null inits to default
-        rParallel = (rParallel == 0) ? null : rParallel; // passing 0 inits to null
+    : t0 = t0 ?? roomTemperatureKelvin, // passing null inits to default
+      rParallel = (rParallel == 0) ? null : rParallel; // passing 0 inits to null
 
-  const Thermistor.board({required this.rSeries, this.rParallel})
-      : b = 0,
-        r0 = 0,
-        t0 = roomTemperatureKelvin;
+  const Thermistor.board({required this.rSeries, this.rParallel}) : b = 0, r0 = 0, t0 = roomTemperatureKelvin;
 
-  const Thermistor.zero()
-      : b = 0,
-        r0 = 0,
-        t0 = roomTemperatureKelvin,
-        rSeries = 0,
-        rParallel = null;
+  const Thermistor.zero() : this.board(rSeries: 0);
 
   final int b;
   final int r0;
@@ -96,55 +87,38 @@ class Thermistor {
   ////////////////////////////////////////////////////////////////////////////////
   double kelvinOf(int adcu) {
     final rNet = rPullDownOf(rSeries, vInRef, vAdcRef, adcMax, adcu);
-    // final rThermistor = (rParallel != null && rParallel != 0) ? rParallelOf(rNet, rParallel!) : rNet;
     final rThermistor = rParallelOf(rNet, rParallel);
     final invT = steinhartB(b, t0, r0, rThermistor);
     return (1.0 / invT);
   }
 
-  double celsiusOf(int adcu) => kelvinOf(adcu) + absoluteZeroCelsius;
-
   int adcuOfKelvin(num kelvin) {
     if (kelvin == 0) return 0;
     final invT = 1.0 / kelvin;
     final rThermistor = invSteinhartB(b, t0, r0, invT);
-    // final rNet = (rParallel != null && rParallel != 0) ? rNetOf(rParallel!, rThermistor) : rThermistor;
     final rNet = rNetOf(rThermistor, rParallel);
     return adcuOfR(adcMax, vAdcRef, vInRef, rSeries, rNet);
   }
 
+  double celsiusOf(int adcu) => kelvinOf(adcu) + absoluteZeroCelsius;
   int adcuOfCelsius(num celsius) => adcuOfKelvin(celsius - absoluteZeroCelsius);
 
-  BinaryConversionCodec? get binaryCodecCelsius {
+  BinaryNumConversion? get conversionCelsius {
     assert(rParallel != 0);
     if (b == 0 || r0 == 0 || rSeries == 0) return null; // no coefficients, no conversion
     return (viewOfData: celsiusOf, dataOfView: adcuOfCelsius);
   }
-  //  ({ViewOfData viewOfData, DataOfView dataOfView}) get binaryCodecCelsius => (viewOfData: celsiusOf, dataOfView: adcuOfCelsius);
 
-  Thermistor copyWith({
-    int? r0,
-    double? t0,
-    int? b,
-    int? rSeries,
-    int? rParallel,
-  }) {
-    return Thermistor(
-      r0: r0 ?? this.r0,
-      t0: t0 ?? this.t0,
-      b: b ?? this.b,
-      rSeries: rSeries ?? this.rSeries,
-      rParallel: rParallel ?? this.rParallel,
-    );
+  Thermistor copyWith({int? r0, double? t0, int? b, int? rSeries, int? rParallel}) {
+    return Thermistor(r0: r0 ?? this.r0, t0: t0 ?? this.t0, b: b ?? this.b, rSeries: rSeries ?? this.rSeries, rParallel: rParallel ?? this.rParallel);
   }
-
-  // or use separate class?
-  // keep only the fixed values for comparison
-  // Thermistor asDetached() => Thermistor.detached(rSeries: rSeries, rParallel: rParallel);
-  // Thermistor updateAsDetached({int? r0, double? t0, int? b}) => copyWith(r0: r0, t0: t0, b: b);
 
   Thermistor copyWithoutCoeffcients() => Thermistor.board(rSeries: rSeries, rParallel: rParallel);
   Thermistor copyWithCoeffcients({int? r0, double? t0, int? b}) => copyWith(r0: r0, t0: t0, b: b);
+  // or use separate class?
+  // keep only the fixed values for comparison
+  // WiredThermistor asWired() => Thermistor.detached(rSeries: rSeries, rParallel: rParallel);
+  // BoardThermistor updateAsBoard({int? r0, double? t0, int? b}) => copyWith(r0: r0, t0: t0, b: b);
 
   @override
   bool operator ==(covariant Thermistor other) {

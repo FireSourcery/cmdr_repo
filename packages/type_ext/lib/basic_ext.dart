@@ -24,9 +24,9 @@ extension IsThen<T extends Object?> on T? {
   bool isAnd(bool Function(T input) test) => switch (this) { T value => test(value), null => false };
 }
 
-extension NumTo on num {
-  R to<R extends num>() => switch (R) { const (int) => toInt(), const (double) => toDouble(), const (num) => this, _ => throw StateError(' ') } as R;
-}
+// extension NumTo on num {
+//   R to<R extends num>() => switch (R) { const (int) => toInt(), const (double) => toDouble(), const (num) => this, _ => throw StateError(' ') } as R;
+// }
 
 extension TrimString on String {
   String trimNulls() => replaceAll(RegExp(r'^\u0000+|\u0000+$'), '');

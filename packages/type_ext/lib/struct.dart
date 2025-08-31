@@ -73,6 +73,7 @@ abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>
   void setField(K key, V value) => set(key, value);
 
   V? fieldOrNull(K key) => getOrNull(key);
+  // trySetField
   bool setFieldOrNot(K key, V value) => setOrNot(key, value);
 
   FieldEntry<K, V> fieldEntry(K key) => (key: key, value: field(key));
@@ -234,7 +235,7 @@ mixin StructAsSubtype<S extends Structure<K, V>, K extends Field, V> on Structur
 //   // final S Function() constructor;
 // }
 
-// /// [Construct]
+// /// [Construct] Factory + Data
 // ///   keys + meta as a data member. library side create a structview
 // // can be created without extending
 // // Scope with T so copyWith can return a consistent type

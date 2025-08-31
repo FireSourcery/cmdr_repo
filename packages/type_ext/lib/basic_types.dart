@@ -19,7 +19,6 @@ mixin class TypeKey<T> {
   R call<R>(R Function<G>() callback) => callback<T>();
   // callGeneric, callTyped, callPassingType, passType
   R callWithType<R>(R Function<G>() callback) => callback<T>();
-  // R callAsKey<R>(R Function<G>(TypeKey key) callback) => callback<T>(this);
 }
 
 extension TypeKeysValidate on List<TypeKey> {
@@ -48,7 +47,7 @@ typedef EnumRange = List<Enum>;
 typedef Stringifier<T> = String Function(T input);
 typedef NullableStringifier<T> = String Function(T? input);
 typedef GenericStringifier = String Function<T>(T input);
-// typedef GenericStringifier = String Function<T>(T? input); // pass non-nullable type, with nullable input, cases where T is used for selection
+// typedef GenericStringifier = String Function<T>(T? input); // non-nullable type, with nullable input, cases where T is used for selection
 
 // naming convention notes
 // For classes and types -

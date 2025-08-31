@@ -1,8 +1,7 @@
 part of 'var_notifier.dart';
 
-/// [VarCache] with [Serivce]
+/// [VarRepo]/[VarCache] with [Serivce]
 ///
-// todo addtional status mappings
 class VarCacheController {
   const VarCacheController({required this.cache, required this.protocolService});
 
@@ -36,14 +35,6 @@ class VarCacheController {
     return VarStatusDefault.success;
   }
 
-  // todo depreciate, var use 2nd outbound value
-  Future<VarStatus?> readAllOverwrite([Iterable<VarKey>? keys]) async {
-    for (final element in cache.varEntries) {
-      element.lastUpdate = VarLastUpdate.clear; // updateByData rejects when updated by view by default
-    }
-    return readAll(keys);
-  }
-
   ////////////////////////////////////////////////////////////////////////////////
   /// Collective Write Vars `Send/Update`
   ////////////////////////////////////////////////////////////////////////////////
@@ -58,7 +49,6 @@ class VarCacheController {
     await for (final event in protocolService.setAll(pairs)) {
       if (_onWriteSlice(event) == null) return null;
     }
-    // await protocolService.setAll(pairs).forEach(_onWriteSlice); // process all, continue on error
     return VarStatusDefault.success;
   }
 
@@ -79,7 +69,15 @@ class VarCacheController {
   ////////////////////////////////////////////////////////////////////////////////
   /// Single Read/Write Var
   ////////////////////////////////////////////////////////////////////////////////
+  VarSingleController<V>? singleController<V>(VarKey key) {
+    assert(key.viewType.type == V);
+    if (cache[key] case VarNotifier<V> varNotifier) return VarSingleController(varNotifier: varNotifier, protocolService: protocolService);
+    return null;
+  }
+
   // fetch
+  // Future<VarNotifier>
+  // Future<VarStatus?>
   Future<bool> read(VarKey key) async {
     if (await protocolService.get(key.value) case int value) {
       cache[key]?.updateByData(value);
@@ -90,7 +88,6 @@ class VarCacheController {
 
   // send
   Future<VarStatus?> write(VarKey key) async {
-    //if (cache[key]?.dataValue case int dataValue) {
     if (await protocolService.set(key.value, cache[key]?.dataValue ?? 0) case int statusValue) {
       return (cache[key]?..updateStatusByData(statusValue))?.status;
     }
@@ -107,15 +104,6 @@ class VarCacheController {
     return write(key);
   }
 
-  // update then return the state
-  // Future<VarNotifier> operator [](VarKey key) async {
-  //   if (await protocolService.get(key.value) case int value) {
-  //     cache[key]?.updateByData(value);
-  //   }
-  //   return cache[key]!;
-  // }
-
-  // MapCache interface
   // return num or object of key V type
   // Future<num?> operator [](VarKey key) async {
   //   if (await protocolService.get(key.value) case int value) {
@@ -172,9 +160,10 @@ class VarRealTimeController extends VarCacheController {
   Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListenersCombined).map((e) => e.varKey);
   Iterable<int> _readKeysGetter() => _readKeys.map((e) => e.value);
 
-  Iterable<VarKey> get _writeKeys => cache.varEntries.where((e) => e.varKey.isPushing || (e.lastUpdate == VarLastUpdate.byView)).map((e) => e.varKey);
+  Iterable<VarKey> get _writeKeys => cache.varEntries.where((e) => e.varKey.isPushing || e.hasPendingChanges).map((e) => e.varKey);
   Iterable<(int, int)> _writePairsGetter() => cache.dataPairsOf(_writeKeys);
 
+  ///[e.hasListenersCombined]
   // polling stream setters, optionally implement local <Set>
   void addPolling(Iterable<VarKey> keys) => cache.varsOf(keys).forEach((element) => element.hasIndirectListeners = true);
   void removePollingAll() => cache.varEntries.forEach((element) => element.hasIndirectListeners = false);
@@ -192,25 +181,21 @@ class VarRealTimeController extends VarCacheController {
     await pushHandler.end();
   }
 
-  // Future<void> get isStopped async =>  pollHandler.isStopped && pushHandler.isStopped;
+  Future<void> get isStopped async => pollHandler.isStopped && pushHandler.isStopped;
+}
 
-  // wait for an user initiated write to resolve
-  Future<void> writeBatchCompleted(VarKey varKey) async {
+extension VarNotifierAwait on VarNotifier {
+  Future<void> pendingChanges() async {
     await Future.doWhile(() async {
-      await Future.delayed(const Duration(milliseconds: 10)); // wait some duration before every check
-      return (cache[varKey]!.lastUpdate == VarLastUpdate.byView);
+      await Future.delayed(const Duration(milliseconds: 20)); // wait some duration before every check
+      return hasPendingChanges;
     });
   }
 
-  Future<void> readBatchCompleted(VarKey varKey) async {
-    cache[varKey]!.lastUpdate = VarLastUpdate.clear;
-
-    await Future.doWhile(() async {
-      await Future.delayed(const Duration(milliseconds: 10)); // wait some duration before every check
-      //if (cache[varKey]!.value ==
-      return (cache[varKey]!.lastUpdate == VarLastUpdate.byData);
-    });
-  }
+  // Future<void> nextRead() async {
+  //   view = viewOf(data); // set pending value to the same value and wait for it to clear
+  //   await pendingChanges();
+  // }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

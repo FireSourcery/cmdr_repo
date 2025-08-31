@@ -9,7 +9,15 @@ extension type const EnumType<T extends Enum>(List<T> enumValues) implements Lis
 
 extension EnumByNullable<T extends Enum> on List<T> {
   T? resolve(int? index) => (index != null) ? elementAtOrNull(index) : null;
+
+  // non nullable result using default
+  /// byIndexOrDefault
+  Enum resolveAsBase(int index) => elementAtOrNull(index) ?? EnumUnknown.unknown; // on List<Enum>?
+  /// byIndexOr
+  T byIndex(int index, [T? defaultValue]) => elementAtOrNull(index) ?? defaultValue ?? first;
 }
+
+enum EnumUnknown { unknown }
 
 // T is only used for nested types, if the subtype implements a common type
 // extension type const EnumValuesUnion(Set<List<Enum>> valuesUnion) {
@@ -26,6 +34,10 @@ extension type const EnumUnionType<T extends Enum>(Set<List<T>> valuesUnion) imp
   // without extends Enum, for work around subtype issues
   List<S>? _resolveSubtype<S>() => valuesUnion.whereType<List<S>>().singleOrNull;
   S? resolveSubtype<S>(int? index) => (_resolveSubtype<S>() as List<Enum>?)?.resolve(index) as S?;
+
+  // Map<Type, Map<int, T>> asMap() {
+  //   return {for (var list in valuesUnion) list.first.runtimeType: valuesUnion.map((list) => list.asMap())};
+  // }
 }
 
 

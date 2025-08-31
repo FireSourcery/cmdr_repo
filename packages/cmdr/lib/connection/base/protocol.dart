@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:binary_data/models/packet.dart';
@@ -38,10 +39,10 @@ class Protocol {
   //  the check id routine must run for each socket. but a map would not be necessary.
   //  sync ids is passed to all sockets, alternatively 2 levels of keys
   void _demux(Packet packet) {
-    print("RX $packet");
+    if (kDebugMode) print("RX $packet");
     if (respSocketMap[packet.packetId] case ProtocolSocket socket) {
       socket.add(packet);
-      print("Socket [${socket.hashCode}] Time: ${socket.timer.elapsedMilliseconds}");
+      if (kDebugMode) print("Socket [${socket.hashCode}] Time: ${socket.timer.elapsedMilliseconds}");
     } else {
       handleProtocolException(const ProtocolException('No matching socket'));
     }
