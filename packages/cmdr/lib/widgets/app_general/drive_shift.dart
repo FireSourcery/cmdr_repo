@@ -11,6 +11,12 @@ class DriveShift extends StatefulWidget {
   final AsyncValueGetter<DriveShiftSelect?>? confirmSelected;
   final DriveShiftSelect initialSelect;
 
+  // alternatively directly return users type
+  // Enum enumF ;
+  // Enum enumN ;
+  // Enum enumR ;
+  // Enum enumP ;
+
   final Radius radius = const Radius.circular(10.0);
   final double size = 25;
 
@@ -55,42 +61,22 @@ class _DriveShiftState extends State<DriveShift> {
 
   // late DriveShiftSelect _selected = widget.initialSelect;
 
-  // void _onValueChanged() {
-  //   if (widget.valueNotifier?.value != _selected) {
-  //     setState(() => _selected = widget.valueNotifier!.value);
-  //     _updateControllers();
-  //   }
-  // }
-
-  // void _updateControllers() {
-  //   controllerF.update(WidgetState.selected, (_selected == DriveShiftSelect.forward));
-  //   controllerN.update(WidgetState.selected, (_selected == DriveShiftSelect.neutral));
-  //   controllerR.update(WidgetState.selected, (_selected == DriveShiftSelect.reverse));
-  //   controllerP.update(WidgetState.selected, (_selected == DriveShiftSelect.park));
-  // }
-
-  // Future<void> handleSelect(DriveShiftSelect select) async {
-  //   widget.onSelect?.call(select);
-  //   // widget.valueNotifier?.value = select;
-  //   setState(() => _selected = select);
-  //   _updateControllers();
-  // }
-
   Future<void> handleSelect(DriveShiftSelect select) async {
     widget.onSelect?.call(select);
-    // handle returning null result as null, null function use the selected value directly
-    DriveShiftSelect? confirmed = (widget.confirmSelected != null) ? await widget.confirmSelected!() : select;
-    DriveShiftSelect? errorSelect = (confirmed != select) ? select : null;
-    if (!mounted) return;
-
     controllerF.update(WidgetState.selected, (select == DriveShiftSelect.forward));
     controllerN.update(WidgetState.selected, (select == DriveShiftSelect.neutral));
     controllerR.update(WidgetState.selected, (select == DriveShiftSelect.reverse));
     controllerP.update(WidgetState.selected, (select == DriveShiftSelect.park));
-    controllerF.update(WidgetState.error, (errorSelect == DriveShiftSelect.forward));
-    controllerN.update(WidgetState.error, (errorSelect == DriveShiftSelect.neutral));
-    controllerR.update(WidgetState.error, (errorSelect == DriveShiftSelect.reverse));
-    controllerP.update(WidgetState.error, (errorSelect == DriveShiftSelect.park));
+
+    // handle returning null result as null, null function use the selected value directly
+    if (widget.confirmSelected case AsyncValueGetter<DriveShiftSelect?> confirmed) {
+      DriveShiftSelect? errorSelect = (await confirmed() == select) ? null : select;
+      if (!mounted) return;
+      controllerF.update(WidgetState.error, (errorSelect == DriveShiftSelect.forward));
+      controllerN.update(WidgetState.error, (errorSelect == DriveShiftSelect.neutral));
+      controllerR.update(WidgetState.error, (errorSelect == DriveShiftSelect.reverse));
+      controllerP.update(WidgetState.error, (errorSelect == DriveShiftSelect.park));
+    }
   }
 
   // short hand wrapper
@@ -137,7 +123,6 @@ class _DriveShiftState extends State<DriveShift> {
   @override
   void initState() {
     super.initState();
-    // widget.confirmationNotifier?.addListener(_onConfimation);
   }
 
   @override
@@ -146,7 +131,6 @@ class _DriveShiftState extends State<DriveShift> {
     controllerN.dispose();
     controllerR.dispose();
     controllerP.dispose();
-    // widget.confirmationNotifier?.removeListener(_onConfimation);
     super.dispose();
   }
 }

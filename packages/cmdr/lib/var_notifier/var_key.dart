@@ -172,4 +172,4 @@ enum VarStatusUnknown with VarStatus, VarEnumStatus {
   int get code => -1;
 }
 
-enum VarHandlerStatus with VarStatus, VarEnumStatus { unknownId, outOfRange }
+enum VarHandlerStatus with VarStatus, VarEnumStatus { unknownId, outOfRange, noResponse }

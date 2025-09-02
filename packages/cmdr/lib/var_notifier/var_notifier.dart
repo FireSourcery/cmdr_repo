@@ -123,6 +123,7 @@ class VarNotifier<V> with ChangeNotifier, VarData<V>, VarValueNotifier<V>, VarSt
 }
 
 /// [VarData<V>]/[VarViewer]
+/// UnionCodec + InplaceValue + sync pending buffer
 /// handle conversions
 /// handling syncing 2 variable representations
 mixin class VarData<V> {
@@ -159,6 +160,9 @@ mixin class VarData<V> {
     };
   }
 
+  // void updateView(V newValue) => _pendingValue = newValue;
+  // void submitView(V newValue) => serverData = dataOf(newValue);
+
   /// additional way to clear pending on Status response
   /// restore [get view] to [serverData]
   void commitView() {
@@ -182,6 +186,7 @@ mixin class VarData<V> {
     if (_pendingValue == viewOf(newValue)) _pendingValue = null; // only if user value matches server value, clear pending.
   }
 
+  /// todo move to codec unioinValue
   /// [numView] The num view representation of the [view] value as a num.
   //  BinaryNumCodec<num> numCodec = BinaryNumCodec<num>.of(); optionally include as default num codec
 
@@ -219,7 +224,6 @@ mixin class VarData<V> {
   /// [valueAs<V>] Generic parameter / union handling
   /// UnionCodec
   /// widgets optionally select
-  /// todo move to codec unioinValue
   num get valueAsNum => numView;
   int get valueAsInt => (numView).toInt();
   double get valueAsDouble => (numView).toDouble();
@@ -260,8 +264,6 @@ mixin class VarData<V> {
           const (BitStruct) => valueAsBitFields,
           const (String) => valueAsString,
           _ => throw UnsupportedError('Unsupported type: $R'),
-          // _ when TypeKey<R>().isSubtype<Enum>() => valueAsEnum,
-          // _ => subtypeOf<R>(_viewValue),
         }
         as R;
   }
@@ -282,7 +284,7 @@ mixin class VarData<V> {
   // input bounds checked only to ensure a valid value is sent to client side
   // switch on value will also handle dynamic
   /// generic setter can optionally switch on object type
-  void updateByValueAs<T>(T typedValue) {
+  void updateValueAs<T>(T typedValue) {
     if (T == V) {
       view = typedValue as V;
     } else {
@@ -291,7 +293,7 @@ mixin class VarData<V> {
     }
   }
 
-  // void updateByValueAs<T>(T typedValue) {
+  // void updateValueAs<T>(T typedValue) {
   //   numValue = switch (T) {
   //     _ when T == V => typedValue as num,
   //     const (double) || const (int) || const (num) => (typedValue as num),
@@ -313,10 +315,10 @@ abstract mixin class VarValueNotifier<V> implements VarData<V>, ValueNotifier<V>
   ////////////////////////////////////////////////////////////////////////////////
   /// runtime variables
   ////////////////////////////////////////////////////////////////////////////////
-  bool hasIndirectListeners = false;
-  bool get hasListenersCombined => hasListeners || hasIndirectListeners;
-
   bool get hasPendingChanges => _pendingValue != null;
+
+  // bool hasIndirectListeners = false;
+  // bool get hasListenersCombined => hasListeners || hasIndirectListeners;
 
   // if separating host and server status
   // bool outOfRange; // value from client out of range
@@ -350,7 +352,7 @@ abstract mixin class VarValueNotifier<V> implements VarData<V>, ValueNotifier<V>
   ValueSetter<V> get valueSetter => updateByView;
 
   void updateByViewAs<T>(T typedValue) {
-    updateByValueAs<T>(typedValue);
+    updateValueAs<T>(typedValue);
     notifyListeners();
   }
 

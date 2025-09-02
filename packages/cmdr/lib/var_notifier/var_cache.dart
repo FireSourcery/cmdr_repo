@@ -118,7 +118,7 @@ class VarCache {
 
   /// Collective Data Read
   Iterable<int> get dataIds => _cache.keys;
-  Iterable<int> dataIdsOf(Iterable<VarKey> keys) => varsOf(keys).map((e) => e.dataKey);
+  Iterable<int> dataIdsOf(Iterable<VarKey> keys) => varsOf(keys).map((e) => e.dataKey); // use the cached value
 
   /// Collective Data Write - Individual write use VarController/VarValue Instance
   Iterable<(int, int)> get dataPairs => varEntries.map((e) => e.dataPair);

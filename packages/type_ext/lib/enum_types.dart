@@ -40,19 +40,51 @@ extension type const EnumUnionType<T extends Enum>(Set<List<T>> valuesUnion) imp
   // }
 }
 
-
 // extension type const EnumIdFactory<K extends Enum, V>._(Map<V, K> reverseMap) {
 //   EnumIdFactory.of(List<K> keys) : reverseMap = EnumMap.buildReverseMap<K, V>(keys);
 //   K? idOf(V mappedValue) => reverseMap[mappedValue];
 
-  // static Map<V, K> buildReverse<K extends Enum, V>(List<K> keys, [V Function(K)? valueOf]) {
-  //   if (valueOf != null) {
-  //     return keys.asReverseMap(valueOf);
-  //   } else if (V == int) {
-  //     return keys.asMap() as Map<V, K>; // index by default
-  //   } else {
-  //     throw ArgumentError('EnumMap: $V must be defined for reverseMap');
-  //   }
-  //   // assert(V == int, 'EnumMap: $V must be defined for reverseMap');
-  // }
+// static Map<V, K> buildReverse<K extends Enum, V>(List<K> keys, [V Function(K)? valueOf]) {
+//   if (valueOf != null) {
+//     return keys.asReverseMap(valueOf);
+//   } else if (V == int) {
+//     return keys.asMap() as Map<V, K>; // index by default
+//   } else {
+//     throw ArgumentError('EnumMap: $V must be defined for reverseMap');
+//   }
+//   // assert(V == int, 'EnumMap: $V must be defined for reverseMap');
+// }
+// }
+
+// class EnumCodec<V extends Enum> /* implements Codec<V> */ {
+//   /// Enum subtype, in case a value other than enum.index is selected
+//   const EnumCodec({required this.decoder, required this.encoder, required this.enumRange});
+
+//   /// [byIndex] returns first on out of range input
+//   EnumCodec.of(this.enumRange)
+//       : decoder = enumRange.byIndex,
+//         encoder = _defaultEnumEncoder;
+
+//   /// [byIndexOrNull] returns null on out of range input
+//   EnumCodec.nullable(this.enumRange)
+//       : assert(null is V),
+//         decoder = enumRange.elementAtOrNull,
+//         encoder = _defaultEnumEncoder;
+
+//   /// throw if V is not exactly type Enum, returns non-nullable Enum
+//   EnumCodec.base(this.enumRange)
+//       : assert(V == Enum),
+//         decoder = enumRange.resolveAsBase,
+//         encoder = _defaultEnumEncoder;
+
+//   final DataDecoder<V> decoder;
+//   final DataEncoder<V> encoder;
+//   final List<V> enumRange;
+
+//   static int _defaultEnumEncoder(Enum view) => view.index;
+
+//   @override
+//   V decode(int data) => decoder.call(data);
+//   @override
+//   int encode(V view) => encoder.call(view);
 // }

@@ -78,36 +78,33 @@ abstract mixin class ServiceIO<K, V, S> {
   }
 
   Stream<ServiceGetSlice<K, V>> pollFlex(Iterable<K> Function() keysGetter, {Duration delay = const Duration(milliseconds: 1)}) async* {
+    // List<K> keys = []; // Reusable buffer
+    // List<List<K>> slices = [[]]; // Reusable buffer
     while (true) {
       var keys = keysGetter();
       if (keys.isEmpty) {
-        yield* const Stream.empty();
+        // yield* const Stream.empty();
         await Future.delayed(const Duration(milliseconds: 10)); // subsitute time of 1 iteration
       } else {
         yield* getAll(keys, delay: delay);
       }
     }
     // can this reuse the same allocated memory buffer for the new slices?
-    // while (true) {
     // var keys = keysGetter();
-    // var slices = keys.slices(maxGetBatchSize ?? keys.length);
+    // Iterable<List<K>> slices = keys.slices(maxGetBatchSize ?? keys.length);
     // yield* _getSlices(slices, delay: delay);
-    // }
   }
 
   Stream<ServiceSetSlice<K, V, S>> push(Iterable<(K, V)> Function() pairsGetter, {Duration delay = const Duration(milliseconds: 1)}) async* {
     while (true) {
       var pairs = pairsGetter();
       if (pairs.isEmpty) {
-        yield* const Stream.empty();
+        // yield* const Stream.empty();
         await Future.delayed(const Duration(milliseconds: 10));
       } else {
         yield* setAll(pairs, delay: delay);
       }
     }
-    // while (true) {
-    //   yield* setAll(pairsGetter(), delay: delay);
-    // }
   }
 
   // Stream<ServiceSetSlice<K, V, S>> pushFixed(Iterable<K> keys, Iterable<V> Function() valuesGetter, {Duration delay = const Duration(milliseconds: 1)}) async* {
@@ -160,6 +157,27 @@ abstract class ServiceStreamHandler<T> {
     return streamSubscription = stream.listen(onDataSlice);
   }
 
+  // Future<void> get stopped => streamSubscription?.asFuture() ?? Future.value();
+
   Future<void> end() async => streamSubscription?.cancel().whenComplete(() => streamSubscription = null);
   Future<void> restart() async => end().whenComplete(() => begin());
 }
+
+// class BuiltInStreamManager<T> {
+//   StreamController<T>? _controller;
+//   StreamSubscription<T>? _subscription;
+
+//   Stream<T> get stream => _controller?.stream ?? const Stream.empty();
+
+//   void start(Stream<T> sourceStream) {
+//     _controller = StreamController<T>(sync: true);
+//     _subscription = sourceStream.listen(_controller!.add);
+//   }
+
+//   Future<void> stop() async {
+//     await _subscription?.cancel();
+//     await _controller?.close();
+//     _subscription = null;
+//     _controller = null;
+//   }
+// }

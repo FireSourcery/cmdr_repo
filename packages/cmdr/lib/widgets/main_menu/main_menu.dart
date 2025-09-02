@@ -5,10 +5,12 @@ import '../app_general/logo.dart';
 import 'main_menu_controller.dart';
 
 class MainMenu extends StatelessWidget {
-  const MainMenu({required this.background, required this.menuController, this.useIndicator, super.key});
+  const MainMenu({required this.background, required this.menuController, this.useIndicator, super.key, this.trailing});
   final ImageProvider<AssetBundleImageKey> background;
   final MainMenuController menuController;
   final bool? useIndicator;
+
+  final Widget? trailing;
 
   Widget _navigationRail(BuildContext _, Widget? __) {
     return NavigationRail(
@@ -34,6 +36,7 @@ class MainMenu extends StatelessWidget {
             label: Text(entry.label, textAlign: TextAlign.center),
           ),
       ],
+      trailing: trailing,
     );
   }
 
@@ -47,15 +50,16 @@ class MainMenu extends StatelessWidget {
 }
 
 class RightMenu extends StatelessWidget {
-  const RightMenu({required this.menuController, required this.background, super.key});
+  const RightMenu({required this.menuController, required this.background, super.key, this.trailing});
   final ImageProvider<AssetBundleImageKey> background;
   final MainMenuController menuController;
 
+  final Widget? trailing;
   @override
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: MainMenu(background: background, menuController: menuController, useIndicator: false),
+      child: MainMenu(background: background, menuController: menuController, useIndicator: false, trailing: trailing),
     );
   }
 }
