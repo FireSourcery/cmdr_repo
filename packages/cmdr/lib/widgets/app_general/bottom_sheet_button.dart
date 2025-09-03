@@ -122,7 +122,18 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
 
   void show([Widget? child]) => WidgetsBinding.instance.addPostFrameCallback((_) => _show(child));
 
+  void set(Widget child) {
+    setState(() {
+      selectedBottomSheet = child;
+    });
+  }
+
   void exit() => WidgetsBinding.instance.addPostFrameCallback((_) => _exit());
+
+  // Future<void> exit() async {
+  //   WidgetsBinding.instance.addPostFrameCallback((_) => _exit());
+  //   await bottomSheetController?.closed;
+  // }
 
   @override
   Widget build(BuildContext context) {

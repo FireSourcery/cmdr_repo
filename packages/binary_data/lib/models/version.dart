@@ -4,7 +4,7 @@ import '../word/word_struct.dart';
 
 /// 4 fields [optional, major, minor, fix] by default, 1 or 2 bytes each
 /// parameterize T to constrain functions of T key to types the Version is defined with
-abstract class Version<T extends WordField> extends WordStruct<T> with BitStructAsSubtype<Version<T>, T> {
+abstract base class Version<T extends WordField> extends WordStruct<T> with BitStructAsSubtype<Version<T>, T> {
   // uses VersionFieldStandard keys when no keys AND type parameter is specified
   factory Version(int optional, int major, int minor, int fix, {String? name}) => VersionStandard(optional, major, minor, fix, name: name) as Version<T>;
 
@@ -141,7 +141,7 @@ abstract class Version<T extends WordField> extends WordStruct<T> with BitStruct
 }
 
 // ignore: missing_override_of_must_be_overridden
-class VersionConstruct<T extends WordField> extends Version<T> {
+base class VersionConstruct<T extends WordField> extends Version<T> {
   const VersionConstruct(this.keys, {this.name, int value = 0}) : super.word(value as Bits);
   // _VersionWithKeys.castBase(this.keys, super.state, {super.name}) : super.castBase();
   // _VersionWithKeys.fromValues(List<T> keys, Iterable<int> values, {String? name}) : this(keys, value: Bits.ofIterables(keys.bitmasks, values), name: name);
@@ -154,7 +154,7 @@ class VersionConstruct<T extends WordField> extends Version<T> {
 }
 
 // byte size chars
-class VersionStandard extends Version<VersionFieldStandard> {
+base class VersionStandard extends Version<VersionFieldStandard> {
   const VersionStandard(super.optional, super.major, super.minor, super.fix, {this.name = 'Version'}) : super.char8();
   const VersionStandard.word(super.value, {this.name = 'Version'}) : super.word();
 
@@ -199,8 +199,7 @@ enum VersionFieldStandard with BitField, TypedField<Uint8>, WordField<Uint8> {
   fix(0),
   minor(1),
   major(2),
-  optional(3),
-  ;
+  optional(3);
 
   const VersionFieldStandard(this.offset);
   @override

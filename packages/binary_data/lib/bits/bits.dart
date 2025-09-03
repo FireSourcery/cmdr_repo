@@ -127,7 +127,7 @@ extension BitmasksMethods on Iterable<Bitmask> {
 ///   gives Bits a type for matching, distinguish from int
 ///   cast with any sub type
 ///  use by BitsMap. BitsStuct, BoolMap, etc.
-abstract mixin class BitsBase {
+abstract base class BitsBase {
   const BitsBase();
 
   Bits get bits;
@@ -164,7 +164,7 @@ abstract mixin class BitsBase {
 }
 
 /// base for Map or Struct
-class MutableBits with BitsBase {
+base class MutableBits extends BitsBase {
   MutableBits([this.bits = const Bits.allZeros()]);
   // MutableBits.castBase(BitsBase state) : this(state.bits);
 
@@ -176,7 +176,7 @@ class MutableBits with BitsBase {
 
 // although only MutableBits must wrap Bits, this way they both implement and derive the same interfaces
 @immutable
-class ConstBits with BitsBase {
+base class ConstBits extends BitsBase {
   const ConstBits(this.bits);
   // const ConstBits.value(int bits) : this(bits as Bits);
   // ConstBits(int value) : this( );

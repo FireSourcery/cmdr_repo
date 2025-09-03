@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:type_ext/index_map.dart';
 
 import "bit_field.dart";
@@ -79,6 +80,9 @@ abstract mixin class BitFieldMap<K extends BitField> implements BitsMap<K, int> 
   Iterable<MapEntry<K, int>> get entriesAsBits => keys.map((key) => MapEntry(key, this[key]));
   @override
   Iterable<MapEntry<K, bool>> get entriesAsBools => keys.map((key) => MapEntry(key, this[key] != 0));
+
+  K get firstSet => entries.firstWhere((entry) => (entry.value != 0)).key;
+  K? get firstSetOrNull => entries.firstWhereOrNull((entry) => (entry.value != 0))?.key;
 }
 
 class MutableBitFieldMap<K extends BitField> extends BitsMap<K, int> with BitFieldMap<K> {

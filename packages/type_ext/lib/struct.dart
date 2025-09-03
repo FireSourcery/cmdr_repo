@@ -17,7 +17,7 @@ typedef DataStruct<K extends Field, V extends Object?> = Structure<K, V>;
 ///   fixed set of keys
 ///   getOrNull/setOrNot
 ///
-/// Provides Key interface to an Object
+/// Provides Key interface to an Object, for iterative field access, e.g. serialization
 /// mixin for withX and serialization
 ///
 /// subclass determines mutability

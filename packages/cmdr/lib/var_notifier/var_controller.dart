@@ -148,17 +148,18 @@ class VarRealTimeController extends VarCacheController {
 
   // hasListeners check is regularly updated.
   // (e.lastUpdate == VarLastUpdate.clear) read all once.
+  // Iterable<VarNotifier> get _readVars => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListeners) ;
   Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListeners).map((e) => e.varKey);
-  // Iterable<int> _readKeysGetter() => cache.dataIdsOf(_readKeys);
-  // same n time complexity, without constraint
+  Iterable<int> _readKeysGetter() => cache.dataIdsOf(_pollingKeys..addAll(_readKeys)); // no updates after init
+
+  // same n time complexity
   // Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListeners || _pollingKeys.contains(e.varKey)).map((e) => e.varKey);
-  Iterable<int> _readKeysGetter() => cache.dataIdsOf(_pollingKeys..addAll(_readKeys));
-  // Iterable<int> _readKeysGetter() => cache.dataIdsOf(_readKeys.toSet().union(_pollingKeys));
+  // Iterable<int> _readKeysGetter() => cache.dataIdsOf(_readKeys);
 
   Iterable<VarKey> get _writeKeys => cache.varEntries.where((e) => e.varKey.isPushing || e.hasPendingChanges).map((e) => e.varKey);
   Iterable<(int, int)> _writePairsGetter() => cache.dataPairsOf(_writeKeys);
 
-  ///
+  /// indirectListeners
   final Set<VarKey> _pollingKeys = {};
   // assert isStopped
   void addPolling(Iterable<VarKey> keys) => _pollingKeys.addAll(keys);
@@ -178,6 +179,7 @@ class VarRealTimeController extends VarCacheController {
   }
 
   Future<void> endPeriodic() async {
+    _pollingKeys.clear();
     await pollHandler.end();
     await pushHandler.end();
   }
@@ -195,11 +197,11 @@ extension VarNotifierAwait on VarNotifier {
   // of a polling, read/write
   // assuming no periodic writes
   // needs to be set with listeners, add to polling
-  Future<void> nextRead() async {
-    // await pendingChanges();
-    view = viewOf(data); // set pending value to the same value and wait for it to clear
-    await pendingChanges();
-  }
+  // Future<void> nextRead() async {
+  //   await pendingChanges();
+  //   view = viewOf(data); // set pending value to the same value and wait for it to clear
+  //   await pendingChanges();
+  // }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

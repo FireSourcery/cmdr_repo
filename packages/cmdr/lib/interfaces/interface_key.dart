@@ -13,10 +13,6 @@ import 'dart:convert';
 //   List<BitField>? get bitsKeys;
 // }
 
-// extension NumTo on num {
-//   R to<R extends num>() => switch (R) { const (int) => toInt(), const (double) => toDouble(), const (num) => this, _ => throw StateError(' ') } as R;
-// }
-
 // abstract mixin class   {
 //   // Limits as the values the num can take, inclusive, compare with >= and <=
 //   ({num min, num max})? get numLimits; // must be null for non-num types

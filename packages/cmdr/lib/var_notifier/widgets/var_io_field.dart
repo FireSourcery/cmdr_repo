@@ -150,7 +150,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
     return varNotifier.varKey.viewType.callWithType(local) as VarIOFieldConfig<V>;
   }
 
-  final VarNotifier<dynamic> varNotifier; //should this be cast here?
+  final VarNotifier<dynamic> varNotifier; //alternatively split valuenotifier/valueUnion
   final VarEventNotifier? eventNotifier;
   final VarSingleController? controller; // unused for now
 
@@ -197,9 +197,9 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   @override
   ValueGetter<String> get valueStringGetter => varNotifier.valueStringAs<V>;
   @override
-  ValueGetter<bool> get errorGetter => (() => varNotifier.statusIsError);
-  @override
   ValueSetter<V> get valueSetter => (eventNotifier != null) ? eventNotifier!.submitByViewAs<V> : varNotifier.updateByViewAs<V>;
+  @override
+  ValueGetter<bool> get errorGetter => (() => varNotifier.statusIsError);
 
   @override
   ValueChanged<V> get sliderChanged => varNotifier.updateByViewAs<V>;

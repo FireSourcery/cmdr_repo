@@ -72,14 +72,12 @@ abstract mixin class ServiceIO<K, V, S> {
   Stream<ServiceGetSlice<K, V>> pollFixed(Iterable<K> keys, {Duration delay = const Duration(milliseconds: 1)}) async* {
     if (keys.isEmpty) return; // input does not change
     while (true) {
-      yield* getAll(keys, delay: delay); // todo check slices allocation
+      yield* getAll(keys, delay: delay);
       // await Future.delayed(perIterationDelay); // an additional delay after each round
     }
   }
 
   Stream<ServiceGetSlice<K, V>> pollFlex(Iterable<K> Function() keysGetter, {Duration delay = const Duration(milliseconds: 1)}) async* {
-    // List<K> keys = []; // Reusable buffer
-    // List<List<K>> slices = [[]]; // Reusable buffer
     while (true) {
       var keys = keysGetter();
       if (keys.isEmpty) {
@@ -89,6 +87,7 @@ abstract mixin class ServiceIO<K, V, S> {
         yield* getAll(keys, delay: delay);
       }
     }
+    // List<List<K>> slices = [[]]; // Reusable buffer
     // can this reuse the same allocated memory buffer for the new slices?
     // var keys = keysGetter();
     // Iterable<List<K>> slices = keys.slices(maxGetBatchSize ?? keys.length);

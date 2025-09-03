@@ -18,7 +18,7 @@ export 'word.dart';
 /// subclass to passthrough constructors for convienience
 /// alternatively extension type WordStruct(BitsStruct _)
 /// caller wrap inner constructor for const. WordStruct(Word())
-abstract class WordStruct<T extends WordField> extends ConstBitStruct<T> {
+abstract base class WordStruct<T extends WordField> extends ConstBitStruct<T> {
   const WordStruct(super.value) : super();
 
   // re-implementation of Word constructors for const

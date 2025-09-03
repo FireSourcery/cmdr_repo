@@ -28,8 +28,7 @@ extension NumTo on num {
       switch (R) {
             const (int) => toInt(),
             const (double) => toDouble(),
-            const (num) => this,
-            _ => throw StateError('Unreachable'),
+            const (num) || _ => this,
           }
           as R;
 }
