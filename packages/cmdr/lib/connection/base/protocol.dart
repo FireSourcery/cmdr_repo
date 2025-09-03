@@ -160,17 +160,20 @@ class ProtocolSocket implements Sink<Packet> {
   Future<R?> requestResponse<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration timeout = reqRespTimeoutDefault, ProtocolSyncOptions? syncOptions}) async {
     waitingOnLockCount++;
     try {
-      return await _lock.synchronized<R?>(() async {
-        print('');
-        print('--- New Request');
-        print('Socket [$hashCode] Request [$requestId] | waiting on lock [$waitingOnLockCount]');
+      return await _lock.synchronized<R?>(
+        () async {
+          print('');
+          print('--- New Request');
+          print('Socket [$hashCode] Request [$requestId] | waiting on lock [$waitingOnLockCount]');
 
-        if (syncOptions != null) {
-          return await _requestResponseOptions<T, R>(requestId, requestArgs, syncOptions: syncOptions, timeout: timeout);
-        } else {
-          return await _requestResponseShort<T, R>(requestId, requestArgs, timeout: timeout);
-        }
-      }, timeout: timeout);
+          if (syncOptions != null) {
+            return await _requestResponseOptions<T, R>(requestId, requestArgs, syncOptions: syncOptions, timeout: timeout);
+          } else {
+            return await _requestResponseShort<T, R>(requestId, requestArgs, timeout: timeout);
+          }
+        },
+        timeout: timeout,
+      );
     } on TimeoutException catch (e) {
       print(e);
       return null;
@@ -282,6 +285,7 @@ class ProtocolSocket implements Sink<Packet> {
       return await _recved.future.timeout(timeout).then((_) => parse());
     } on TimeoutException {
       print("Socket Recv Response Timeout");
+      rethrow;
     } on ProtocolException catch (e) {
       //should be handled by protocol
       print("Unhandled ProtocolException on Socket");

@@ -131,6 +131,7 @@ mixin class VarValue<V> {
   /// generic getter use switch on type literal, and require extension to account for subtypes
   R valueAs<R>() {
     if (R == V) return view as R;
+    // if (TypeKey<R>().isSubtype<V>()) return view as R;
     // codec.decodeAs<R>( numValue.toInt());
     return switch (R) {
           const (int) => valueAsInt,

@@ -149,12 +149,12 @@ class VarRealTimeController extends VarCacheController {
   // hasListeners check is regularly updated.
   // (e.lastUpdate == VarLastUpdate.clear) read all once.
   // Iterable<VarNotifier> get _readVars => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListeners) ;
-  Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListeners).map((e) => e.varKey);
-  Iterable<int> _readKeysGetter() => cache.dataIdsOf(_pollingKeys..addAll(_readKeys)); // no updates after init
+  // Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListeners).map((e) => e.varKey);
+  // Iterable<int> _readKeysGetter() => cache.dataIdsOf(_pollingKeys..addAll(_readKeys)); // no updates after init
 
   // same n time complexity
-  // Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListeners || _pollingKeys.contains(e.varKey)).map((e) => e.varKey);
-  // Iterable<int> _readKeysGetter() => cache.dataIdsOf(_readKeys);
+  Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListeners || _pollingKeys.contains(e.varKey)).map((e) => e.varKey);
+  Iterable<int> _readKeysGetter() => cache.dataIdsOf(_readKeys);
 
   Iterable<VarKey> get _writeKeys => cache.varEntries.where((e) => e.varKey.isPushing || e.hasPendingChanges).map((e) => e.varKey);
   Iterable<(int, int)> _writePairsGetter() => cache.dataPairsOf(_writeKeys);

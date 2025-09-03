@@ -22,7 +22,7 @@ class MotProtocolSocket extends ProtocolSocket {
   Future<int?> stopMotors() async => requestResponse(MotPacketRequestId.MOT_PACKET_STOP_ALL, null);
   Future<VersionResponseValues?> version() async => await requestResponse(MotPacketRequestId.MOT_PACKET_VERSION, null);
 
-  Future<CallResponseValues?> call(int id, int? arg, [Duration timeout = const Duration(milliseconds: 500)]) async =>
+  Future<CallResponseValues?> call(int id, int? arg, [Duration timeout = const Duration(milliseconds: 1000)]) async =>
       requestResponse(MotPacketRequestId.MOT_PACKET_CALL, (id: id, arg: arg), timeout: timeout);
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -37,7 +37,7 @@ class MotProtocolSocket extends ProtocolSocket {
   ////////////////////////////////////////////////////////////////////////////////
   Future<MemReadResponseValues?> readMem(int address, int size, int config) async {
     assert(size <= MemReadRequest.sizeMax);
-    return await requestResponse(MotPacketRequestId.MOT_PACKET_MEM_READ, (address: address, size: size, config: config));
+    return await requestResponse(MotPacketRequestId.MOT_PACKET_MEM_READ, (address: address, size: size, config: config), timeout: const Duration(milliseconds: 1000));
   }
 
   Future<MemWriteResponseValues?> writeMem(int address, int size, int config, Uint8List data) async {
