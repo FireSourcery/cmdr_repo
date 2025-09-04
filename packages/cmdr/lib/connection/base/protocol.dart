@@ -14,7 +14,7 @@ class Protocol {
   final Link link; // optionally mutable for inert state
   final PacketClass packetInterface;
   final HeaderParser headerParser; // the rx buffer
-  final Map<PacketId, ProtocolSocket> respSocketMap = {}; // map response id to socket, listeners
+  final Map<PacketId, ProtocolSocket> respSocketMap = {}; // map response id to socket, listeners table
   final Lock _lock = Lock();
 
   // packetTransformer = PacketTransformer(parserBuffer: HeaderParser(packetInterface, packetInterface.lengthMax * 4));
@@ -62,6 +62,7 @@ class Protocol {
 
   // socket unique per packetId for now
   // alternatively Map<(PacketId, ProtocolSocket), ProtocolSocket>
+  /// `listenResponse` - map responseId to socket
   void mapResponse(PacketId responseId, ProtocolSocket socket) {
     _lock.synchronized(() {
       respSocketMap.putIfAbsent(responseId, () => socket);

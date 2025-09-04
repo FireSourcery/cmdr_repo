@@ -12,9 +12,9 @@ mixin class MotPacketInterface implements PacketClass<MotPacket> {
   @override
   int get lengthMax => 40;
   @override
-  int get lengthMin => 2;
+  int get lengthMin => 4;
   @override
-  int get syncHeaderLength => 2;
+  int get syncHeaderLength => 4;
   @override
   int get headerLength => 8;
   @override
@@ -27,11 +27,13 @@ mixin class MotPacketInterface implements PacketClass<MotPacket> {
   @override
   ByteField<Uint8> get idFieldDef => const ByteField<Uint8>(1);
   @override
-  ByteField<Uint16> get checksumFieldDef => const ByteField<Uint16>(2);
-  @override
-  ByteField<Uint8> get lengthFieldDef => const ByteField<Uint8>(4);
+  ByteField<Uint8> get lengthFieldDef => const ByteField<Uint8>(2);
 
-  // ByteField<Uint8> get test => ByteField<Uint8>(ffi.offsetOf<MotPacketHeader>(#startField););
+  ByteField<Uint8> get sequenceFieldDef => const ByteField<Uint8>(3);
+  @override
+  ByteField<Uint16> get checksumFieldDef => const ByteField<Uint16>(4);
+
+  ByteField<Uint16> get flexFieldDef => const ByteField<Uint16>(6);
 
   @override
   PacketSyncId get ack => MotPacketSyncId.MOT_PACKET_SYNC_ACK;
@@ -88,24 +90,19 @@ base class MotPacketHeader extends Struct implements PacketHeader {
   @Uint8()
   external int idField;
   @override
-  @Uint16()
-  external int checksumField;
-
-  @override
   @Uint8()
   external int lengthField;
   @Uint8()
   external int sequenceField;
 
-  @Uint8()
-  external int flex1Field;
-  @Uint8()
-  external int flex2Field;
+  @override
+  @Uint16()
+  external int checksumField;
+  @Uint16()
+  external int flexField;
 
-  int get flexUpper16Field => (flex2Field << 8) | flex1Field;
-  set flexUpper16Field(int value) => this
-    ..flex2Field = (value >> 8)
-    ..flex1Field = (value & 0xFF);
+  int get flexLower8Field => (flexField & 0xFF);
+  int get flexUpper8Field => (flexField >> 8);
 
   @override
   void build(PacketId packetId, Packet? packet) => UnimplementedError();
@@ -123,6 +120,10 @@ base class MotPacketHeaderSync extends Struct implements PacketSyncHeader {
   external int startField;
   @Uint8()
   external int idField;
+  @Uint8()
+  external int controlField;
+  @Uint8()
+  external int checksumField;
 }
 
 sealed class MotPacketId implements PacketId {
@@ -159,9 +160,6 @@ enum MotPacketRequestId<T, R> implements PacketIdRequest<T, R>, MotPacketId {
   MOT_PACKET_VERSION(0x01, requestCaster: VersionRequest.cast, responseCaster: VersionResponse.cast),
 
   MOT_PACKET_CALL(0xC0, requestCaster: CallRequest.cast, responseCaster: CallResponse.cast),
-  // MOT_PACKET_CALL_ADDRESS(0xCA),
-  // MOT_PACKET_FIXED_VAR_READ(0xB1),
-  // MOT_PACKET_FIXED_VAR_WRITE(0xB2),
 
   /* Configurable Length */
   MOT_PACKET_VAR_READ(0xB3, requestCaster: VarReadRequest.cast, responseCaster: VarReadResponse.cast),
@@ -189,6 +187,7 @@ enum MotPacketRequestId<T, R> implements PacketIdRequest<T, R>, MotPacketId {
   @override
   final PayloadCaster<R>? responseCaster;
 
+  // MotPacketId get responseId => this;
   @override
   String toString() => name;
 }

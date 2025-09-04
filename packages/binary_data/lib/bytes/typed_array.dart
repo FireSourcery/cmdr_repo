@@ -55,16 +55,10 @@ extension type const TypedArray<T extends TypedDataList>._(T _this) implements T
 ////////////////////////////////////////////////////////////////////////////////
 /// [sublistView] using [length] instead of [end]
 /// Effectively moving up [ByteBuffer] layer, to [TypedData] view segment accounting for [this.offsetInBytes]
-// alternatively cast as TypedArray for access
 ////////////////////////////////////////////////////////////////////////////////
-/// all offsets in elements
-extension on TypedData {
-  // R asTypedArray<R extends TypedData>([int typedOffset = 0, int? end]) => TypedArray<R>.cast(this, typedOffset, end) as R;
-  // R? asTypedArrayOrNull<R extends TypedData>([int typedOffset = 0, int? end]) => testBounds(typedOffset, end) ? asTypedArray<R>(typedOffset, end) : null;
-}
 
-/// all offsets in bytes for simplicity
-/// /// length using type size
+/// offsets in bytes for simplicity, correspond with [ByteBuffer]
+/// length using type size
 extension on TypedData {
   T Function([int offsetInBytes, int? length]) _asTypedIntListFn<T extends TypedDataList<int>>() {
     return switch (T) {
@@ -106,11 +100,11 @@ extension ByteDataTypedArray on ByteData {
   int get end => offsetInBytes + lengthInBytes; // index of last byte + 1
   int get length => lengthInBytes;
 
-  //testPart
+  // testPart
   bool testLength(int offset, int? length) {
     assert(offset >= 0, 'Offset must be non-negative: $offset');
-    if (offset > this.length) return false;
-    if (length != null && (offset + length > this.length)) return false;
+    if (offset > this.length) return false; // compare to total length
+    if (length != null && (offset + length > this.length)) return false; // compare to view length
     return true;
   }
 
@@ -120,24 +114,15 @@ extension ByteDataTypedArray on ByteData {
   // let ByteBuffer handle RangeError
   T arrayAt<T extends TypedDataList<int>>([int offset = 0, int? length]) => asTypedIntList<T>(offset, length);
   T? arrayOrNullAt<T extends TypedDataList<int>>([int offset = 0, int? length]) => testLength(offset, length) ? arrayAt<T>(offset, length) : null;
-
-  // List<int> arrayOrEmptyAt<T extends TypedDataList<int>>([int offset = 0, int? length]) => testLength(offset, length) ? arrayAt<T>(offset, length) : <int>[];
-  // returning the same type may be more optimal
-  // static TypedDataList<int> emptyIntList = Int64List(0);
-  // T intListEmpty<T extends TypedDataList<int>>() {
-  //   return switch (T) {
-  //         const (Uint8List) => emptyIntList,
-  //         const (Uint16List) => Uint16List(0),
-  //         const (Uint32List) => Uint32List(0),
-  //         const (Int8List) => Int8List(0),
-  //         const (Int16List) => Int16List(0),
-  //         const (Int32List) => Int32List(0),
-  //         _ => throw UnimplementedError(),
-  //       }
-  //       as T;
-  // }
 }
 
+// /// all offsets in elements
+// extension on TypedData {
+// alternatively use buffer.asTypeList using length
+// int? endOf(int offset, int? length) => (length != null) ? length + offset : null;
+//   // R asTypedArray<R extends TypedData>([int typedOffset = 0, int? end]) => TypedArray<R>.cast(this, typedOffset, end) as R;
+//   // R? asTypedArrayOrNull<R extends TypedData>([int typedOffset = 0, int? end]) => testBounds(typedOffset, end) ? asTypedArray<R>(typedOffset, end) : null;
+// }
 ////////////////////////////////////////////////////////////////////////////////
 /// as `this` type
 /// outer interface only

@@ -74,9 +74,6 @@ int bytesPerElementOf<T extends TypedData>() {
   };
 }
 
-// alternatively use buffer.asTypeList using length
-int? endOf(int offset, int? length) => (length != null) ? length + offset : null;
-
 ////////////////////////////////////////////////////////////////////////////////
 /// implementations on TypedData returning as `this` type
 /// parameters in element size of `this` type

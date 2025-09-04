@@ -8,8 +8,8 @@ export '../bytes/byte_struct.dart';
 
 /// Collective def of Packet format specs. 'Class variables'
 // Abstract factory pattern
-// effectively Packet subtype encapsulated
-//  values available without a Packet instance, over prototype object
+// effectively Packet `subtype` encapsulated
+// values available without a Packet instance, over prototype object
 // abstract mixin class PacketClass<T extends Packet> implements ByteStruct <T, ByteField>  {
 abstract interface class PacketClass<T extends Packet> {
   // const for each packet instance
@@ -42,19 +42,20 @@ abstract interface class PacketClass<T extends Packet> {
 
   List<ByteField> get keys => [startFieldDef, idFieldDef, lengthFieldDef, checksumFieldDef];
 
-  // at least one header type must be implemented, with fields able to determine completion
-  // TypedDataCaster<PacketHeader> get headerCaster;
-  // TypedDataCaster<PacketHeader> get idHeaderCaster; // minimal header to determine id, consistent for all types
+  // factory functions
   // child class constructor
-  @override
   TypedDataCaster<T> get caster;
-
-  @override
   T cast(TypedData typedData);
 
   // not all types must be implemented
   PacketHeader headerOf(TypedData typedData);
   PacketSyncHeader syncHeaderOf(TypedData typedData);
+
+  // R headerAs<R extends PacketHeader>(TypedData typedData);
+
+  // at least one header type must be implemented, with fields able to determine completion
+  // TypedDataCaster<PacketHeader> get headerCaster;
+  // TypedDataCaster<PacketHeader> get idHeaderCaster; // minimal header to determine id, consistent for all types
   // PacketIdHeader idHeaderOf(TypedData typedData);
   // PacketFixedHeader fixedHeaderOf(TypedData typedData);
   // PacketVariableHeader variableHeaderOf(TypedData typedData);
@@ -70,10 +71,14 @@ abstract interface class PacketClass<T extends Packet> {
 /// ffi.Struct current does not allow length < full struct length, or mixin
 /// alternatively, use extension type on TypedData
 abstract class Packet {
-  Packet(TypedData typedData) : packetData = (ByteData.sublistView(typedData));
+  Packet(TypedData typedData) : packetData = ByteData.sublistView(typedData);
 
   /// Class variables per subtype class, or should this be mixin
   PacketClass get packetClass;
+  // header must be complete in ffi.Struct case
+  // can resolve as field in class if compiler does not optimize
+  PacketHeader get asHeader => packetClass.headerOf(packetData);
+  PacketSyncHeader get asSync => packetClass.syncHeaderOf(packetData);
 
   // per instance
   // pointer to a buffer, immutable view/length
@@ -186,10 +191,6 @@ abstract class Packet {
   ///   cannot be implemented in packet header, ffi.Struct cannot mixin,
   /// alternatively extension?
   ////////////////////////////////////////////////////////////////////////////////
-  // header must be complete in ffi.Struct case
-  // can resolve as field in class if compiler does not optimize
-  PacketHeader get asHeader => packetClass.headerOf(packetData);
-  PacketSyncHeader get asSync => packetClass.syncHeaderOf(packetData);
 
   void fillStartField() => asSync.startField = packetClass.startId;
 
@@ -216,6 +217,7 @@ abstract class Packet {
   void buildHeaderAs(PacketHeaderCaster caster, PacketId packetId) => caster(header).build(packetId, this);
 
   ////////////////////////////////////////////////////////////////////////////////
+  /// alternatively move to header parser
   /// parse header
   ////////////////////////////////////////////////////////////////////////////////
   // use shorter type, casting as longer header on smaller bytes will throw. optionally use field offset
@@ -299,13 +301,6 @@ abstract class Packet {
 typedef PacketCaster<P extends Packet> = P Function(TypedData typedData);
 // typedef PacketCaster = Packet Function(TypedData typedData);
 
-// non-Struct backed packets, parent constructor, enforce that a sublistView is used
-// optionally resolve getters to fields
-// abstract class PacketBase extends ByteStructBase with Packet {
-//   PacketBase(super.bytes, [super.offset = 0, super.length]);
-//   // PacketBase.origin(super.bytesBuffer, [super.offset = 0, super.length]) : super.origin();
-// }
-
 ////////////////////////////////////////////////////////////////////////////////
 /// Struct Components Header/Payload
 ////////////////////////////////////////////////////////////////////////////////
@@ -377,19 +372,17 @@ abstract interface class PacketSyncHeader implements PacketIdHeader {
 ///   allows stronger encapsulation
 ///   does not have to declare filler header fields
 /// for simplicity, the packet header includes all meta parameters, parsing a payload does not need stateMeta
-/// Alternative
-// Codec functions require double buffering, since header and payload is a contiguous list.
+//  Alternative
+// Codec functions would double buffer with return Uint8List
 // same as cast, build, asTypedData
 // Uint8List encodePayload(T input);
 // T decodePayload(Uint8List input);
-// Passing buffer same as cast then build
-// encodeOn(Uint8List buffer, T input);
+
 abstract interface class Payload<V> {
   PayloadMeta build(V values, covariant Packet header);
   V parse(covariant Packet header, covariant PayloadMeta? stateMeta);
 }
 
-//
 // abstract interface class PayloadFixed<V> {
 //   V get values;
 //   set values(V values);
@@ -417,15 +410,14 @@ class PacketBuffer<T extends Packet> extends ByteStructBuffer<T> {
   PacketBuffer(this.packetClass, [int? size]) : super.caster(packetClass.caster, size ?? packetClass.lengthMax);
 
   final PacketClass<T> packetClass;
-
-  Packet get _packetBuffer => bufferAsStruct;
-  Packet get viewAsPacket => viewAsStruct;
-
   int get headerLength => packetClass.headerLength;
   int get syncHeaderLength => packetClass.syncHeaderLength;
   int get payloadIndex => packetClass.headerLength;
 
-  // @protected
+  Packet get _packetBuffer => bufferAsStruct;
+  Packet get viewAsPacket => viewAsStruct;
+
+  // ByteStructBuffer
   // final PacketCaster packetCaster; // inherited class may use for addition buffers
   // final ByteBuffer _byteBuffer; // PacketBuffer can directly retain byteBuffer, its own buffer starts at offset 0, methods are provided as relative via Packet,
   // final Packet _packetBuffer; // holds full view, max length buffer, with named fields. build functions unconstrained, then sets length
@@ -469,12 +461,13 @@ class PacketIdCaster {
 
   final Map<int, PacketId> _lookUpMap;
 
+  PacketId? call(int intId) => _lookUpMap[intId];
+
+  // if expand to PacketIdClass
   // final List<PacketIdSync> syncIds = [];
   // PacketIdSync get ack;
   // PacketIdSync get nack;
   // PacketIdSync get abort;
-
-  PacketId? call(int intId) => _lookUpMap[intId];
 }
 
 // separate type label allow pattern matching
