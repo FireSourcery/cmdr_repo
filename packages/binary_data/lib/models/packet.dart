@@ -106,6 +106,9 @@ abstract class Packet {
   Uint8List get header => Uint8List.sublistView(packetData, 0, packetClass.headerLength);
   Uint8List get payload => Uint8List.sublistView(packetData, payloadIndex);
 
+  // @override
+  // String toString();
+
   ////////////////////////////////////////////////////////////////////////////////
   ///
   ////////////////////////////////////////////////////////////////////////////////

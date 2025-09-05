@@ -147,12 +147,14 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
       }
     } on ProtocolException catch (e) {
       // unparsable error
+      print('PacketTransformer: ${e.message}');
       switch (e) {
         case ProtocolException.meta:
           parserBuffer.clear(); // ensure remainder buffer is cleared this way
         case ProtocolException.checksum:
+          print('${parserBuffer.viewAsPacket}');
+          print('${parserBuffer.viewAsPacket.checksumFieldOrNull}');
       }
-      print('PacketTransformer: ${e.message}');
       _outputSink.addError(e);
     } catch (e) {
       parserBuffer.clear();

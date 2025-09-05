@@ -81,8 +81,8 @@ abstract mixin class ServiceIO<K, V, S> {
     while (true) {
       var keys = keysGetter();
       if (keys.isEmpty) {
-        // yield* const Stream.empty();
-        await Future.delayed(const Duration(milliseconds: 10)); // subsitute time of 1 iteration
+        await Future.delayed(const Duration(milliseconds: 50)); // subsitute time of 1 iteration
+        yield* const Stream.empty(); // so a key keys can be canceled
       } else {
         yield* getAll(keys, delay: delay);
       }
@@ -98,8 +98,8 @@ abstract mixin class ServiceIO<K, V, S> {
     while (true) {
       var pairs = pairsGetter();
       if (pairs.isEmpty) {
-        // yield* const Stream.empty();
-        await Future.delayed(const Duration(milliseconds: 10));
+        await Future.delayed(const Duration(milliseconds: 50));
+        yield* const Stream.empty(); //
       } else {
         yield* setAll(pairs, delay: delay);
       }

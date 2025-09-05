@@ -137,12 +137,14 @@ class VarCacheController {
 class VarRealTimeController extends VarCacheController {
   VarRealTimeController({required super.cache, required super.protocolService});
 
-  late final ServicePollStreamHandler<int, int, int> pollHandler = ServicePollStreamHandler(protocolService, _readKeysGetter, _onReadSlice);
-  late final ServicePushStreamHandler<int, int, int> pushHandler = ServicePushStreamHandler(protocolService, _writePairsGetter, _onWriteSlice);
+  // late final ServicePollStreamHandler<int, int, int> pollHandler = ServicePollStreamHandler(protocolService, _readKeysGetter, _onReadSlice);
+  // late final ServicePushStreamHandler<int, int, int> pushHandler = ServicePushStreamHandler(protocolService, _writePairsGetter, _onWriteSlice);
 
-  // Stream<ServiceGetSlice<K, V>> get _readStream => protocolService.pollFlex(_readKeysGetter, delay: const Duration(milliseconds: 5));
-  // Stream<ServiceSetSlice<K, V, S>> get _writeStream => protocolService.push(_writePairsGetter, delay: const Duration(milliseconds: 5));
+  Stream<ServiceGetSlice<int, int>> get _readStream => protocolService.pollFlex(_readKeysGetter);
+  Stream<ServiceSetSlice<int, int, int>> get _writeStream => protocolService.push(_writePairsGetter);
 
+  StreamSubscription? pollSubscription;
+  StreamSubscription? pushSubscription;
   // stream will call slices creating a new list, at the beginning of each multi-batch operation
   // while this iterator is accessed, view must not add or remove keys, either by lock or preallocate cache
 
@@ -153,7 +155,7 @@ class VarRealTimeController extends VarCacheController {
   // Iterable<int> _readKeysGetter() => cache.dataIdsOf(_pollingKeys..addAll(_readKeys)); // no updates after init
 
   // same n time complexity
-  Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListeners || _pollingKeys.contains(e.varKey)).map((e) => e.varKey);
+  Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => (e.varKey.isPolling && e.hasListeners) || _pollingKeys.contains(e.varKey)).map((e) => e.varKey);
   Iterable<int> _readKeysGetter() => cache.dataIdsOf(_readKeys);
 
   Iterable<VarKey> get _writeKeys => cache.varEntries.where((e) => e.varKey.isPushing || e.hasPendingChanges).map((e) => e.varKey);
@@ -173,18 +175,23 @@ class VarRealTimeController extends VarCacheController {
   Future<bool> beginPeriodic() async {
     if (!protocolService.isConnected) return false;
     _pollingKeys.addAll(_readKeys);
-    pollHandler.begin();
-    pushHandler.begin();
+    pollSubscription ??= _readStream.listen(_onReadSlice);
+    pushSubscription ??= _writeStream.listen(_onWriteSlice);
+    // pushHandler.begin();
     return true;
   }
 
   Future<void> endPeriodic() async {
     _pollingKeys.clear();
-    await pollHandler.end();
-    await pushHandler.end();
+    await pollSubscription?.cancel().whenComplete(() => pollSubscription = null);
+    await pushSubscription?.cancel().whenComplete(() => pushSubscription = null);
+    // await pollSubscription?.asFuture();
+    // await pushSubscription?.asFuture();
+    // await pollHandler.end();
+    // await pushHandler.end();
   }
 
-  void get isStopped => pollHandler.isStopped && pushHandler.isStopped;
+  // void get isStopped => pollHandler.isStopped && pushHandler.isStopped;
 }
 
 extension VarNotifierAwait on VarNotifier {

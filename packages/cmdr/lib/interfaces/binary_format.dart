@@ -204,7 +204,7 @@ class BinaryNumCodec<V extends num> implements BinaryCodec<V> {
   static const BinaryNumConversion defaultConversion = (viewOfData: _defaultNumOf, dataOfView: _defaultDataOf);
   static int _defaultSignExtension(int binary) => binary;
   static num _defaultNumOf(int data) => data;
-  static int _defaultDataOf(num view) => view as int;
+  static int _defaultDataOf(num view) => view.toInt();
 }
 
 /// Numeric value conversion

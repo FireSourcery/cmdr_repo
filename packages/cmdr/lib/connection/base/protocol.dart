@@ -132,7 +132,7 @@ class ProtocolSocket implements Sink<Packet> {
   final PacketBuffer packetBufferOut;
 
   final Lock _lock = Lock();
-  Completer<void> _recved = Completer.sync();
+  Completer<Packet> _recved = Completer.sync();
 
   int waitingOnLockCount = 0;
   // ProtocolException status = ProtocolException.ok; // todo with eventSink
@@ -225,7 +225,7 @@ class ProtocolSocket implements Sink<Packet> {
   Future<PayloadMeta> sendRequest<V>(PacketIdRequest<V, dynamic> packetId, V requestArgs) async {
     protocol.mapRequestResponse(packetId, this); // request always paired with response, so map here
     packetBufferIn.clear();
-    _recved = Completer.sync();
+    _recved = Completer<Packet>.sync();
 
     final PayloadMeta requestMeta = packetBufferOut.buildRequest<V>(packetId, requestArgs);
     timer.reset();
@@ -317,7 +317,7 @@ class ProtocolSocket implements Sink<Packet> {
     packetBufferIn.copy(event.bytes); // sets buffer length to packet length, [PacketTransformer] handles max buffer length
     // socket table does not unmap. might receive packets following completion
     if (!_recved.isCompleted) {
-      _recved.complete();
+      _recved.complete(packetBufferIn.viewAsPacket);
     } else {
       throw const ProtocolException('Unexpected Rx');
     }
