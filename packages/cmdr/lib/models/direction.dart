@@ -54,14 +54,7 @@ enum Direction implements Sign {
   const Direction(this.value);
   final int value;
 
-  factory Direction.from(int value) {
-    return switch (value.sign) {
-      -1 => reverse,
-      0 => stop,
-      1 => forward,
-      _ => throw StateError('Invalid direction sign: $value'),
-    };
-  }
+  factory Direction.from(int value) => Direction.of(value.sign);
 
   factory Direction.of(int sign) {
     return switch (sign) {

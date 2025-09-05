@@ -13,7 +13,8 @@ export 'word.dart';
 /// 8-byte [ByteData] backed by int, via
 /// [BitStruct] enforcing byte aligned fields
 ///
-/// Implementation centric Map, up to 8 bytes, int values
+/// Implementation centric Map, up to 8 bytes
+/// serializaable as a single [int]
 ///
 /// subclass to passthrough constructors for convienience
 /// alternatively extension type WordStruct(BitsStruct _)

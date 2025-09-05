@@ -174,7 +174,6 @@ abstract class Packet {
     assert((() => (length == null) ? this.length == asHeader.lengthField : true).call());
     final checksumMask = ((1 << (checksumSize * 8)) - 1);
     final checksumEnd = checksumIndex + checksumSize;
-    // final afterChecksumSize = (headerLength - checksumEnd) + (payloadLength);
 
     var checkSum = 0;
     checkSum += checksumAlgorithm(Uint8List.sublistView(packetData, 0, checksumIndex));
@@ -381,6 +380,7 @@ abstract interface class PacketSyncHeader implements PacketIdHeader {
 abstract interface class Payload<V> {
   PayloadMeta build(V values, covariant Packet header);
   V parse(covariant Packet header, covariant PayloadMeta? stateMeta);
+  // parseMeta(Packet header)
 }
 
 // abstract interface class PayloadFixed<V> {

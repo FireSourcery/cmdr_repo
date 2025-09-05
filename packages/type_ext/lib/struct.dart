@@ -163,6 +163,8 @@ abstract mixin class Field<V> {
   V? get defaultValue => null; // allows additional handling of Map<K, V?>
 }
 
+// abstract interface class SerializableKey<V> implements Enum, Field {}
+
 // extension on List<Field> {
 //   // provide toMap
 //   Structure view(Object struct) {}

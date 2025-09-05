@@ -302,8 +302,6 @@ base class VarWriteResponse extends Struct implements Payload<VarWriteResponseVa
     return (header.payloadAt<Uint8List>(0, header.parsePayloadLength));
   }
 
-  // (int? idChecksum, int? respCode) parseMeta(MotPacket header) => (payloadWordAt<Uint16>(0), payloadWordAt<Uint16>(2));
-
   @override
   PayloadMeta build(VarWriteResponseValues args, MotPacket header) => throw UnimplementedError();
 }
