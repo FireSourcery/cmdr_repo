@@ -43,6 +43,7 @@ class Protocol {
   void _demux(Packet packet) {
     if (kDebugMode) print("RX $packet");
     if (respSocketMap[packet.packetId] case ProtocolSocket socket) {
+      print("Socket [${socket.hashCode}] Time: ${socket.timer.elapsedMilliseconds}");
       socket.add(packet);
     } else {
       handleProtocolException(const ProtocolException('No matching socket'));
@@ -186,7 +187,6 @@ class ProtocolSocket implements Sink<Packet> {
       print(e);
       return null;
     } finally {
-      print("Socket [${hashCode}] Time: ${timer.elapsedMilliseconds}");
       print('--- End Request');
       waitingOnLockCount--;
     }
@@ -232,6 +232,7 @@ class ProtocolSocket implements Sink<Packet> {
     packetBufferIn.clear();
 
     final PayloadMeta requestMeta = packetBufferOut.buildRequest<V>(packetId, requestArgs);
+    timer.start();
     timer.reset();
     await protocol.trySend(packetBufferOut.viewAsPacket);
     return requestMeta;
@@ -287,7 +288,7 @@ class ProtocolSocket implements Sink<Packet> {
   @protected
   Future<R?> tryRecv<R>(R? Function() parse, [Duration timeout = rxTimeoutDefault]) async {
     try {
-      _recved.first.timeout(timeout).then((_) => parse());
+      return await _recved.first.timeout(timeout).then((_) => parse());
     } on TimeoutException {
       print("Socket Recv Response Timeout");
       rethrow;
@@ -295,16 +296,10 @@ class ProtocolSocket implements Sink<Packet> {
       //should be handled by protocol
       print("Unhandled ProtocolException on Socket");
       print(e.message);
-    } on Exception catch (e) {
-      print("Protocol Unnamed Exception");
-      print(e);
-    } on RangeError catch (e) {
-      print(packetBufferIn.viewAsBytes);
-      print("Protocol Parser Failed");
-      print(e);
     } catch (e) {
-      print("ProtocolSocket");
+      print("ProtocolSocket Exception");
       print(e);
+      print(packetBufferIn.viewAsBytes);
       // payload parser may throw if invalid packet passes header parser as valid
     } finally {}
     return null;
@@ -317,6 +312,7 @@ class ProtocolSocket implements Sink<Packet> {
     packetBufferIn.copy(event.bytes); // sets buffer length to packet length, [PacketTransformer] handles max buffer length
     // socket table does not unmap. might receive packets following completion
     if (!_recvedController.isClosed) {
+      // if(event.packetId != )
       _recvedController.add(null);
     } else {
       throw const ProtocolException('Unexpected Rx');
