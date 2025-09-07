@@ -17,9 +17,14 @@ class FlyweightMenuSource<T> {
     required Iterable<T> itemKeys,
     required Widget Function(T) itemBuilder,
     T? defaultValue,
-  }) : this(menuItems: itemsFrom<T>(itemKeys: itemKeys, itemBuilder: itemBuilder), defaultKey: defaultValue);
+  }) : this(
+         menuItems: itemsFrom<T>(itemKeys: itemKeys, itemBuilder: itemBuilder),
+         defaultKey: defaultValue,
+       );
 
   final List<FlyweightMenuItem<T>> menuItems; // keep as MenuSourceItem in case implementation changes
+  //todo split model and builder
+  // final Widget Function(T) itemBuilder; or just keep the builder
   final T? defaultKey;
 
   // createFlyweight()
@@ -55,11 +60,11 @@ class FlyweightMenu<T> extends FlyweightMenuSource<T> with ChangeNotifier implem
     T? initialValue,
     // IterableFilter<T>? filter,
     // ValueSetter<({T newValue, T oldValue})>? onPressedExt,
-  })  : _value = (initialValue ?? menuSource.defaultKey) as T, // T is either nullable, or initialValue must be provided
-        super(
-          menuItems: menuSource.menuItems,
-          defaultKey: menuSource.defaultKey,
-        ) {
+  }) : _value = (initialValue ?? menuSource.defaultKey) as T, // T is either nullable, or initialValue must be provided
+       super(
+         menuItems: menuSource.menuItems,
+         defaultKey: menuSource.defaultKey,
+       ) {
     if (onPressed != null) addListener(_onPressedAsListener);
   }
 
@@ -134,7 +139,7 @@ class FlyweightMenuItem<T> extends StatelessWidget {
   // });
 
   final T? itemKey; // if key is null, the item appears as a static image
-  final Widget child; // the MenuItem from FlyweightMenuSource<T>
+  final Widget child; // the itemBuilder MenuItem from FlyweightMenuSource<T>
 
   // void _onPressed(BuildContext context) => FlyweightMenuContext.of<T>(context).value = itemKey as T; // calls attached callbacks
 

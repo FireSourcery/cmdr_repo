@@ -16,8 +16,6 @@ abstract mixin class ServiceIO<K, V, S> {
   const ServiceIO();
 
   bool get isConnected;
-  // FutureOr<S?> connect();
-  // FutureOr<S?> disconnect();
 
   FutureOr<V?> get(K key);
   FutureOr<S?> set(K key, V value);
@@ -82,16 +80,16 @@ abstract mixin class ServiceIO<K, V, S> {
       var keys = keysGetter();
       if (keys.isEmpty) {
         await Future.delayed(const Duration(milliseconds: 50)); // subsitute time of 1 iteration
-        yield* const Stream.empty(); // so a key keys can be canceled
+        yield* const Stream.empty(); // so empty keys can be canceled
       } else {
         yield* getAll(keys, delay: delay);
       }
     }
-    // List<List<K>> slices = [[]]; // Reusable buffer
-    // can this reuse the same allocated memory buffer for the new slices?
-    // var keys = keysGetter();
-    // Iterable<List<K>> slices = keys.slices(maxGetBatchSize ?? keys.length);
-    // yield* _getSlices(slices, delay: delay);
+
+    // List<K> keys = []; // Reusable buffer
+    // keys.setAll(0, keysGetter());
+    // var sliceLength = maxGetBatchSize ?? keys.length;
+    // yield* _getSlices(keys.mapIndexed((index, key) => ListSlice(keys, index * sliceLength, index * sliceLength + sliceLength)), delay: delay);
   }
 
   Stream<ServiceSetSlice<K, V, S>> push(Iterable<(K, V)> Function() pairsGetter, {Duration delay = const Duration(milliseconds: 1)}) async* {
@@ -114,69 +112,57 @@ abstract mixin class ServiceIO<K, V, S> {
   // }
 }
 
-class ServicePollStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceGetSlice<K, V>> {
-  ServicePollStreamHandler(this.protocolService, this.inputGetter, super.onDataSlice);
-
-  final ServiceIO<K, V, S> protocolService;
-  final Iterable<K> Function() inputGetter;
-
-  @protected
-  @override
-  Stream<ServiceGetSlice<K, V>> get stream => protocolService.pollFlex(inputGetter, delay: const Duration(milliseconds: 1));
-}
-
-class ServicePushStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceSetSlice<K, V, S>> {
-  ServicePushStreamHandler(this.protocolService, this.inputGetter, super.onDataSlice);
-
-  final ServiceIO<K, V, S> protocolService;
-  final Iterable<(K, V)> Function() inputGetter;
-
-  @protected
-  @override
-  Stream<ServiceSetSlice<K, V, S>> get stream => protocolService.push(inputGetter, delay: const Duration(milliseconds: 1));
-}
-
-abstract class ServiceStreamHandler<T> {
-  ServiceStreamHandler(this.onDataSlice);
-
-  // final ServiceIO protocolService;
-  // final Iterable<T> Function() inputGetter;
-
-  // createStream()
-  @protected
-  Stream<T> get stream; // creates a new stream, call from begin() only
-
-  final void Function(T data) onDataSlice;
-
-  StreamSubscription? streamSubscription;
-  bool get isStopped => streamSubscription == null;
-
-  StreamSubscription? begin() {
-    if (!isStopped) return null;
-    return streamSubscription = stream.listen(onDataSlice);
+extension ListBuffer<T> on List<List<T>> {
+  void setSlices(Iterable<List<T>> newSlices) {
+    clear();
+    addAll(newSlices);
   }
-
-  // Future<void> get stopped => streamSubscription?.asFuture() ?? Future.value();
-
-  Future<void> end() async => streamSubscription?.cancel().whenComplete(() => streamSubscription = null);
-  Future<void> restart() async => end().whenComplete(() => begin());
 }
 
-// class BuiltInStreamManager<T> {
-//   StreamController<T>? _controller;
-//   StreamSubscription<T>? _subscription;
+// class ServicePollStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceGetSlice<K, V>> {
+//   ServicePollStreamHandler(this.protocolService, this.inputGetter, super.onDataSlice);
 
-//   Stream<T> get stream => _controller?.stream ?? const Stream.empty();
+//   final ServiceIO<K, V, S> protocolService;
+//   final Iterable<K> Function() inputGetter;
 
-//   void start(Stream<T> sourceStream) {
-//     _controller = StreamController<T>(sync: true);
-//     _subscription = sourceStream.listen(_controller!.add);
+//   @protected
+//   @override
+//   Stream<ServiceGetSlice<K, V>> get stream => protocolService.pollFlex(inputGetter, delay: const Duration(milliseconds: 1));
+// }
+
+// class ServicePushStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceSetSlice<K, V, S>> {
+//   ServicePushStreamHandler(this.protocolService, this.inputGetter, super.onDataSlice);
+
+//   final ServiceIO<K, V, S> protocolService;
+//   final Iterable<(K, V)> Function() inputGetter;
+
+//   @protected
+//   @override
+//   Stream<ServiceSetSlice<K, V, S>> get stream => protocolService.push(inputGetter, delay: const Duration(milliseconds: 1));
+// }
+
+// abstract class ServiceStreamHandler<T> {
+//   ServiceStreamHandler(this.onDataSlice);
+
+//   // final ServiceIO protocolService;
+//   // final Iterable<T> Function() inputGetter;
+
+//   // createStream()
+//   @protected
+//   Stream<T> get stream; // creates a new stream, call from begin() only
+
+//   final void Function(T data) onDataSlice;
+
+//   StreamSubscription? streamSubscription;
+//   bool get isStopped => streamSubscription == null;
+
+//   StreamSubscription? begin() {
+//     if (!isStopped) return null;
+//     return streamSubscription = stream.listen(onDataSlice);
 //   }
 
-//   Future<void> stop() async {
-//     await _subscription?.cancel();
-//     await _controller?.close();
-//     _subscription = null;
-//     _controller = null;
-//   }
+//   // Future<void> get stopped => streamSubscription?.asFuture() ?? Future.value();
+
+//   Future<void> end() async => streamSubscription?.cancel().whenComplete(() => streamSubscription = null);
+//   Future<void> restart() async => end().whenComplete(() => begin());
 // }

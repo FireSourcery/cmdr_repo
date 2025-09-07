@@ -7,6 +7,8 @@ import 'file_storage.dart';
 
 // app side extends FileStorage can mixin instead of creating controller
 abstract mixin class FileStorageNotifier<T> implements FileStorage<T> {
+  // FileStorage<T> fileStorage;
+
   /// ValueNotifiers for caller update
   // async values are available once after resolving future. continuous updates use ValueNotifier
   final ValueNotifier<File?> fileNotifier = ValueNotifier(null);
@@ -14,7 +16,7 @@ abstract mixin class FileStorageNotifier<T> implements FileStorage<T> {
   File? get file => fileNotifier.value;
   String? get filePath => file?.path;
 
-// // FileStorageStatus status = FileStorageStatus.ok;
+  // // FileStorageStatus status = FileStorageStatus.ok;
   // final ValueNotifier<FileStorageStatus> statusNotifier = ValueNotifier(FileStorageStatus.ok);
   final ValueNotifier<String?> statusNotifier = ValueNotifier(null);
   String get status => statusNotifier.value ?? 'Ok';
@@ -27,16 +29,11 @@ abstract mixin class FileStorageNotifier<T> implements FileStorage<T> {
 
   /// async state notifiers for FutureBuilder, pick open and pick save
   Future<File?> _pickedFile = Future.value(null);
-  set pickedFile(Future<File?> value) => (_pickedFile = value);
   Future<File?> get pickedFile => _pickedFile;
   Future<String> get pickedFileName => _pickedFile.then((value) => value?.path ?? 'No file selected');
-  // Future<File?>? _pickedFile; // pick open and pick save
-  // set pickedFile(Future<File?> value) => (_pickedFile = value).then((value) => file = value);
-  // Future<File?> get pickedFile => _pickedFile ?? Future.value(null);
-  // Future<String>? get pickedFileName => _pickedFile?.then((value) => value?.path ?? 'No file selected') ?? Future.value('Error: Not initialized');
+  set pickedFile(Future<File?> value) => (_pickedFile = value).then((value) => file = value); // also updates associated views listening to fileNotifier
 
   Future<dynamic>? operationCompleted; // return of function pass to processWithNotify
-
   @protected
   Completer<void> userConfirmation = Completer();
   Future<void> get userConfirmed => userConfirmation.future;

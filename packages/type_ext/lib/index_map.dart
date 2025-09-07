@@ -72,7 +72,10 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
         _valuesBuffer = List.from((IndexMap<K, V?>.filled(keys, null)..addEntries(entries))._valuesBuffer);
 
   // default copyFrom implementation
+  // IndexMap.fromBase(IndexMap<K, V?> state) : this._(state.keys, List<V>.from(state.values, growable: false));
   IndexMap.fromBase(List<K> keys, FixedMap<K, V?> state) : this._(keys, List<V>.from(state.values, growable: false));
+
+  IndexMap.fromMap(List<K> keys, Map<K, V?> state) : this._(keys, List<V>.from(state.values, growable: false));
 
   // IndexMap.castBase(IndexMap<K, V> state) : this._(state._keysReference, state._valuesBuffer);
 

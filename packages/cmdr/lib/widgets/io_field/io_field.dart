@@ -69,6 +69,7 @@ abstract mixin class _IOFieldStringBox<T> implements IOField<T> {
 /// Effectively:
 /// The IOField generative constructor, which can be shared without inheritance
 /// Union of all mode/subtype parameters. pass to subtype variations' constructors as a common interface
+/// optionally as var widdget interface
 class IOFieldConfig<T> {
   const IOFieldConfig({
     this.idDecoration = const InputDecoration(),
@@ -82,8 +83,8 @@ class IOFieldConfig<T> {
     this.valueStringifier,
     this.valueEnumRange,
     this.valueNumLimits,
-    this.sliderChanged,
-    this.useSliderBorder = false,
+    this.valueChanged,
+    // this.useSliderBorder = false,
     this.useSwitchBorder = true,
     this.boolStyle = IOFieldBoolStyle.latchingSwitch,
   }) : assert(!((T == num || T == int || T == double) && (valueNumLimits == null && valueEnumRange == null)));
@@ -92,23 +93,19 @@ class IOFieldConfig<T> {
   final bool isReadOnly;
   final String tip;
 
-  /// using ListenableBuilder for cases where value is not of the same type as valueListenable
+  /// using Listenable for cases where value is not of the same type as valueListenable
   final Listenable valueListenable; // read/output update
   final ValueGetter<T?> valueGetter;
   final ValueSetter<T>? valueSetter;
-
+  final ValueChanged<T>? valueChanged; // slider only for now
   final ValueGetter<bool>? errorGetter; // true on error
-
-  // value string precedence: valueStringGetter > valueStringifier > valueGetter().toString()
-  final ValueGetter<String>? valueStringGetter;
+  final ValueGetter<String>? valueStringGetter; // value string precedence: valueStringGetter > valueStringifier > valueGetter().toString()
   final Stringifier<T>? valueStringifier; // for enum and other range bound types
 
   final ({num min, num max})? valueNumLimits; // required for num type, slider and input range check on submit
   final List<T>? valueEnumRange; // enum or String selection, alternatively type as enum only
 
-  final ValueChanged<T>? sliderChanged;
-
-  final bool useSliderBorder;
+  // final bool useSliderBorder;
   final bool useSwitchBorder;
   final IOFieldBoolStyle boolStyle;
 
@@ -139,8 +136,8 @@ class IOFieldConfig<T> {
       valueStringGetter: valueStringGetter ?? this.valueStringGetter,
       valueStringifier: valueStringifier ?? this.valueStringifier,
       valueEnumRange: valueEnumRange ?? this.valueEnumRange,
-      sliderChanged: sliderChanged ?? this.sliderChanged,
-      useSliderBorder: useSliderBorder ?? this.useSliderBorder,
+      valueChanged: sliderChanged ?? this.valueChanged,
+      // useSliderBorder: useSliderBorder ?? this.useSliderBorder,
       useSwitchBorder: useSwitchBorder ?? this.useSwitchBorder,
       boolStyle: boolStyle ?? this.boolStyle,
     );
@@ -487,7 +484,7 @@ class IOFieldSlider<T extends num> extends StatelessWidget implements IOField<T>
 
   final IOFieldConfig<T> config;
 
-  void onChanged(double value) => config.sliderChanged?.call(value.to<T>());
+  void onChanged(double value) => config.valueChanged?.call(value.to<T>());
   void onChangeEnd(double value) => config.valueSetter?.call(value.to<T>());
 
   Widget builder(BuildContext context, Widget? child) {

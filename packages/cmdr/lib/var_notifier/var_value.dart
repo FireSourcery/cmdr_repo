@@ -32,8 +32,8 @@ mixin class VarValue<V> {
   set view(V newValue) {
     // _pendingValue = newValue; // let codec handle clamping on [encode], view may be out of bounds
     _pendingValue = switch (V) {
-      const (int) => codec.clamp(newValue as int) as V,
-      const (double) => codec.clamp(newValue as double) as V,
+      const (int) => codec.clamp(newValue as int).toInt() as V,
+      const (double) => codec.clamp(newValue as double).toDouble() as V, // clamp returns num, maybe return int
       const (num) => codec.clamp(newValue as num) as V,
       const (bool) => newValue,
       _ => newValue,

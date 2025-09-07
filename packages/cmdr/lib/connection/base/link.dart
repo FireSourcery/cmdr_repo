@@ -72,3 +72,7 @@ class LinkConnectionStatus extends LinkStatus {
 
   final bool isConnected;
 }
+
+// class LinkStatusError extends LinkStatus implements Exception {
+//   const LinkStatusError(super.message, {super.linkType});
+// }

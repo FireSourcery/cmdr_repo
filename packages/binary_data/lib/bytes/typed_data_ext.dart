@@ -113,10 +113,6 @@ extension TypedDataListSeek<T extends TypedDataList<int>> on T {
   T? seekChar(int match) => seek(indexOf(match));
   T? seekSequence(Iterable<int> match) => seek(indexOfSequence(match));
 
-  // alternative as seekOrNull
-  // T? seekElement(int match) => seekOrNull(this.indexOf(match));
-  // T? seekSequence(Iterable<int> match) => seekOrNull(this.indexOfSequence(match));
-
   String asString([int start = 0, int? end]) => String.fromCharCodes(this, start, end);
   // String toStringAsCode([int start = 0, int? end]) => String.fromCharCodes(this, start, end);
 }

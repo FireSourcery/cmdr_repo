@@ -9,7 +9,7 @@ export 'typed_array.dart';
 export 'typed_field.dart';
 export 'typed_data_buffer.dart';
 
-/// [ByteStruct] is a [TypedData] with keyed access to fields.
+/// [ByteStruct] is a [TypedData] with keyed/named access to fields.
 /// [TypedData] + [] Map operators returning [int]
 /// keyed view
 ///   mixin keyed access for serialization map

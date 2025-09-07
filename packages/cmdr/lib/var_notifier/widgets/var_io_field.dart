@@ -172,6 +172,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
       prefixIcon: (showPrefix) ? (!isReadOnly ? const Icon(Icons.input) : null) : null,
       suffixText: (showSuffix) ? varNotifier.varKey.suffix : null,
       isDense: isDense,
+
       // floatingLabelAlignment: labelAlignment,
     );
 
@@ -202,7 +203,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   ValueGetter<bool> get errorGetter => (() => varNotifier.statusIsError);
 
   @override
-  ValueChanged<V> get sliderChanged => varNotifier.updateByViewAs<V>;
+  ValueChanged<V> get valueChanged => varNotifier.updateByViewAs<V>;
 
   @override
   String get tip => varNotifier.varKey.tip ?? '';
@@ -237,6 +238,16 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
     bool? useSwitchBorder,
     IOFieldBoolStyle? boolStyle,
   }) {
-    throw UnimplementedError();
+    return VarIOFieldConfig<V>(
+      varNotifier,
+      eventNotifier: eventNotifier,
+      controller: controller,
+      labelAlignment: labelAlignment,
+      showLabel: showLabel,
+      showPrefix: showPrefix,
+      showSuffix: showSuffix,
+      isDense: isDense,
+      readOnly: isReadOnly ?? readOnly,
+    );
   }
 }

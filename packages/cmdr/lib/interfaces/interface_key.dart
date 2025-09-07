@@ -1,7 +1,15 @@
 import 'package:cmdr/var_notifier.dart';
+import 'package:flutter/foundation.dart';
 import 'package:type_ext/basic_types.dart';
 
 import 'dart:convert';
+
+// abstract interface class FactoryCodec<T, V> {
+//   const FactoryCodec._();
+
+//   V decode(T data);
+//   T encode(V view);
+// }
 
 /// Union of generic types
 // A primitive union type key

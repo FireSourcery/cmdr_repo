@@ -113,7 +113,9 @@ class SerialLink implements Link {
   Future<void> send(Uint8List bytes) async {
     try {
       // implicit await blocking, allow driver to initiate timeout, block reentrant, or ignore reentrant call. ensure blocking calls do not stack
+      // although without explicit await, exceptions cannot be caught here
       if (_serialPort!.write(bytes, timeout: 1000) < bytes.length) throw TimeoutException('Serial Write Incomplete');
+
       // reentrant async calls handled in the same order they arrive?
       // if (await Future(() => serialPort!.write(bytes, timeout: 500)).timeout(const Duration(milliseconds: 1000)) < bytes.length) throw TimeoutException('SerialPort Tx Timeout');
     } on TimeoutException {

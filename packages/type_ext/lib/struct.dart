@@ -33,6 +33,11 @@ typedef DataStruct<K extends Field, V extends Object?> = Structure<K, V>;
 abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>  */ {
   const Structure();
 
+  // default implementation for copyWith
+  // static Structure<K1, V1> fromBase<K1, V1>(Structure<K1, V1?> fields) {
+  //   // return StructMap.ofMap({for (var key in keys) key: fields.field(key) ?? field(key)} as FixedMap<K, V?>);
+  // }
+
   // @override
   List<K> get keys; // a method that is the meta contents, fieldsList
   // Iterable<K> get keys;
@@ -123,6 +128,21 @@ abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>
     }
     return false;
   }
+
+  // static S fromMap<S extends Structure<K, V>, K extends Field, V>(
+  //   Map<String, dynamic> map,
+  //   List<K> keys,
+  //   S Function(Structure<K, V>) constructor,
+  // ) {
+  //   final struct = StructMap<K, V>.filled(keys, null); // Start with nulls
+  //   for (final key in keys) {
+  //     final value = map[key.name]; // Use enum.name as key
+  //     if (value != null) {
+  //       struct[key] = value as V; // Type cast (add validation if needed)
+  //     }
+  //   }
+  //   return constructor(struct);
+  // }
 }
 
 /// [Field] - key to a value in a [StructView], with type

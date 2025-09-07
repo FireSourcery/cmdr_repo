@@ -1,21 +1,21 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import "dart:async";
 
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 
 class DriveShift extends StatefulWidget {
-  const DriveShift({this.onSelect, this.confirmSelected, this.initialSelect = DriveShiftSelect.park, super.key});
+  const DriveShift({super.key, this.onSelect, this.confirmSelected, this.initialSelect, required this.enumF, required this.enumN, required this.enumR, required this.enumP});
 
-  final ValueSetter<DriveShiftSelect>? onSelect;
-  // final ValueNotifier<DriveShiftSelect>? valueNotifier;
-  final AsyncValueGetter<DriveShiftSelect?>? confirmSelected;
-  final DriveShiftSelect initialSelect;
-
-  // alternatively directly return users type
-  // Enum enumF ;
-  // Enum enumN ;
-  // Enum enumR ;
-  // Enum enumP ;
+  final ValueSetter<Enum>? onSelect;
+  // final ValueNotifier<Enum>? valueNotifier;
+  final AsyncValueGetter<Enum?>? confirmSelected;
+  final Enum? initialSelect;
+  // directly return users type
+  final Enum enumF;
+  final Enum enumN;
+  final Enum enumR;
+  final Enum enumP;
 
   final Radius radius = const Radius.circular(10.0);
   final double size = 25;
@@ -54,33 +54,33 @@ class _DriveShiftState extends State<DriveShift> {
   late final BorderSide baseBorderSide = BorderSide(color: borderColor, width: 2, strokeAlign: BorderSide.strokeAlignInside);
   late final OutlinedBorder baseBorder = BeveledRectangleBorder(borderRadius: BorderRadius.all(radius * 2.5), side: baseBorderSide);
 
-  late final WidgetStatesController controllerF = WidgetStatesController({if (widget.initialSelect == DriveShiftSelect.forward) WidgetState.selected});
-  late final WidgetStatesController controllerN = WidgetStatesController({if (widget.initialSelect == DriveShiftSelect.neutral) WidgetState.selected});
-  late final WidgetStatesController controllerR = WidgetStatesController({if (widget.initialSelect == DriveShiftSelect.reverse) WidgetState.selected});
-  late final WidgetStatesController controllerP = WidgetStatesController({if (widget.initialSelect == DriveShiftSelect.park) WidgetState.selected});
+  late final WidgetStatesController controllerF = WidgetStatesController({if (widget.initialSelect == widget.enumF) WidgetState.selected});
+  late final WidgetStatesController controllerN = WidgetStatesController({if (widget.initialSelect == widget.enumN) WidgetState.selected});
+  late final WidgetStatesController controllerR = WidgetStatesController({if (widget.initialSelect == widget.enumR) WidgetState.selected});
+  late final WidgetStatesController controllerP = WidgetStatesController({if (widget.initialSelect == widget.enumP) WidgetState.selected});
 
   // late DriveShiftSelect _selected = widget.initialSelect;
 
-  Future<void> handleSelect(DriveShiftSelect select) async {
+  Future<void> handleSelect(Enum select) async {
     widget.onSelect?.call(select);
-    controllerF.update(WidgetState.selected, (select == DriveShiftSelect.forward));
-    controllerN.update(WidgetState.selected, (select == DriveShiftSelect.neutral));
-    controllerR.update(WidgetState.selected, (select == DriveShiftSelect.reverse));
-    controllerP.update(WidgetState.selected, (select == DriveShiftSelect.park));
+    controllerF.update(WidgetState.selected, (select == widget.enumF));
+    controllerN.update(WidgetState.selected, (select == widget.enumN));
+    controllerR.update(WidgetState.selected, (select == widget.enumR));
+    controllerP.update(WidgetState.selected, (select == widget.enumP));
 
     // handle returning null result as null, null function use the selected value directly
-    if (widget.confirmSelected case AsyncValueGetter<DriveShiftSelect?> confirmed) {
-      DriveShiftSelect? errorSelect = (await confirmed() == select) ? null : select;
+    if (widget.confirmSelected case AsyncValueGetter<Enum?> confirmed) {
+      Enum? errorSelect = (await confirmed() == select) ? null : select;
       if (!mounted) return;
-      controllerF.update(WidgetState.error, (errorSelect == DriveShiftSelect.forward));
-      controllerN.update(WidgetState.error, (errorSelect == DriveShiftSelect.neutral));
-      controllerR.update(WidgetState.error, (errorSelect == DriveShiftSelect.reverse));
-      controllerP.update(WidgetState.error, (errorSelect == DriveShiftSelect.park));
+      controllerF.update(WidgetState.error, (errorSelect == widget.enumF));
+      controllerN.update(WidgetState.error, (errorSelect == widget.enumN));
+      controllerR.update(WidgetState.error, (errorSelect == widget.enumR));
+      controllerP.update(WidgetState.error, (errorSelect == widget.enumP));
     }
   }
 
   // short hand wrapper
-  ElevatedButton button(DriveShiftSelect id, String label, ButtonStyle style, WidgetStatesController controller) {
+  ElevatedButton button(Enum id, String label, ButtonStyle style, WidgetStatesController controller) {
     return ElevatedButton(
       onPressed: () => handleSelect(id),
       style: style,
@@ -89,10 +89,10 @@ class _DriveShiftState extends State<DriveShift> {
     );
   }
 
-  late final ElevatedButton forward = button(DriveShiftSelect.forward, "F", styleForward, controllerF);
-  late final ElevatedButton neutral = button(DriveShiftSelect.neutral, "N", styleSeed, controllerN);
-  late final ElevatedButton reverse = button(DriveShiftSelect.reverse, "R", styleReverse, controllerR);
-  late final ElevatedButton park = button(DriveShiftSelect.park, "P", styleSeed, controllerP);
+  late final ElevatedButton forward = button(widget.enumF, "F", styleForward, controllerF);
+  late final ElevatedButton neutral = button(widget.enumN, "N", styleSeed, controllerN);
+  late final ElevatedButton reverse = button(widget.enumR, "R", styleReverse, controllerR);
+  late final ElevatedButton park = button(widget.enumP, "P", styleSeed, controllerP);
 
   // if material3 == false
   // Widget wrapTheme(Widget child) => Theme(data: ThemeData(useMaterial3: true, colorSchemeSeed: borderColor, brightness: Brightness.dark), child: child);
@@ -135,7 +135,7 @@ class _DriveShiftState extends State<DriveShift> {
   }
 }
 
-enum DriveShiftSelect { forward, neutral, reverse, park }
+// enum DriveShiftSelect { forward, neutral, reverse, park }
 
 class _ButtonBackgroundColor implements WidgetStateProperty<Color?> {
   const _ButtonBackgroundColor(this.baseColor, this.errorColor);

@@ -17,6 +17,7 @@ abstract class FileStorage<T> {
   // getter over mixin for codecs with state to maintain encapsulation
   FileStorageCodec<T, dynamic> get fileCodec;
 
+  //effectively inplace wrap of file codec
   /// Abstract functions to handle file contents
   /// called by openAsync, saveAsync
   Object? fromContents(T contents); //parseContents

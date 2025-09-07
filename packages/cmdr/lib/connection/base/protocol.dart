@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
@@ -21,6 +22,7 @@ class Protocol {
   // final PacketTransformer packetTransformer;
 
   // Stream<Packet>? packetStream; // rx complete packets, pre sockets
+  // Stream<Packet> get rxStream => link.streamIn.transform(PacketTransformer(parserBuffer: headerParser)); // rx complete packets, pre sockets
 
   /// begin Socket Rx
   StreamSubscription<Packet>? begin() {
@@ -42,7 +44,6 @@ class Protocol {
     if (kDebugMode) print("RX $packet");
     if (respSocketMap[packet.packetId] case ProtocolSocket socket) {
       socket.add(packet);
-      if (kDebugMode) print("Socket [${socket.hashCode}] Time: ${socket.timer.elapsedMilliseconds}");
     } else {
       handleProtocolException(const ProtocolException('No matching socket'));
     }
@@ -51,10 +52,10 @@ class Protocol {
   @protected
   Future<void> trySend(Packet packet) async {
     try {
-      print("TX $packet");
+      if (kDebugMode) print("TX $packet");
       return await link.send(packet.bytes); // lock buffer, or await on blocking function
     } on TimeoutException {
-      print("Link Tx Timeout");
+      if (kDebugMode) print("trySend Timeout");
     } catch (e) {
       _onError(e);
     } finally {}
@@ -125,26 +126,29 @@ class ProtocolSocket implements Sink<Packet> {
   ProtocolSocket(this.protocol) : packetBufferIn = PacketBuffer(protocol.packetInterface), packetBufferOut = PacketBuffer(protocol.packetInterface);
 
   @protected
-  final Protocol protocol; //optionally make this mutable
+  final Protocol protocol; // optionally make this mutable
   @protected
   final PacketBuffer packetBufferIn; // alternatively implement lock on buffers
   @protected
   final PacketBuffer packetBufferOut;
 
+  PacketClass get packetInterface => protocol.packetInterface;
+
   final Lock _lock = Lock();
-  Completer<Packet> _recved = Completer.sync();
+  // Completer<Packet> _recved = Completer.sync();
+  final StreamController<void> _recvedController = StreamController<void>.broadcast(sync: true);
+  Stream<void> get _recved => _recvedController.stream;
 
   int waitingOnLockCount = 0;
-  // ProtocolException status = ProtocolException.ok; // todo with eventSink
+  // ProtocolException status = ProtocolException.ok; // use eventSink
 
   final Stopwatch timer = Stopwatch()..start();
 
+  //
   static const Duration timeoutDefault = Duration(milliseconds: 500);
   static const Duration rxTimeoutDefault = Duration(milliseconds: 500);
   static const Duration reqRespTimeoutDefault = Duration(milliseconds: 1000);
   static const Duration datagramDelay = Duration(milliseconds: 1);
-
-  PacketClass get packetInterface => protocol.packetInterface;
 
   /// async function maintains state
   /// locks buffer, packet buildPayload function must be defined with override to include during lock
@@ -182,6 +186,7 @@ class ProtocolSocket implements Sink<Packet> {
       print(e);
       return null;
     } finally {
+      print("Socket [${hashCode}] Time: ${timer.elapsedMilliseconds}");
       print('--- End Request');
       waitingOnLockCount--;
     }
@@ -225,7 +230,6 @@ class ProtocolSocket implements Sink<Packet> {
   Future<PayloadMeta> sendRequest<V>(PacketIdRequest<V, dynamic> packetId, V requestArgs) async {
     protocol.mapRequestResponse(packetId, this); // request always paired with response, so map here
     packetBufferIn.clear();
-    _recved = Completer<Packet>.sync();
 
     final PayloadMeta requestMeta = packetBufferOut.buildRequest<V>(packetId, requestArgs);
     timer.reset();
@@ -257,23 +261,24 @@ class ProtocolSocket implements Sink<Packet> {
     return tryRecv<PacketSyncId>(() => packetBufferIn.parseSyncId(), timeout);
   }
 
-  // Future<void> sendRaw(Uint8List bytes, {Duration timeout = timeoutDefault}) async {}
-  // Uint8List recvRaw(int bytes, {int timeout = -1})
-  // @protected
-  // Future<PayloadMeta> send<V>(PacketPayloadId<V> packetId, V requestArgs) async {
-  //   final PayloadMeta requestMeta = packetBufferOut.buildRequest<V>(packetId, requestArgs);
-  //   timer.reset();
-  //   timer.start();
+  // Future<void> sendBytes(Uint8List bytes, {PacketId? id, Duration timeout = timeoutDefault}) async {
+  //   // protocol.mapRequestResponse(packetId, this);
+  //   packetBufferOut.copy(bytes);
   //   await protocol.trySend(packetBufferOut.viewAsPacket);
-  //   return requestMeta;
   // }
+
+  // Uint8List recvBytes(int bytes, {int timeout = -1}) {
+  //   // await tryRecv<Uint8List>(() => packetBufferIn.viewAsBytes, Duration(milliseconds: timeout < 0 ? rxTimeoutDefault.inMilliseconds : timeout));
+  //   // return packetBufferIn.viewAsBytes;
+  // }
+
   // host side initiated wait
   // Future<V?> expectResponse<V>(PacketIdRequest<dynamic, V> packetId, {PayloadMeta? reqStateMeta, Duration timeout = timeoutDefault}) async {
   //   protocol.mapResponse(packetId.responseId ?? packetId, this);
   //   return recvResponse<V>(packetId, reqStateMeta: reqStateMeta, timeout: timeoutDefault);
   // }
 
-  // Future<PacketIdSync?> expectSync([Duration timeout = timeoutDefault]) {
+  // Future<PacketSyncId?> expectSync([Duration timeout = timeoutDefault]) {
   //   protocol.mapSync(this);
   //   return recvSync(timeout);
   // }
@@ -282,8 +287,7 @@ class ProtocolSocket implements Sink<Packet> {
   @protected
   Future<R?> tryRecv<R>(R? Function() parse, [Duration timeout = rxTimeoutDefault]) async {
     try {
-      // await stream.first.timeout(timeout);
-      return await _recved.future.timeout(timeout).then((_) => parse());
+      _recved.first.timeout(timeout).then((_) => parse());
     } on TimeoutException {
       print("Socket Recv Response Timeout");
       rethrow;
@@ -302,10 +306,7 @@ class ProtocolSocket implements Sink<Packet> {
       print("ProtocolSocket");
       print(e);
       // payload parser may throw if invalid packet passes header parser as valid
-    } finally {
-      // mark input as empty
-      _recved = Completer.sync(); // sync completer call parse as soon as complete is called
-    }
+    } finally {}
     return null;
   }
 
@@ -313,11 +314,10 @@ class ProtocolSocket implements Sink<Packet> {
   @override
   void add(Packet event) {
     timer.stop();
-
     packetBufferIn.copy(event.bytes); // sets buffer length to packet length, [PacketTransformer] handles max buffer length
     // socket table does not unmap. might receive packets following completion
-    if (!_recved.isCompleted) {
-      _recved.complete(packetBufferIn.viewAsPacket);
+    if (!_recvedController.isClosed) {
+      _recvedController.add(null);
     } else {
       throw const ProtocolException('Unexpected Rx');
     }
@@ -325,7 +325,7 @@ class ProtocolSocket implements Sink<Packet> {
 
   @override
   void close() {
-    print('Socket closed');
+    if (kDebugMode) print('Socket Closed');
   }
 
   /// Must return as stream, so callback can run following each response. This way eliminates additional buffering.
@@ -367,6 +367,12 @@ class ProtocolSocket implements Sink<Packet> {
   //   //  (cos(debugStopwatch.elapsedMilliseconds / 1000) * 32767).toInt(),
   // }
 }
+// alternatively
+// request formats, match in this layer, provides more than one pairing than packet id
+// abstract interface class ProtocolRequest<T, R> {
+//   PacketIdPayload<T>? get requestId;
+//   PacketIdPayload<R>? get responseId;
+// }
 
 enum ProtocolSyncOptions {
   none,
@@ -400,10 +406,3 @@ class ProtocolException implements Exception {
   static const ProtocolException ok = ProtocolException('Ok');
   static const ProtocolException link = ProtocolException(' ');
 }
-
-// request formats, match in this layer, provides more than one pairing than packet id
-// alternatively
-// abstract interface class ProtocolRequest<T, R> {
-//   PacketIdPayload<T>? get requestId;
-//   PacketIdPayload<R>? get responseId;
-// }

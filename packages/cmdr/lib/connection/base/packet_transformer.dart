@@ -17,11 +17,10 @@ class HeaderParser extends PacketBuffer {
 
   HeaderStatus get status => HeaderStatus(viewAsPacket);
 
-  // td check length before parsing: RangeError (typedData.lengthInBytes): The typed list is not large enough: Not greater than or equal to 8: 3
-
   // cannot cast struct without full length
   // always copies remainder, double buffers.
   // but does not need additional logic to handle remainder, simpler logic than switching pointers
+  // creating a new view maybe more expensive than setting pointers
   // sets view length to bound validity checks
   void receive(Uint8List bytes) {
     // handle trailing here
@@ -65,9 +64,10 @@ class HeaderParser extends PacketBuffer {
   // }
 }
 
+/// immutable view of packet parsing status
 /// determine complete, error, or wait for more data
 class HeaderStatus {
-  HeaderStatus(this.packet);
+  const HeaderStatus(this.packet);
   @protected
   final Packet packet;
 
@@ -75,13 +75,14 @@ class HeaderStatus {
   bool get isPacketComplete {
     assert(isStartValid != false);
     assert(isIdValid != false);
-    // assert(isLengthValid != false);
+    // assert(isLengthValid != false); //check length field if implemented
     return packet.isPacketComplete;
   }
 
+  // bool? effectively as 3 state: null=unknown, false=invalid, true=valid
   bool? get isStartValid => packet.isStartFieldValid; // nullable when StartField is multiple bytes
   bool? get isIdValid => packet.isIdFieldValid;
-  // non-sync only
+  // check packet length field if implemented
   bool? get isLengthValid => packet.isLengthFieldValid;
   // packet must be complete and length set
   bool? get isChecksumValid => packet.isChecksumFieldValid; // (isPacketComplete == true), buffer.length == buffer.lengthFieldOrNull
@@ -90,7 +91,7 @@ class HeaderStatus {
 /// combine partial/fragmented packets
 /// emitted [Packet] is a reference to the buffer, not a copy. handling must be synchronous, before returning control to the transformer
 class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> implements EventSink<Uint8List> {
-  PacketTransformer({required this.parserBuffer});
+  PacketTransformer({required this.parserBuffer}); // alternatively pass packetClass and create parserBuffer internally
 
   late final EventSink<Packet> _outputSink;
   final HeaderParser parserBuffer;

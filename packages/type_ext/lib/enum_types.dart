@@ -1,11 +1,4 @@
-// inherits
-//  T byName(String name)
-//  Map<String, T> asNameMap()
-extension type const EnumType<T extends Enum>(List<T> enumValues) implements List<T> {
-  // EnumType.inUnion(Set<List<Enum>> enumValues) : this(enumValues.whereType<List<T>>().single);
-
-  // T? resolve(int? index) => (index != null) ? enumValues.elementAtOrNull(index) : null;
-}
+import 'package:type_ext/type_ext.dart';
 
 extension EnumByNullable<T extends Enum> on List<T> {
   T? resolve(int? index) => (index != null) ? elementAtOrNull(index) : null;
@@ -15,11 +8,21 @@ extension EnumByNullable<T extends Enum> on List<T> {
   Enum resolveAsBase(int index) => elementAtOrNull(index) ?? EnumUnknown.unknown; // on List<Enum>?
   /// byIndexOr
   T byIndex(int index, [T? defaultValue]) => elementAtOrNull(index) ?? defaultValue ?? first;
+  // T byIndex(int index, [T? defaultValue]) => elementAtOrNull(index) ?? defaultValue ?? (throw ArgumentError.checkNotNull(defaultValue, 'defaultValue'));
+
+  Map<V, T> asReverseMap<V>([V Function(T)? valueOf]) {
+    if (valueOf != null) return {for (final key in this) valueOf(key): key};
+    if (V == int) return asMap() as Map<V, T>; // index by default
+    throw ArgumentError('EnumMap: $V must be defined for reverseMap');
+  }
+
+  // EnumCodec<T> asCodec() => EnumCodec.of(this);
 }
 
 enum EnumUnknown { unknown }
 
 // T is only used for nested types, if the subtype implements a common type
+// extension on Set<List<T>>
 // extension type const EnumValuesUnion(Set<List<Enum>> valuesUnion) {
 extension type const EnumUnionType<T extends Enum>(Set<List<T>> valuesUnion) implements Set<List<T>> {
   // if S extends T then non-null is guaranteed by class definition
@@ -40,20 +43,13 @@ extension type const EnumUnionType<T extends Enum>(Set<List<T>> valuesUnion) imp
   // }
 }
 
-// extension type const EnumIdFactory<K extends Enum, V>._(Map<V, K> reverseMap) {
-//   EnumIdFactory.of(List<K> keys) : reverseMap = EnumMap.buildReverseMap<K, V>(keys);
-//   K? idOf(V mappedValue) => reverseMap[mappedValue];
-
-// static Map<V, K> buildReverse<K extends Enum, V>(List<K> keys, [V Function(K)? valueOf]) {
-//   if (valueOf != null) {
-//     return keys.asReverseMap(valueOf);
-//   } else if (V == int) {
-//     return keys.asMap() as Map<V, K>; // index by default
-//   } else {
-//     throw ArgumentError('EnumMap: $V must be defined for reverseMap');
-//   }
-//   // assert(V == int, 'EnumMap: $V must be defined for reverseMap');
-// }
+// inherits
+//  T byName(String name)
+//  Map<String, T> asNameMap()
+// extension type const EnumType<T extends Enum>(List<T> enums) implements List<T>, EnumMapFactory<T> {
+//   EnumCodec<T> get codec => EnumCodec.of(enums);
+//   EnumCodec<T?> get nullableCodec => EnumCodec.nullable(enums);
+//   EnumCodec<Enum> get baseCodec => EnumCodec.base(enums);
 // }
 
 // class EnumCodec<V extends Enum> /* implements Codec<V> */ {
@@ -76,10 +72,6 @@ extension type const EnumUnionType<T extends Enum>(Set<List<T>> valuesUnion) imp
 //       : assert(V == Enum),
 //         decoder = enumRange.resolveAsBase,
 //         encoder = _defaultEnumEncoder;
-
-//   final DataDecoder<V> decoder;
-//   final DataEncoder<V> encoder;
-//   final List<V> enumRange;
 
 //   static int _defaultEnumEncoder(Enum view) => view.index;
 

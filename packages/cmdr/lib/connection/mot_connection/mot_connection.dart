@@ -25,8 +25,8 @@ class MotConnection {
   final SerialLink serialLink = SerialLink();
   // final BluetoothLink bluetoothLink = BluetoothLink();
 
-  static final Protocol _protocolUninit = Protocol(const Link.uninitialized(), const MotPacketInterface());
-  late final Protocol _protocolSerial = Protocol(serialLink, const MotPacketInterface());
+  static final Protocol _uninitialized = Protocol(const Link.uninitialized(), const MotPacketInterface());
+  late final Protocol _serial = Protocol(serialLink, const MotPacketInterface());
 
   // late final Protocol protocol = Protocol(serialLink, const MotPacketInterface());
   // late final MotProtocolSocket general = MotProtocolSocket(protocol);
@@ -37,11 +37,11 @@ class MotConnection {
   // Link activeLink = const Link.uninitialized();
   Link get activeLink => activeProtocol.link;
 
-  Protocol activeProtocol = _protocolUninit;
-  MotProtocolSocket general = MotProtocolSocket(_protocolUninit);
-  MotProtocolSocket stop = MotProtocolSocket(_protocolUninit);
-  MotProtocolSocket varRead = MotProtocolSocket(_protocolUninit);
-  MotProtocolSocket varWrite = MotProtocolSocket(_protocolUninit);
+  Protocol activeProtocol = _uninitialized;
+  MotProtocolSocket general = MotProtocolSocket(_uninitialized);
+  MotProtocolSocket stop = MotProtocolSocket(_uninitialized);
+  MotProtocolSocket varRead = MotProtocolSocket(_uninitialized);
+  MotProtocolSocket varWrite = MotProtocolSocket(_uninitialized);
 
   StreamSubscription<Packet>? packetSubscription;
 
@@ -51,14 +51,14 @@ class MotConnection {
     //  switch on link type
 
     if (serialLink.connect(name: name, baudRate: baudRate).isConnected) {
-      if (packetSubscription != null) packetSubscription!.cancel();
-      packetSubscription = _protocolSerial.begin();
+      packetSubscription?.cancel(); // begin central demux
+      packetSubscription = _serial.begin();
 
-      activeProtocol = _protocolSerial;
-      general = MotProtocolSocket(_protocolSerial);
-      stop = MotProtocolSocket(_protocolSerial);
-      varRead = MotProtocolSocket(_protocolSerial);
-      varWrite = MotProtocolSocket(_protocolSerial);
+      activeProtocol = _serial;
+      general = MotProtocolSocket(_serial);
+      stop = MotProtocolSocket(_serial);
+      varRead = MotProtocolSocket(_serial);
+      varWrite = MotProtocolSocket(_serial);
     }
 
     return isConnected;

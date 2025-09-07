@@ -97,8 +97,8 @@ extension on TypedData {
 }
 
 extension ByteDataTypedArray on ByteData {
-  int get end => offsetInBytes + lengthInBytes; // index of last byte + 1
-  int get length => lengthInBytes;
+  // int get end => offsetInBytes + lengthInBytes; // index of last byte + 1
+  // int get length => lengthInBytes;
 
   // testPart
   bool testLength(int offset, int? length) {

@@ -46,8 +46,8 @@ class MainMenuController with ChangeNotifier {
 
 class LinkedMenuController {
   LinkedMenuController(List<MenuEntry> menuListMain, List<MenuEntry> menuListAux)
-      : mainMenu = MainMenuController(menuListMain, navigatorKey: GlobalKey()),
-        auxMenu = MainMenuController(menuListAux, navigatorKey: null);
+    : mainMenu = MainMenuController(menuListMain, navigatorKey: GlobalKey()),
+      auxMenu = MainMenuController(menuListAux, navigatorKey: null);
 
   final MainMenuController mainMenu;
   final MainMenuController auxMenu;
@@ -64,12 +64,11 @@ class LinkedMenuController {
 }
 
 class MenuEntry {
-  const MenuEntry({required this.id, this.label = '', this.icon, this.route, this.widget});
+  const MenuEntry({required this.id, this.label = '', this.icon, this.route});
   final Enum id; // menu in order of index
   final String label;
   final IconData? icon;
   final String? route;
-  final Widget? widget;
 }
 
 abstract mixin class MenuEntryId implements MenuEntry, Enum {
@@ -77,5 +76,5 @@ abstract mixin class MenuEntryId implements MenuEntry, Enum {
   String get label => name.pascalCase;
   IconData? get icon;
   String? get route;
-  Widget? get widget;
+  // int get index => id.index;
 }
