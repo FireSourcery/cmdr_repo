@@ -146,10 +146,6 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
   // by user for output
   void updateByView(V newValue) => value = newValue;
 
-  V _getValue() => value;
-  ValueGetter<V> get valueGetter => _getValue;
-  ValueSetter<V> get valueSetter => updateByView;
-
   void updateByViewAs<T>(T typedValue) {
     updateValueAs<T>(typedValue);
     notifyListeners();
@@ -208,6 +204,12 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
   //   lastUpdate = VarLastUpdate.byData;
   //   // if (numValue != _clampedNumValue) statusCode = 1;
   // }
+
+  //make extension
+  V _getValue() => value;
+  void _setValue(V newValue) => value = newValue;
+  ValueGetter<V> get valueGetter => _getValue;
+  ValueSetter<V> get valueSetter => _setValue;
 }
 
 // replace null for over bounds
@@ -222,6 +224,14 @@ enum VarValueEnum { unknown }
 //   outOfRangeData,
 //   // add more as needed
 // }
+
+extension ValueNotifierExtensions<V> on ValueNotifier<V> {
+  // //make extension
+  // V _getValue() => value;
+  // void _setValue(V newValue) => value = newValue;
+  // ValueGetter<V> get valueGetter => _getValue;
+  // ValueSetter<V> get valueSetter => _setValue;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 /// [VarStatusNotifier]

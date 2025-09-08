@@ -13,14 +13,11 @@ class FlyweightMenuSource<T> {
   // defaultKey is required if T is not nullable. T must be nullable if defaultValue is not provided
   const FlyweightMenuSource({required this.menuItems, this.defaultKey}) : assert(defaultKey is T); // (null is T) || (defaultKey != null)
 
-  FlyweightMenuSource.itemBuilder({
-    required Iterable<T> itemKeys,
-    required Widget Function(T) itemBuilder,
-    T? defaultValue,
-  }) : this(
-         menuItems: itemsFrom<T>(itemKeys: itemKeys, itemBuilder: itemBuilder),
-         defaultKey: defaultValue,
-       );
+  FlyweightMenuSource.itemBuilder({required Iterable<T> itemKeys, required Widget Function(T) itemBuilder, T? defaultValue})
+    : this(
+        menuItems: itemsFrom<T>(itemKeys: itemKeys, itemBuilder: itemBuilder),
+        defaultKey: defaultValue,
+      );
 
   final List<FlyweightMenuItem<T>> menuItems; // keep as MenuSourceItem in case implementation changes
   //todo split model and builder
@@ -232,10 +229,7 @@ class _MenuAnchorBuilderState<T> extends State<MenuAnchorBuilder<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return FlyweightMenuContext<T>(
-      notifier: menu,
-      child: widget.menuAnchorBuilder(context, menu, keyListener),
-    );
+    return FlyweightMenuContext<T>(notifier: menu, child: widget.menuAnchorBuilder(context, menu, keyListener));
   }
 
   @override

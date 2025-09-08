@@ -33,9 +33,9 @@ class BottomSheetButton extends StatefulWidget {
 
 /// Public. [selectedBottomSheet] can be set to a new widget to change the bottom sheet.
 class BottomSheetButtonState extends State<BottomSheetButton> {
-  late final double appBarHeight = Scaffold.of(context).appBarMaxHeight ?? 137;
   late final BottomSheetThemeData theme = Theme.of(context).bottomSheetTheme;
   late final Color color = Theme.of(context).bottomAppBarTheme.color ?? Theme.of(context).colorScheme.surface;
+  late final double appBarHeight = Scaffold.of(context).appBarMaxHeight ?? 137;
   late final ShapeBorder? shape = widget.shape ?? theme.shape ?? const BeveledRectangleBorder();
   // late final Color shadowClosed = theme.shadowColor ?? Colors.black;
   // late final Color shadowOpen = theme.shadowColor ?? Colors.black;
@@ -55,8 +55,8 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
   bool get isClosed => bottomSheetController == null;
 
   // fab = fabClose;
-  void expand([Widget? child]) {
-    late final sheetHeight = MediaQuery.of(context).size.height * widget.heightScale + appBarHeight; // repeat in case of screen size change
+  void expand([Widget? child, double? height]) {
+    late final sheetHeight = height ?? MediaQuery.of(context).size.height * widget.heightScale + appBarHeight; // repeat in case of screen size change
     if (child != null) selectedBottomSheet = child;
     if (selectedBottomSheet == null) return;
     bottomSheetController = Scaffold.of(context).showBottomSheet(_bottomSheetBuilder, enableDrag: true, constraints: BoxConstraints.expand(height: sheetHeight));
@@ -68,7 +68,7 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
   void collapse() => bottomSheetController?.close();
 
   /// call from global state
-  void show([Widget? child]) => WidgetsBinding.instance.addPostFrameCallback((_) => expand(child));
+  void show([Widget? child, double? height]) => WidgetsBinding.instance.addPostFrameCallback((_) => expand(child, height));
   void set(Widget child) => setState(() => selectedBottomSheet = child);
   void exit() => WidgetsBinding.instance.addPostFrameCallback((_) => _exit());
 

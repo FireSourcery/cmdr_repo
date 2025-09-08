@@ -50,7 +50,7 @@ class TimeChart extends StatelessWidget {
           maxX: chartController.tMax,
           clipData: const FlClipData.all(),
           backgroundColor: backgroundColor,
-          lineTouchData: chartController.touchData,
+          lineTouchData: chartController.touchDataWhenStopped, // only when stopped
           gridData: const FlGridData(show: true, drawVerticalLine: true, drawHorizontalLine: true),
           titlesData: FlTitlesData(
             rightTitles: AxisTitles(

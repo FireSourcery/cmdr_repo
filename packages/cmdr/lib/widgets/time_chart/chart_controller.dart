@@ -9,6 +9,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'chart_style.dart';
 import 'chart_data.dart';
 
+/// TimeChartController
 // notifies on every data update, caller handle selection update
 class ChartController with TimerNotifier, ChangeNotifier {
   ChartController({
@@ -18,15 +19,15 @@ class ChartController with TimerNotifier, ChangeNotifier {
     int entriesMax = kSelectionCountMax,
     double? yMin,
     double? yMax,
-  })  : assert(entriesMax <= kSelectionCountMax),
-        chartEntries = chartEntries ?? [],
-        _yMax = yMax,
-        _yMin = yMin,
-        _chartData = ChartData.zero(
-          samplesMax: samplesMax,
-          linesMax: entriesMax,
-          lineNames: chartEntries?.map((e) => e.name),
-        );
+  }) : assert(entriesMax <= kSelectionCountMax),
+       chartEntries = chartEntries ?? [],
+       _yMax = yMax,
+       _yMin = yMin,
+       _chartData = ChartData.zero(
+         samplesMax: samplesMax,
+         linesMax: entriesMax,
+         lineNames: chartEntries?.map((e) => e.name),
+       );
 
   static const int kSelectionCountMax = 8; // fixed 16 selections max
 
@@ -86,7 +87,7 @@ class ChartController with TimerNotifier, ChangeNotifier {
 
   int get chartDataLength => chartData.lineEntries.length;
 
-//  final ValueNotifier<double> timerNotifier = ValueNotifier(0);
+  //  final ValueNotifier<double> timerNotifier = ValueNotifier(0);
   /// data update with generators
   void _updateData() {
     final remove = chartData.excessLength;
@@ -135,8 +136,9 @@ class ChartController with TimerNotifier, ChangeNotifier {
   // double get tViewRange => ;
   // double get tSamplesRange => updateInterval.inSeconds * chartData.samplesMax * 1.0;
 
-  // smallest max and largest max over 100
   bool get useScalarView => true;
+  // dynamic view - auto switch
+  // smallest max and largest max over 100
   // bool get useScalarView {
   //   // double min = double.infinity;
   //   // double max = double.negativeInfinity;
@@ -166,6 +168,7 @@ class ChartController with TimerNotifier, ChangeNotifier {
     return (useScalarView) ? _flSpotsViewOfAsScalar(index) : _flSpotsViewOf(index);
   }
 
+  /// Visual options
   /// todo visual options with notify
   FlDotData configDotData = const FlDotData(show: true);
   FlGridData configGridData = const FlGridData(show: true, drawVerticalLine: true, drawHorizontalLine: true);
@@ -173,8 +176,11 @@ class ChartController with TimerNotifier, ChangeNotifier {
 
   LineTouchData touchData = const LineTouchData(enabled: false);
 
-  void showTouchData({List<Color>? colors}) {
-    touchData = LineTouchData(
+  /// stateless on stopped only
+  LineTouchData get touchDataWhenStopped => isStopped ? touchDataBuilder() : const LineTouchData(enabled: false);
+
+  LineTouchData touchDataBuilder() {
+    return LineTouchData(
       enabled: true,
       handleBuiltInTouches: true,
       touchTooltipData: LineTouchTooltipData(
@@ -188,7 +194,6 @@ class ChartController with TimerNotifier, ChangeNotifier {
         fitInsideVertically: true,
       ),
     );
-    notifyListeners();
   }
 
   LineTooltipItem? _lineTooltipItem(LineBarSpot e) {
@@ -199,6 +204,11 @@ class ChartController with TimerNotifier, ChangeNotifier {
       TextStyle(color: style.legendColors?[e.barIndex] ?? Colors.white),
       textAlign: TextAlign.left,
     );
+  }
+
+  void showTouchData({List<Color>? colors}) {
+    touchData = touchDataBuilder();
+    notifyListeners();
   }
 
   void hideTouchData() {
@@ -213,13 +223,11 @@ class ChartController with TimerNotifier, ChangeNotifier {
 
   // Debug
   void addTestData() {
-    final fnTimer = Stopwatch();
+    final fnTimer = Stopwatch()..start();
     addEntry(ChartEntry(valueGetter: () => sin(fnTimer.elapsedMilliseconds / 1000), name: 'sine'));
     addEntry(ChartEntry(valueGetter: () => cos(fnTimer.elapsedMilliseconds / 1000), name: 'cosine'));
     yMax ??= 1.2;
     yMin ??= -1.2;
-    fnTimer.start();
-    // start();
   }
 }
 
