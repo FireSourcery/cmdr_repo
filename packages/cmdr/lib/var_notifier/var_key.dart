@@ -64,9 +64,10 @@ abstract mixin class VarKey implements ValueKey<int> {
   String toString() => '[$runtimeType<$value>]$label<${viewType.type}>';
 
   @override
-  bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) return false;
-    return other is VarKey && other.value == value;
+  bool operator ==(covariant VarKey other) {
+    // if (other.runtimeType != runtimeType) return false;
+    // return other is VarKey && other.value == value;
+    return other.value == value;
   }
 
   @override

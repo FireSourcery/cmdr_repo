@@ -174,7 +174,7 @@ class VarRealTimeController extends VarCacheController {
 
   Future<bool> beginPeriodic() async {
     if (!protocolService.isConnected) return false;
-    _pollingKeys.addAll(_readKeys);
+    // _pollingKeys.addAll(_readKeys);
     pollSubscription ??= _readStream.listen(_onReadSlice);
     pushSubscription ??= _writeStream.listen(_onWriteSlice);
     // pushHandler.begin();
@@ -182,7 +182,7 @@ class VarRealTimeController extends VarCacheController {
   }
 
   Future<void> endPeriodic() async {
-    _pollingKeys.clear();
+    // _pollingKeys.clear();
     await pollSubscription?.cancel().whenComplete(() => pollSubscription = null);
     await pushSubscription?.cancel().whenComplete(() => pushSubscription = null);
     // await pollSubscription?.asFuture();
