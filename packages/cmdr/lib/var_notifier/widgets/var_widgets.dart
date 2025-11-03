@@ -44,6 +44,8 @@ class VarSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return const SizedBox.shrink();
+    if (!varNotifier.varKey.viewType.isSubtype<num>()) return const SizedBox.shrink();
     if (!varNotifier.varKey.viewType.isSubtype<num>() || varNotifier.varKey.isReadOnly || (varNotifier.numLimits!.max <= varNotifier.numLimits!.min)) return const SizedBox.shrink();
     return ListenableBuilder(listenable: varNotifier, builder: builder);
   }
