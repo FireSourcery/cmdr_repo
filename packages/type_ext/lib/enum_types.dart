@@ -22,21 +22,21 @@ extension EnumByNullable<T extends Enum> on List<T> {
 enum EnumUnknown { unknown }
 
 // T is only used for nested types, if the subtype implements a common type
-// extension on Set<List<T>>
-// extension type const EnumValuesUnion(Set<List<Enum>> valuesUnion) {
 extension type const EnumUnionType<T extends Enum>(Set<List<T>> valuesUnion) implements Set<List<T>> {
   // if S extends T then non-null is guaranteed by class definition
   List<S> subtype<S extends T>() => valuesUnion.whereType<List<S>>().single;
   S bySubtype<S extends T>(int index) => subtype<S>().elementAt(index);
 
-  List<S>? subtypeOrNull<S extends Enum>() => valuesUnion.whereType<List<S>>().singleOrNull;
-  S? resolve<S extends Enum>(int? index) => subtypeOrNull<S>()?.resolve(index);
+  S? resolve<S extends T>(int? index) => subtype<S>().resolve(index);
+
+  // List<S>? subtypeOrNull<S extends Enum>() => valuesUnion.whereType<List<S>>().singleOrNull;
+  // S? resolve<S extends Enum>(int? index) => subtypeOrNull<S>()?.resolve(index);
 
   // alternatively as status unions
   // pass any type, return nullable
   // without extends Enum, for work around subtype issues
-  List<S>? _resolveSubtype<S>() => valuesUnion.whereType<List<S>>().singleOrNull;
-  S? resolveSubtype<S>(int? index) => (_resolveSubtype<S>() as List<Enum>?)?.resolve(index) as S?;
+  // List<S>? _resolveSubtype<S>() => valuesUnion.whereType<List<S>>().singleOrNull;
+  // S? resolveSubtype<S>(int? index) => (_resolveSubtype<S>() as List<Enum>?)?.resolve(index) as S?;
 
   // Map<Type, Map<int, T>> asMap() {
   //   return {for (var list in valuesUnion) list.first.runtimeType: valuesUnion.map((list) => list.asMap())};

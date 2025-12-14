@@ -4,14 +4,6 @@ import 'index_map.dart';
 
 export 'index_map.dart';
 
-/// typedefs
-typedef FieldEntry<K, V> = ({K key, V value});
-
-/// General mixin for keyed data structures
-/// K extends Enum for serialization
-/// V as Object or Object?
-typedef DataStruct<K extends Field, V extends Object?> = Structure<K, V>;
-
 /// [Structure]
 /// Similar to a [Map]
 ///   fixed set of keys
@@ -183,7 +175,13 @@ abstract mixin class Field<V> {
   V? get defaultValue => null; // allows additional handling of Map<K, V?>
 }
 
-// abstract interface class SerializableKey<V> implements Enum, Field {}
+/// typedefs
+typedef FieldEntry<K, V> = ({K key, V value});
+
+/// General mixin for keyed data structures
+/// K extends Enum for serialization
+/// V as Object or Object?
+typedef DataStruct<K extends Field, V extends Object?> = Structure<K, V>;
 
 // extension on List<Field> {
 //   // provide toMap
