@@ -23,12 +23,8 @@ abstract mixin class TypedField<T extends NativeType> {
   int get size => _sizeOf<T>();
   int get end => offset + size; // index of the last byte + 1
 
-  /// [WordStruct/BitStruct]
-  // Bitmask asBitmask() => Bitmask.bytes(offset, size);
-  // Bitmask bitmaskOf<T extends NativeType>(int offset) => Bitmask.bytes(offset, _sizeOf<T>());
-  //  int ofBits(Bits bits) =>  bits.getInt(offset, size);
-
   /// [ByteStruct]
+  /// Primarily for offsets > word length
   // call passing T
   // Although handling of keyed access is preferable in the data source class.
   // T must handled in it's local scope. No type inference when passing `Field` to ByteData
@@ -39,6 +35,11 @@ abstract mixin class TypedField<T extends NativeType> {
   //
   // int? getWordOrNull(ByteData byteData) => byteData.wordOrNullAt<T>(offset);
   // bool setWordOrNot(ByteData byteData, int value) => byteData.setWordOrNotAt<T>(offset, value);
+
+  /// [WordStruct/BitStruct]
+  // Bitmask asBitmask() => Bitmask.bytes(offset, size);
+  // Bitmask bitmaskOf<T extends NativeType>(int offset) => Bitmask.bytes(offset, _sizeOf<T>());
+  //  int ofBits(Bits bits) =>  bits.getInt(offset, size);
 
   @override
   int get defaultValue => 0;

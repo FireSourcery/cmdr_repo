@@ -13,3 +13,5 @@ export "word/word_struct.dart";
 
 export "models/packet.dart";
 export "models/version.dart";
+
+// alternatively struct data include object fields, struct meta

@@ -79,7 +79,7 @@ extension type const Bits(int _bits) implements int {
 }
 
 extension BitsOfInt on int {
-  Bits get bits => Bits(this);
+  Bits get bits => Bits(this); // asBits();
   int get byteLength => ((bitLength - 1) ~/ 8) + 1; // (bitLength / 8).ceil();
 }
 
