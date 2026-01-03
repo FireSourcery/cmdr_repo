@@ -14,9 +14,9 @@ export 'word.dart';
 /// [BitStruct] enforcing byte aligned fields
 ///
 /// Implementation centric Map, up to 8 bytes
-/// serializaable as a single [int]
+/// serializable as a single [int]
 ///
-/// subclass to passthrough constructors for convienience
+/// subclass to passthrough constructors for convenience
 /// alternatively extension type WordStruct(BitsStruct _)
 /// caller wrap inner constructor for const. WordStruct(Word())
 abstract base class WordStruct<T extends WordField> extends ConstBitStruct<T> {
@@ -58,4 +58,10 @@ abstract mixin class WordField<V extends NativeType> implements BitField, TypedF
   /// can be overridden with compile time constant
   @override
   Bitmask get bitmask => Bitmask.bytes(offset, size);
+
+  // copy from TypedField until mixins can be combined
+  // int get offset; // index of the first byte
+
+  // int get size => _sizeOf<T>();
+  // int get end => offset + size; // index of the last byte + 1
 }

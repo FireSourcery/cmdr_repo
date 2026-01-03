@@ -222,7 +222,7 @@ base class _BitStruct<K extends BitField> extends ConstBitStruct<K> {
 }
 
 // Keys list effectively define type and act as factory
-// factorys returning as super interface type
+// factories returning as super interface type
 // Separates subtype `class variables` from instance
 // inheritable over BitStruct factory constructors, with redeclare
 // extension type const BitStructType<T extends BitField>(List<T> keys) {

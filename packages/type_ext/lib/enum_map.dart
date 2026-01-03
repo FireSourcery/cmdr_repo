@@ -28,6 +28,7 @@ abstract mixin class EnumMap<K extends Enum, V> implements FixedMap<K, V> {
     return EnumIndexMap<K, V>.fromMap(keys, <K, V>{}..addJson(json));
   }
 
+  @override
   List<K> get keys; // Enum.values
   // V operator [](covariant K key);
   // void operator []=(covariant K key, V value);
@@ -36,9 +37,12 @@ abstract mixin class EnumMap<K extends Enum, V> implements FixedMap<K, V> {
 }
 
 /// directly construct a Map<K, V> from Map<String, V>
+/// on creation ensure all fields are valid
 // returning a regular HashMap, which is likely already index based in the case of Enum
 // alternatively wrap with FixedMap constraints
+// EnumFields
 extension type const EnumMapFactory<T extends Enum>(List<T> enums) implements List<T> {
+  //todo return nullable unless default is set
   Map<T, V> fromJson<V>(Map<String, dynamic> json) {
     if (json case Map<String, V>()) {
       return _fromJson<V>(json);
@@ -47,9 +51,10 @@ extension type const EnumMapFactory<T extends Enum>(List<T> enums) implements Li
     }
   }
 
-  // Iterable<(T, V)> mapByName<V>(Map<String, V> values) => values.entries.map((e) => (enums.byName(e.key), e.value));
-  // Iterable<MapEntry<T, V>> mapByName<V>(Map<String, V> values) => values.entries.map((e) => MapEntry(enums.byName(e.key), e.value));
+  // Iterable<MapEntry<T, V>>
   // less iteration through enum list
+  // Iterable<(T, V)> mapByName<V>(Map<String, V> values) => enums.map((e) => e.name).map((e) => (values[e] != null) ? (enums.byName(e), values[e]!) : null).nonNulls;
+
   Iterable<(T, V)> mapByName<V>(Map<String, V> values) => enums.map((e) => e.name).map((e) => (values[e] != null) ? (enums.byName(e), values[e]!) : null).nonNulls;
 
   // fast path if types already match
@@ -63,11 +68,10 @@ extension type const EnumMapFactory<T extends Enum>(List<T> enums) implements Li
 
   // mixed types case, V is Object?
   Map<T, Object?> _fromJsonMixed(Map<String, Object?> json) {
-    // assert(enums is List<TypeKey>, 'EnumType: $T must implement TypeKey for type checking');
-    if (enums case List<SerializableKey>()) {
+    if (enums case List<TypeKey>()) {
       return <T, Object?>{
         for (final (key, value) in mapByName(json))
-          if ((key as SerializableKey).compareType(value)) key: value
+          if ((key as TypeKey).compareType(value)) key: value
       };
     } else {
       throw FormatException('EnumType: $T must implement TypeKey for type checking');
@@ -78,6 +82,7 @@ extension type const EnumMapFactory<T extends Enum>(List<T> enums) implements Li
 /// Serialization of [Map<Enum, V>] interface
 /// Apply to all types of [Map<Enum, V>]
 /// Enum.name base methods are applicable regardless of EnumMap FixedMap constraints
+/// [add] fills existing Map only
 extension EnumMapByName<K extends Enum, V> on Map<K, V> {
   ////////////////////////////////////////////////////////////////////////////////
   /// Buffer Case -
@@ -91,27 +96,18 @@ extension EnumMapByName<K extends Enum, V> on Map<K, V> {
   ///   i.e. []= is defined
   ////////////////////////////////////////////////////////////////////////////////
   Map<String, Object?> toJson() => toMapByName();
-  // loadFromJson
-  // fill values from json
-  void addJson(Map<String, Object?> json) => addAllByName(validateJson(json));
+  // fill values from json  // loadFromJson
+  void addJson(Map<String, Object?> json) => addAllByName(_validateJson(json));
 
-//replacably with EnumMapFactory methods
   // handle mixed types case, V is defined as Object?
-  bool _validateTypes(Map<String, V> json) {
-    if (keys case List<TypeKey> typedKeys) {
-      for (final key in typedKeys) {
-        if (!key.compareType(json[(key as Enum).name])) return false;
-      }
-    }
-    return true;
-  }
+  bool _validateTypes(Map<String, V> json) => (keys as List<TypeKey>).every((key) => key.compareType(json[(key as Enum).name]));
 
-  Map<String, V> validateJson(Map<String, Object?> json) {
+  Map<String, V> _validateJson(Map<String, Object?> json) {
     if (json is Map<String, V>) {
       // handle mixed types case, V is defined as Object?
       if (keys case List<TypeKey> typedKeys) {
-        // typedKeys.compareTypes(json.values)
         for (final key in typedKeys) {
+          //json[(key as Enum).name] return null matches key type if nullable
           if (!key.compareType(json[(key as Enum).name])) throw FormatException('$runtimeType: ${(key as Enum).name} is not of type ${key.type}');
         }
       }
@@ -119,62 +115,13 @@ extension EnumMapByName<K extends Enum, V> on Map<K, V> {
     }
     throw FormatException('$runtimeType: $json is not of type Map<String, $V>');
   }
-
-  ////////////////////////////////////////////////////////////////////////////////
-  /// Named Values
-  ////////////////////////////////////////////////////////////////////////////////
-  // String name, value pairs
-  // Iterable<(String name, V value)> get namedValues => keys.map((e) => (e.name, this[e] as V));
 }
 
 extension EnumNamedValues<K extends Enum, V> on Iterable<MapEntry<K, V>> {
-  // on entries better fit after selection
+  // on Iterable entries better fit after selection
   Iterable<(String name, MapEntry<K, V> entry)> get named => map((e) => (e.key.name, e));
   Iterable<(String name, V value)> get namedValues => map((e) => (e.key.name, e.value));
 }
 
 class EnumIndexMap<K extends Enum, V> = IndexMap<K, V> with EnumMap<K, V>;
 class EnumProxyMap<K extends Enum, V> = ProxyIndexMap<K, V> with EnumMap<K, V>;
-
-// available as mixin
-// homogeneous fields
-typedef Serializable<K extends Enum, V> = MapBase<K, V>;
-
-// only necessary for mixed V type keys
-abstract interface class SerializableKey<V> implements Enum, TypeKey<V> {}
-
-// typedef SerializableData = Map<SerializableKey<dynamic>, Object?>;
-// typedef SerializableData = Serializable<SerializableKey<dynamic>, Object?>;
-typedef SerializableData<K extends SerializableKey<Object?>> = Serializable<K, Object?>;
-
-// abstract mixin class SerializableData<V> implements Map<Enum, V> {
-//   const Serializable();
-//   List<K> get keys; // Enum.values
-//    V operator [](covariant K key);
-//   void operator []=(covariant K key, V value);
-// }
-
-// abstract mixin class EnumSerializable {
-//   // Subclass must provide the enum values (field IDs)
-//   List<Enum> get fieldIds;
-  
-//   // Subclass must implement field setters/getters
-//   void setField(Enum id, dynamic value);
-//   dynamic getField(Enum id);
-  
-//   // Inheritable fromJson using enum pairing
-//   void fromJson(Map<String, dynamic> json) {
-//     for (final id in fieldIds) {
-//       final key = id.name;  // Use enum.name as JSON key
-//       if (json.containsKey(key)) {
-//         setField(id, json[key]);
-//       }
-//     }
-//   }
-  
-//   // Optional: toJson for completeness
-//   Map<String, dynamic> toJson() {
-//     return {for (final id in fieldIds) id.name: getField(id)};
-//   }
-// }
-

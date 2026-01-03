@@ -17,6 +17,8 @@ abstract mixin class FixedMap<K, V> implements Map<K, V> {
   V operator [](covariant K key);
   @override
   void operator []=(covariant K key, V value);
+
+  /// do not remove keys, only reset values to default or null
   @override
   void clear();
   @override

@@ -88,7 +88,7 @@ extension BitsOfInt on int {
 class Bitmask {
   const Bitmask._(this.bitmask, this.shift, this.width);
   const Bitmask(this.shift, this.width) : bitmask = ((1 << width) - 1) << shift;
-  // int bitmask(int shift, int width) => ((1 << width) - 1) << shift;
+  // int _bitmask(int shift, int width) => ((1 << width) - 1) << shift;
 
   const Bitmask.bits(int shift, int width) : this(shift, width);
   const Bitmask.bit(int index) : this(index, 1);

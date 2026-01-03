@@ -6,8 +6,7 @@ mixin class TypeKey<T> {
 
   Type get type => T;
 
-  // if (TypeKey<T> is TypeKey<S>)
-  bool isSubtype<S>() => this is TypeKey<S>;
+  bool isSubtype<S>() => this is TypeKey<S>; // if (TypeKey<T> is TypeKey<S>)
   bool isSupertype<S>() => TypeKey<S>() is TypeKey<T>;
   bool isExactType<S>() => S == T;
   bool get isNullable => null is T;
@@ -16,8 +15,8 @@ mixin class TypeKey<T> {
   bool isTypeOf(Object? object) => object is T;
 
   // call passing type
+  // callGeneric, callTyped, callPassType, passType
   R call<R>(R Function<G>() callback) => callback<T>();
-  // callGeneric, callTyped, callPassingType, passType
   R callWithType<R>(R Function<G>() callback) => callback<T>();
 }
 
