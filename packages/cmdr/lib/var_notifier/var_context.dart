@@ -5,6 +5,8 @@ import 'package:type_ext/basic_types.dart';
 import 'var_notifier.dart';
 
 /// Get [VarCacheController] via Context
+/// For library side to include widgets find key type
+///
 // abstract class VarContext<T extends VarContext<dynamic>> extends InheritedWidget { //alternatively pass parameter type
 abstract class VarContext extends InheritedWidget {
   const VarContext({super.key, required this.repo, required super.child});

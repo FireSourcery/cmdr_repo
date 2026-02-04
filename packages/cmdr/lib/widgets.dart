@@ -28,7 +28,7 @@ export 'widgets/app_general/drive_shift.dart';
 export 'widgets/app_general/logo.dart';
 
 // Data view widgets
-export 'widgets/data_views/enum_chips.dart';
+export 'widgets/data_views/selection_chips.dart';
 export 'widgets/data_views/flag_field_view.dart';
 export 'widgets/data_views/map_form_fields.dart';
 

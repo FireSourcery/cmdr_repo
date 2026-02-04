@@ -63,15 +63,12 @@ abstract mixin class VarKey implements ValueKey<int> {
   @override
   String toString() => '[$runtimeType<$value>]$label<${viewType.type}>';
 
+  // strictly by id. subtype casting not considered
   @override
-  bool operator ==(covariant VarKey other) {
-    // if (other.runtimeType != runtimeType) return false;
-    // return other is VarKey && other.value == value;
-    return other.value == value;
-  }
+  bool operator ==(covariant VarKey other) => other.value == value;
 
   @override
-  int get hashCode => Object.hash(runtimeType, value);
+  int get hashCode => Object.hash(value, value);
 }
 
 enum VarReadWriteAccess {

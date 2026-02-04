@@ -119,7 +119,12 @@ class DialogButton<T> extends StatelessWidget {
     return ElevatedButton(
       onPressed: () async {
         onPressed?.call();
-        final result = await showDialog<T>(context: context, builder: dialogBuilder, barrierDismissible: barrierDismissible, useRootNavigator: useRootNavigator);
+        final result = await showDialog<T>(
+          context: context,
+          builder: dialogBuilder,
+          barrierDismissible: barrierDismissible,
+          useRootNavigator: useRootNavigator,
+        );
         onPop?.call(result); // alternatively show dialog next over async
       },
       style: buttonStyle,

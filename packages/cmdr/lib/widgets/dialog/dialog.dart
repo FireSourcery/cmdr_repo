@@ -4,7 +4,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../data_views/enum_chips.dart';
+import '../data_views/selection_chips.dart';
+
+/// "Subtypes"
 
 class ConfirmationDialog<T> extends StatelessWidget {
   const ConfirmationDialog({super.key, this.onCancel, this.onConfirm, this.title, this.icon, this.iconColor, this.content});
@@ -50,8 +52,8 @@ class AsyncConfirmationDialog<T> extends StatefulWidget {
 }
 
 class _AsyncConfirmationDialogState<T> extends State<AsyncConfirmationDialog<T>> {
-  final Completer<void> userConfirmation = Completer(); // results of 'Confirm' button
-  Future<T>? onConfirmCompleted; // process onConfirm.
+  final Completer<void> userConfirmation = Completer(); // results of 'Confirm' button, held by widget
+  Future<T>? onConfirmCompleted; // process onConfirm. Connect after user confirmation
 
   // @override
   // void initState() {
@@ -104,78 +106,34 @@ class _AsyncConfirmationDialogState<T> extends State<AsyncConfirmationDialog<T>>
           builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
             return switch (snapshot.connectionState) {
               ConnectionState.waiting => TextButton(onPressed: onPressedConfirm, child: const Text('Confirm')),
-              ConnectionState.none || ConnectionState.active || ConnectionState.done => FutureBuilder(
-                future: onConfirmCompleted,
-                builder: (BuildContext context, AsyncSnapshot<T> snapshot) {
-                  // AsyncSnapshot(hasError: true) =>  ,
-                  return switch (snapshot.connectionState) {
-                    ConnectionState.none => const Text('Initialing...'),
-                    ConnectionState.waiting || ConnectionState.active => const CircularProgressIndicator(),
-                    ConnectionState.done => TextButton(onPressed: () => Navigator.of(context).pop(snapshot.data), child: const Text('Ok')), // done with or without error
-                  };
-                },
-              ),
+              ConnectionState.none || ConnectionState.active || ConnectionState.done => const SizedBox.shrink(),
+              // ConnectionState.none || ConnectionState.active || ConnectionState.done => FutureBuilder(
+              //   future: onConfirmCompleted,   //  Connect after user confirmation
+              //   builder: (BuildContext context, AsyncSnapshot<T> snapshot) {
+              //     // AsyncSnapshot(hasError: true) =>  ,
+              //     return switch (snapshot.connectionState) {
+              //       ConnectionState.none => const Text('Initialing...'), // should not happen
+              //       ConnectionState.waiting || ConnectionState.active => const CircularProgressIndicator(),
+              //       ConnectionState.done => TextButton(onPressed: () => Navigator.of(context).pop(snapshot.data), child: const Text('Ok')), // done with or without error
+              //     };
+              //   },
+              // ),
+            };
+          },
+        ),
+
+        /// Progress Indicator
+        FutureBuilder(
+          future: userConfirmation.future.then((_) => widget.onConfirm()),
+          builder: (BuildContext context, AsyncSnapshot<T> snapshot) {
+            return switch (snapshot.connectionState) {
+              ConnectionState.none || ConnectionState.waiting => const SizedBox.shrink(),
+              ConnectionState.active => const CircularProgressIndicator(),
+              ConnectionState.done => TextButton(onPressed: () => Navigator.of(context).pop(snapshot.data), child: const Text('Ok')), // with or without error
             };
           },
         ),
       ],
-    );
-  }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-///
-////////////////////////////////////////////////////////////////////////////////
-// state to maintain selected items
-class SelectionDialog<E> extends StatefulWidget {
-  const SelectionDialog({super.key, this.title, this.icon, this.selectMax, this.iconColor, required this.selectable, this.labelBuilder, this.selectionState, this.initialSelected});
-  final Widget? title;
-  final Widget? icon;
-  final Color? iconColor;
-  // MultiSelectChips
-  final List<E> selectable; // must be a new list, iterable non-primitives do not add to set properly
-  final Set<E>? selectionState;
-  // final ValueSetter<E>? onAdd;
-  // final ValueSetter<E>? onRemove;
-  final Iterable<E>? initialSelected;
-  final int? selectMax;
-  final ValueWidgetBuilder<E>? labelBuilder;
-
-  @override
-  State<SelectionDialog<E>> createState() => _SelectionDialogState<E>();
-}
-
-class _SelectionDialogState<E> extends State<SelectionDialog<E>> {
-  late final selected = widget.selectionState ?? {};
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.initialSelected != null) selected.addAll(widget.initialSelected!);
-  }
-
-  Set<E> onConfirm() => selected;
-
-  void onSelected(E value) {
-    setState(() {});
-    // widget.onSelected?.call(value);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ConfirmationDialog<Set<E>>(
-      onConfirm: onConfirm,
-      title: widget.title,
-      icon: widget.icon,
-      iconColor: widget.iconColor,
-      content: MultiSelectChips<E>(
-        selectable: widget.selectable,
-        selectionState: selected,
-        selectMax: widget.selectMax,
-        // initialSelected: widget.initialSelected,
-        labelBuilder: widget.labelBuilder,
-        onSelected: onSelected,
-      ),
     );
   }
 }

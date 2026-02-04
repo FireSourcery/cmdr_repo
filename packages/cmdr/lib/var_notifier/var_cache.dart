@@ -125,12 +125,6 @@ class VarCache {
   Iterable<(int, int)> dataPairsOf(Iterable<VarKey> keys) => varsOf(keys).map((e) => e.dataPair);
 
   ////////////////////////////////////////////////////////////////////////////////
-  ///
-  ////////////////////////////////////////////////////////////////////////////////
-  // Iterable<VarNotifier> varsHaving(PropertyFilter<VarKey>? property) => varsOf(varKeys.havingProperty(property));
-  // Iterable<VarNotifier> varsHaving<T extends VarKey>(PropertyFilter<T>? property) => varsOf(varKeys.havingProperty(property));
-
-  ////////////////////////////////////////////////////////////////////////////////
   /// Collective Data Read Response - Update by Packet
   ////////////////////////////////////////////////////////////////////////////////
   // caller clear varNotifier.lastUpdate to overwrite

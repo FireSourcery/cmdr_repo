@@ -14,12 +14,12 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
   /// Q fraction types, view = rawValue * unitsRef/FormatRef
   fract16<Int16, double>(reference: 32767), // Q1.15
   ufract16<Uint16, double>(reference: 32768), // frac16 abs with 2x over-saturation
-  uaccum16<Uint16, double>(reference: 128), // Q9.7
+  uaccum16<Uint16, double>(reference: 127), // Q9.7
   accum16<Int16, double>(reference: 128), // Q9.7
 
   percent16<Uint16, double>(reference: 65535), // Q0.16
   angle16<Uint16, double>(reference: 65536), // marker for alternative sign handling
-  ufixed16<Uint16, double>(reference: null), // caller handle
+  // ufixed16<Uint16, double>(reference: null), // caller handle
   // fixed32(reference:   ),
   ///
   scalar10<Int16, double>(reference: 10), // view = Int16/10
@@ -105,7 +105,7 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
 
   // const (double) when (this != adcu),  ref > 0
   bool get isFixedPoint => switch (this) {
-    fract16 || ufract16 || ufixed16 || percent16 || uaccum16 || accum16 => true,
+    fract16 || ufract16 /* || ufixed16 */ || percent16 || uaccum16 || accum16 => true,
     _ => false,
   };
   bool get isScalarBase10 => switch (this) {
@@ -113,18 +113,19 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
     _ => false,
   };
 
-  // reference != null || adcu
   bool get isNumeric => switch (V) {
-    const (int) || const (double) when (this != bits16) => true,
+    const (int) || const (double) => switch (this) {
+      bits16 || enum16 || sign || sign16 => false,
+      _ => true,
+    },
     _ => false,
-  }; // !isEnum && !isBits && !isBoolean;
+  };
+  // reference != null || adcu
+  // const (int) || const (double) when (this != bits16  ) => true,
+  // !isEnum && !isBits && !isBoolean;
 
   // bool get isInteger => switch (this) { int16 || uint16 => true, _ => false };
   // bool get isFraction => isFixedPoint || isScalar || (this == adcu || this == cycles);
-
-  // direct partial conversion
-  // int signed(int raw16) => (isSigned) ? _signExtension16(raw16) : raw16;
-  // double decimal(int bytes) => signed(bytes) / reference;
 }
 
 ///

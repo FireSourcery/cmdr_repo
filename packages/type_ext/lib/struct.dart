@@ -5,6 +5,7 @@ import 'index_map.dart';
 export 'index_map.dart';
 
 /// [Structure]
+/// Keyed data
 /// Similar to a [Map]
 ///   fixed set of keys
 ///   getOrNull/setOrNot
@@ -190,7 +191,8 @@ typedef FieldEntry<K, V> = ({K key, V value});
 /// General mixin for keyed data structures
 /// K extends Enum for serialization
 /// V as Object or Object?
-typedef DataStruct<K extends Field, V extends Object?> = Structure<K, V>;
+// typedef DataStruct<K extends Field, V extends Object?> = Structure<K, V>;
+// abstract class EnumData<K extends Enum, V> with MapBase<K, V>, Structure<K, V> {}
 
 /// implement Structure using parallel arrays
 class StructMap<K extends Field, V> extends IndexMap<K, V> with Structure<K, V> {

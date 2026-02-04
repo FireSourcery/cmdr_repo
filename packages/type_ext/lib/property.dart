@@ -15,9 +15,8 @@ abstract mixin class PropertyFilter<T> {
 }
 
 extension WhereFilter<T> on Iterable<T> {
-  // Iterable<T> filter(Iterable<T> Function(Iterable<T> input)? filter) => filter?.call(this) ?? this;
-
   Iterable<T> havingProperty(PropertyFilter<T>? property) => property?.call(this) ?? this;
+
   // Iterable<T> havingTyped<P extends PropertyFilter<T>>(Iterable<List<PropertyFilter<T>>> allProperties, P filter) {
   Iterable<T> havingTyped<P extends PropertyFilter<T>>(Iterable<List<PropertyFilter<T>>> allProperties) {
     return allProperties.whereType<List<P>>().whereType<P>().singleOrNull?.call(this) ?? this;
