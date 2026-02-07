@@ -24,9 +24,14 @@ extension IsThen<T extends Object?> on T? {
   bool isAnd(bool Function(T input) test) => switch (this) { T value => test(value), null => false };
 }
 
-// extension NumTo on num {
-//   R to<R extends num>() => switch (R) { const (int) => toInt(), const (double) => toDouble(), const (num) => this, _ => throw StateError(' ') } as R;
-// }
+extension NumTo on num {
+  // R to<R extends num>() => switch (R) { const (int) => toInt(), const (double) => toDouble(), const (num) => this, _ => throw StateError(' ') } as R;
+}
+
+extension NumExt on num {
+  double normalize(int max) => (this / max).clamp(-1.0, 1.0); // throw division by zero if max is 0, otherwise normalize to -1.0 to 1.0
+  double percent(int max) => normalize(max) * 100;
+}
 
 extension TrimString on String {
   String trimNulls() => replaceAll(RegExp(r'^\u0000+|\u0000+$'), '');

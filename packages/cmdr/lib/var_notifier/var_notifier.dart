@@ -65,7 +65,7 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
   void updateCodec(BinaryUnionCodec<V> newCodec) {
     codec = newCodec;
     // Recompute current values with new conversion
-    if (_pendingValue == null) {
+    if (_viewValue == null) {
       notifyListeners(); // View may have changed due to new conversion
     }
   }
@@ -122,17 +122,29 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
   void updateByFile(num newValue) => numView = newValue;
 }
 
+extension VarNotifiers on Iterable<VarNotifier> {
+  Iterable<(String, num)> get namedValues => map((e) => (e.varKey.label, e.valueAsNum));
+  Iterable<(VarKey, VarNotifier)> get keyed => map((e) => (e.varKey, e));
+
+  Iterable<String> toNamedValueStrings([String divider = ': ', int precision = 2]) {
+    return namedValues.map((e) => '${e.$1}$divider${e.$2.toStringAsFixed(precision)}');
+  }
+}
+
 /// [VarValueNotifier<V>]
 /// A notifier combining a ValueNotifier with support for conversion between view types and data values.
+///   - Implements [ValueNotifier]
+///   - Unit conversion between view and data values
+///   - Sync local and remote values, with pending change tracking
 /// It be can further combined with a status notifier.
 abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V> {
   ////////////////////////////////////////////////////////////////////////////////
   /// runtime variables
   ////////////////////////////////////////////////////////////////////////////////
-  bool get hasPendingChanges => _pendingValue != null;
+  bool get hasPendingChanges => _viewValue != null;
 
   ////////////////////////////////////////////////////////////////////////////////
-  /// Typed view [value]
+  /// Typed view [value] as view side
   ////////////////////////////////////////////////////////////////////////////////
   @override
   V get value => view;
@@ -142,6 +154,8 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
     view = newValue;
     notifyListeners();
   }
+
+  // V get viewValue => view;
 
   // by user for output
   void updateByView(V newValue) => value = newValue;
@@ -156,81 +170,29 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
 
   // Call to discard user changes
   void discardUserChanges() {
-    if (_pendingValue != null) {
-      _pendingValue = null; // Value reverts to last update by server value
+    if (_viewValue != null) {
+      _viewValue = null; // Value reverts to last update by server value
       notifyListeners();
     }
   }
 
   ////////////////////////////////////////////////////////////////////////////////
   /// [dataValue]
+  // Inbound data from server/packets
   ////////////////////////////////////////////////////////////////////////////////
   int get dataValue => data;
 
-  // Inbound data from server/packets
   void updateByData(int bytesValue) {
     data = bytesValue; // Always update server value
-    if (_pendingValue == null) notifyListeners(); // Only notify if effective value changed
+    if (_viewValue == null) notifyListeners(); // Only notify if effective value changed
   }
 
-  // bool hasIndirectListeners = false;
-  // bool get hasListenersCombined => hasListeners || hasIndirectListeners;
-
-  // if separating host and server status
-  // bool outOfRange; // value from client out of range
-  // Enum valueStatus;
-
-  // @override
-  // V get value => valueAs<V>();
-  // @override
-  // set value(V newValue) => updateByViewAs<V>(newValue);
-
-  // num _numValue = 0;
-  // num get _viewValue => _numValue;
-  // set _viewValue(num value) {
-  //   if (_numValue == value) return;
-  //   _numValue = value;
-  //   notifyListeners();
-  // }
-
-  // int get dataValue => dataOf(_viewValue);
-  // set _dataValue(int newValue) => _viewValue = viewOf(newValue);
-
-  // performs common conversion on update
-  // before sign extension
-  // void updateByData(int bytesValue) {
-  //   // _dataValue = dataOfBinary(bytesValue);
-  //   _viewValue = viewOf(dataOfBinary(bytesValue));
-  //   lastUpdate = VarLastUpdate.byData;
-  //   // if (numValue != _clampedNumValue) statusCode = 1;
-  // }
-
+  /// convenience short hand
   //make extension
   V _getValue() => value;
   void _setValue(V newValue) => value = newValue;
   ValueGetter<V> get valueGetter => _getValue;
   ValueSetter<V> get valueSetter => _setValue;
-}
-
-// replace null for over bounds
-enum VarValueEnum { unknown }
-
-/// alternatively seperate
-// enum VarLastUpdate { clear, byData, byView }
-
-// enum VarValueStatus {
-//   outOfRange,
-//   outOfRangeView,
-//   outOfRangeData,
-//   // add more as needed
-// }
-
-extension ValueNotifierExtensions<V> on ValueNotifier<V> {
-  // //make extension
-  // V _getValue() => value;
-  // void _setValue(V newValue) => value = newValue;
-  // ValueGetter<V> get valueGetter => _getValue;
-  // ValueSetter<V> get valueSetter => _setValue;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -301,25 +263,25 @@ abstract mixin class VarStatusNotifier implements ChangeNotifier {
 //////////////////////////////////////////////////////////////////////////////
 // User submit
 //   associated with UI component, instead of VarNotifier value
-//   not triggerd by value changes
+//   not triggered by value changes
 //   Listeners to the VarNotifier value on another UI component will not be notified of submit
 //////////////////////////////////////////////////////////////////////////////
 // class VarEventNotifier<V> extends VarNotifier<V> { over valueGetter for simplicity
 class VarEventNotifier<V> extends ChangeNotifier {
-  VarEventNotifier({required this.varNotifier, required this.onSubmitted});
+  VarEventNotifier({required this.varNotifier, required this.onSubmit});
   final VarNotifier<V> varNotifier; // typed by Key. returning as dynamic.
-  final ValueSetter<VarNotifier<V>> onSubmitted;
-  // final ValueSetter<VarNotifier<dynamic>> onSubmitted(VarCache);
+  final ValueSetter<VarNotifier<V>> onSubmit; // handle additional logic on submit
+  // final ValueSetter<VarCache > onSubmit (VarCache);
 
   void submitByView(V varValue) {
     varNotifier.updateByView(varValue);
-    onSubmitted(varNotifier);
+    onSubmit(varNotifier);
     notifyListeners();
   }
 
   void submitByViewAs<T>(T varValue) {
     varNotifier.updateByViewAs<T>(varValue);
-    onSubmitted(varNotifier);
+    onSubmit(varNotifier);
     notifyListeners();
   }
 }

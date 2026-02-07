@@ -1,68 +1,88 @@
 part of 'var_notifier.dart';
 
 /// [VarDataView<V>]
-/// UnionCodec + InplaceValue + sync pending buffer
-/// handle conversions
-/// handling syncing 2 variable representations
-/// optionally split union value interface
+///   - handle type and numeric unit conversions, [UnionCodec]
+///   - sync 2 variable representations, local and remote
+///   - all mutability contained in a single layer, to simplify syncing and state management
+///   - hold value allocation
+// optionally split union value interface
 mixin class VarValue<V> {
-  /// Config
-  /// caching results from VarKey for performance. does not have to be immutable.
-  /// all mutability is contained in a single layer. cache preallocate can be immutable
+  /// `Config`
+  /// caching results from VarKey for performance.
   /// by default get from varKey. resolve in constructor to cached values derived from varKey
-  ///
   /// Handle Return as the exact type, to account for user defined method on that type
-  /// codec handles sign extension
+  // codec handles sign extension
+  // does not have to be immutable. only case of cache preallocate can benefit from immutable
   BinaryUnionCodec<V> codec = BinaryUnionCodec<V>.of();
 
   V viewOf(int data) => codec.decode(data);
   int dataOf(V view) => codec.encode(view);
 
-  /// runtime
+  /// `Runtime`
   /// Handle syncing server data and local view, mark for outbound
-  /// `ReadOnly Mode` may directly access serverData. _pendingValue is not updated;
-  int serverData = 0; // Source of truth from server // Base storage as server's native type
-  V? _pendingValue; // User changes (null = synchronized), // effectively LastUpdateFlag
+  /// Implementation
+  ///   Base storage as server's native type.
+  ///   convert on transmit only, get [data]. lazy update on updateByView
+  ///   [serverData] is public for `Read Only Mode` vars setter access, may directly access serverData. [_viewValue] is not updated;
+  int serverData = 0; // Server data. Source of truth from server. in sync with server by receive and commit to transmit.
+  V? _viewValue; // User view - BOTH cached UI changes + pending before commit. (null => synchronized). Cached storage as view + effectively LastUpdateFlag
 
-  /// [view] the value seen by the user
-  V get view => _pendingValue ?? viewOf(serverData); // Single source of truth: pending takes precedence
+  /// [data] to/from server. Always accept server data.
 
-  /// update view without outputting to server
-  /// always sets pending first,  submit needs to mark pending unless add to outbound Set is implemented
+  /// [get] on transmit to server. serverData unless pending _viewValue is set
+  /// value over view boundaries handle by [view]
+  int get data => (_viewValue == null) ? serverData : dataOf(_viewValue as V);
+  // int get data => serverData; // on transmit to server. committed value only
+  // int get data => (_viewValue != null) ? dataOf(_viewValue as V) : serverData; // data value of pending
+
+  /// [set] on receive from server. always store serverData even if pending
+  /// does not update/overwrite [view] if it was set by the UI
+  set data(int newValue) {
+    serverData = newValue; // codec handle sign extension
+    if (_viewValue case V val when val == viewOf(newValue)) _viewValue = null; // clear pending, view as serverData again, only if user value matches server value,
+    // auto restore control to serverData for read/write-only cases
+  }
+
+  /// [view] value linked to UI
+
+  /// [get] UI. last UI set takes precedence, get the same as set value
+  V get view => _viewValue ?? viewOf(serverData);
+
+  /// [set] UI. update view without outputting to server, wait for commit to set [dataOf(_viewValue as V)]
+  /// always sets pending first, submit needs to mark pending, unless add to outbound collection is implemented
   set view(V newValue) {
-    // _pendingValue = newValue; // let codec handle clamping on [encode], view may be out of bounds
-    _pendingValue = switch (V) {
+    _viewValue = switch (V) {
       const (int) => codec.clamp(newValue as int).toInt() as V,
       const (double) => codec.clamp(newValue as double).toDouble() as V, // clamp returns num, maybe return int
       const (num) => codec.clamp(newValue as num) as V,
       const (bool) => newValue,
       _ => newValue,
     };
+    // _viewValue = newValue; // let codec handle clamping on [encode], view may be out of bounds
   }
 
-  /// additional way to clear pending on Status response
-  /// restore [get view] to [serverData]
-  /// not for view `submit`, pending marks for outbound stream
+  /// separate clear pending.
+  /// submit/mark for outbound to server, not for view-only changes
+  /// call on Status response to restore serverData as source
+  /// restore get [view] to reflect serverData, [viewOf(serverData)],
+  /// after calling, unaccepted [view] changes will be overwritten
+  // No notification needed - view value doesn't change
   void commitView() {
-    if (_pendingValue case V newValue) {
-      serverData = dataOf(newValue); // update in case of write only, no server polling updates
-      _pendingValue = null; // allow further [data] updates to determine [view]
-      // No notification needed - effective value doesn't change
+    if (_viewValue case V val) {
+      serverData = dataOf(val); // update in case of write only var, no server polling updates
+      _viewValue = null; // unblocks further [data] updates to affect [view]
     }
   }
 
-  /// [data] to/from packet. convert on transmit only. lazy update on updateByView
-  /// Always accept server data.
-  /// value over view boundaries handle by [view]
-  int get data => (_pendingValue != null) ? dataOf(_pendingValue as V) : serverData;
+  ///
+  bool get isLastUpdateByView => _viewValue != null;
+  bool get isLastUpdateByData => _viewValue == null;
+  bool get isSynced => isLastUpdateByData;
+  // alternatively separate
+  // enum VarLastUpdate { clear, byData, byView }
 
-  set data(int newValue) {
-    serverData = newValue; // codec handle sign extension
-    if (_pendingValue == null) return;
-    if (_pendingValue == viewOf(newValue)) _pendingValue = null; // only if user value matches server value, clear pending.
-  }
-
-  /// todo move to codec unioinValue
+  /// value conversion
+  /// todo move to codec unionValue
   /// [numView] The num view representation of the [view] value as a num.
   //  BinaryNumCodec<num> numCodec = BinaryNumCodec<num>.of(); optionally include as default num codec
 
@@ -162,7 +182,7 @@ mixin class VarValue<V> {
 
   // input bounds checked only to ensure a valid value is sent to client side
   // switch on value will also handle dynamic
-  /// generic setter can optionally switch on object type
+  // generic setter can optionally switch on object type
   void updateValueAs<T>(T typedValue) {
     if (T == V) {
       view = typedValue as V;
@@ -185,20 +205,71 @@ mixin class VarValue<V> {
   //   lastUpdate = VarLastUpdate.byView;
   //   if (typedValue case num input when input != numValue) statusCode = 1;
   // }
+
+  // bool hasIndirectListeners = false;
+  // bool get hasListenersCombined => hasListeners || hasIndirectListeners;
+
+  // if separating host and server status
+  // bool outOfRange; // value from client out of range
+  // Enum valueStatus;
+
+  // @override
+  // V get value => valueAs<V>();
+  // @override
+  // set value(V newValue) => updateByViewAs<V>(newValue);
+
+  // num _numValue = 0;
+  // num get _viewValue => _numValue;
+  // set _viewValue(num value) {
+  //   if (_numValue == value) return;
+  //   _numValue = value;
+  //   notifyListeners();
+  // }
+
+  // int get dataValue => dataOf(_viewValue);
+  // set _dataValue(int newValue) => _viewValue = viewOf(newValue);
+
+  // performs common conversion on update
+  // before sign extension
+  // void updateByData(int bytesValue) {
+  //   // _dataValue = dataOfBinary(bytesValue);
+  //   _viewValue = viewOf(dataOfBinary(bytesValue));
+  //   lastUpdate = VarLastUpdate.byData;
+  //   // if (numValue != _clampedNumValue) statusCode = 1;
+  // }
 }
 
+// replace null for over bounds
+enum VarValueEnum { unknown }
+
+// enum VarValueStatus {
+//   outOfRange,
+//   outOfRangeView,
+//   outOfRangeData,
+//   // add more as needed
+// }
+
+// extension ValueNotifierExtensions<V> on ValueNotifier<V> {
+//   // V _getValue() => value;
+//   // void _setValue(V newValue) => value = newValue;
+//   // ValueGetter<V> get valueGetter => _getValue;
+//   // ValueSetter<V> get valueSetter => _setValue;
+// }
+
 // simplified version without local view cache
-// mixin class _VarData<V> {
+// less sync step, but more expensive to convert on every view get and set,
+// no cache for intermediate UI view initiated changes/animations (e.g. slider)
+// UI updates 16ms, serverUpdates ~50ms
+
+// `UI-only change vs submit for push must be implemented separately`
+// mixin class VarData<V> {
 //   BinaryUnionCodec<V> codec = BinaryUnionCodec<V>.of();
 
 //   V viewOf(int data) => codec.decode(data);
 //   int dataOf(V view) => codec.encode(view);
 
-//   int serverData = 0; // Source of truth from server // Base storage as server's native type
+//   int data = 0; // Source of truth from server. Base storage as server's native type
 
-//   V get view => viewOf(serverData); // Single source of truth: pending takes precedence
-//   set view(V newValue) => serverData = dataOf(newValue);
-
-//   int get data => serverData;
-//   set data(int newValue) => serverData = newValue;
+//   V get view => viewOf(data);
+//   set view(V newValue) => data = dataOf(newValue);
 // }

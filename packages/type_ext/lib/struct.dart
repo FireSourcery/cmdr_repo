@@ -5,7 +5,7 @@ import 'index_map.dart';
 export 'index_map.dart';
 
 /// [Structure]
-/// Keyed data
+/// KeyedData, EnumData
 /// Similar to a [Map]
 ///   fixed set of keys
 ///   getOrNull/setOrNot

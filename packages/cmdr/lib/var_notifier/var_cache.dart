@@ -10,7 +10,7 @@ part of 'var_notifier.dart';
 ///
 /// ServiceIO can mixin to this module, still both derive from the same context
 ////////////////////////////////////////////////////////////////////////////////
-// class VarCache<K extends VarKey, V extends VarNotifier> {
+// class VarCache<K extends VarKey, V extends VarNotifier> implements Map<K, V> {
 class VarCache {
   VarCache() : _cache = {};
 
@@ -220,15 +220,6 @@ class VarCache {
   void printCache() {
     print(this);
     _cache.forEach((key, value) => print('{ ${value.varKey} : $value }'));
-  }
-}
-
-extension VarNotifiers on Iterable<VarNotifier> {
-  Iterable<(String, num)> get namedValues => map((e) => (e.varKey.label, e.valueAsNum));
-  Iterable<(VarKey, VarNotifier)> get keyed => map((e) => (e.varKey, e));
-
-  Iterable<String> toNamedValueStrings([String divider = ': ', int precision = 2]) {
-    return namedValues.map((e) => '${e.$1}$divider${e.$2.toStringAsFixed(precision)}');
   }
 }
 
