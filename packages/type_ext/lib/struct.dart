@@ -23,6 +23,7 @@ export 'index_map.dart';
 
 // notes: extension type StructView<K extends Field, V>(Object _this) more closely resembles direct memory mapping with associated methods,
 // but does not allow implementation of additional interfaces, redeclare keys rather then override may cause complications.
+// abstract mixin class Structure<S extends Structure, K extends Field> implements  FixedMap<K, Object?>
 abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>  */ {
   const Structure();
 
@@ -41,8 +42,12 @@ abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>
   // mixin for asMap()
   V operator [](covariant K key) => get(key);
   void operator []=(covariant K key, V value) => set(key, value);
+  // with type constraint
+  // `field` referring to the field value
+  // V field(K key) => get(key);
+  // void setField(K key, V value) => set(key, value);
 
-  // or mixin 2 additional for Map interface
+  // mixin 2 additional for Map interface
   // void clear();
   // V remove(covariant K key);
 
@@ -65,18 +70,12 @@ abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>
     return true;
   }
 
-  // with type contraint
-  // `field` referring to the field value
-  V field(K key) => get(key);
-  void setField(K key, V value) => set(key, value);
-
   V? fieldOrNull(K key) => getOrNull(key);
-  // trySetField
-  bool setFieldOrNot(K key, V value) => setOrNot(key, value);
+  bool setFieldOrNot(K key, V value) => setOrNot(key, value); // trySetField
 
-  FieldEntry<K, V> fieldEntry(K key) => (key: key, value: field(key));
+  FieldEntry<K, V> fieldEntry(K key) => (key: key, value: this[key]);
 
-  Iterable<V> valuesOf(Iterable<K> keys) => keys.map((key) => field(key));
+  Iterable<V> valuesOf(Iterable<K> keys) => keys.map((key) => this[key]);
   Iterable<FieldEntry<K, V>> entriesOf(Iterable<K> keys) => keys.map((key) => fieldEntry(key));
 
   /// with context of this.keys
@@ -90,9 +89,7 @@ abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>
     // return StructMap.ofMap({for (var key in keys) key: fields.field(key) ?? field(key)} as FixedMap<K, V?>);
     return StructMap<K, V>(this)
       ..forEach((key, value) {
-        if (fields.field(key) case V newValue) {
-          this[key] = newValue;
-        }
+        if (fields[key] case V newValue) this[key] = newValue;
       });
   }
 
@@ -106,36 +103,18 @@ abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>
   Structure<K, V> withMap(Map<K, V> map) => StructMap<K, V>(this)..addAll(map);
 
   @override
-  int get hashCode => keys.fold(0, (prev, key) => prev ^ field(key).hashCode);
+  int get hashCode => keys.fold(0, (prev, key) => prev ^ this[key].hashCode);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    if (other is Structure<K, V>) {
-      if (keys != other.keys) return false; // keys are fixed, so compare with ==
-      // if (keys.length != other.keys.length) return false;
-      for (var i = 0; i < keys.length; i++) {
-        if (field(keys[i]) != other.field(keys[i])) return false;
-      }
-      return true;
+    if (other is! Structure<K, V>) return false;
+    if (keys != other.keys) return false; // keys are const, so compare with ==
+    for (final key in keys) {
+      if (this[key] != other[key]) return false;
     }
-    return false;
+    return true;
   }
-
-  // static S fromMap<S extends Structure<K, V>, K extends Field, V>(
-  //   Map<String, dynamic> map,
-  //   List<K> keys,
-  //   S Function(Structure<K, V>) constructor,
-  // ) {
-  //   final struct = StructMap<K, V>.filled(keys, null); // Start with nulls
-  //   for (final key in keys) {
-  //     final value = map[key.name]; // Use enum.name as key
-  //     if (value != null) {
-  //       struct[key] = value as V; // Type cast (add validation if needed)
-  //     }
-  //   }
-  //   return constructor(struct);
-  // }
 }
 
 /// [Field] - key to a value in a [StructView], with type
@@ -147,8 +126,6 @@ abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>
 ///
 /// effectively allows StructView to be abstract
 abstract mixin class Field<V> {
-  // int get index; //index map correspondance
-
   @protected
   V getIn(covariant Object struct); // within(covariant Object struct);
   @protected
@@ -176,23 +153,16 @@ abstract mixin class Field<V> {
   V? get defaultValue => null; // allows additional handling of Map<K, V?>
 }
 
-// extension type const FieldFactory<K extends Field, V>(List<K> fields) {
-//   // S fromMap(Map<K, V> map) => castBase(_fromEntries(map.entries));
-//   Map<K, V> createMap( ) => Map.fromEntries(fields.map((key) => MapEntry(key,  )));
-// }
-// extension on List<Field> {
-//   // provide toMap
-//   Structure view(Object struct) {}
-// }
+// extension type const StructFactory<K extends Field, V>({List<K> fields, constructor}) {
+extension type const StructFactory<K extends Field, V>(List<K> fields) {
+  // Map<K, V> createMap(List<V> values) => Map.fromEntries(fields.map((key) => MapEntry(key, values[fields ])));
+  // S castMap(Map<K, V> map) => castBase(_fromEntries(map.entries));
+  // Structure<K, V> create () =>  ; // default constructor, may be overridden by user defined constructor in child class
+  // Structure<K, V> cast(Structure<Field, Object?> struct) {}
+}
 
 /// typedefs
 typedef FieldEntry<K, V> = ({K key, V value});
-
-/// General mixin for keyed data structures
-/// K extends Enum for serialization
-/// V as Object or Object?
-// typedef DataStruct<K extends Field, V extends Object?> = Structure<K, V>;
-// abstract class EnumData<K extends Enum, V> with MapBase<K, V>, Structure<K, V> {}
 
 /// implement Structure using parallel arrays
 class StructMap<K extends Field, V> extends IndexMap<K, V> with Structure<K, V> {
