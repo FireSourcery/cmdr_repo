@@ -19,6 +19,8 @@ extension EnumByNullable<T extends Enum> on List<T> {
   // EnumCodec<T> asCodec() => EnumCodec.of(this);
 }
 
+extension type const EnumType<T extends Enum>(List<T> _) implements List<T> {}
+
 enum EnumUnknown { unknown }
 
 // T is only used for nested types, if the subtype implements a common type
@@ -41,6 +43,23 @@ extension type const EnumUnionType<T extends Enum>(Set<List<T>> valuesUnion) imp
   // Map<Type, Map<int, T>> asMap() {
   //   return {for (var list in valuesUnion) list.first.runtimeType: valuesUnion.map((list) => list.asMap())};
   // }
+}
+
+abstract mixin class Sign<T extends Sign<T>> implements Enum {
+  static const _zeroIndex = 1;
+
+  int get value => index - _zeroIndex;
+
+// assert(T==dynamic)
+  factory Sign.of(int value) => SignId.of(value) as Sign<T>;
+}
+
+enum SignId with Sign<SignId> {
+  negative, // -1
+  none, //  0
+  forward; //  1
+
+  factory SignId.of(int value) => SignId.values[value + 1];
 }
 
 // inherits

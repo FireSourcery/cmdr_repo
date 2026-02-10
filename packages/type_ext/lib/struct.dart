@@ -23,14 +23,9 @@ export 'index_map.dart';
 
 // notes: extension type StructView<K extends Field, V>(Object _this) more closely resembles direct memory mapping with associated methods,
 // but does not allow implementation of additional interfaces, redeclare keys rather then override may cause complications.
-// abstract mixin class Structure<S extends Structure, K extends Field> implements  FixedMap<K, Object?>
 abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>  */ {
+// abstract mixin class Structure<S extends Structure, K extends Field> implements FixedMap<K, Object?>
   const Structure();
-
-  // default implementation for copyWith
-  // static Structure<K1, V1> fromBase<K1, V1>(Structure<K1, V1?> fields) {
-  //   // return StructMap.ofMap({for (var key in keys) key: fields.field(key) ?? field(key)} as FixedMap<K, V?>);
-  // }
 
   // @override
   List<K> get keys; // a method that is the meta contents, fieldsList
@@ -81,6 +76,9 @@ abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>
   /// with context of this.keys
   // IndexMap<K, V> asMap() => IndexMap<K, V>._(keys, valuesOf(keys));
   // Map<K, V> toMap() => IndexMap<K, V>.of(keys, valuesOf(keys));
+
+  // default implementation for copyWith, base operation for the same keys
+  // factory Structure.cast(Structure<K, V> fields) = StructMap.new;
 
   // Structure<K, V> copyWith() /// override in child class, using index map by default
 
