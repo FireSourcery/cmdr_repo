@@ -72,6 +72,7 @@ abstract mixin class VarKey implements ValueKey<int> {
 }
 
 enum VarReadWriteAccess {
+  disabled,
   readOnly,
   writeOnly,
   readWrite;
@@ -81,7 +82,7 @@ enum VarReadWriteAccess {
       (true, false) => VarReadWriteAccess.readOnly,
       (false, true) => VarReadWriteAccess.writeOnly,
       (false, false) => VarReadWriteAccess.readWrite,
-      (true, true) => throw RangeError('Invalid read/write access'),
+      (true, true) => throw ArgumentError('VarReadWriteAccess cannot be both readOnly and writeOnly'),
     };
   }
 
@@ -90,7 +91,7 @@ enum VarReadWriteAccess {
       (false, true) => VarReadWriteAccess.writeOnly,
       (true, false) => VarReadWriteAccess.readOnly,
       (true, true) => VarReadWriteAccess.readWrite,
-      (false, false) => throw RangeError('Invalid read/write access'),
+      (false, false) => VarReadWriteAccess.disabled,
     };
   }
 
@@ -109,50 +110,20 @@ enum VarReadWriteAccess {
 // }
 
 /// [VarStatus]
-// generalize as system status, 0 -> ok, -1 -> error
 // does not implement Enum, as it can be a union of Enums
 abstract mixin class VarStatus {
   factory VarStatus.defaultOf(int code) => VarStatusDefault.values.elementAtOrNull(code) ?? VarStatusUnknown.unknown;
-
-  // static const int defaultErrorCode = -1;
 
   int get code;
   String get message;
   Enum? get enumId; // null or meta default
   bool get isSuccess => code == 0;
   bool get isError => code != 0;
-
-  //   R statusAs<R>() {
-  //   return switch (R) {
-  //         const (int) => statusCode,
-  //         const (bool) => statusIsSuccess,
-  //         const (Enum) => status.enumId ?? VarStatusUnknown.unknown,
-  //         const (VarStatus) => status,
-  //         // _ when TypeKey<R>().isSubtype<VarStatus>() => statusId, // statusOf must have been overridden for R
-  //         // _ when TypeKey<R>().isSubtype<Enum>() => statusId.enumId,
-  //         _ => throw UnsupportedError('statusAs: $R'),
-  //       }
-  //       as R;
-  // }
-
-  // void updateStatusAs<T>(T status) {
-  //   statusCode = switch (T) {
-  //     const (int) => status as int,
-  //     const (bool) => (status as bool) ? 1 : 0,
-  //     const (Enum) => (status as Enum).index,
-  //     const (VarStatus) => (status as VarStatus).code,
-  //     _ when status is VarStatus => (status as VarStatus).code,
-  //     _ when status is Enum => (status as Enum).index,
-  //     _ => throw UnsupportedError('updateStatusByViewAs: $T'),
-  //   };
-  // }
 }
 
 abstract mixin class VarStatusOk implements VarStatus, ValueResult<void> {}
 
 abstract mixin class VarStatusError implements VarStatus, ErrorResult, Exception {}
-// enum VarStatusOkDefault with VarStatusOk, VarEnumStatus { ok }
-// enum VarStatusErrorDefault with VarStatusError, VarEnumStatus { error, unknown }
 
 // mixin on enum to implement the Status interface
 abstract mixin class VarEnumStatus implements VarStatus, Enum {
@@ -161,8 +132,19 @@ abstract mixin class VarEnumStatus implements VarStatus, Enum {
   Enum get enumId => this;
 }
 
-enum VarStatusDefault with VarStatus, VarEnumStatus { success, error }
+// generalize as system status, 0 -> ok, -1 -> error
+enum VarStatusDefault with VarStatus, VarEnumStatus {
+  success,
+  error;
 
+  @override
+  bool get isSuccess => code == 0;
+  @override
+  bool get isError => code != 0;
+}
+
+// enum VarStatusOkDefault with VarStatusOk, VarEnumStatus { ok }
+// enum VarStatusErrorDefault with VarStatusError, VarEnumStatus { error, unknown }
 enum VarStatusUnknown with VarStatus, VarEnumStatus {
   unknown;
 
