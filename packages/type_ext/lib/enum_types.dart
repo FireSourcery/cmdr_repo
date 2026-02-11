@@ -62,6 +62,22 @@ enum SignId with Sign<SignId> {
   factory SignId.of(int value) => SignId.values[value + 1];
 }
 
+// extension type const OffsetEnumType<T extends Enum>((List<T> enums, int zeroIndex) _) {
+//   // const OffsetEnumType ( List<T> enums, int zeroIndex ) : _ = (enums, zeroIndex);
+//   T factory(int value) => _.$1.elementAt(value - _.$2);
+//   int value(T e) => e.index + _.$2;
+//   int call(T e) => e.index + _.$2;
+// }
+
+// enum SignId1 {
+//   negative, // -1
+//   none, //  0
+//   forward; //  1
+
+//   factory SignId1.of(int value) => const OffsetEnumType((SignId1.values, 1)).factory(value);
+//   get value => const OffsetEnumType((SignId1.values, 1))(this);
+// }
+
 // inherits
 //  T byName(String name)
 //  Map<String, T> asNameMap()
