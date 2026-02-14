@@ -67,7 +67,8 @@ class Protocol {
   /// `listenResponse` - map responseId to socket
   void mapResponse(PacketId responseId, ProtocolSocket socket) {
     _lock.synchronized(() {
-      respSocketMap.putIfAbsent(responseId, () => socket);
+      // respSocketMap.putIfAbsent(responseId, () => socket);
+      respSocketMap[responseId] = socket; // update to most recent socket, for responseId, if not implemented with socket id
     });
   }
 
@@ -80,9 +81,12 @@ class Protocol {
   // alternatively send ack to all sockets
   void mapSync(ProtocolSocket socket) {
     _lock.synchronized(() {
-      respSocketMap.putIfAbsent(packetInterface.ack, () => socket);
-      respSocketMap.putIfAbsent(packetInterface.nack, () => socket);
-      respSocketMap.putIfAbsent(packetInterface.abort, () => socket);
+      // respSocketMap.putIfAbsent(packetInterface.ack, () => socket);
+      // respSocketMap.putIfAbsent(packetInterface.nack, () => socket);
+      // respSocketMap.putIfAbsent(packetInterface.abort, () => socket);
+      respSocketMap[packetInterface.ack] = socket;
+      respSocketMap[packetInterface.nack] = socket;
+      respSocketMap[packetInterface.abort] = socket;
     });
   }
 
