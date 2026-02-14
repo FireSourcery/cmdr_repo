@@ -6,14 +6,18 @@ class ExpandedColumnExpanded extends StatelessWidget {
   const ExpandedColumnExpanded(this.children, {super.key});
   final List<Widget> children;
   @override
-  Widget build(BuildContext context) => Expanded(child: Column(children: [for (final child in children) Expanded(child: child)]));
+  Widget build(BuildContext context) => Expanded(
+    child: Column(children: [for (final child in children) Expanded(child: child)]),
+  );
 }
 
 class ExpandedRowExpanded extends StatelessWidget {
   const ExpandedRowExpanded(this.children, {super.key});
   final List<Widget> children;
   @override
-  Widget build(BuildContext context) => Expanded(child: Row(children: [for (final child in children) Expanded(child: child)]));
+  Widget build(BuildContext context) => Expanded(
+    child: Row(children: [for (final child in children) Expanded(child: child)]),
+  );
 }
 
 class FlexExpanded extends StatelessWidget {
@@ -21,7 +25,10 @@ class FlexExpanded extends StatelessWidget {
   final Axis direction;
   final List<Widget> children;
   @override
-  Widget build(BuildContext context) => Flex(direction: direction, children: [for (final child in children) Expanded(child: child)]);
+  Widget build(BuildContext context) => Flex(
+    direction: direction,
+    children: [for (final child in children) Expanded(child: child)],
+  );
 }
 
 class ExpandedFlexExpanded extends StatelessWidget {
@@ -29,7 +36,12 @@ class ExpandedFlexExpanded extends StatelessWidget {
   final Axis direction;
   final List<Widget> children;
   @override
-  Widget build(BuildContext context) => Expanded(child: Flex(direction: direction, children: [for (final child in children) Expanded(child: child)]));
+  Widget build(BuildContext context) => Expanded(
+    child: Flex(
+      direction: direction,
+      children: [for (final child in children) Expanded(child: child)],
+    ),
+  );
 }
 
 class Grid4 extends StatelessWidget {
@@ -43,10 +55,12 @@ class Grid4 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(children: [
-      ExpandedRowExpanded([upperLeft, upperRight]),
-      ExpandedRowExpanded([lowerLeft, lowerRight])
-    ]);
+    return Column(
+      children: [
+        ExpandedRowExpanded([upperLeft, upperRight]),
+        ExpandedRowExpanded([lowerLeft, lowerRight]),
+      ],
+    );
     // return Flex(children: [
     //   ExpandedFlexExpanded([upperLeft, upperRight]),
     //   ExpandedFlexExpanded([lowerLeft, lowerRight])
@@ -69,7 +83,7 @@ class Grid3 extends StatelessWidget {
       // todo select if half is first top/left
       children: [
         ExpandedFlexExpanded(flipAxis(direction), [half]),
-        ExpandedFlexExpanded(flipAxis(direction), [quarter1, quarter2])
+        ExpandedFlexExpanded(flipAxis(direction), [quarter1, quarter2]),
       ],
     );
   }
@@ -89,10 +103,16 @@ class ExpandedCard extends StatelessWidget {
   const ExpandedCard(this.child, {super.key});
   final Widget child;
   @override
-  Widget build(BuildContext context) => Expanded(child: Card(child: Padding(padding: const EdgeInsets.all(20), child: Center(child: child))));
+  Widget build(BuildContext context) => Expanded(
+    child: Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Center(child: child),
+      ),
+    ),
+  );
 }
 
-//todo with grid3 with adaptive
 class Grid6 extends StatelessWidget {
   const Grid6({
     required this.leftPanel,

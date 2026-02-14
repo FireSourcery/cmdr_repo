@@ -151,12 +151,16 @@ abstract mixin class Field<V> {
   V? get defaultValue => null; // allows additional handling of Map<K, V?>
 }
 
-// extension type const StructFactory<K extends Field, V>({List<K> fields, constructor}) {
-extension type const StructFactory<K extends Field, V>(List<K> fields) {
-  // Map<K, V> createMap(List<V> values) => Map.fromEntries(fields.map((key) => MapEntry(key, values[fields ])));
-  // S castMap(Map<K, V> map) => castBase(_fromEntries(map.entries));
-  // Structure<K, V> create () =>  ; // default constructor, may be overridden by user defined constructor in child class
+//
+extension type const StructSchema<S extends Structure<K, V>, K extends Field, V>(List<K> fields) {
+  StructSchema.withC(S Function([List<V>?]) constructor) : fields = constructor().keys;
+// extension type const StructFactory<S, K extends Field, V>(List<K> fields, S Function([List<V>?])? constructor)
+
+  // StructMap<K, V> createBase([List<V>? values]) => StructMap<K, V>()
+  // Map.fromEntries(fields.map((key) => MapEntry(key, values[fields ])));
+  // S create([List<V>? values]) => createBase(values).copyWith() as S; // implicitly call constructor
   // Structure<K, V> cast(Structure<Field, Object?> struct) {}
+  // S castMap(Map<K, V> map) => castBase(_fromEntries(map.entries));
 }
 
 /// typedefs
