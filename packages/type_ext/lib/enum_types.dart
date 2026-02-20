@@ -23,6 +23,8 @@ extension type const EnumType<T extends Enum>(List<T> _) implements List<T> {}
 
 enum EnumUnknown { unknown }
 
+// typedef EnumUnionFn = List<T> Function<T extends Enum>();
+
 // T is only used for nested types, if the subtype implements a common type
 extension type const EnumUnionType<T extends Enum>(Set<List<T>> valuesUnion) implements Set<List<T>> {
   // if S extends T then non-null is guaranteed by class definition
@@ -33,12 +35,6 @@ extension type const EnumUnionType<T extends Enum>(Set<List<T>> valuesUnion) imp
 
   // List<S>? subtypeOrNull<S extends Enum>() => valuesUnion.whereType<List<S>>().singleOrNull;
   // S? resolve<S extends Enum>(int? index) => subtypeOrNull<S>()?.resolve(index);
-
-  // alternatively as status unions
-  // pass any type, return nullable
-  // without extends Enum, for work around subtype issues
-  // List<S>? _resolveSubtype<S>() => valuesUnion.whereType<List<S>>().singleOrNull;
-  // S? resolveSubtype<S>(int? index) => (_resolveSubtype<S>() as List<Enum>?)?.resolve(index) as S?;
 
   // Map<Type, Map<int, T>> asMap() {
   //   return {for (var list in valuesUnion) list.first.runtimeType: valuesUnion.map((list) => list.asMap())};

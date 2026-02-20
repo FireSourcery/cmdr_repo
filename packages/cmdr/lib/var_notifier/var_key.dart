@@ -121,9 +121,9 @@ abstract mixin class VarStatus {
   bool get isError => code != 0;
 }
 
-abstract mixin class VarStatusOk implements VarStatus, ValueResult<void> {}
+abstract mixin class VarStatusOk implements VarStatus /* , ValueResult<void> */ {}
 
-abstract mixin class VarStatusError implements VarStatus, ErrorResult, Exception {}
+abstract mixin class VarStatusError implements VarStatus, /*  ErrorResult, */ Exception {}
 
 // mixin on enum to implement the Status interface
 abstract mixin class VarEnumStatus implements VarStatus, Enum {
