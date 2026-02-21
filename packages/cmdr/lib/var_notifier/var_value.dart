@@ -242,13 +242,6 @@ mixin class VarValue<V> {
 // replace null for over bounds
 enum VarValueEnum { unknown }
 
-// enum VarValueStatus {
-//   outOfRange,
-//   outOfRangeView,
-//   outOfRangeData,
-//   // add more as needed
-// }
-
 // extension ValueNotifierExtensions<V> on ValueNotifier<V> {
 //   // V _getValue() => value;
 //   // void _setValue(V newValue) => value = newValue;

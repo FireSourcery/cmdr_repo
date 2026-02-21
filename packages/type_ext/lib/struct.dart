@@ -18,19 +18,9 @@ export 'index_map.dart';
 ///
 // extend to fill class variables.
 // Field may use a type parameter other than V, used to determine the value of V
-// always wrap a single Object, can implement as extension type when better support of abstract methods/override is available
-// paste map mixin for 1 part mixin
-
-// notes: extension type StructView<K extends Field, V>(Object _this) more closely resembles direct memory mapping with associated methods,
-// but does not allow implementation of additional interfaces, redeclare keys rather then override may cause complications.
 abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>  */ {
-// abstract mixin class Structure<S extends Structure, K extends Field> implements FixedMap<K, Object?>
+// abstract mixin class Structure<S extends Structure, K extends Field>
   const Structure();
-
-  // @override
-  List<K> get keys; // a method that is the meta contents, fieldsList
-  // Iterable<K> get keys;
-  // List<K> get fields;
 
   // Map
 
@@ -74,6 +64,11 @@ abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>
   Iterable<FieldEntry<K, V>> entriesOf(Iterable<K> keys) => keys.map((key) => fieldEntry(key));
 
   /// with context of this.keys
+  // @override
+  List<K> get keys; // a method that is the meta contents, fieldsList
+  // Iterable<K> get keys;
+  // List<K> get fields;
+
   // IndexMap<K, V> asMap() => IndexMap<K, V>._(keys, valuesOf(keys));
   // Map<K, V> toMap() => IndexMap<K, V>.of(keys, valuesOf(keys));
 
@@ -100,19 +95,19 @@ abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>
   // A general values map representing external input, may be a partial map
   Structure<K, V> withMap(Map<K, V> map) => StructMap<K, V>(this)..addAll(map);
 
-  @override
-  int get hashCode => keys.fold(0, (prev, key) => prev ^ this[key].hashCode);
+  // @override
+  // int get hashCode => keys.fold(0, (prev, key) => prev ^ this[key].hashCode);
 
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! Structure<K, V>) return false;
-    if (keys != other.keys) return false; // keys are const, so compare with ==
-    for (final key in keys) {
-      if (this[key] != other[key]) return false;
-    }
-    return true;
-  }
+  // @override
+  // bool operator ==(Object other) {
+  //   if (identical(this, other)) return true;
+  //   if (other is! Structure<K, V>) return false;
+  //   if (keys != other.keys) return false; // keys are const, so compare with ==
+  //   for (final key in keys) {
+  //     if (this[key] != other[key]) return false;
+  //   }
+  //   return true;
+  // }
 }
 
 /// [Field] - key to a value in a [StructView], with type
@@ -151,17 +146,26 @@ abstract mixin class Field<V> {
   V? get defaultValue => null; // allows additional handling of Map<K, V?>
 }
 
-//
-extension type const StructSchema<S extends Structure<K, V>, K extends Field, V>(List<K> fields) {
-  StructSchema.withC(S Function([List<V>?]) constructor) : fields = constructor().keys;
-// extension type const StructFactory<S, K extends Field, V>(List<K> fields, S Function([List<V>?])? constructor)
+// class StructSchema<S extends Structure<K, V>, K extends Field, V> {
+//   const StructSchema(this.fields, {this.constructor});
+//   final List<K> fields;
+//   final S Function([List<V>?])? constructor;
 
-  // StructMap<K, V> createBase([List<V>? values]) => StructMap<K, V>()
-  // Map.fromEntries(fields.map((key) => MapEntry(key, values[fields ])));
-  // S create([List<V>? values]) => createBase(values).copyWith() as S; // implicitly call constructor
-  // Structure<K, V> cast(Structure<Field, Object?> struct) {}
-  // S castMap(Map<K, V> map) => castBase(_fromEntries(map.entries));
-}
+//   Structure<K, V> createBase([List<V>? values]) => StructMap<K, V>._(fields, values ?? List.filled(fields.length, null as V));
+// }
+
+//
+// extension type const StructSchema<S extends Structure<K, V>, K extends Field, V>(List<K> fields) {
+//   // StructSchema.withC(S Function([List<V>?]) constructor) : fields = constructor().keys;
+// // extension type const StructFactory<S, K extends Field, V>(List<K> fields, S Function([List<V>?])? constructor)
+//   StructMap<K, V> createBase([List<V>? values]) => StructMap<K, V>._(fields, values ?? List.filled(fields.length, null as V));
+//   // Map.fromEntries(fields.map((key) => MapEntry(key, values[fields ])));
+//   // S create([List<V>? values]) => createBase(values).copyWith() as S; // implicitly call constructor
+//   // Structure<K, V> cast(Structure<Field, Object?> struct) {}
+//   // S castMap(Map<K, V> map) => castBase(_fromEntries(map.entries));
+// }
+
+// extension type const StructSubtypeSchema<S extends Structure>(S Function([List? values]) constructor) {}
 
 /// typedefs
 typedef FieldEntry<K, V> = ({K key, V value});
@@ -169,7 +173,7 @@ typedef FieldEntry<K, V> = ({K key, V value});
 /// implement Structure using parallel arrays
 class StructMap<K extends Field, V> extends IndexMap<K, V> with Structure<K, V> {
   StructMap(Structure<K, V> struct) : super.of(struct.keys, struct.valuesOf(struct.keys));
-  // StructMap.ofMap(super.map) : super.fromBase();
+  StructMap._(super.keys, super.values) : super.of();
 }
 
 /// default implementation of immutable copy as subtype

@@ -94,9 +94,6 @@ class VarCache {
   ////////////////////////////////////////////////////////////////////////////////
   VarNotifier? operator [](VarKey varKey) => _cache[varKey.value]; // alternatively ?? undefined;
 
-  // @protected
-  // VarNotifier? ofId(int id) => _cache[id];
-
   // directely return value. useful for sync update
   @protected
   num valueOf(VarKey varKey) => _cache[varKey.value]?.numView ?? 0;

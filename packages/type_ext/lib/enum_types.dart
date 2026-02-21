@@ -19,27 +19,27 @@ extension EnumByNullable<T extends Enum> on List<T> {
   // EnumCodec<T> asCodec() => EnumCodec.of(this);
 }
 
-extension type const EnumType<T extends Enum>(List<T> _) implements List<T> {}
+// extension type const EnumType<T extends Enum>(List<T> _) implements List<T> {}
 
 enum EnumUnknown { unknown }
 
 // typedef EnumUnionFn = List<T> Function<T extends Enum>();
 
 // T is only used for nested types, if the subtype implements a common type
-extension type const EnumUnionType<T extends Enum>(Set<List<T>> valuesUnion) implements Set<List<T>> {
-  // if S extends T then non-null is guaranteed by class definition
-  List<S> subtype<S extends T>() => valuesUnion.whereType<List<S>>().single;
-  S bySubtype<S extends T>(int index) => subtype<S>().elementAt(index);
+// extension type const EnumUnionType<T extends Enum>(Set<List<T>> valuesUnion) implements Set<List<T>> {
+//   // if S extends T then non-null is guaranteed by class definition
+//   List<S> subtype<S extends T>() => valuesUnion.whereType<List<S>>().single;
+//   S bySubtype<S extends T>(int index) => subtype<S>().elementAt(index);
 
-  S? resolve<S extends T>(int? index) => subtype<S>().resolve(index);
+//   S? resolve<S extends T>(int? index) => subtype<S>().resolve(index);
 
-  // List<S>? subtypeOrNull<S extends Enum>() => valuesUnion.whereType<List<S>>().singleOrNull;
-  // S? resolve<S extends Enum>(int? index) => subtypeOrNull<S>()?.resolve(index);
+//   // List<S>? subtypeOrNull<S extends Enum>() => valuesUnion.whereType<List<S>>().singleOrNull;
+//   // S? resolve<S extends Enum>(int? index) => subtypeOrNull<S>()?.resolve(index);
 
-  // Map<Type, Map<int, T>> asMap() {
-  //   return {for (var list in valuesUnion) list.first.runtimeType: valuesUnion.map((list) => list.asMap())};
-  // }
-}
+//   // Map<Type, Map<int, T>> asMap() {
+//   //   return {for (var list in valuesUnion) list.first.runtimeType: valuesUnion.map((list) => list.asMap())};
+//   // }
+// }
 
 abstract mixin class Sign<T extends Sign<T>> implements Enum {
   static const _zeroIndex = 1;
@@ -110,4 +110,37 @@ enum SignId with Sign<SignId> {
 //   V decode(int data) => decoder.call(data);
 //   @override
 //   int encode(V view) => encoder.call(view);
+// }
+
+// class EnumCodecDefault<V extends Enum> /* implements Codec<V> */ {
+//   const EnumCodecDefault(this.list, [this.defaultValue]);
+
+//   final List<V> list;
+//   final V? defaultValue;
+//   @override
+//   V decode(int data) => list.byIndex(data, defaultValue);
+//   @override
+//   int encode(V view) => view.index;
+// }
+
+// class EnumUnionCodecDefault {
+//   const EnumUnionCodecDefault(this.switcher);
+
+//   final List<T> Function<T extends Enum>() switcher;
+
+//   @override
+//   V decodeAs<V extends Enum>(int data) => switcher<V>().byIndex(data);
+//   @override
+//   int encodeAs<V extends Enum>(V view) => view.index;
+// }
+
+// class EnumUnionCodecMapDefault {
+//   const EnumUnionCodecMapDefault(this.map);
+
+//   final Map<Type, List<Enum>> map;
+
+//   @override
+//   V decodeAs<V extends Enum>(int data) => map[V]!.byIndex(data) as V;
+//   @override
+//   int encodeAs<V extends Enum>(V view) => view.index;
 // }

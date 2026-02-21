@@ -189,6 +189,7 @@ class VarRealTimeController extends VarCacheController {
     // await pushHandler.end();
   }
 
+  void get isStopped => (pollSubscription == null && pushSubscription == null);
   // void get isStopped => pollHandler.isStopped && pushHandler.isStopped;
 }
 

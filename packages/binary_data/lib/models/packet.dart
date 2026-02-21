@@ -397,7 +397,7 @@ abstract interface class Payload<V> {
   // parseMeta(Packet header)
 }
 
-// abstract interface class PayloadFixed<V> {
+// abstract interface class PayloadFixed<V extends Record> {
 //   V get values;
 //   set values(V values);
 // }

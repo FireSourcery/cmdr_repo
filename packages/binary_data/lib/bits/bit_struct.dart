@@ -25,14 +25,15 @@ export 'bits_map.dart';
 ///
 /// base class enforce data implementation. ensure correct correspondance with remote devices
 ////////////////////////////////////////////////////////////////////////////////
-abstract base class BitStruct<K extends BitField> extends BitsBase with MapBase<K, int>, BitFieldMap<K> implements BitsMap<K, int> {
+// abstract class BitStruct<T extends BitStruct<K>, K extends BitField> extends BitsBase with MapBase<K, int>, BitFieldMap<K> implements BitsMap<K, int> {
+abstract class BitStruct<K extends BitField> extends BitsBase with MapBase<K, int>, BitFieldMap<K> implements BitsMap<K, int> {
   const BitStruct();
   const factory BitStruct.view(List<K> keys, Bits bits) = _BitStruct<K>;
   // const factory BitStruct.withType(List<K> keys, Bits bits) = _BitStruct<K>;
 
   Bits get bits;
   set bits(Bits value);
-  // BitsBase get bitData; //alternatively wrap for combined const and mutable
+  // final BitsBase  bitData; //alternatively wrap for combined const and mutable
 
   // BitStruct-specific methods
   // Child class defines fixed keys
@@ -122,7 +123,7 @@ abstract base class BitStruct<K extends BitField> extends BitsBase with MapBase<
 /// to return a subtype,[S extends BitStruct<K>]:
 ///   provide the constructor of the subtype
 ///   use a prototype object copyWith(), which calls the constructor of the subtype
-base mixin BitStructAsSubtype<S extends BitStruct<K>, K extends BitField> on BitStruct<K> {
+mixin BitStructAsSubtype<S extends BitStruct<K>, K extends BitField> on BitStruct<K> {
   @mustBeOverridden // mark for overide in the case of return as a subtype
   S copyWithBits(Bits value);
 

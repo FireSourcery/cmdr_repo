@@ -17,22 +17,8 @@ abstract mixin class VarKey implements ValueKey<int> {
 
   // VarViewer<dynamic>? get viewer; // null for int
 
-  BinaryUnionCodec<R>? buildViewer<R>(); // null for int
-
-  // remove
   /// Data numeric conversion
-  // int Function(int binary)? get signExtension;
-  // ViewOfData? get viewOfData;
-  // DataOfView? get dataOfView;
-
-  // /// Union type properties.
-  // ({num min, num max})? get valueNumLimits;
-  // List<Enum>? get valueEnumRange;
-  // List<BitField>? get valueBitsKeys;
-  // T subtypeOf<T>(num value) => throw UnsupportedError('valueAsSubtype: $T');
-  // num valueOfSubtype<T>(T value) => throw UnsupportedError('viewOfSubtype: $T');
-  // // num? get valueDefault;
-  ///
+  BinaryUnionCodec<R>? buildViewer<R>(); // null for int
 
   // optionally override with subtype
   VarStatus varStatusOf(int code); // should only be one. instances shared
@@ -77,15 +63,6 @@ enum VarReadWriteAccess {
   writeOnly,
   readWrite;
 
-  factory VarReadWriteAccess.of(bool isReadOnly, bool isWriteOnly) {
-    return switch ((isReadOnly, isWriteOnly)) {
-      (true, false) => VarReadWriteAccess.readOnly,
-      (false, true) => VarReadWriteAccess.writeOnly,
-      (false, false) => VarReadWriteAccess.readWrite,
-      (true, true) => throw ArgumentError('VarReadWriteAccess cannot be both readOnly and writeOnly'),
-    };
-  }
-
   factory VarReadWriteAccess.from(bool isReadable, bool isWritable) {
     return switch ((isReadable, isWritable)) {
       (false, true) => VarReadWriteAccess.writeOnly,
@@ -97,17 +74,10 @@ enum VarReadWriteAccess {
 
   bool get isWritable => this != readOnly;
   bool get isReadable => this != writeOnly;
+
   bool get isReadOnly => this == readOnly;
   bool get isWriteOnly => this == writeOnly;
 }
-
-// extension VarMinMaxs on Iterable<VarKey> {
-//   Iterable<({num min, num max})?> get viewMinMaxs => map((e) => e.viewer?.numLimits);
-//   Iterable<num> get viewMaxs => viewMinMaxs.map((e) => e?.max).nonNulls;
-//   Iterable<num> get viewMins => viewMinMaxs.map((e) => e?.min).nonNulls;
-//   num get viewMax => viewMaxs.max;
-//   num get viewMin => viewMins.min;
-// }
 
 /// [VarStatus]
 // does not implement Enum, as it can be a union of Enums
@@ -117,13 +87,9 @@ abstract mixin class VarStatus {
   int get code;
   String get message;
   Enum? get enumId; // null or meta default
-  bool get isSuccess => code == 0;
-  bool get isError => code != 0;
+  bool get isSuccess;
+  bool get isError;
 }
-
-abstract mixin class VarStatusOk implements VarStatus /* , ValueResult<void> */ {}
-
-abstract mixin class VarStatusError implements VarStatus, /*  ErrorResult, */ Exception {}
 
 // mixin on enum to implement the Status interface
 abstract mixin class VarEnumStatus implements VarStatus, Enum {
@@ -150,6 +116,22 @@ enum VarStatusUnknown with VarStatus, VarEnumStatus {
 
   @override
   int get code => -1;
+
+  @override
+  bool get isError => true;
+
+  @override
+  bool get isSuccess => false;
 }
 
-enum VarHandlerStatus with VarStatus, VarEnumStatus { unknownId, outOfRange, noResponse }
+// enum VarHandlerStatus with VarStatus, VarEnumStatus { unknownId, outOfRange, noResponse, 
+//   @override
+//   int get code => -1; }
+
+// extension VarMinMaxs on Iterable<VarKey> {
+//   Iterable<({num min, num max})?> get viewMinMaxs => map((e) => e.viewer?.numLimits);
+//   Iterable<num> get viewMaxs => viewMinMaxs.map((e) => e?.max).nonNulls;
+//   Iterable<num> get viewMins => viewMinMaxs.map((e) => e?.min).nonNulls;
+//   num get viewMax => viewMaxs.max;
+//   num get viewMin => viewMins.min;
+// }

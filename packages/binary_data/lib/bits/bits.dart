@@ -127,7 +127,7 @@ extension BitmasksMethods on Iterable<Bitmask> {
 ///   gives Bits a type for matching, distinguish from int
 ///   cast with any sub type
 ///  use by BitsMap. BitsStuct, BoolMap, etc.
-abstract base class BitsBase {
+abstract class BitsBase {
   const BitsBase();
 
   Bits get bits;

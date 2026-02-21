@@ -100,10 +100,12 @@ class Grid2 extends StatelessWidget {
 }
 
 class ExpandedCard extends StatelessWidget {
-  const ExpandedCard(this.child, {super.key});
+  const ExpandedCard(this.child, {this.flex = 1, super.key});
   final Widget child;
+  final int flex;
   @override
   Widget build(BuildContext context) => Expanded(
+    flex: flex,
     child: Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
