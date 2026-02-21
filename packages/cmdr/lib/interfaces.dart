@@ -22,5 +22,4 @@
 /// ```
 library cmdr.interfaces;
 
-export 'interfaces/interface_key.dart';
 export 'interfaces/service_io.dart';

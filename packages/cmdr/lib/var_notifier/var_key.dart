@@ -82,13 +82,30 @@ enum VarReadWriteAccess {
 /// [VarStatus]
 // does not implement Enum, as it can be a union of Enums
 abstract mixin class VarStatus {
-  factory VarStatus.defaultOf(int code) => VarStatusDefault.values.elementAtOrNull(code) ?? VarStatusUnknown.unknown;
+  const VarStatus();
+  factory VarStatus.defaultOf(int code) = _VarStatus;
 
   int get code;
   String get message;
   Enum? get enumId; // null or meta default
   bool get isSuccess;
   bool get isError;
+}
+
+class _VarStatus extends VarStatus {
+  const _VarStatus(this.code);
+
+  @override
+  final int code;
+
+  @override
+  Enum? get enumId => VarStatusDefault.values.elementAtOrNull(code) ?? VarStatusUnknown.unknown;
+  @override
+  bool get isError => code != 0;
+  @override
+  bool get isSuccess => code == 0;
+  @override
+  String get message => enumId?.name ?? 'VarStatus: $code';
 }
 
 // mixin on enum to implement the Status interface

@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:async/async.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' hide BitField;
+import 'package:recase/recase.dart';
 
 import 'package:type_ext/basic_types.dart';
 import 'package:binary_data/binary_data.dart';
@@ -282,6 +283,11 @@ class VarEventNotifier<V> extends ChangeNotifier {
   void submitByViewAs<T>(T varValue) {
     varNotifier.updateByViewAs<T>(varValue);
     onSubmit(varNotifier);
+    notifyListeners();
+  }
+
+  void call(Function(VarNotifier<V>) submitAction) {
+    submitAction(varNotifier);
     notifyListeners();
   }
 }

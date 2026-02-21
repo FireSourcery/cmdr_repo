@@ -1,7 +1,5 @@
 ///
 
-typedef StatelessCodec<S, T> = ({T Function(S) encoder, S Function(T) decoder});
-
 typedef NumConverter = num Function(num);
 typedef NumConversion = ({NumConverter decode, NumConverter encode});
 typedef NumLimits = ({num min, num max});

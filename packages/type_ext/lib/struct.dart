@@ -18,8 +18,8 @@ export 'index_map.dart';
 ///
 // extend to fill class variables.
 // Field may use a type parameter other than V, used to determine the value of V
+
 abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>  */ {
-// abstract mixin class Structure<S extends Structure, K extends Field>
   const Structure();
 
   // Map
@@ -95,6 +95,16 @@ abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>
   // A general values map representing external input, may be a partial map
   Structure<K, V> withMap(Map<K, V> map) => StructMap<K, V>(this)..addAll(map);
 
+  // @mustBeOverridden
+  // S copyWithBase([Structure<K, Object?>? fields]);
+
+  // @override
+  // S withField(K key, Object? value) => copyWithBase(_withField(key, value));
+  // @override
+  // S withEntries(Iterable<MapEntry<K, Object?>> newEntries) => copyWithBase(_withEntries(newEntries));
+  // @override
+  // S withMap(Map<K, Object?> map) => copyWithBase(_withMap(map));
+
   // @override
   // int get hashCode => keys.fold(0, (prev, key) => prev ^ this[key].hashCode);
 
@@ -109,6 +119,11 @@ abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>
   //   return true;
   // }
 }
+
+// abstract class StructureS<S extends StructureS<S, K>, K extends Field> extends Structure<K, Object?> {
+//   const StructureS();
+
+// }
 
 /// [Field] - key to a value in a [StructView], with type
 /// although implementation of operators may be preferable in the containing class with full context of relationships between fields

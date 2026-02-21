@@ -129,6 +129,8 @@ enum BinaryFormat<S extends NativeType, V extends Object> {
   // bool get isFraction => isFixedPoint || isScalar || (this == adcu || this == cycles);
 }
 
+typedef StatelessCodec<S, T> = ({T Function(S) encoder, S Function(T) decoder});
+
 ///
 /// [BinaryCodec<V>]
 ///
@@ -382,6 +384,21 @@ final class BinaryUnionCodecImpl<V> with BinaryUnionCodec<V> {
   @override
   final List<BitField>? bitsKeys;
 }
+
+// class BinaryData<S extends NativeType, V extends Object> with {
+//   const BinaryData(this._format, this.value);
+//   final BinaryFormat<S, V> _format;
+// BinaryUnionCodec<V> get _viewer;
+//   final int rawValue;
+//   V get value => (format.reference != null) ? (rawValue / format.reference!) as V : rawValue as V;
+//   // final V value;
+//   // int get rawValue => (format.reference != null) ? (value as num * format.reference!).round() : (value as num).round();
+// }
+
+// abstract class ValueData {
+//   BinaryUnionCodec<V> get viewer;
+
+//   int get data;
 
 /// mixin value field
 // abstract mixin class NumUnion implements BinaryUnionCodec<V> {

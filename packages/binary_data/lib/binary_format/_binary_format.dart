@@ -6,6 +6,18 @@ import 'package:binary_data/binary_data.dart';
 
 sealed class BinaryFormat<S extends NativeType, V extends Object> {
   const BinaryFormat({required this.reference});
+  // factory BinaryFormat.type()
+  // {
+  //   return switch (S, V) {
+  //     (Uint16, double) => Fract16(),
+  //     (Int16, double) => Accum16(),
+  //     (Uint16, int) => UInt16AsInt(),
+  //     (Int16, int) => Int16AsInt(),
+  //     (Bool, bool) => BooleanFormat(),
+  //     _ => throw UnimplementedError('No default BinaryFormat for types S=$S, V=$V. Please specify a format or add a default case.'),
+  //   };
+  // }
+
   final num? reference;
 
   // Common helpers (override as needed)
@@ -26,6 +38,8 @@ sealed class BinaryFormat<S extends NativeType, V extends Object> {
 }
 
 // Width/sign “base” classes to centralize baseRange/sign behaviors.
+
+// abstract class NumberFormat<S ,V extends num> extends BinaryFormat<S, V> {}
 
 abstract class Uint16Format<V extends num> extends BinaryFormat<Uint16, V> {
   const Uint16Format({required super.reference});
@@ -146,20 +160,19 @@ final class SignFlag extends BinaryFormat<Int, int> {
 }
 
 // Example registry to keep an enum-like values list and names.
-abstract final class Formats {
-  static const fract16 = Fract16();
-  static const ufract16 = UFract16();
-  static const uaccum16 = UAccum16();
-  static const accum16 = Accum16();
-  static const percent16 = Percent16();
-  static const angle16 = Angle16();
-  static const scalar10 = Scalar10();
-  static const scalarInv10 = ScalarInv10();
-  static const int16 = Int16AsInt();
-  static const uint16 = UInt16AsInt();
-  static const boolean = BooleanFormat();
-  static const sign = SignFlag();
+// abstract final class Formats {
+//   static const fract16 = Fract16();
+//   static const ufract16 = UFract16();
+//   static const uaccum16 = UAccum16();
+//   static const accum16 = Accum16();
+//   static const percent16 = Percent16();
+//   static const angle16 = Angle16();
+//   static const scalar10 = Scalar10();
+//   static const scalarInv10 = ScalarInv10();
+//   static const int16 = Int16AsInt();
+//   static const uint16 = UInt16AsInt();
+//   static const boolean = BooleanFormat();
+//   static const sign = SignFlag();
 
-  static const values = <BinaryFormat<dynamic, Object>>[fract16, ufract16, uaccum16, accum16, percent16, angle16, scalar10, scalarInv10, int16, uint16, boolean, sign];
-}
-// ...existing code...
+//   static const values = <BinaryFormat<dynamic, Object>>[fract16, ufract16, uaccum16, accum16, percent16, angle16, scalar10, scalarInv10, int16, uint16, boolean, sign];
+// }
