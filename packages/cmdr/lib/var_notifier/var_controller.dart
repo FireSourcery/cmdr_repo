@@ -68,8 +68,6 @@ class VarCacheController {
   /// `Single` Read/Write Var
   ////////////////////////////////////////////////////////////////////////////////
   // fetch
-  // Future<VarNotifier>
-  // Future<VarStatus?>
   Future<bool> read(VarKey key) async {
     if (await protocolService.get(key.value) case int value) {
       cache[key]?.updateByData(value);
@@ -96,14 +94,15 @@ class VarCacheController {
     return write(key);
   }
 
+  // maps to protocol service, not cache, so no cache update or status update.
   VarSingleController<V> single<V>(VarNotifier<V> notifier) => VarSingleController(varNotifier: notifier, protocolService: protocolService);
 
   // return num or object of key V type
-  // Future<num?> operator [](VarKey key) async {
+  // Future<V?> operator [](VarKey<V> key) async {
   //   if (await protocolService.get(key.value) case int value) {
   //     cache[key]?.updateByData(value);
   //   }
-  //   return cache[key]!.valueAsNum;
+  //   return cache[key]!.value ;
   // }
 
   // @override
@@ -135,9 +134,6 @@ class VarCacheController {
 class VarRealTimeController extends VarCacheController {
   VarRealTimeController({required super.cache, required super.protocolService});
 
-  // late final ServicePollStreamHandler<int, int, int> pollHandler = ServicePollStreamHandler(protocolService, _readKeysGetter, _onReadSlice);
-  // late final ServicePushStreamHandler<int, int, int> pushHandler = ServicePushStreamHandler(protocolService, _writePairsGetter, _onWriteSlice);
-
   Stream<ServiceGetSlice<int, int>> get _readStream => protocolService.pollFlex(_readKeysGetter);
   Stream<ServiceSetSlice<int, int, int>> get _writeStream => protocolService.push(_writePairsGetter);
 
@@ -159,7 +155,7 @@ class VarRealTimeController extends VarCacheController {
   Iterable<VarKey> get _writeKeys => cache.varEntries.where((e) => e.varKey.isPushing || e.hasPendingChanges).map((e) => e.varKey);
   Iterable<(int, int)> _writePairsGetter() => cache.dataPairsOf(_writeKeys);
 
-  /// indirectListeners
+  /// temp handle indirectListeners
   final Set<VarKey> _pollingKeys = {};
   // assert isStopped
   void addPolling(Iterable<VarKey> keys) => _pollingKeys.addAll(keys);
@@ -170,11 +166,12 @@ class VarRealTimeController extends VarCacheController {
   // void removePollingAll() => cache.varEntries.forEach((element) => element.hasIndirectListeners = false);
   // void selectPolling(Iterable<VarKey> keys) => (this..removePollingAll()).addPolling(keys);
 
-  Future<bool> beginPeriodic() async {
+  Future<bool> beginPeriodic({void Function(Object error)? onError, void Function()? onDone, bool? cancelOnError}) async {
     if (!protocolService.isConnected) return false;
+    // if (!isStopped) return true;
     // _pollingKeys.addAll(_readKeys);
-    pollSubscription ??= _readStream.listen(_onReadSlice);
-    pushSubscription ??= _writeStream.listen(_onWriteSlice);
+    pollSubscription ??= _readStream.listen(_onReadSlice, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
+    pushSubscription ??= _writeStream.listen(_onWriteSlice, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
     // pushHandler.begin();
     return true;
   }
@@ -185,14 +182,12 @@ class VarRealTimeController extends VarCacheController {
     await pushSubscription?.cancel().whenComplete(() => pushSubscription = null);
     // await pollSubscription?.asFuture();
     // await pushSubscription?.asFuture();
-    // await pollHandler.end();
-    // await pushHandler.end();
   }
 
   void get isStopped => (pollSubscription == null && pushSubscription == null);
-  // void get isStopped => pollHandler.isStopped && pushHandler.isStopped;
 }
 
+///
 extension VarNotifierAwait on VarNotifier {
   Future<void> pendingChanges() async {
     while (hasPendingChanges) {

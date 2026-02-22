@@ -5,6 +5,8 @@ part of 'var_notifier.dart';
 /// == and hash from ValueKey
 @immutable
 abstract mixin class VarKey implements ValueKey<int> {
+  // abstract mixin class VarKey<V> implements ValueKey<int> {
+  // TypeKey<V> get viewType;
   const VarKey();
 
   @override
