@@ -68,28 +68,28 @@ class VarCacheController {
   /// `Single` Read/Write Var
   ////////////////////////////////////////////////////////////////////////////////
   // fetch
-  Future<bool> read(VarKey key) async {
+  Future<V?> read<V>(VarKey<V> key) async {
     if (await protocolService.get(key.value) case int value) {
       cache[key]?.updateByData(value);
-      return true;
+      return cache[key]?.value as V?;
     }
-    return false;
+    return null;
   }
 
   // send
-  Future<VarStatus?> write(VarKey key) async {
-    if (await protocolService.set(key.value, cache[key]?.dataValue ?? 0) case int statusValue) {
-      return (cache[key]?..updateStatusByData(statusValue))?.status;
+  Future<VarStatus?> write<V>(VarKey<V> key) async {
+    if (await protocolService.set(key.value, cache[key]?.dataValue ?? 0) case int status) {
+      return (cache[key]?..updateStatusByData(status))?.status;
     }
     return null;
   }
 
-  Future<V?> readAs<V>(VarKey key) async {
-    if (await read(key) == true) return cache[key]?.valueAs<V>();
-    return null;
+  Future<V?> readAs<V>(VarKey<dynamic> key) async {
+    await read(key);
+    return cache[key]?.valueAs<V>();
   }
 
-  Future<VarStatus?> writeAs<V>(VarKey key, V value) async {
+  Future<VarStatus?> writeAs<V>(VarKey<dynamic> key, V value) async {
     cache[key]?.updateByViewAs<V>(value);
     return write(key);
   }
@@ -131,8 +131,8 @@ class VarCacheController {
 //
 // if an entry is removed from the cache map, listener will still exist synced with previously allocated Var.
 // it will no longer be updated by Streams.
-class VarRealTimeController extends VarCacheController {
-  VarRealTimeController({required super.cache, required super.protocolService});
+class VarStreamController extends VarCacheController {
+  VarStreamController({required super.cache, required super.protocolService});
 
   Stream<ServiceGetSlice<int, int>> get _readStream => protocolService.pollFlex(_readKeysGetter);
   Stream<ServiceSetSlice<int, int, int>> get _writeStream => protocolService.push(_writePairsGetter);

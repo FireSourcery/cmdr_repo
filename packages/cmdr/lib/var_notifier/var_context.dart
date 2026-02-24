@@ -34,14 +34,14 @@ abstract class VarContext extends InheritedWidget {
   bool updateShouldNotify(covariant VarContext oldWidget) => repo != oldWidget.repo;
 }
 
-/// additional sub type containing [VarRealTimeController]
+/// additional sub type containing [VarStreamController]
 class VarRealTimeContext extends VarContext {
-  const VarRealTimeContext({super.key, required VarRealTimeController super.repo, required super.child});
+  const VarRealTimeContext({super.key, required VarStreamController super.repo, required super.child});
 
   // static T of<T extends VarRealTimeContext>(BuildContext context) => VarContext.of<T>(context);
 
   @override
-  VarRealTimeController get repo => super.repo as VarRealTimeController;
+  VarStreamController get repo => super.repo as VarStreamController;
 }
 
 /// Maps VarKey to VarController or sub-VarContext which contains VarCacheController

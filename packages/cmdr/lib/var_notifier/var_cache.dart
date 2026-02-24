@@ -10,7 +10,6 @@ part of 'var_notifier.dart';
 ///
 /// ServiceIO can mixin to this module, still both derive from the same context
 ////////////////////////////////////////////////////////////////////////////////
-// class VarCache<K extends VarKey,  VarNotifier<V>> implements Map<K, V> {
 class VarCache {
   VarCache() : _cache = {};
 

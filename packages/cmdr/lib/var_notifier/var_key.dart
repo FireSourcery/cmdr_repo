@@ -4,9 +4,7 @@ part of 'var_notifier.dart';
 /// immutable properties of a VarNotifier
 /// == and hash from ValueKey
 @immutable
-abstract mixin class VarKey implements ValueKey<int> {
-  // abstract mixin class VarKey<V> implements ValueKey<int> {
-  // TypeKey<V> get viewType;
+abstract mixin class VarKey<V> implements ValueKey<int> {
   const VarKey();
 
   @override
@@ -14,10 +12,10 @@ abstract mixin class VarKey implements ValueKey<int> {
   int get id => value;
 
   // the varNotifier type parameter
-  TypeKey<dynamic> get viewType; // binaryFormat!.viewType; // override if binaryFormat is null
-  // BinaryFormat? get binaryFormat; // can depreciate
+  TypeKey<V> get viewType;
 
-  // VarViewer<dynamic>? get viewer; // null for int
+  // BinaryFormat? get binaryFormat; // can depreciate
+  // VarViewer<V>? get viewer; // null for int
 
   /// Data numeric conversion
   BinaryUnionCodec<R>? buildViewer<R>(); // null for int
@@ -30,15 +28,15 @@ abstract mixin class VarKey implements ValueKey<int> {
   bool get isPolling; // polling, all readable. Processed by read stream
   bool get isPushing; // pushing, selected writable, other writable updated on change, processed by write stream
 
+  VarReadWriteAccess get access;
   bool get isReadOnly; // isPushing == false
   bool get isWriteOnly;
-  // VarReadWriteAccess get access;
 
   List<VarKey>? get dependents;
 
   /// Text View Widgets properties
   // value stringifier
-  String stringify<V>(V value);
+  String stringify<V1>(V1 value);
   // String stringify<V>(V? value);
 
   int? get valueStringDigits;
@@ -135,10 +133,8 @@ enum VarStatusUnknown with VarStatus, VarEnumStatus {
 
   @override
   int get code => -1;
-
   @override
   bool get isError => true;
-
   @override
   bool get isSuccess => false;
 }
