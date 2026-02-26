@@ -18,8 +18,8 @@ export 'index_map.dart';
 ///
 // extend to fill class variables.
 // Field may use a type parameter other than V, used to determine the value of V
-abstract mixin class _Structure<K extends Field, V> /* implements  FixedMap<K, V>  */ {
-  const _Structure();
+abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>  */ {
+  const Structure();
 
   // Map
 
@@ -84,32 +84,32 @@ abstract mixin class _Structure<K extends Field, V> /* implements  FixedMap<K, V
   // Structure<K, V> copyWith() /// override in child class, using index map by default
 
 // overwrite copyWith to cast after buffered build, or leave abstract.
+  Structure<K, V> withFields(Structure<K, V?> fields) {
+    // return StructMap.ofMap({for (var key in keys) key: fields.field(key) ?? field(key)} as FixedMap<K, V?>);
+    return StructMap<K, V>(this)
+      ..forEach((key, value) {
+        if (fields[key] case V newValue) this[key] = newValue;
+      });
+  }
+
+  /// Returns a copy of this structure with non-null fields from [fields] applied.
+  /// Overwrite [copyWith] in [StructAsSubtype] to return the concrete subtype.
   // Structure<K, V> withFields(Structure<K, V?> fields) {
-  //   // return StructMap.ofMap({for (var key in keys) key: fields.field(key) ?? field(key)} as FixedMap<K, V?>);
-  //   return StructMap<K, V>(this)
-  //     ..forEach((key, value) {
-  //       if (fields[key] case V newValue) this[key] = newValue;
-  //     });
+  //   final copy = StructMap<K, V>(this);
+  //   for (final key in keys) {
+  //     if (fields[key] case final V newValue) copy[key] = newValue;
+  //   }
+  //   return copy;
   // }
 
-  // /// Returns a copy of this structure with non-null fields from [fields] applied.
-  // /// Overwrite [copyWith] in [StructAsSubtype] to return the concrete subtype.
-  // // Structure<K, V> withFields(Structure<K, V?> fields) {
-  // //   final copy = StructMap<K, V>(this);
-  // //   for (final key in keys) {
-  // //     if (fields[key] case final V newValue) copy[key] = newValue;
-  // //   }
-  // //   return copy;
-  // // }
-
-  // // user may overwrite once a subclass constructor is defined
-  // // immutable `with` copy operations, via IndexMap
-  // // analogous to operator []=, but returns a new instance
-  // Structure<K, V> withField(K key, V value) => StructMap<K, V>(this)..[key] = value;
-  // //
-  // Structure<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => StructMap<K, V>(this)..addEntries(newEntries);
-  // // A general values map representing external input, may be a partial map
-  // Structure<K, V> withMap(Map<K, V> map) => StructMap<K, V>(this)..addAll(map);
+  // user may overwrite once a subclass constructor is defined
+  // immutable `with` copy operations, via IndexMap
+  // analogous to operator []=, but returns a new instance
+  Structure<K, V> withField(K key, V value) => StructMap<K, V>(this)..[key] = value;
+  //
+  Structure<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => StructMap<K, V>(this)..addEntries(newEntries);
+  // A general values map representing external input, may be a partial map
+  Structure<K, V> withMap(Map<K, V> map) => StructMap<K, V>(this)..addAll(map);
 
   // @mustBeOverridden
   // S copyWithBase([Structure<K, Object?>? fields]);
@@ -141,9 +141,9 @@ abstract mixin class _Structure<K extends Field, V> /* implements  FixedMap<K, V
   String toString() => '{${keys.map((k) => '$k: ${this[k]}').join(', ')}}';
 }
 
-abstract class Structure<S extends Structure<S, K>, K extends Field> extends _Structure<K, Object?> {
-  const Structure();
-}
+// abstract class Structure<S extends Structure<S, K>, K extends Field> extends _Structure<K, Object?> {
+//   const Structure();
+// }
 
 /// [Field] - key to a value in a [StructView], with type
 /// although implementation of operators may be preferable in the containing class with full context of relationships between fields
