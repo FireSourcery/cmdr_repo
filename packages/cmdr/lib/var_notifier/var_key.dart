@@ -29,8 +29,9 @@ abstract mixin class VarKey<V> implements ValueKey<int> {
   bool get isPushing; // pushing, selected writable, other writable updated on change, processed by write stream
 
   VarReadWriteAccess get access;
-  bool get isReadOnly; // isPushing == false
-  bool get isWriteOnly;
+  bool get isReadOnly => (access == VarReadWriteAccess.readOnly);
+  bool get isWriteOnly => (access == VarReadWriteAccess.writeOnly);
+  bool get isReadWrite => (access == VarReadWriteAccess.readWrite);
 
   List<VarKey>? get dependents;
 
@@ -74,9 +75,6 @@ enum VarReadWriteAccess {
 
   bool get isWritable => this != readOnly;
   bool get isReadable => this != writeOnly;
-
-  bool get isReadOnly => this == readOnly;
-  bool get isWriteOnly => this == writeOnly;
 }
 
 /// [VarStatus]

@@ -15,7 +15,7 @@ export 'typed_data_buffer.dart';
 ///   mixin keyed access for serialization map
 ///
 /// Wrapper over extension type. see [Structure]
-abstract mixin class ByteStruct<K extends ByteField<NativeType>> implements Structure<K, int> {
+abstract mixin class ByteStruct<K extends ByteField<NativeType>> /* implements Structure<K, int>  */ {
   const ByteStruct();
   //  factory _ByteStruct._(this.structData);
   //  factory _ByteStruct.origin(ByteBuffer bytesBuffer, [int offset = 0, int? length]) : structData = ByteStruct(bytesBuffer.asByteData(offset, length));
