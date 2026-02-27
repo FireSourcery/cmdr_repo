@@ -155,6 +155,13 @@ final class BinaryCodecImpl<V> implements BinaryCodec<V> {
   int encode(V view) => encoder(view);
 }
 
+abstract interface class BinaryFractionCodec<V> {
+  BinaryFormat get format;
+
+  V decode(int data);
+  int encode(V view);
+}
+
 // abstract mixin class BinaryNumCodecBase<V extends num> implements BinaryCodec<V> {
 //   ({V min, V max})? get numLimits;
 //   int signedOf(int binary); // int64Of

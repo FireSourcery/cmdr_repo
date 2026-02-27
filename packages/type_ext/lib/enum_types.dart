@@ -40,6 +40,14 @@ enum EnumUnknown { unknown }
 //   //   return {for (var list in valuesUnion) list.first.runtimeType: valuesUnion.map((list) => list.asMap())};
 //   // }
 // }
+// inherits
+//  T byName(String name)
+//  Map<String, T> asNameMap()
+// extension type const EnumType<T extends Enum>(List<T> enums) implements List<T>, EnumMapFactory<T> {
+//   EnumCodec<T> get codec => EnumCodec.of(enums);
+//   EnumCodec<T?> get nullableCodec => EnumCodec.nullable(enums);
+//   EnumCodec<Enum> get baseCodec => EnumCodec.base(enums);
+// }
 
 abstract mixin class Sign<T extends Sign<T>> implements Enum {
   static const _zeroIndex = 1;
@@ -47,7 +55,7 @@ abstract mixin class Sign<T extends Sign<T>> implements Enum {
   int get value => index - _zeroIndex;
 
 // assert(T==dynamic)
-  factory Sign.of(int value) => SignId.of(value) as Sign<T>;
+  // factory Sign.of(int value) => SignId.of(value) as Sign<T>;
 }
 
 enum SignId with Sign<SignId> {
@@ -58,70 +66,61 @@ enum SignId with Sign<SignId> {
   factory SignId.of(int value) => SignId.values[value + 1];
 }
 
-// extension type const OffsetEnumType<T extends Enum>((List<T> enums, int zeroIndex) _) {
-//   // const OffsetEnumType ( List<T> enums, int zeroIndex ) : _ = (enums, zeroIndex);
-//   T factory(int value) => _.$1.elementAt(value - _.$2);
-//   int value(T e) => e.index + _.$2;
-//   int call(T e) => e.index + _.$2;
-// }
+abstract interface class EnumCodec<V extends Enum> /* implements Codec<V> */ {
+  //  final List<V> list;
+  @override
+  V decode(int data);
+  @override
+  int encode(V view);
+}
 
-// enum SignId1 {
-//   negative, // -1
-//   none, //  0
-//   forward; //  1
+class EnumCodecSign<V extends Sign<V>> implements EnumCodec<V> {
+  const EnumCodecSign(this.list, [this.zeroIndex = 1]);
 
-//   factory SignId1.of(int value) => const OffsetEnumType((SignId1.values, 1)).factory(value);
-//   get value => const OffsetEnumType((SignId1.values, 1))(this);
-// }
+  final List<V> list;
+  final int zeroIndex;
 
-// inherits
-//  T byName(String name)
-//  Map<String, T> asNameMap()
-// extension type const EnumType<T extends Enum>(List<T> enums) implements List<T>, EnumMapFactory<T> {
-//   EnumCodec<T> get codec => EnumCodec.of(enums);
-//   EnumCodec<T?> get nullableCodec => EnumCodec.nullable(enums);
-//   EnumCodec<Enum> get baseCodec => EnumCodec.base(enums);
-// }
+  @override
+  V decode(int data) => switch (data) {
+        -1 => list[0], // negative
+        0 => list[1], // none
+        1 => list[2], // forward
+        _ => throw ArgumentError('Invalid sign value: $data'),
+      };
+  @override
+  int encode(V view) => view.value;
 
-// class EnumCodec<V extends Enum> /* implements Codec<V> */ {
-//   /// Enum subtype, in case a value other than enum.index is selected
-//   const EnumCodec({required this.decoder, required this.encoder, required this.enumRange});
+  // asStatelessCodec() => StatelessCodec<V>(decode, encode);
+}
 
-//   /// [byIndex] returns first on out of range input
-//   EnumCodec.of(this.enumRange)
-//       : decoder = enumRange.byIndex,
-//         encoder = _defaultEnumEncoder;
+class EnumCodecOffset<V extends Enum> implements EnumCodec<V> {
+  const EnumCodecOffset(this.list, this.zeroIndex);
 
-//   /// [byIndexOrNull] returns null on out of range input
-//   EnumCodec.nullable(this.enumRange)
-//       : assert(null is V),
-//         decoder = enumRange.elementAtOrNull,
-//         encoder = _defaultEnumEncoder;
+  final List<V> list;
+  final int zeroIndex;
 
-//   /// throw if V is not exactly type Enum, returns non-nullable Enum
-//   EnumCodec.base(this.enumRange)
-//       : assert(V == Enum),
-//         decoder = enumRange.resolveAsBase,
-//         encoder = _defaultEnumEncoder;
+  @override
+  V decode(int data) => list.elementAtOrNull(data - zeroIndex) ?? (throw ArgumentError('Invalid enum value: $data'));
+  @override
+  int encode(V view) => view.index + zeroIndex;
 
-//   static int _defaultEnumEncoder(Enum view) => view.index;
+  // asStatelessCodec() => StatelessCodec<V>(decode, encode);
+}
 
-//   @override
-//   V decode(int data) => decoder.call(data);
-//   @override
-//   int encode(V view) => encoder.call(view);
-// }
+//by index
+class EnumCodecDefault<V extends Enum> implements EnumCodec<V> {
+  const EnumCodecDefault(this.list, [this.defaultValue]);
 
-// class EnumCodecDefault<V extends Enum> /* implements Codec<V> */ {
-//   const EnumCodecDefault(this.list, [this.defaultValue]);
+  final List<V> list;
+  final V? defaultValue;
 
-//   final List<V> list;
-//   final V? defaultValue;
-//   @override
-//   V decode(int data) => list.byIndex(data, defaultValue);
-//   @override
-//   int encode(V view) => view.index;
-// }
+  @override
+  V decode(int data) => list.byIndex(data, defaultValue);
+  @override
+  int encode(V view) => view.index;
+
+  // asStatelessCodec() => StatelessCodec<V>(decode, encode);
+}
 
 // class EnumUnionCodecDefault {
 //   const EnumUnionCodecDefault(this.switcher);
