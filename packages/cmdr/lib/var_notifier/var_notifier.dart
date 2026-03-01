@@ -31,20 +31,20 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
     this.codec = codec ?? varKey.buildViewer();
   }
 
-  // withType
   VarNotifier.ofKey(this.varKey) {
     initReferences();
   }
 
-  // derive type from [VarKey]
   factory VarNotifier.of(VarKey<V> varKey) {
-    // if (V == dynamic) {
-    // return varKey.viewType(<G>() => VarNotifier<G>.ofKey(varKey as VarKey<G>) as VarNotifier<V>);
-    //allow dynamic key to create typed notifier need varKey be cast matching
-    // } else {
     return VarNotifier<V>.ofKey(varKey);
-    // }
   }
+  // // derive type from [VarKey]
+  //   // if (V == dynamic) {
+  //   // return varKey.viewType(<G>() => VarNotifier<G>.ofKey(varKey as VarKey<G>) as VarNotifier<V>);
+  //   //allow dynamic key to create typed notifier need varKey be cast matching
+  //   // } else {
+  //   return VarNotifier<V>.ofKey(varKey);
+  //   // }
 
   final VarKey<V> varKey;
   late final int dataKey = varKey.value; // compute once and cache
@@ -99,10 +99,6 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
   ({num min, num max})? get numLimits => unionCodec?.numLimits; // must be null for non-num types
   List<Enum>? get enumRange => unionCodec?.enumRange; // EnumSubtype.values must be non-null for Enum types
   List<BitField>? get bitsKeys => unionCodec?.bitsKeys;
-
-  ////////////////////////////////////////////////////////////////////////////////
-  /// Proxy with different view conversion
-  // VarNotifier<R> proxyWith<R>({required BinaryUnionCodec<R> codec}) => VarProxyNotifier<R>(this, codec: codec);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Json
@@ -161,8 +157,6 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
     notifyListeners();
   }
 
-  // V get viewValue => view;
-
   // by user for output
   void updateByView(V newValue) => value = newValue;
 
@@ -204,12 +198,6 @@ extension VarValueNotifierExtensions<V> on VarValueNotifier<V> {
   void _setValue(V newValue) => value = newValue;
   ValueGetter<V> get valueGetter => _getValue;
   ValueSetter<V> get valueSetter => _setValue;
-
-  // with known case
-  // V1 _getValue<V1>() => value as V1;
-  // void _setValue<V1>(V1 newValue) => value = newValue as V;
-  // ValueGetter<V> get valueGetter => _getValue;
-  // ValueSetter<V> get valueSetter => _setValue;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -283,7 +271,6 @@ abstract mixin class VarStatusNotifier implements ChangeNotifier {
 //   not triggered by value changes
 //   Listeners to the VarNotifier value on another UI component will not be notified of submit
 //////////////////////////////////////////////////////////////////////////////
-// class VarEventNotifier<V> extends VarNotifier<V> { over valueGetter for simplicity
 class VarEventNotifier<V> extends ChangeNotifier {
   VarEventNotifier({required this.varNotifier, required this.onSubmit});
   final VarNotifier<V> varNotifier; // typed by Key. returning as dynamic.

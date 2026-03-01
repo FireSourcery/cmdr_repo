@@ -74,12 +74,3 @@ extension BitsEntrysMethods on Iterable<MapEntry<BitField, int>> {
 extension BitIndexKeysMethods on Iterable<BitIndexField> {
   int get totalWidth => length;
 }
-
-// alternatively derive at runtime from only width defined at compile time
-// abstract mixin class EnumBitField implements BitField, Enum {
-//   int get width; 
-//   int get index; 
-//   List<BitField> get bitFields; // Enum.values
-//   Bitmasks get bitmasks =>  bitFields.map((e) => Bitmask.bits(e.index, e. width)); 
-//   Bitmask get bitmask => bitmasks.take(index).sum, width ;
-// }

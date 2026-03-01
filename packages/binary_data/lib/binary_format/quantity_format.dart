@@ -15,14 +15,12 @@ class BinaryQuantityCodec<V extends num> implements BinaryCodec<V> {
   // NumConversion override
   BinaryQuantityCodec.of(this.format, {NumDataConversion? conversion, this.numLimits})
     : numConversion = switch (format) {
-        IntFormat() => _disabled,
+        IntFormat() => _disabled, // enlarged int treat as fract for now.
         FractFormat() => conversion ?? _disabled,
         Adcu() => conversion ?? _disabled,
       };
 
   // BinaryQuantityCodec.linear(this.format, num unitRef, {this.numLimits}) : numConversion = NumLinearConversion(unitRef / format.reference).conversion ?? _disabled;
-
-  //alternatively wrap format with numeric only conversion
 
   final NumFormat<dynamic, V> format;
   final NumDataConversion numConversion;
@@ -35,7 +33,7 @@ class BinaryQuantityCodec<V extends num> implements BinaryCodec<V> {
   @override
   int encode(V view) => numConversion.dataOfView(_clamp(view));
 
-  //alternatively
+  //alternatively wrap format with numeric only conversion
   // V decode(int data) => numConversion.of(format.decode(data)).to<V>();
 
   /// disabled conversion, direct data to view mapping

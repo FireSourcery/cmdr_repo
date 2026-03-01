@@ -163,30 +163,6 @@ abstract base class ConstBitStruct<K extends BitField> extends BitStruct<K> {
   set bits(Bits value) => throw UnsupportedError('Cannot modify unmodifiable');
 }
 
-/// alternatively, wrap for combined const and mutable, allow BitsInitializer as common interfacce
-// abstract class BitStructBase1<K extends BitField> extends BitsBase with MapBase<K, int>, BitFieldMap<K>, BitStruct<K> implements BitStruct<K> {
-//   const BitStructBase1(this.bitData);
-//   const BitStructBase1.initalizer(BitsInitializer this.bitData);
-
-//   BitStructBase1.mutable(Bits bits) : bitData = MutableBits(bits);
-
-//   Iterable<K> get keys;
-//   final BitsBase bitData;
-
-//   @override
-//   Bits get bits => bitData.bits;
-//   @override
-//   set bits(Bits value) => bitData.bits = value;
-// }
-
-// class BitStructBaseTest<K extends BitField> extends BitStructBase1<K> {
-//   const BitStructBaseTest.init(BitsInitializer super.bitData);
-//   const BitStructBaseTest(super.bits);
-
-//   @override
-//   Iterable<K> get keys => [];
-// }
-
 // const BitStructBaseTest<BitField> empty = BitStructBaseTest<BitField>(ConstBits(1 as Bits));
 
 /// [BitsInitializer]
@@ -281,56 +257,4 @@ base class _BitStruct<K extends BitField> extends ConstBitStruct<K> {
 //   List<K> get keys;
 //   S cast(BitsBase base);
 //   // S createBuffer([Bits initialValue = const Bits.allZeros()]) => constructor(initialValue);
-// }
-
-////////////////////////////////////////////////////////////////////////////////
-/// Buffer with all interfaces, factory, return as subtype
-/// prototype object which can return a subtype
-///
-/// keys with buffer
-/// extends for mutiple view types
-///
-/// passing keys
-/// castBase returning S
-// optionally as const object or as typed buffer
-////////////////////////////////////////////////////////////////////////////////
-// class BitConstruct<S extends BitStruct<K>, K extends BitField> with BitsBase, MapBase<K, int>, BitFieldMap<K>, BitStruct<K> implements BitStruct<K> {
-//   const BitConstruct({required this.keys, required this.constructor, required this.buffer});
-
-//   BitConstruct.withConstructor(this.constructor, [Bits initialValue = const Bits.allZeros()]) : keys = constructor(initialValue).keys, buffer = constructor(initialValue);
-
-//   BitConstruct.withPrototype(S prototype) : keys = prototype.keys, buffer = prototype, constructor = prototype.copyWithBits as S Function(Bits);
-
-//   // S is dynamic or BitStruct<K>, return base type
-//   // BitConstruct.generic(this.keys, this.bits) : constructor = ((Bits bits) => BitStruct<K>.view(const [], bits) as S);
-
-//   @override
-//   final Iterable<K> keys;
-//   final S Function(Bits) constructor; // final S Function(BitsBase) caster;
-//   final BitsBase buffer; // may be shared
-
-//   @override
-//   Bits get bits => buffer.bits;
-//   @override
-//   set bits(Bits value) => buffer.bits = value; // mutable if base is mutable
-
-//   S createBuffer() {
-//     return constructor(bits);
-//     // return caster(MutableBits(bits)) ;
-//   }
-
-//   S castView(BitsBase base) => constructor(base.bits);
-
-//   @override
-//   S copyWithBits(Bits value) => constructor(value);
-
-//   // @override
-//   // BitConstruct<S, K> copyWith() => BitConstruct<S, K>(keys, bits);
-
-//   // @override
-//   // S withField(K key, int value) => copyWithBits(bits.withBits(key.bitmask, value));
-//   // @override
-//   // BitConstruct<S, K> withEntries(Iterable<MapEntry<K, int>> entries) =>
-//   // @override
-//   // BitConstruct<S, K> withAll(Map<K, int> map) =>
 // }

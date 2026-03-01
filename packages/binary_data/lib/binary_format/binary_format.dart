@@ -46,6 +46,7 @@ mixin class NativeTypeFormat<S extends NativeType> {
   // static const NativeTypeFormat<Uint8> uint8 = NativeTypeFormat<Uint8>();
 }
 
+/// Serialization and storage on base [int] type
 /// S handle sign extension. V handle base value conversion
 sealed class BinaryFormat<S extends NativeType, V> with NativeTypeFormat<S> implements BinaryCodec<V> {
   const BinaryFormat();
@@ -53,6 +54,7 @@ sealed class BinaryFormat<S extends NativeType, V> with NativeTypeFormat<S> impl
   // NativeTypeFormat<S> get baseType => NativeTypeFormat<S>();
 
   TypeKey<V> get viewType => TypeKey<V>();
+
   ({int min, int max}) get binaryRange => range; //accepted range
 
   int encode(V value);
@@ -86,7 +88,7 @@ sealed class BinaryFormat<S extends NativeType, V> with NativeTypeFormat<S> impl
 /// Int/Fract
 sealed class NumFormat<S extends NativeType, V extends num> extends BinaryFormat<S, V> {
   const NumFormat();
-  num get formatScalar;
+  // num get formatScalar;
   ({num min, num max}) get valueRange => range;
 
   int signedOf(int raw) => signExtension?.call(raw) ?? raw;
@@ -138,7 +140,7 @@ abstract class FractFormat<S extends NativeType> extends NumFormat<S, double> {
 
 abstract class IntFormat<S extends NativeType> extends NumFormat<S, int> {
   const IntFormat();
-  get formatScalar => 1;
+  // get formatScalar => 1;
   int decode(int raw) => signedOf(raw);
   int encode(int value) => value.clamp(binaryRange.min, binaryRange.max);
 }
@@ -410,55 +412,4 @@ abstract final class BinaryFormats {
 
 //   @override
 //   String toString() => 'BinaryCodec<${format.runtimeType}>(endian: $endian)';
-// }
-// abstract class _BoolFormat extends BinaryFormat<Bool, bool> {
-//   const _BoolFormat();
-//   get baseRange => (min: 0, max: 1);
-//   bool decode(int raw) => raw != 0;
-//   int encode(bool value) => value ? 1 : 0;
-// }
-
-// abstract class _SignFormat extends BinaryFormat<Int, int> {
-//   const _SignFormat();
-//   get baseRange => (min: -1, max: 1);
-//   int decode(int raw) => raw.toSigned(8);
-//   int encode(int value) => value.isNegative ? -1 : 1;
-// }
-
-// abstract class _EnumFormat<V extends Enum> extends BinaryFormat<Int, V> {
-//   const _EnumFormat();
-//   List<V> get values;
-//   get baseRange => (min: 0, max: values.length - 1);
-//   V decode(int raw) => values[raw.clamp(baseRange.min, baseRange.max)];
-//   int encode(V value) => value.index;
-// }
-
-/// NumFormat Mixins
-// mixin FractFormat<S extends NativeType> on NumFormat<S, double> {
-//   num get reference;
-//   get valueRange => (min: baseRange.min / reference, max: baseRange.max / reference);
-//   double decode(int raw) => signedOf(raw) / reference;
-//   int encode(double value) => (value * reference).round().clamp(baseRange.min, baseRange.max);
-// }
-// mixin IntFormat<S extends NativeType> on NumFormat<S, int> {
-//   get reference => 1;
-//   int decode(int raw) => signedOf(raw);
-//   int encode(int value) => value.clamp(baseRange.min, baseRange.max);
-// }
-
-// mixin FixedPoint<S extends NativeType> on FractFormat<S> {
-//   int get fractBits;
-//   num get reference => (1 << fractBits);
-// }
-
-// mixin ScalarBase10<S extends NativeType> on FractFormat<S> {
-//   num get reference;
-// }
-
-// mixin _Angle16 on NumFormat<Uint16, double> {
-//   double get fullScale;
-//   num get reference => 65536;
-//   get valueRange => (min: 0.0, max: fullScale);
-//   double decode(int raw) => raw * fullScale / reference;
-//   int encode(double value) => ((value % fullScale) * reference ~/ fullScale);
 // }

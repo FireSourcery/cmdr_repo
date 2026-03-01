@@ -5,11 +5,10 @@ import '../bytes/byte_struct.dart';
 import '../data/basic_ext.dart';
 export '../bytes/byte_struct.dart';
 
-/// Collective def of Packet format specs. 'Class variables'
+/// Collective def of Packet format. Descriptor/'Class variables'
 // Abstract factory pattern
 // effectively Packet `subtype` encapsulated
-// values available without a Packet instance, over prototype object
-// abstract mixin class PacketClass<T extends Packet> implements ByteStruct <T, ByteField>  {
+// values available without a Packet instance  {
 abstract interface class PacketClass<T extends Packet> {
   // 'Packet' factory / subtype constructor
   TypedDataCaster<T> get caster;

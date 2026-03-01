@@ -35,6 +35,8 @@ abstract mixin class ByteStruct<K extends ByteField<NativeType>> /* implements S
 
   int get length => byteData.lengthInBytes;
 
+  int operator [](covariant K key) => key.getIn(byteData);
+  void operator []=(covariant K key, int value) => key.setIn(byteData, value);
   // dynamic buildAs<V>(V values);
   // V parseAs<V>( );
 
