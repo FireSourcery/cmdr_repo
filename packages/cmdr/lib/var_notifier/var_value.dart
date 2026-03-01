@@ -143,6 +143,7 @@ mixin class VarValue<V> {
           const (Enum) => valueAsEnum,
           const (BitStruct) => valueAsBitFields,
           const (String) => valueAsString,
+          _ when (TypeKey<R>().isSubtype<Enum>()) => valueAsEnum as R, // match by TypeKey can be subtype, but requires type registration for unions
           _ => throw UnsupportedError('Unsupported type: $R'),
         }
         as R;

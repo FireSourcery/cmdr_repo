@@ -18,6 +18,8 @@ abstract mixin class VarKey<V> implements ValueKey<int> {
   BinaryCodec<V> buildViewer();
   NumUnionCodec? buildUnionViewer();
 
+  VarNotifier<V> create() => VarNotifier<V>.ofKey(this);
+
   // optionally override with subtype
   VarStatus varStatusOf(int code); // should only be one. instances shared
 

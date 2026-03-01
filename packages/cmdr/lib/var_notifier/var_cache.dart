@@ -14,12 +14,10 @@ class VarCache {
   VarCache() : _cache = {};
 
   // stores key in value when using dynamically generated iterable
-  VarCache.preallocate(Iterable<VarKey> varKeys) : _cache = {for (final varKey in varKeys) varKey.value: VarNotifier.of(varKey)};
+  // VarCache.preallocate(Iterable<VarKey> varKeys) : _cache = {for (final varKey in varKeys) varKey.value: varKey.viewType(<G>() => VarNotifier<G>.of(varKey as VarKey<G>))};
+  VarCache.preallocate(Iterable<VarKey> varKeys) : _cache = {for (final varKey in varKeys) varKey.value: varKey.create()};
 
-  VarCache.fixed(Iterable<VarKey> varKeys) : _cache = Map.unmodifiable({for (final varKey in varKeys) varKey.value: VarNotifier.of(varKey)});
-
-  // notifiers are of a subtype
-  // VarCache.subtype(Iterable<VarKey> varKeys, VarNotifier Function(VarKey) constructor) : _cache = {for (final varKey in varKeys) varKey.value: constructor(varKey)};
+  // VarCache.fixed(Iterable<VarKey> varKeys) : _cache = Map.unmodifiable({for (final varKey in varKeys) varKey.value: VarNotifier.of(varKey)});
 
   /// "It is generally not allowed to modify the map (add or remove keys) while
   /// an operation is being performed on the map."
@@ -43,20 +41,18 @@ class VarCache {
   // final ValueNotifier _eventNotifier = ValueNotifier(null);
   // ValueListenable get eventNotifier => _eventNotifier; // for listeners to subscribe to events
 
-  VarNotifier<V> constructor<V>(covariant VarKey<V> varKey) => VarNotifier<V>.of(varKey);
-
   /// Maps VarKey to VarNotifier
   /// `allocate` the same VarNotifier storage if found. `create if not found`
   ///
   VarNotifier<V> resolve<V>(VarKey<V> varKey) {
     if (_cache is UnmodifiableMapView) return this[varKey]! as VarNotifier<V>; // fixed, throw if not found
-    return _cache.putIfAbsent(varKey.value, () => constructor<V>(varKey)) as VarNotifier<V>;
+    return _cache.putIfAbsent(varKey.value, () => varKey.create()) as VarNotifier<V>;
   }
 
   VarNotifier<V> allocate<V>(VarKey<V> varKey) {
-    // if (_cache is UnmodifiableMapView) return this[varKey] ?? constructor(varKey); // unmapped instance or throw
     // if (lengthMax case int max when _cache.length >= max) _cache.remove(_cache.entries.first.key)?.dispose();
-    return _cache.putIfAbsent(varKey.value, () => constructor<V>(varKey)) as VarNotifier<V>;
+    // return _cache.putIfAbsent(varKey.value, () => constructor<V>(varKey)) as VarNotifier<V>;
+    return _cache.putIfAbsent(varKey.value, () => varKey.create()) as VarNotifier<V>;
   }
 
   /// current listeners would need to reattach to the new VarNotifier
