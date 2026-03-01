@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'package:type_ext/basic_types.dart';
+import 'package:binary_data/data/basic_types.dart';
 import 'package:cmdr/var_notifier/widgets/var_menu.dart';
 
+import '../../interfaces/stringifier.dart';
 import '../../widgets/flyweight_menu/flyweight_menu.dart';
 import '../../widgets/flyweight_menu/flyweight_menu_widgets.dart';
 import '../../widgets/io_field/io_field.dart';
@@ -193,8 +194,8 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   @override
   Listenable get valueListenable => varNotifier;
   @override
-  // ValueGetter<V> get valueGetter => varNotifier.valueAs<V>;
-  ValueGetter<V> get valueGetter => varNotifier.valueGetter as ValueGetter<V>;
+  ValueGetter<V> get valueGetter => varNotifier.valueAs<V>;
+  // ValueGetter<V> get valueGetter => varNotifier.cast<V>().valueGetter as ValueGetter<V>;
   @override
   ValueGetter<String> get valueStringGetter => varNotifier.valueStringAs<V>;
   @override

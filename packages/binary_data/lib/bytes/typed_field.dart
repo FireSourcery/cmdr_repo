@@ -56,12 +56,9 @@ abstract mixin class TypedField<T extends NativeType> {
 ////////////////////////////////////////////////////////////////////////////////
 int _sizeOf<T extends NativeType>() {
   return switch (T) {
-    const (Int8) => 1,
-    const (Int16) => 2,
-    const (Int32) => 4,
-    const (Uint8) => 1,
-    const (Uint16) => 2,
-    const (Uint32) => 4,
+    const (Int8) || const (Uint8) => 1,
+    const (Int16) || const (Uint16) => 2,
+    const (Int32) || const (Uint32) => 4,
     _ => throw UnimplementedError(),
   };
 }

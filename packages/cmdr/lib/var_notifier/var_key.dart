@@ -14,11 +14,9 @@ abstract mixin class VarKey<V> implements ValueKey<int> {
   // the varNotifier type parameter
   TypeKey<V> get viewType;
 
-  // BinaryFormat? get binaryFormat; // can depreciate
-  // VarViewer<V>? get viewer; // null for int
-
   /// Data numeric conversion
-  BinaryUnionCodec<R>? buildViewer<R>(); // null for int
+  BinaryCodec<V> buildViewer();
+  NumUnionCodec? buildUnionViewer();
 
   // optionally override with subtype
   VarStatus varStatusOf(int code); // should only be one. instances shared
@@ -38,7 +36,6 @@ abstract mixin class VarKey<V> implements ValueKey<int> {
   /// Text View Widgets properties
   // value stringifier
   String stringify<V1>(V1 value);
-  // String stringify<V>(V? value);
 
   int? get valueStringDigits;
 

@@ -36,7 +36,6 @@ class VarCache {
   // <int, VarNotifier> allows direct access by updateByData
   final Map<int, VarNotifier> _cache; // map key to entire state containing the key
   // final int? lengthMax;
-  // final VarNotifier? undefined;
 
   // final Map<VarKey, ValueSetter<VarCache>>? onUpdate; // (onUpdate callbacks for dependent keys, if any)
   // final Map<VarKey, ValueSetter<Iterable<VarNotifier>>>? onUpdate; // (onUpdate callbacks for dependent keys, if any)
@@ -44,30 +43,29 @@ class VarCache {
   // final ValueNotifier _eventNotifier = ValueNotifier(null);
   // ValueListenable get eventNotifier => _eventNotifier; // for listeners to subscribe to events
 
-  // override for subtype
-  VarNotifier<dynamic> constructor(covariant VarKey varKey) => VarNotifier.of(varKey);
+  VarNotifier<V> constructor<V>(covariant VarKey<V> varKey) => VarNotifier<V>.of(varKey);
 
   /// Maps VarKey to VarNotifier
   /// `allocate` the same VarNotifier storage if found. `create if not found`
   ///
-  VarNotifier resolve(VarKey varKey) {
-    if (_cache is UnmodifiableMapView) return this[varKey]!; // fixed, throw if not found
-    return _cache.putIfAbsent(varKey.value, () => constructor(varKey));
+  VarNotifier<V> resolve<V>(VarKey<V> varKey) {
+    if (_cache is UnmodifiableMapView) return this[varKey]! as VarNotifier<V>; // fixed, throw if not found
+    return _cache.putIfAbsent(varKey.value, () => constructor<V>(varKey)) as VarNotifier<V>;
   }
 
-  VarNotifier allocate(VarKey varKey) {
+  VarNotifier<V> allocate<V>(VarKey<V> varKey) {
     // if (_cache is UnmodifiableMapView) return this[varKey] ?? constructor(varKey); // unmapped instance or throw
     // if (lengthMax case int max when _cache.length >= max) _cache.remove(_cache.entries.first.key)?.dispose();
-    return _cache.putIfAbsent(varKey.value, () => constructor(varKey));
+    return _cache.putIfAbsent(varKey.value, () => constructor<V>(varKey)) as VarNotifier<V>;
   }
 
   /// current listeners would need to reattach to the new VarNotifier
-  VarNotifier reallocate(VarKey varKey) {
-    return _cache.update(varKey.value, (value) {
-      value.dispose(); // remove listeners
-      return constructor(varKey);
-    });
-  }
+  // VarNotifier reallocate(VarKey varKey) {
+  //   return _cache.update(varKey.value, (value) {
+  //     value.dispose(); // remove listeners
+  //     return constructor(varKey);
+  //   });
+  // }
 
   // in preallocated case, where size is not constrained. deallocate and replace is not necessary
   // remove viewer

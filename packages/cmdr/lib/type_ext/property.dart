@@ -1,10 +1,11 @@
-import 'basic_types.dart';
-
 /// [PropertyFilter]
 // filterable property
 // encapsulated for selection
 // implements Enum for List
 // PropertyOf<T>
+///
+typedef ValueTest<T> = bool Function(T input);
+
 abstract mixin class PropertyFilter<T> {
   const PropertyFilter();
 

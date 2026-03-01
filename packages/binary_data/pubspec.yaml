@@ -1,5 +1,5 @@
 name: binary_data
-description: "Bitwise operations and binary data manipulation utilities."
+description: "Bitwise operations and binary data manipulation utilities. + Data handling and serialization"
 version: 0.0.1
 homepage: https://github.com/FireSourcery/cmdr/tree/main/packages/binary_data
 

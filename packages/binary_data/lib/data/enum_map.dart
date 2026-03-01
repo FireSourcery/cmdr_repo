@@ -1,7 +1,6 @@
 import 'basic_types.dart';
 import 'index_map.dart';
 
-export 'basic_types.dart';
 export 'index_map.dart';
 
 /// [EnumMap]
@@ -71,7 +70,7 @@ extension type const EnumMapFactory<T extends Enum>(List<T> enums) implements Li
     if (enums case List<TypeKey>()) {
       return <T, Object?>{
         for (final (key, value) in mapByName(json))
-          if ((key as TypeKey).compareType(value)) key: value
+          if ((key as TypeKey).compareType(value)) key: value,
       };
     } else {
       throw FormatException('EnumType: $T must implement TypeKey for type checking');

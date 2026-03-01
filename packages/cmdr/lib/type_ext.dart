@@ -19,4 +19,4 @@
 /// ```
 library cmdr.type_ext;
 
-export 'package:type_ext/type_ext.dart';
+// export 'type_ext/**';

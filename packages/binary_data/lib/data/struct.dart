@@ -83,13 +83,12 @@ abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>
 
   // Structure<K, V> copyWith() /// override in child class, using index map by default
 
-// overwrite copyWith to cast after buffered build, or leave abstract.
+  // overwrite copyWith to cast after buffered build, or leave abstract.
   Structure<K, V> withFields(Structure<K, V?> fields) {
     // return StructMap.ofMap({for (var key in keys) key: fields.field(key) ?? field(key)} as FixedMap<K, V?>);
-    return StructMap<K, V>(this)
-      ..forEach((key, value) {
-        if (fields[key] case V newValue) this[key] = newValue;
-      });
+    return StructMap<K, V>(this)..forEach((key, value) {
+      if (fields[key] case V newValue) this[key] = newValue;
+    });
   }
 
   /// Returns a copy of this structure with non-null fields from [fields] applied.
@@ -279,3 +278,16 @@ mixin StructAsSubtype<S extends Structure<K, V>, K extends Field, V> on Structur
   @override
   S withFields(Structure<K, V?> fields) => (super.withFields(fields) as StructAsSubtype<S, K, V>).copyWith();
 }
+// abstract class FixedMap <K, V> implements FixedMap<K, V> {
+//   const FixedMapImpl(this.keys);
+//   final List<K> keys;
+// }
+
+// mixin FixedMapWith<K, V> on FixedMap<K, V> {
+//   // analogous to operator []=, but returns a new instance
+//   FixedMap<K, V> withField(K key, V value) => (IndexMap<K, V>.fromBase(this)..[key] = value);
+//   //
+//   FixedMap<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => IndexMap<K, V>.fromBase(this)..addEntries(newEntries);
+//   // A general values map representing external input, may be a partial map
+//   FixedMap<K, V> withAll(Map<K, V> map) => IndexMap<K, V>.fromBase(this)..addAll(map);
+// }

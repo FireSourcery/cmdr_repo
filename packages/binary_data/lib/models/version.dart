@@ -1,4 +1,4 @@
-import 'package:type_ext/enum_map.dart';
+import '../data/enum_map.dart';
 
 import '../word/word_struct.dart';
 

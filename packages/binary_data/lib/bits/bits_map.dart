@@ -1,5 +1,5 @@
 import 'package:collection/collection.dart';
-import 'package:type_ext/index_map.dart';
+import 'package:binary_data/data/index_map.dart';
 
 import "bit_field.dart";
 

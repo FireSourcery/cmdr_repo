@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import '../interfaces/binary_format.dart';
+import 'package:binary_data/binary_format/quantity_format.dart';
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Math
@@ -103,7 +103,7 @@ class Thermistor {
   double celsiusOf(int adcu) => kelvinOf(adcu) + absoluteZeroCelsius;
   int adcuOfCelsius(num celsius) => adcuOfKelvin(celsius - absoluteZeroCelsius);
 
-  BinaryNumConversion? get conversionCelsius {
+  NumDataConversion? get conversionCelsius {
     assert(rParallel != 0);
     if (b == 0 || r0 == 0 || rSeries == 0) return null; // no coefficients, no conversion
     return (viewOfData: celsiusOf, dataOfView: adcuOfCelsius);

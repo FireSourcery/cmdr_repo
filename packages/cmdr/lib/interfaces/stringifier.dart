@@ -1,5 +1,11 @@
 import 'package:flutter/foundation.dart';
 
+/// [Stringifier]
+typedef Stringifier<T> = String Function(T input);
+typedef NullableStringifier<T> = String Function(T? input);
+typedef GenericStringifier = String Function<T>(T input);
+// typedef GenericStringifier = String Function<T>(T? input); // non-nullable type, with nullable input, cases where T is used for selection
+
 /// select based on provided functions
 mixin StringifierSelect<T> {
   // ValueGetter<T?> get valueGetter;

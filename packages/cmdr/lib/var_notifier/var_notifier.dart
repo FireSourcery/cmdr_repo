@@ -2,15 +2,17 @@ library var_notifier;
 
 import 'dart:async';
 import 'package:async/async.dart';
+import 'package:binary_data/binary_format/binary_codec.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' hide BitField;
 import 'package:recase/recase.dart';
 
-import 'package:type_ext/basic_types.dart';
+import 'package:binary_data/data/basic_types.dart';
 import 'package:binary_data/binary_data.dart';
+import 'package:binary_data/binary_format/binary_codec.dart';
 
+import '../interfaces/num_union.dart';
 import '../interfaces/service_io.dart';
-import '../interfaces/binary_format.dart';
 
 export 'package:binary_data/binary_data.dart';
 export '../interfaces/service_io.dart';
@@ -25,23 +27,26 @@ part 'var_value.dart';
 /// each retrievable value as a View Model
 // only default status ids need to be overridden
 class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarStatusNotifier implements ValueNotifier<V> {
-  VarNotifier({required this.varKey, BinaryUnionCodec<V>? codec}) {
-    this.codec = codec ?? varKey.buildViewer<V>() ?? BinaryUnionCodec<V>.of();
+  VarNotifier({required this.varKey, BinaryCodec<V>? codec}) {
+    this.codec = codec ?? varKey.buildViewer();
   }
 
   // withType
-  @protected
-  VarNotifier.ofKey(this.varKey) : assert(V != dynamic) {
+  VarNotifier.ofKey(this.varKey) {
     initReferences();
   }
 
   // derive type from [VarKey]
-  factory VarNotifier.of(VarKey varKey) {
-    assert(V == dynamic, 'V is determined by VarKey.viewType');
-    return varKey.viewType(<G>() => VarNotifier<G>.ofKey(varKey) as VarNotifier<V>);
+  factory VarNotifier.of(VarKey<V> varKey) {
+    // if (V == dynamic) {
+    // return varKey.viewType(<G>() => VarNotifier<G>.ofKey(varKey as VarKey<G>) as VarNotifier<V>);
+    //allow dynamic key to create typed notifier need varKey be cast matching
+    // } else {
+    return VarNotifier<V>.ofKey(varKey);
+    // }
   }
 
-  final VarKey varKey;
+  final VarKey<V> varKey;
   late final int dataKey = varKey.value; // compute once and cache
 
   /// as outbound data depending on [dataKey]
@@ -58,18 +63,18 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
   /// Derived from [VarKey] and cached
   /// reinit on VarKey update
   void initReferences() {
-    // viewer = varKey.viewer as VarViewer<V>?;
-    codec = varKey.buildViewer<V>() ?? BinaryUnionCodec<V>.of();
+    codec = varKey.buildViewer()!;
+    unionCodec = varKey.buildUnionViewer();
     // assert(varKey.buildViewer<V>() != null || V == int || V == bool, 'Unsupported type: $V');
   }
 
-  void updateCodec(BinaryUnionCodec<V> newCodec) {
-    codec = newCodec;
-    // Recompute current values with new conversion
-    if (_viewValue == null) {
-      notifyListeners(); // View may have changed due to new conversion
-    }
-  }
+  // void updateCodec(BinaryCodec<V> newCodec) {
+  //   codec = newCodec;
+  //   // Recompute current values with new conversion
+  //   if (_viewValue == null) {
+  //     notifyListeners(); // View may have changed due to new conversion
+  //   }
+  // }
 
   /// [VarStatus] type is the same for all vars in most cases.
   /// Compile time const defined in [VarKey]. Does not need to build and cache.
@@ -91,9 +96,9 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
   ////////////////////////////////////////////////////////////////////////////////
   ///
   ////////////////////////////////////////////////////////////////////////////////
-  ({num min, num max})? get numLimits => codec.numLimits; // must be null for non-num types
-  List<Enum>? get enumRange => codec.enumRange; // EnumSubtype.values must be non-null for Enum types
-  List<BitField>? get bitsKeys => codec.bitsKeys;
+  ({num min, num max})? get numLimits => unionCodec?.numLimits; // must be null for non-num types
+  List<Enum>? get enumRange => unionCodec?.enumRange; // EnumSubtype.values must be non-null for Enum types
+  List<BitField>? get bitsKeys => unionCodec?.bitsKeys;
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Proxy with different view conversion
@@ -161,11 +166,6 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
   // by user for output
   void updateByView(V newValue) => value = newValue;
 
-  void updateByViewAs<T>(T typedValue) {
-    updateValueAs<T>(typedValue);
-    notifyListeners();
-  }
-
   // also clear on updateByDataStatus
   void commitUserChanges() => commitView();
 
@@ -175,6 +175,11 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
       _viewValue = null; // Value reverts to last update by server value
       notifyListeners();
     }
+  }
+
+  void updateByViewAs<T>(T typedValue) {
+    updateValueAs<T>(typedValue);
+    notifyListeners();
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -188,12 +193,23 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
     if (_viewValue == null) notifyListeners(); // Only notify if effective value changed
   }
 
-  /// convenience short hand
-  //make extension
+  // if separating host and server status
+  // bool outOfRange; // value from client out of range
+  // Enum syncStatus;
+}
+
+/// convenience short hand
+extension VarValueNotifierExtensions<V> on VarValueNotifier<V> {
   V _getValue() => value;
   void _setValue(V newValue) => value = newValue;
   ValueGetter<V> get valueGetter => _getValue;
   ValueSetter<V> get valueSetter => _setValue;
+
+  // with known case
+  // V1 _getValue<V1>() => value as V1;
+  // void _setValue<V1>(V1 newValue) => value = newValue as V;
+  // ValueGetter<V> get valueGetter => _getValue;
+  // ValueSetter<V> get valueSetter => _setValue;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

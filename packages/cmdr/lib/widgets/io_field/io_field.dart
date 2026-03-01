@@ -1,6 +1,8 @@
-import 'package:type_ext/basic_types.dart';
+import 'package:binary_data/data/basic_types.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import '../../interfaces/stringifier.dart';
 
 /// [IOField] is effectively a view union of IO types styled similar to a [TextField]
 abstract class IOField<T> implements Widget {

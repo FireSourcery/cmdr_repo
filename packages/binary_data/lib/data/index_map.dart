@@ -25,22 +25,7 @@ abstract mixin class FixedMap<K, V> implements Map<K, V> {
   V remove(covariant K key);
 
 //   // List<V>? get defaultValues;
-//   // FixedMap<K, V> clone() => IndexMap<K, V>(this);
 }
-
-// abstract class FixedMap <K, V> implements FixedMap<K, V> {
-//   const FixedMapImpl(this.keys);
-//   final List<K> keys;
-// }
-
-// mixin FixedMapWith<K, V> on FixedMap<K, V> {
-//   // analogous to operator []=, but returns a new instance
-//   FixedMap<K, V> withField(K key, V value) => (IndexMap<K, V>.fromBase(this)..[key] = value);
-//   //
-//   FixedMap<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => IndexMap<K, V>.fromBase(this)..addEntries(newEntries);
-//   // A general values map representing external input, may be a partial map
-//   FixedMap<K, V> withAll(Map<K, V> map) => IndexMap<K, V>.fromBase(this)..addAll(map);
-// }
 
 /// [IndexMap]
 /// Default implementation using parallel arrays
@@ -165,3 +150,11 @@ class ProxyIndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
   @override
   V remove(covariant K key) => throw UnsupportedError("Cannot modify unmodifiable");
 }
+// mixin FixedMapWith<K, V> on FixedMap<K, V> {
+//   // analogous to operator []=, but returns a new instance
+//   FixedMap<K, V> withField(K key, V value) => (IndexMap<K, V>.fromBase(this)..[key] = value);
+//   //
+//   FixedMap<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => IndexMap<K, V>.fromBase(this)..addEntries(newEntries);
+//   // A general values map representing external input, may be a partial map
+//   FixedMap<K, V> withAll(Map<K, V> map) => IndexMap<K, V>.fromBase(this)..addAll(map);
+// }

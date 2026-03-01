@@ -1,9 +1,8 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
-import 'package:type_ext/basic_ext.dart';
-
 import '../bytes/byte_struct.dart';
+import '../data/basic_ext.dart';
 export '../bytes/byte_struct.dart';
 
 /// Collective def of Packet format specs. 'Class variables'

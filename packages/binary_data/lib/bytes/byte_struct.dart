@@ -1,9 +1,9 @@
-import 'package:type_ext/struct.dart';
 import 'package:meta/meta.dart';
 
 import 'typed_array.dart';
 import 'typed_field.dart';
 import 'typed_data_buffer.dart';
+import '../data/struct.dart';
 
 export 'typed_array.dart';
 export 'typed_field.dart';

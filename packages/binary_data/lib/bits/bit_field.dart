@@ -1,5 +1,5 @@
 import 'package:collection/collection.dart';
-import 'package:type_ext/struct.dart';
+import 'package:binary_data/data/struct.dart';
 
 import 'bits.dart';
 export 'bits.dart';

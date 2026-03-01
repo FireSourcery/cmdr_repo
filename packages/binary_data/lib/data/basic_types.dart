@@ -1,6 +1,5 @@
 /// Mixin for methods
 /// Instantiate temporary object for type checking
-// TypeCarrier, TypeHelper
 mixin class TypeKey<T> {
   const TypeKey();
 
@@ -15,7 +14,6 @@ mixin class TypeKey<T> {
   bool isTypeOf(Object? object) => object is T;
 
   // call passing type
-  // callGeneric, callTyped, callPassType, passType
   R call<R>(R Function<G>() callback) => callback<T>();
   R callWithType<R>(R Function<G>() callback) => callback<T>();
 }
@@ -24,29 +22,12 @@ extension TypeKeysValidate on List<TypeKey> {
   bool compareTypes(Iterable<Object?> objects) => objects.indexed.every((e) => elementAt(e.$1).compareType(e.$2));
 }
 
-// mixin TypeKeyFactory<T> on TypeKey<T> {
-//   T constructor() => throw UnimplementedError('TypeKeyFactory.create() must be implemented in subclass');
-// }
-
 // workaround for calling generic methods with type restrictions
 // SubtypeKey
 mixin class TypeRestrictedKey<T extends S, S> {
   const TypeRestrictedKey();
   R callWithRestrictedType<R>(R Function<G extends S>() callback) => callback<T>();
 }
-
-///
-typedef ValueTest<T> = bool Function(T input);
-
-/// [Range] types
-typedef NumRange = ({num min, num max});
-typedef EnumRange = List<Enum>;
-
-/// [Stringifier]
-typedef Stringifier<T> = String Function(T input);
-typedef NullableStringifier<T> = String Function(T? input);
-typedef GenericStringifier = String Function<T>(T input);
-// typedef GenericStringifier = String Function<T>(T? input); // non-nullable type, with nullable input, cases where T is used for selection
 
 // naming convention notes
 // For classes and types -

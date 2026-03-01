@@ -1,7 +1,7 @@
 import 'package:binary_data/word/word.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:type_ext/basic_ext.dart';
+import 'package:binary_data/data/basic_ext.dart';
 
 /// A singular FormField partitioned corresponding to the Map input.
 /// Displays a TextField for each Map entry, with initial values from the map.
@@ -28,13 +28,15 @@ class MapFormFields<K, V> extends StatefulWidget {
     this.keyStringifier,
     this.numLimits,
     this.leading,
-  })  : valueParser = switch (V) {
-          const (int) => int.tryParse,
-          const (double) => double.tryParse,
-          const (num) => num.tryParse,
-          _ => throw UnsupportedError('$V must be num type'),
-        } as V? Function(String),
-        inputFormatters = [FilteringTextInputFormatter.digitsOnly];
+  }) : valueParser =
+           switch (V) {
+                 const (int) => int.tryParse,
+                 const (double) => double.tryParse,
+                 const (num) => num.tryParse,
+                 _ => throw UnsupportedError('$V must be num type'),
+               }
+               as V? Function(String),
+       inputFormatters = [FilteringTextInputFormatter.digitsOnly];
 
   final Iterable<MapEntry<K, V>> entries; // MapEntry<K, V>
   final bool isReadOnly;

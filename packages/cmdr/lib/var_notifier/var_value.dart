@@ -13,7 +13,8 @@ mixin class VarValue<V> {
   /// Handle Return as the exact type, to account for user defined method on that type
   // codec handles sign extension
   // does not have to be immutable. only case of cache preallocate can benefit from immutable
-  BinaryUnionCodec<V> codec = BinaryUnionCodec<V>.of();
+  late BinaryCodec<V> codec;
+  NumUnionCodec? unionCodec;
 
   V viewOf(int data) => codec.decode(data);
   int dataOf(V view) => codec.encode(view);
@@ -33,7 +34,6 @@ mixin class VarValue<V> {
   /// value over view boundaries handle by [view]
   int get data => (_viewValue == null) ? serverData : dataOf(_viewValue as V);
   // int get data => serverData; // on transmit to server. committed value only
-  // int get data => (_viewValue != null) ? dataOf(_viewValue as V) : serverData; // data value of pending
 
   /// [set] on receive from server. always store serverData even if pending
   /// does not update/overwrite [view] if it was set by the UI
@@ -50,16 +50,7 @@ mixin class VarValue<V> {
 
   /// [set] UI. update view without outputting to server, wait for commit to set [dataOf(_viewValue as V)]
   /// always sets pending first, submit needs to mark pending, unless add to outbound collection is implemented
-  set view(V newValue) {
-    _viewValue = switch (V) {
-      const (int) => codec.clamp(newValue as int).toInt() as V,
-      const (double) => codec.clamp(newValue as double).toDouble() as V, // clamp returns num, maybe return int
-      const (num) => codec.clamp(newValue as num) as V,
-      const (bool) => newValue,
-      _ => newValue,
-    };
-    // _viewValue = newValue; // let codec handle clamping on [encode], view may be out of bounds
-  }
+  set view(V newValue) => _viewValue = newValue; // let codec handle clamping on [encode], view may be out of bounds
 
   /// separate clear pending.
   /// submit/mark for outbound to server, not for view-only changes
@@ -81,19 +72,16 @@ mixin class VarValue<V> {
   // alternatively separate
   // enum VarLastUpdate { clear, byData, byView }
 
+  /// assert(V is num);
+  // bool get isOverLimit => (numView > codec.numLimits!.max);
+  // bool get isUnderLimit => (numView < codec.numLimits!.min);
+  // double get normalized => (numView / codec!.numLimits!.max).clamp(-1.0, 1.0);
+  // double get percent => normalized * 100;
+
   /// value conversion
   /// todo move to codec unionValue
   /// [numView] The num view representation of the [view] value as a num.
-  //  BinaryNumCodec<num> numCodec = BinaryNumCodec<num>.of(); optionally include as default num codec
-
-  // /   since it is the base for all generic types that can be converted to and from,
   // /     [valueAs<R>()] can always return a value without throwing; the closest representation possible.
-  // /   primitive/register sized only for now
-  // /   consistent DataOfView interface
-  // /   multiple view on the same value will require conversion anyway
-  // /   using view side num as notifier,
-  // /   notify view side listener on all updates, not all changes are pushed to client
-
   num get numView {
     return switch (V) {
       const (int) || const (double) || const (num) => view as num,
@@ -113,12 +101,6 @@ mixin class VarValue<V> {
     };
   }
 
-  /// assert(V is num);
-  // bool get isOverLimit => (numView > codec.numLimits!.max);
-  // bool get isUnderLimit => (numView < codec.numLimits!.min);
-  double get normalized => (numView / codec.numLimits!.max).clamp(-1.0, 1.0);
-  double get percent => normalized * 100;
-
   /// [valueAs<V>] Generic parameter / union handling
   /// UnionCodec
   /// widgets optionally select
@@ -126,8 +108,8 @@ mixin class VarValue<V> {
   int get valueAsInt => (numView).toInt();
   double get valueAsDouble => (numView).toDouble();
   bool get valueAsBool => (numView != 0);
-  Enum get valueAsEnum => codec?.enumOf(numView as int) ?? VarValueEnum.unknown;
-  BitStruct get valueAsBitFields => codec?.bitsOf(numView as int) ?? BitStruct.view([], valueAsInt as Bits);
+  Enum get valueAsEnum => unionCodec?.enumOf(numView as int) ?? VarValueEnum.unknown;
+  BitStruct get valueAsBitFields => unionCodec?.bitsOf(numView as int) ?? BitStruct.view([], valueAsInt as Bits);
   String get valueAsString => String.fromCharCodes(valueAsBytes);
   Uint8List get valueAsBytes => Uint8List(8)..buffer.asByteData().setUint64(0, numView as int, Endian.little);
 
@@ -151,8 +133,7 @@ mixin class VarValue<V> {
   /// generic getter use switch on type literal, and require extension to account for subtypes
   R valueAs<R>() {
     if (R == V) return view as R;
-    // if (TypeKey<R>().isSubtype<V>()) return view as R;
-    // codec.decodeAs<R>( numValue.toInt());
+
     return switch (R) {
           const (int) => valueAsInt,
           const (double) => valueAsDouble,
@@ -191,70 +172,16 @@ mixin class VarValue<V> {
       // view = decode(numValueOf<T>(typedValue).toInt()),
     }
   }
-
-  // void updateValueAs<T>(T typedValue) {
-  //   numValue = switch (T) {
-  //     _ when T == V => typedValue as num,
-  //     const (double) || const (int) || const (num) => (typedValue as num),
-  //     const (bool) => (typedValue as bool) ? 1 : 0,
-  //     const (Enum) => (typedValue as Enum).index,
-  //     const (BitStruct) => (typedValue as BitStruct).bits,
-  //     _ => throw UnsupportedError('Unsupported type: $T'),
-  //   };
-
-  //   lastUpdate = VarLastUpdate.byView;
-  //   if (typedValue case num input when input != numValue) statusCode = 1;
-  // }
-
-  // bool hasIndirectListeners = false;
-  // bool get hasListenersCombined => hasListeners || hasIndirectListeners;
-
-  // if separating host and server status
-  // bool outOfRange; // value from client out of range
-  // Enum valueStatus;
-
-  // @override
-  // V get value => valueAs<V>();
-  // @override
-  // set value(V newValue) => updateByViewAs<V>(newValue);
-
-  // num _numValue = 0;
-  // num get _viewValue => _numValue;
-  // set _viewValue(num value) {
-  //   if (_numValue == value) return;
-  //   _numValue = value;
-  //   notifyListeners();
-  // }
-
-  // int get dataValue => dataOf(_viewValue);
-  // set _dataValue(int newValue) => _viewValue = viewOf(newValue);
-
-  // performs common conversion on update
-  // before sign extension
-  // void updateByData(int bytesValue) {
-  //   // _dataValue = dataOfBinary(bytesValue);
-  //   _viewValue = viewOf(dataOfBinary(bytesValue));
-  //   lastUpdate = VarLastUpdate.byData;
-  //   // if (numValue != _clampedNumValue) statusCode = 1;
-  // }
 }
 
 // replace null for over bounds
 enum VarValueEnum { unknown }
 
-// extension ValueNotifierExtensions<V> on ValueNotifier<V> {
-//   // V _getValue() => value;
-//   // void _setValue(V newValue) => value = newValue;
-//   // ValueGetter<V> get valueGetter => _getValue;
-//   // ValueSetter<V> get valueSetter => _setValue;
-// }
-
 // simplified version without local view cache
-// less sync step, but more expensive to convert on every view get and set,
+// UI-only change vs submit for push must be implemented separately
 // no cache for intermediate UI view initiated changes/animations (e.g. slider)
+// less sync step, but more expensive to convert on every view get and set,
 // UI updates 16ms, serverUpdates ~50ms
-
-// `UI-only change vs submit for push must be implemented separately`
 // mixin class VarData<V> {
 //   BinaryUnionCodec<V> codec = BinaryUnionCodec<V>.of();
 

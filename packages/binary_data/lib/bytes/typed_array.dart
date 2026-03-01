@@ -154,20 +154,3 @@ extension ByteDataTypedArray on ByteData {
 //     };
 //   }
 // }
-
-////////////////////////////////////////////////////////////////////////////////
-/// TypedDataOfIterable
-////////////////////////////////////////////////////////////////////////////////
-// void memCpy(TypedData destination, TypedData source, int lengthInBytes) {
-//   Uint8List.sublistView(destination).setAll(0, Uint8List.sublistView(source, 0, lengthInBytes));
-// }
-
-// void copyMemory(TypedData destination, TypedData source, [int? lengthInBytes]) {
-//   final effectiveLength = (lengthInBytes ?? source.lengthInBytes).clamp(0, destination.lengthInBytes);
-//   memCpy(destination, source, effectiveLength);
-// }
-
-// void copyMemoryRange(TypedData destination, TypedData source, [int destOffset = 0, int? lengthInBytes]) {
-//   final effectiveLength = (lengthInBytes ?? source.lengthInBytes).clamp(0, destination.lengthInBytes - destOffset);
-//   Uint8List.sublistView(destination).setAll(destOffset, Uint8List.sublistView(source, 0, effectiveLength));
-// }

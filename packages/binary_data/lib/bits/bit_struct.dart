@@ -1,8 +1,7 @@
 import 'package:meta/meta.dart';
 
-import 'package:type_ext/index_map.dart';
-import 'package:type_ext/struct.dart';
-import 'package:type_ext/basic_ext.dart';
+import 'package:binary_data/data/index_map.dart';
+import 'package:binary_data/data/struct.dart';
 
 import 'bit_field.dart';
 import 'bits_map.dart';
@@ -25,7 +24,7 @@ export 'bits_map.dart';
 ///
 /// base class enforce data implementation. ensure correct correspondance with remote devices
 ////////////////////////////////////////////////////////////////////////////////
-// abstract class BitStruct<T extends BitStruct<K>, K extends BitField> extends BitsBase with MapBase<K, int>, BitFieldMap<K> implements BitsMap<K, int> {
+
 abstract class BitStruct<K extends BitField> extends BitsBase with MapBase<K, int>, BitFieldMap<K> implements BitsMap<K, int> {
   const BitStruct();
   const factory BitStruct.view(List<K> keys, Bits bits) = _BitStruct<K>;
@@ -117,6 +116,10 @@ abstract class BitStruct<K extends BitField> extends BitsBase with MapBase<K, in
     return keys.hashCode ^ bits.hashCode;
   }
 }
+
+//todo
+// final class BitStruct<K extends BitField>  // final for interface
+// abstract class BitStructBase<T extends BitStruct<K>, K extends BitField> as base
 
 /// mixn to override [copyWithBits]/copyWith to return a subtype
 /// Subtype considerations:
@@ -221,6 +224,11 @@ base class _BitStruct<K extends BitField> extends ConstBitStruct<K> {
   @override
   final Iterable<K> keys;
 }
+
+// extension on List<BitField> {
+//   BitStruct encode(int value) => BitStruct.view(this, value as Bits);
+//   int decode(BitStruct bits) => bits.value;
+// }
 
 // Keys list effectively define type and act as factory
 // factories returning as super interface type
