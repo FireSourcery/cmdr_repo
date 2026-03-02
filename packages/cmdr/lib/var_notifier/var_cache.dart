@@ -93,9 +93,6 @@ class VarCache {
   @protected
   void setValueOf(VarKey varKey, num value) => _cache[varKey.value]?.numView = value;
 
-  /// Single updateByView can call from VarNotifier ref
-  VarNotifier? updateByViewAs<T>(VarKey key, T varValue) => this[key]?..updateByViewAs<T>(varValue);
-
   ////////////////////////////////////////////////////////////////////////////////
   /// Collective App View
   ////////////////////////////////////////////////////////////////////////////////

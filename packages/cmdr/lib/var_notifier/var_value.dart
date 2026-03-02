@@ -11,10 +11,9 @@ mixin class VarValue<V> {
   /// caching results from VarKey for performance.
   /// by default get from varKey. resolve in constructor to cached values derived from varKey
   /// Handle Return as the exact type, to account for user defined method on that type
-  // codec handles sign extension
+  // codec handles sign extension and conversion
   // does not have to be immutable. only case of cache preallocate can benefit from immutable
   late BinaryCodec<V> codec;
-  NumUnionCodec? unionCodec;
 
   V viewOf(int data) => codec.decode(data);
   int dataOf(V view) => codec.encode(view);
@@ -68,20 +67,10 @@ mixin class VarValue<V> {
   ///
   bool get isLastUpdateByView => _viewValue != null;
   bool get isLastUpdateByData => _viewValue == null;
-  bool get isSynced => isLastUpdateByData;
-  // alternatively separate
-  // enum VarLastUpdate { clear, byData, byView }
+  // bool get isSynced => isLastUpdateByData;
 
-  /// assert(V is num);
-  // bool get isOverLimit => (numView > codec.numLimits!.max);
-  // bool get isUnderLimit => (numView < codec.numLimits!.min);
-  // double get normalized => (numView / codec!.numLimits!.max).clamp(-1.0, 1.0);
-  // double get percent => normalized * 100;
-
-  /// value conversion
-  /// todo move to codec unionValue
+  /// serialization use
   /// [numView] The num view representation of the [view] value as a num.
-  // /     [valueAs<R>()] can always return a value without throwing; the closest representation possible.
   num get numView {
     return switch (V) {
       const (int) || const (double) || const (num) => view as num,
@@ -90,95 +79,28 @@ mixin class VarValue<V> {
     };
   }
 
-  // set pending first
   set numView(num newValue) {
     view = switch (V) {
       const (int) => newValue.toInt() as V,
       const (double) => newValue.toDouble() as V,
       const (num) => newValue as V,
       const (bool) => (newValue != 0) as V,
-      _ => viewOf(newValue.toInt()), // decode to view type
+      _ => viewOf(newValue as int), // stored as data
     };
   }
 
   /// [valueAs<V>] Generic parameter / union handling
   /// UnionCodec
-  /// widgets optionally select
   num get valueAsNum => numView;
   int get valueAsInt => (numView).toInt();
   double get valueAsDouble => (numView).toDouble();
   bool get valueAsBool => (numView != 0);
-  Enum get valueAsEnum => unionCodec?.enumOf(numView as int) ?? VarValueEnum.unknown;
-  BitStruct get valueAsBitFields => unionCodec?.bitsOf(numView as int) ?? BitStruct.view([], valueAsInt as Bits);
   String get valueAsString => String.fromCharCodes(valueAsBytes);
   Uint8List get valueAsBytes => Uint8List(8)..buffer.asByteData().setUint64(0, numView as int, Endian.little);
-
-  // set valueAsBool(bool newValue) => (numValue = newValue ? 1 : 0);
-  // set valueAsNum(num newValue) {
-  //   // assert(V == int || V == double, 'Only num types are supported');
-  //   if (viewer.numLimits != null) {
-  //     value = newValue.clamp(viewer.numLimits!.min, viewer.numLimits!.max) as V;
-  //   }
-  // }
-  // set valueAsEnum(Enum newValue) => _numValue = newValue.index;
-  // set valueAsEnum(Enum newValue) {
-  //   if (viewer.enumRange != null) {
-  //     if (viewer.enumRange![newValue.index] == newValue) value = newValue as V;
-  //   }
-  // }
-  // set valueAsBitFields(BitStruct newValue) => _numValue = newValue.bits;
-
-  ///
-  /// caller determines type after accounting for VarKey
-  /// generic getter use switch on type literal, and require extension to account for subtypes
-  R valueAs<R>() {
-    if (R == V) return view as R;
-
-    return switch (R) {
-          const (int) => valueAsInt,
-          const (double) => valueAsDouble,
-          const (num) => valueAsNum,
-          const (bool) => valueAsBool,
-          // match by type literal cannot be subtype
-          const (Enum) => valueAsEnum,
-          const (BitStruct) => valueAsBitFields,
-          const (String) => valueAsString,
-          _ when (TypeKey<R>().isSubtype<Enum>()) => valueAsEnum as R, // match by TypeKey can be subtype, but requires type registration for unions
-          _ => throw UnsupportedError('Unsupported type: $R'),
-        }
-        as R;
-  }
-
-  /// update
-  static num numValueOf<T>(T typedValue) {
-    return switch (T) {
-      const (int) => typedValue as int,
-      const (double) => typedValue as double,
-      const (num) => typedValue as num,
-      const (bool) => (typedValue as bool) ? 1 : 0,
-      const (Enum) => (typedValue as Enum).index,
-      const (BitStruct) => (typedValue as BitStruct).bits,
-      _ => throw UnsupportedError('Unsupported type: $T'),
-    };
-  }
-
-  // input bounds checked only to ensure a valid value is sent to client side
-  // switch on value will also handle dynamic
-  // generic setter can optionally switch on object type
-  void updateValueAs<T>(T typedValue) {
-    if (T == V) {
-      view = typedValue as V;
-    } else {
-      numView = numValueOf<T>(typedValue);
-      // view = decode(numValueOf<T>(typedValue).toInt()),
-    }
-  }
 }
 
-// replace null for over bounds
-enum VarValueEnum { unknown }
-
 // simplified version without local view cache
+// polling vars may overwrite user changes before they are sent
 // UI-only change vs submit for push must be implemented separately
 // no cache for intermediate UI view initiated changes/animations (e.g. slider)
 // less sync step, but more expensive to convert on every view get and set,

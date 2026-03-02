@@ -84,16 +84,6 @@ class VarCacheController {
     return null;
   }
 
-  Future<V?> readAs<V>(VarKey<dynamic> key) async {
-    await read(key);
-    return cache[key]?.valueAs<V>();
-  }
-
-  Future<VarStatus?> writeAs<V>(VarKey<dynamic> key, V value) async {
-    cache[key]?.updateByViewAs<V>(value);
-    return write(key);
-  }
-
   // maps to protocol service, not cache, so no cache update or status update.
   VarSingleController<V> single<V>(VarNotifier<V> notifier) => VarSingleController(varNotifier: notifier, protocolService: protocolService);
 

@@ -127,7 +127,20 @@ class EnumOffsetFormat<V extends Enum> extends EnumFormat<V> with EnumCodecByOff
   @override
   V decode(int raw) => values.byIndex(raw.toSigned(8) + zeroIndex);
   @override
-  int encode(V view) => view.index - zeroIndex;
+  int encode(V view) => (view.index - zeroIndex).clamp(binaryRange.min, binaryRange.max);
+}
+
+// for custom handling, separate from index-based. include list for view
+class EnumFormatBuilder<V extends Enum> extends EnumFormat<V> {
+  const EnumFormatBuilder(super.values, {required this.decoder, required this.encoder});
+
+  final DataDecoder<V> decoder;
+  final DataEncoder<V> encoder;
+
+  @override
+  V decode(int data) => decoder(data);
+  @override
+  int encode(V view) => encoder(view);
 }
 
 abstract class FractFormat<S extends NativeType> extends NumFormat<S, double> {
@@ -135,7 +148,7 @@ abstract class FractFormat<S extends NativeType> extends NumFormat<S, double> {
   num get formatScalar;
   get valueRange => (min: binaryRange.min / formatScalar, max: binaryRange.max / formatScalar);
   double decode(int raw) => signedOf(raw) / formatScalar;
-  int encode(double value) => (value * formatScalar).round().clamp(binaryRange.min, binaryRange.max);
+  int encode(double value) => (value * formatScalar).truncate().clamp(binaryRange.min, binaryRange.max);
 }
 
 abstract class IntFormat<S extends NativeType> extends NumFormat<S, int> {

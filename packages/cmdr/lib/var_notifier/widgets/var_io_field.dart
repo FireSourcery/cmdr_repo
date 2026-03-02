@@ -1,3 +1,4 @@
+import 'package:binary_data/binary_format/quantity_format.dart';
 import 'package:flutter/material.dart';
 
 import 'package:binary_data/data/basic_types.dart';
@@ -31,7 +32,7 @@ abstract interface class VarIOField extends StatelessWidget {
     // convenience for passing parameters
     _VarIOField<V> local<V>() {
       final config = VarIOFieldConfig<V>(
-        varNotifier,
+        varNotifier as VarNotifier<V>,
         eventNotifier: eventNotifier,
         controller: controller,
         readOnly: readOnly,
@@ -44,6 +45,18 @@ abstract interface class VarIOField extends StatelessWidget {
     }
 
     return varNotifier.varKey.viewType.callWithType(local);
+
+    // final config = VarIOFieldConfig(
+    //   varNotifier,
+    //   eventNotifier: eventNotifier,
+    //   controller: controller,
+    //   readOnly: readOnly,
+    //   showLabel: showLabel,
+    //   showPrefix: showPrefix,
+    //   showSuffix: showSuffix,
+    //   isDense: isDense,
+    // );
+    // return _VarIOField._(config);
   }
 
   factory VarIOField.compact(
@@ -134,10 +147,10 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
     this.readOnly,
   });
 
-  factory VarIOFieldConfig.of(VarNotifier<dynamic> varNotifier) {
+  factory VarIOFieldConfig.of(VarNotifier varNotifier) {
     VarIOFieldConfig<G> local<G>() {
       return VarIOFieldConfig<G>(
-        varNotifier,
+        varNotifier as VarNotifier<G>,
         // eventNotifier: eventNotifier,
         // controller: controller,
         // readOnly: readOnly,
@@ -151,7 +164,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
     return varNotifier.varKey.viewType.callWithType(local) as VarIOFieldConfig<V>;
   }
 
-  final VarNotifier<dynamic> varNotifier; //alternatively split valuenotifier/valueUnion
+  final VarNotifier<V> varNotifier; //alternatively split valuenotifier/valueUnion
   final VarEventNotifier? eventNotifier;
   final VarSingleController? controller; // unused for now
 
@@ -194,24 +207,37 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   @override
   Listenable get valueListenable => varNotifier;
   @override
-  ValueGetter<V> get valueGetter => varNotifier.valueAs<V>;
+  ValueGetter<V> get valueGetter => (() => varNotifier.value);
   // ValueGetter<V> get valueGetter => varNotifier.cast<V>().valueGetter as ValueGetter<V>;
   @override
-  ValueGetter<String> get valueStringGetter => varNotifier.valueStringAs<V>;
+  ValueGetter<String> get valueStringGetter => (() => varNotifier.valueString);
   @override
-  ValueSetter<V> get valueSetter => (eventNotifier != null) ? eventNotifier!.submitByViewAs<V> : varNotifier.updateByViewAs<V>;
+  ValueSetter<V> get valueSetter => (eventNotifier != null) ? eventNotifier!.submitByView : varNotifier.updateByView;
   @override
   ValueGetter<bool> get errorGetter => (() => varNotifier.statusIsError);
 
   @override
-  ValueChanged<V> get valueChanged => varNotifier.updateByViewAs<V>;
+  ValueChanged<V> get valueChanged => varNotifier.updateByView;
 
   @override
   String get tip => varNotifier.varKey.tip ?? '';
   @override
-  ({num max, num min})? get valueNumLimits => varNotifier.numLimits;
+  ({num max, num min})? get valueNumLimits {
+    if (varNotifier is VarNotifier<num>) {
+      if (varNotifier.codec case BinaryQuantityCodec c) return c.numLimits;
+      if (varNotifier.codec case NumFormat n) return n.valueRange;
+    }
+    return null;
+  }
+
   @override
-  List<V>? get valueEnumRange => varNotifier.enumRange as List<V>?;
+  List<V>? get valueEnumRange {
+    if (varNotifier is VarNotifier<Enum>) {
+      if (varNotifier.codec case EnumFormat e) return e.values as List<V>;
+    }
+    return null;
+  }
+
   @override
   Stringifier<V>? get valueStringifier => varNotifier.varKey.stringify<V>;
 

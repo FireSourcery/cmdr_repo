@@ -15,7 +15,7 @@ class BinaryQuantityCodec<V extends num> implements BinaryCodec<V> {
   // NumConversion override
   BinaryQuantityCodec.of(this.format, {NumDataConversion? conversion, this.numLimits})
     : numConversion = switch (format) {
-        IntFormat() => _disabled, // enlarged int treat as fract for now.
+        IntFormat() => _disabled, // handle with sign extension + bounds. // enlarged int treat as fract for now.
         FractFormat() => conversion ?? _disabled,
         Adcu() => conversion ?? _disabled,
       };
@@ -26,12 +26,13 @@ class BinaryQuantityCodec<V extends num> implements BinaryCodec<V> {
   final NumDataConversion numConversion;
   final ({num min, num max})? numLimits;
 
-  num _clamp(num value) => (numLimits != null) ? value.clamp(numLimits!.min, numLimits!.max) : value;
+  // num _clamp(num value) => (numLimits != null) ? value.clamp(numLimits!.min, numLimits!.max) : value;
 
   @override
   V decode(int data) => numConversion.viewOfData(format.signedOf(data)).to<V>();
   @override
-  int encode(V view) => numConversion.dataOfView(_clamp(view));
+  // int encode(V view) => numConversion.dataOfView(_clamp(view));
+  int encode(V view) => numConversion.dataOfView(view).clamp(format.binaryRange.min, format.binaryRange.max);
 
   //alternatively wrap format with numeric only conversion
   // V decode(int data) => numConversion.of(format.decode(data)).to<V>();

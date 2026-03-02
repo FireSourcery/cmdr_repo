@@ -65,6 +65,19 @@ abstract mixin class NumUnionCodec<V> {
         }
         as V;
   }
+
+  /// update
+  static num numValueOf<T>(T typedValue) {
+    return switch (T) {
+      const (int) => typedValue as int,
+      const (double) => typedValue as double,
+      const (num) => typedValue as num,
+      const (bool) => (typedValue as bool) ? 1 : 0,
+      const (Enum) => (typedValue as Enum).index,
+      const (BitStruct) => (typedValue as BitStruct).bits,
+      _ => throw UnsupportedError('Unsupported type: $T'),
+    };
+  }
 }
 
 // abstract mixin class UnionFormat<V> {}

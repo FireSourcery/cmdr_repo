@@ -1,16 +1,43 @@
+import 'package:binary_data/binary_format/quantity_format.dart';
 import 'package:flutter/material.dart';
 
 import '../var_notifier.dart';
 import 'var_widget.dart';
 
 /// End Widgets using VarNotifier
+///
+// Type-specific extensions — only visible with correct type
+extension VarValueNumExt on VarValue<num> {
+  ({num min, num max})? get numLimits {
+    if (codec is NumFormat) return (codec as NumFormat?)?.valueRange;
+    if (codec is BinaryQuantityCodec) return (codec as BinaryQuantityCodec).numLimits;
+  }
+
+  /// assert(V is num);
+  // bool get isOverLimit => (numView > codec.numLimits!.max);
+  // bool get isUnderLimit => (numView < codec.numLimits!.min);
+}
+
+extension VarValueIntExt on VarValue<int> {
+  ({int min, int max})? get intLimits => (codec as IntFormat?)?.binaryRange;
+}
+
+extension VarValueEnumExt<E extends Enum> on VarValue<E> {
+  List<E> get enumRange => (codec as EnumFormat<E>).values;
+  Enum get valueAsEnum => codec.decode(data);
+}
+
+extension VarValueBitsExt on VarValue<BitStruct> {
+  List<BitField> get bitsKeys => (codec as BitStructFormat).fields;
+  BitStruct get valueAsBitFields => codec.decode(data);
+}
 
 class VarSwitch extends StatelessWidget {
   const VarSwitch(this.varNotifier, {super.key});
 
-  final VarNotifier<dynamic> varNotifier;
+  final VarNotifier<bool> varNotifier;
 
-  Widget builder(BuildContext context, Widget? child) => Switch.adaptive(value: varNotifier.valueAs<bool>(), onChanged: varNotifier.updateByViewAs<bool>);
+  Widget builder(BuildContext context, Widget? child) => Switch.adaptive(value: varNotifier.value, onChanged: varNotifier.updateByView);
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +48,7 @@ class VarSwitch extends StatelessWidget {
 class VarSlider extends StatelessWidget {
   const VarSlider(this.varNotifier, {super.key, this.eventNotifier});
 
-  final VarNotifier<dynamic> varNotifier;
+  final VarNotifier<num> varNotifier;
   final VarEventNotifier? eventNotifier;
 
   Widget builder(BuildContext context, Widget? child) {
@@ -30,13 +57,12 @@ class VarSlider extends StatelessWidget {
     final max = varNotifier.numLimits!.max.toDouble();
     // final onChangeEnd = (eventNotifier != null) ? (eventNotifier!.submitByViewAs<double>) : valueChanged;
     // final onChangeEnd = (eventNotifier != null) ? _submitWithCache : valueChanged;
-    final onChangeEnd = varNotifier.updateByViewAs<double>;
 
     return Slider.adaptive(
       // divisions: ((max - min) ~/ 1).clamp(2, 100),
-      value: varNotifier.valueAs<double>().clamp(min, max),
-      onChanged: varNotifier.updateByViewAs<double>,
-      onChangeEnd: onChangeEnd,
+      value: varNotifier.value.toDouble(),
+      onChanged: varNotifier.updateByView,
+      onChangeEnd: varNotifier.updateByView,
       min: min,
       max: max,
     );
@@ -53,14 +79,15 @@ class VarSlider extends StatelessWidget {
 
 /// A var button does not have a variable or view value.
 /// This widget is only for convenience of mapping a VarKey to a button.
-class VarButton extends StatelessWidget {
-  const VarButton(this.varNotifier, {this.writeValue = 1, this.labelOverwrite, super.key});
+///
+class VarButton<V> extends StatelessWidget {
+  const VarButton(this.varNotifier, {required this.writeValue, this.labelOverwrite, super.key});
 
-  final VarNotifier<dynamic> varNotifier;
-  final int writeValue;
+  final VarNotifier<V> varNotifier;
+  final V writeValue;
   final Widget? labelOverwrite;
 
-  void onPressed() => varNotifier.updateByViewAs<int>(writeValue);
+  void onPressed() => varNotifier.updateByView(writeValue);
 
   @override
   Widget build(BuildContext context) {
