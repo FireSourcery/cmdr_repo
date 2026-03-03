@@ -77,7 +77,6 @@ enum VarReadWriteAccess {
 }
 
 /// [VarStatus]
-// does not implement Enum, as it can be a union of Enums
 abstract mixin class VarStatus {
   const VarStatus();
   factory VarStatus.defaultOf(int code) = _VarStatus;

@@ -17,7 +17,6 @@ class VarCacheController {
   /// todo statuses
   // change multi tto VarHandlerStatus?
   /// cache.updateByDataSlice
-  // VarStatus? _onReadSlice(ServiceGetSlice<int, int> slice) => cache.updateByData(slice.keys, slice.values!);
   VarStatus? _onReadSlice(ServiceGetSlice<int, int> slice) {
     if (slice.values == null) return null; // no response error
     cache.updateByData(slice.keys, slice.values!);
@@ -86,30 +85,6 @@ class VarCacheController {
 
   // maps to protocol service, not cache, so no cache update or status update.
   VarSingleController<V> single<V>(VarNotifier<V> notifier) => VarSingleController(varNotifier: notifier, protocolService: protocolService);
-
-  // return num or object of key V type
-  // Future<V?> operator [](VarKey<V> key) async {
-  //   if (await protocolService.get(key.value) case int value) {
-  //     cache[key]?.updateByData(value);
-  //   }
-  //   return cache[key]!.value ;
-  // }
-
-  // @override
-  // Future<Object?> get(VarKey key, {Loader? ifAbsent}) async {
-  //   await read(key);
-  //   return cache[key]?.viewValue;
-  // }
-
-  // @override
-  // Future<void> invalidate(key) {
-  //   throw UnimplementedError();
-  // }
-
-  // @override
-  // Future<void> set(key, value) {
-  //   throw UnimplementedError();
-  // }
 }
 
 /// `Poll/Push Periodic Process Stream`
