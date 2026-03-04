@@ -3,19 +3,20 @@ description: "Bitwise operations and binary data manipulation utilities. + Data 
 version: 0.0.1
 homepage: https://github.com/FireSourcery/cmdr/tree/main/packages/binary_data
 
+resolution: workspace
+
 publish_to: "none"
 
 environment:
   sdk: ^3.8.0
-
+ 
 dependencies:
   collection: ^1.18.0
-  meta: ^1.11.0
-  type_ext: ^0.0.1
+  meta: ^1.11.0 
 
 dev_dependencies:
-  lints: ^4.0.0
-  flutter_lints: ^4.0.0
+  lints: ^6.1.0
+  flutter_lints: ^6.0.0
   test: ^1.25.8
 # formatter:
 #   trailing_commas: false

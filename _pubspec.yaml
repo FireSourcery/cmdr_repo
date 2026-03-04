@@ -7,7 +7,7 @@ homepage: https://github.com/FireSourcery/cmdr
 
 environment:
   sdk: ^3.8.0
-  flutter: ^3.32.0
+  flutter: ^3.32.0 
 
 dependencies:
   flutter:
@@ -34,3 +34,11 @@ dev_dependencies:
 
 formatter:
   trailing_commas: preserve
+
+# workspace: 
+#   - cmdr_repo/packages/cmdr
+#   - cmdr_repo/packages/binary_data
+  
+# melos:
+#   packages: 
+#     - packages/**

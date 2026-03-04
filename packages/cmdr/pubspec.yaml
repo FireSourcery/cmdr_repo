@@ -2,15 +2,15 @@ name: cmdr
 description: "Commander/Host side utilities for interfacing with embedded devices + other general utilities."
 version: 0.0.1
 # homepage:
+resolution: workspace
 
 publish_to: "none"
 
 environment:
   sdk: ^3.8.0
-  flutter: ^3.32.0
+  flutter: ^3.32.0  
 
-dependencies:
-  type_ext: ^0.0.1
+dependencies: 
   binary_data: ^0.0.1
 
   flutter:
@@ -20,9 +20,9 @@ dependencies:
   collection: ^1.18.0
   quiver: ^3.2.2
 
-  csv: ^6.0.0
-  file_picker: ^8.0.3
-  fl_chart: ^0.69.2
+  csv: ^7.2.0
+  file_picker: ^10.3.10
+  fl_chart: ^1.1.1
   intel_hex: ^1.2.1
   libserialport: ^0.3.0+1
   recase: ^4.1.0
@@ -32,7 +32,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^4.0.0
-  # melos: ^6.2.0
-  lints: ^4.0.0
+  flutter_lints: ^6.0.0
+  # melos: ^7.2.0
+  lints: ^6.1.0
   test: ^1.25.5
