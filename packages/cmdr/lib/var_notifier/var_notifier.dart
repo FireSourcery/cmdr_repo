@@ -46,11 +46,11 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
   MapEntry<int, int> get dataEntry => MapEntry(dataKey, dataValue);
   (int key, int value) get dataPair => (dataKey, dataValue);
 
-  @override
-  void updateStatusByData(int status) {
-    updateStatusByData(status);
-    commitUserChanges();
-  }
+  // @override
+  // void updateStatusByData(int status) {
+  //   super.updateStatusByData(status);
+  //   commitUserChanges();
+  // }
 
   /// Derived from [VarKey] and cached
   /// reinit on VarKey update
