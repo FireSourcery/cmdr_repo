@@ -4,10 +4,15 @@ import 'file_storage.dart';
 
 class CsvFileCodec extends FileStringCodec<List<List<dynamic>>> {
   const CsvFileCodec();
+  // @override
+  // String encode(List<List<dynamic>> input) => const CsvEncoder().convert(input, convertNullTo: '');
+  // @override
+  // List<List<dynamic>> decode(String encoded) => const CsvDecoder().convert(encoded, convertEmptyTo: null);
+
   @override
-  String encode(List<List<dynamic>> input) => const ListToCsvConverter().convert(input, convertNullTo: '');
+  String encode(List<List<dynamic>> input) => const CsvEncoder().convert(input);
   @override
-  List<List<dynamic>> decode(String encoded) => const CsvToListConverter().convert(encoded, convertEmptyTo: null);
+  List<List<dynamic>> decode(String encoded) => const CsvDecoder().convert(encoded);
 }
 
 class CsvFileMapCodec extends FileContentCodec<Map<String, List<dynamic>>, List<List<dynamic>>> {
@@ -66,7 +71,7 @@ class CsvFileMapCodec extends FileContentCodec<Map<String, List<dynamic>>, List<
 
 abstract class CsvFileStorage extends FileStorage<Map<String, List<dynamic>>> {
   CsvFileStorage({super.defaultName, super.extensions = const ['csv', 'txt'], bool transposeToColumnMap = true})
-      : _fileCodec = FileStorageCodec.fuse(CsvFileMapCodec(transposeToColumnMap: transposeToColumnMap), const CsvFileCodec());
+    : _fileCodec = FileStorageCodec.fuse(CsvFileMapCodec(transposeToColumnMap: transposeToColumnMap), const CsvFileCodec());
 
   final FileStorageCodec<Map<String, List<dynamic>>, String> _fileCodec;
 
