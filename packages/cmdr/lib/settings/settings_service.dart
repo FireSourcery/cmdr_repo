@@ -48,7 +48,7 @@ class SharedPrefService {
 // abstract interface class Setting<T>  = ServiceKey<T> UnionValueKey<V>
 
 // SettingBase using SharedPreferences
-abstract mixin class SharedPrefSetting<T> implements Setting<T> {
+abstract mixin class SharedPrefSetting<T> implements Setting<T?> {
   String get key;
 
   @override
@@ -92,7 +92,7 @@ abstract mixin class SharedPrefSetting<T> implements Setting<T> {
   }
 
   @override
-  Future<bool> update(T value) async {
+  Future<bool> update(covariant T value) async {
     // return SettingsService.main.update<T>(key, _boundValue(value));
     return switch (T) {
       const (int) || const (double) => SharedPrefService.main.setAsync<T>(key, _boundNum(value as num) as T),

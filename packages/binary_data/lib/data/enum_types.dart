@@ -49,6 +49,10 @@ class EnumCodecByHandlers<V extends Enum> implements EnumCodec<V> {
   int encode(V view) => encoder(view);
 }
 
+// class _EnumCodec <V extends Enum> with EnumCodec<V> {
+//   const _EnumCodec (this.values);
+//   final List<V> values;
+// }
 /// concrete
 class EnumCodecOffset<V extends Enum> with EnumCodecByOffset<V> {
   const EnumCodecOffset(this.values, this.zeroIndex);
@@ -63,12 +67,9 @@ class EnumCodecSign<V extends Enum> with EnumCodecByOffset<V> {
 }
 
 class EnumCodecDefault<V extends Enum> with EnumCodecByIndex<V> {
-  const EnumCodecDefault(this.values, [this.defaultValue]);
-
+  const EnumCodecDefault(this.values);
   final List<V> values;
-  final V? defaultValue;
-
-  V decode(int data) => values.byIndex(data, defaultValue);
+  V decode(int data) => values.byIndex(data);
 }
 
 ///

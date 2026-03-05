@@ -10,10 +10,11 @@ abstract mixin class FirmwareFileStorage implements FileStorage<Map<int, Uint8Li
   // extension(file!.path)
   factory FirmwareFileStorage.type(String fileExtension) {
     return switch (fileExtension) {
-      '.hex' => HexFileStorage(),
-      // '.bin' => Uint8List.fromList(encoded.codeUnits),
-      String() => throw UnimplementedError(),
-    } as FirmwareFileStorage;
+          '.hex' => HexFileStorage(),
+          // '.bin' => Uint8List.fromList(encoded.codeUnits),
+          String() => throw UnimplementedError(),
+        }
+        as FirmwareFileStorage;
   }
 
   @override
