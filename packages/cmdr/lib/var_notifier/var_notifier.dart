@@ -46,12 +46,6 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
   MapEntry<int, int> get dataEntry => MapEntry(dataKey, dataValue);
   (int key, int value) get dataPair => (dataKey, dataValue);
 
-  // @override
-  // void updateStatusByData(int status) {
-  //   super.updateStatusByData(status);
-  //   commitUserChanges();
-  // }
-
   /// Derived from [VarKey] and cached
   /// reinit on VarKey update
   void initReferences() {
@@ -109,15 +103,12 @@ extension VarNotifiers on Iterable<VarNotifier> {
 /// [VarValueNotifier<V>]
 /// A notifier combining a ValueNotifier with support for conversion between view types and data values.
 ///   - Implements [ValueNotifier]
+///   - hold value allocation
 ///   - Unit conversion between view and data values
+///   - all mutability contained in a single layer, to simplify syncing and state management
 ///   - Sync local and remote values, with pending change tracking
 /// It be can further combined with a status notifier.
 abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V> {
-  ////////////////////////////////////////////////////////////////////////////////
-  /// runtime variables
-  ////////////////////////////////////////////////////////////////////////////////
-  bool get hasPendingChanges => _viewValue != null;
-
   ////////////////////////////////////////////////////////////////////////////////
   /// Typed view [value] as view side
   ////////////////////////////////////////////////////////////////////////////////
@@ -145,8 +136,7 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
   }
 
   ////////////////////////////////////////////////////////////////////////////////
-  /// [dataValue]
-  // Inbound data from server/packets
+  /// [dataValue] Inbound data from server/packets
   ////////////////////////////////////////////////////////////////////////////////
   int get dataValue => data;
 
@@ -155,9 +145,10 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
     if (_viewValue == null) notifyListeners(); // Only notify if effective value changed
   }
 
-  // if separating host and server status
-  // bool outOfRange; // value from client out of range
-  // Enum syncStatus;
+  ////////////////////////////////////////////////////////////////////////////////
+  /// runtime variables
+  ////////////////////////////////////////////////////////////////////////////////
+  bool get hasPendingChanges => _viewValue != null;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

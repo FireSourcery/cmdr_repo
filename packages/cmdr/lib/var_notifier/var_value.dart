@@ -1,11 +1,5 @@
 part of 'var_notifier.dart';
 
-/// [VarDataView<V>]
-///   - handle type and numeric unit conversions, [UnionCodec]
-///   - sync 2 variable representations, local and remote
-///   - all mutability contained in a single layer, to simplify syncing and state management
-///   - hold value allocation
-// optionally split union value interface
 mixin class VarValue<V> {
   /// `Config`
   /// caching results from VarKey for performance.
@@ -32,14 +26,13 @@ mixin class VarValue<V> {
   /// [get] on transmit to server. serverData unless pending _viewValue is set
   /// value over view boundaries handle by [view]
   int get data => (_viewValue == null) ? serverData : dataOf(_viewValue as V);
-  // int get data => serverData; // on transmit to server. committed value only
 
   /// [set] on receive from server. always store serverData even if pending
   /// does not update/overwrite [view] if it was set by the UI
   set data(int newValue) {
     serverData = newValue; // codec handle sign extension
-    if (_viewValue case V val when val == viewOf(newValue)) _viewValue = null; // clear pending, view as serverData again, only if user value matches server value,
     // auto restore control to serverData for read/write-only cases
+    if (_viewValue case V val when val == viewOf(newValue)) _viewValue = null; // clear pending, view as serverData again, only if user value matches server value,
   }
 
   /// [view] value linked to UI
@@ -69,8 +62,10 @@ mixin class VarValue<V> {
   bool get isLastUpdateByData => _viewValue == null;
   // bool get isSynced => isLastUpdateByData;
 
-  /// serialization use
+  ////////////////////////////////////////////////////////////////////////////////
   /// [numView] The num view representation of the [view] value as a num.
+  /// serialization use
+  ////////////////////////////////////////////////////////////////////////////////
   num get numView {
     return switch (V) {
       const (int) || const (double) || const (num) => view as num,
