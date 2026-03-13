@@ -9,13 +9,17 @@ export 'binary_format.dart';
 ///
 /// [BinaryCodec<V>]
 ///
-abstract interface class BinaryCodec<V> implements NumCodec<V> {
+abstract interface class BinaryCodec<V> {
   const BinaryCodec._();
 
   static const BinaryCodec<int> identity = BinaryCodecIdentity._();
 
   V decode(int data);
   int encode(V view);
+
+  // default implementation for num codec, can be overridden for specialized handling of double or other num types.
+  // num decodeAsNum(int data) => data;
+  // int encodeAsNum(num view) => view as int;
 }
 
 typedef DataDecoder<T> = T Function(int data);
@@ -43,9 +47,9 @@ class BinaryCodecIdentity implements BinaryCodec<int> {
 }
 
 // canonical form in num to include double.
-abstract interface class NumCodec<V> {
-  const NumCodec._();
+// abstract interface class NumCodec<V> {
+//   const NumCodec._();
 
-  V decode(covariant num data);
-  num encode(V view);
-}
+//   V decode(covariant num data);
+//   num encode(V view);
+// }

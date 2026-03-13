@@ -14,6 +14,7 @@ part 'binary_formats.dart';
 // Separate descriptor constructable for base data type
 mixin class NativeTypeFormat<S extends NativeType> {
   const NativeTypeFormat();
+  // static const NativeTypeFormat uint8 = NativeTypeFormat<Uint8>();
 
   ({int min, int max}) get range => switch (S) {
     const (Uint8) => (min: 0, max: 0xFF),
@@ -57,6 +58,8 @@ sealed class BinaryFormat<S extends NativeType, V> with NativeTypeFormat<S> impl
 
   ({int min, int max}) get binaryRange => range; //accepted range
 
+  int valueOf(int raw) => signExtension?.call(raw) ?? raw;
+
   int encode(V value);
   V decode(int raw);
 
@@ -95,6 +98,21 @@ sealed class NumFormat<S extends NativeType, V extends num> extends BinaryFormat
 
   // int decode(int raw) => signedOf(raw);
   // int encode(int value) => value.clamp(range.min, range.max);
+}
+
+class IntFormat<S extends NativeType> extends NumFormat<S, int> {
+  const IntFormat();
+  // get formatScalar => 1;
+  int decode(int raw) => signedOf(raw);
+  int encode(int value) => value.clamp(binaryRange.min, binaryRange.max);
+}
+
+abstract class FractFormat<S extends NativeType> extends NumFormat<S, double> {
+  const FractFormat();
+  num get formatScalar;
+  get valueRange => (min: binaryRange.min / formatScalar, max: binaryRange.max / formatScalar);
+  double decode(int raw) => signedOf(raw) / formatScalar;
+  int encode(double value) => (value * formatScalar).truncate().clamp(binaryRange.min, binaryRange.max);
 }
 
 final class BoolFormat extends BinaryFormat<Bool, bool> {
@@ -143,25 +161,16 @@ class EnumFormatBuilder<V extends Enum> extends EnumFormat<V> {
   int encode(V view) => encoder(view);
 }
 
-abstract class FractFormat<S extends NativeType> extends NumFormat<S, double> {
-  const FractFormat();
-  num get formatScalar;
-  get valueRange => (min: binaryRange.min / formatScalar, max: binaryRange.max / formatScalar);
-  double decode(int raw) => signedOf(raw) / formatScalar;
-  int encode(double value) => (value * formatScalar).truncate().clamp(binaryRange.min, binaryRange.max);
-}
-
-abstract class IntFormat<S extends NativeType> extends NumFormat<S, int> {
-  const IntFormat();
-  // get formatScalar => 1;
-  int decode(int raw) => signedOf(raw);
-  int encode(int value) => value.clamp(binaryRange.min, binaryRange.max);
-}
-
 ///
 abstract class FixedPoint<S extends NativeType> extends FractFormat<S> {
   const FixedPoint();
   int get fractBits;
+  num get formatScalar => (1 << fractBits);
+}
+
+final class FixedPointN<S extends NativeType> extends FractFormat<S> {
+  const FixedPointN(this.fractBits);
+  final int fractBits;
   num get formatScalar => (1 << fractBits);
 }
 
@@ -244,6 +253,7 @@ final class Scalar100 extends ScalarBase10<Int16> {
   get formatScalar => 100;
 }
 
+// optionally typedef. handled by type tag
 /// Raw integer pass-through
 final class Int16Int extends IntFormat<Int16> {
   const Int16Int();
@@ -323,6 +333,34 @@ class BitStructFormat<K extends BitField> extends BinaryFormat<Int, BitStruct<K>
 //   get baseRange => (min: 0, max: fields.totalWidth);
 //   T decode(int raw) =>  Bits.ofPairs(fields.bitmasks.map((e) => MapEntry(e, (raw & e.mask) >> e.shift)));
 //   int encode(T value) =>
+// }
+
+// abstract class BinaryValue<V> {
+//   const BinaryValue._(this._raw);
+//   final int _raw;
+//   // @protected
+//   BinaryFormat<dynamic, V> get format ;
+//   V get value => format.decode(_raw);
+// }
+
+// extension type BinaryValue<T extends NativeType, V>(int raw) {
+//   // const BinaryValue(this.raw);
+//   // final int raw;
+//   // @protected
+//   // V as(BinaryFormat<T, V> format) => format.decode(raw);
+//   // V get value => format.decode(raw);
+//   // V as<V1>() => formatRegistry[V1]!.decode(raw);
+
+//   // user defined
+//   static late final Map<Type, BinaryFormat<dynamic, dynamic>> formatRegistry;
+//   // static BinaryFormat  formatOf<T extends BinaryFormat>() => formatRegistry[T] as BinaryFormat;
+//   static BinaryFormat formatOf<T1 extends NativeType, V1>() => formatRegistry[BinaryFormat<T1, V1>] as BinaryFormat;
+
+//   BinaryFormat<T, V> get format => formatRegistry[BinaryFormat<T, V>] as BinaryFormat<T, V>;
+//   V get value => format.decode(raw);
+
+//   // handle with type marker
+//   BinaryValue<T, V> operator *(int multiplier) => NativeTypeFormat<T>().clampBase(raw * multiplier) as BinaryValue<T, V>;
 // }
 
 // Registry
