@@ -116,7 +116,8 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
   V get value => view;
   @override
   set value(V newValue) {
-    if (view == newValue) return;
+    // if (view == newValue) return;
+    if (_viewValue == newValue) return;
     view = newValue;
     notifyListeners();
   }
