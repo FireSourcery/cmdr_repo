@@ -117,9 +117,26 @@ abstract class BitStruct<K extends BitField> extends BitsBase with MapBase<K, in
   }
 }
 
-//todo
-// final class BitStruct<K extends BitField>  // final for interface
-// abstract class BitStructBase<T extends BitStruct<K>, K extends BitField> as base
+//todo  //   for interface
+// sufficent for iterative access, common serialization
+// extension type BitStruct1<K extends BitField>(BitsBase bits) implements BitsBase {
+//   int operator [](K key) => bits.getBits(key.bitmask);
+
+//   // BitStruct1 view(BitStructBase base) => BitStruct1(base.bits);
+// }
+
+// // wrap
+// include class varibles
+// abstract class BitStructBase<T extends BitStruct1<K>, K extends BitField> {
+//   BitStructBase(this._inner);
+//   final BitStruct1<K> _inner;
+
+//   @protected
+//   List<K> get fields;
+
+//   int operator [](covariant K key) => _inner[key];
+//   void operator []=(covariant K key, int value) => _inner[key] = value;
+// }
 
 /// mixn to override [copyWithBits]/copyWith to return a subtype
 /// Subtype considerations:
@@ -201,16 +218,11 @@ base class _BitStruct<K extends BitField> extends ConstBitStruct<K> {
   final Iterable<K> keys;
 }
 
-// extension on List<BitField> {
-//   BitStruct encode(int value) => BitStruct.view(this, value as Bits);
-//   int decode(BitStruct bits) => bits.value;
-// }
-
 // Keys list effectively define type and act as factory
 // factories returning as super interface type
 // Separates subtype `class variables` from instance
 // inheritable over BitStruct factory constructors, with redeclare
-// extension type const BitStructType<T extends BitField>(List<T> keys) {
+// extension type const BitStructFormat<T extends BitField>(List<T> keys) {
 //   // BitStruct<T> castBase(BitsBase base) {
 //   //   return switch (base) {
 //   //     ConstBitStruct() => _BitStruct(keys, base.bits),
@@ -241,6 +253,11 @@ base class _BitStruct<K extends BitField> extends ConstBitStruct<K> {
 //   // BitStruct<T> fromMap(Map<T, int> map, [bool mutable = true]) {
 //   //   return create(Bits.ofEntries(map.bitsEntries), mutable);
 //   // }
+// }
+
+// extension on List<BitField> {
+//   BitStruct encode(int value) => BitStruct.view(this, value as Bits);
+//   int decode(BitStruct bits) => bits.value;
 // }
 
 // return as subtype needs constructor
