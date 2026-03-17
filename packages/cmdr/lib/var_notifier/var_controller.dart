@@ -104,44 +104,53 @@ class VarStreamController extends VarCacheController {
 
   StreamSubscription? pollSubscription;
   StreamSubscription? pushSubscription;
+
+  final List<int> _readBuffer = []; // reuse allocation, no new List each cycle
+  final List<(int, int)> _writeBuffer = [];
+  final Set<PollingScope> _scopes = {};
+
+  PollingScope createScope(Iterable<VarKey> keys) {
+    final scope = PollingScope._(this, keys);
+    _scopes.add(scope);
+    return scope;
+  }
+
+  void _releaseScope(PollingScope scope) => _scopes.remove(scope);
+
   // stream will call slices creating a new list, at the beginning of each multi-batch operation
   // while this iterator is accessed, view must not add or remove keys, either by lock or preallocate cache
-
-  // hasListeners check is regularly updated.
-  // (e.lastUpdate == VarLastUpdate.clear) read all once.
-  // Iterable<VarNotifier> get _readVars => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListeners) ;
-  // Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => e.varKey.isPolling && e.hasListeners).map((e) => e.varKey);
-  // Iterable<int> _readKeysGetter() => cache.dataIdsOf(_pollingKeys..addAll(_readKeys)); // no updates after init
-
-  // same n time complexity
-  Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => (e.varKey.isPolling && e.hasListeners) || _pollingKeys.contains(e.varKey)).map((e) => e.varKey);
-  Iterable<int> _readKeysGetter() => cache.dataIdsOf(_readKeys);
+  Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => (e.varKey.isPolling && e.hasListeners) || _scopes.any((s) => s._keys.contains(e.varKey))).map((e) => e.varKey);
+  List<int> _readKeysGetter() => (_readBuffer..clear())..addAll(cache.dataIdsOf(_readKeys));
 
   Iterable<VarKey> get _writeKeys => cache.varEntries.where((e) => e.varKey.isPushing || e.hasPendingChanges).map((e) => e.varKey);
-  Iterable<(int, int)> _writePairsGetter() => cache.dataPairsOf(_writeKeys);
+  List<(int, int)> _writePairsGetter() => (_writeBuffer..clear())..addAll(cache.dataPairsOf(_writeKeys));
 
-  /// temp handle indirectListeners
-  final Set<VarKey> _pollingKeys = {};
-  // assert isStopped
-  void addPolling(Iterable<VarKey> keys) => _pollingKeys.addAll(keys);
-  void removePollingAll() => _pollingKeys.clear();
-  void selectPolling(Iterable<VarKey> keys) => (_pollingKeys..clear()).addAll(keys);
-
-  Future<bool> beginPeriodic({void Function(Object error)? onError, void Function()? onDone, bool? cancelOnError}) async {
+  ///
+  bool beginPeriodic({void Function(Object error)? onError, void Function()? onDone, bool? cancelOnError}) {
     if (!protocolService.isConnected) return false;
-
-    // await endPeriodic(); // cancel previous if exists, or assert isStopped
     pollSubscription ??= _readStream.listen(_onReadSlice, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
     pushSubscription ??= _writeStream.listen(_onWriteSlice, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
-
     return true;
   }
 
   Future<void> endPeriodic() async {
     await pollSubscription?.cancel().whenComplete(() => pollSubscription = null);
     await pushSubscription?.cancel().whenComplete(() => pushSubscription = null);
-    // await pollSubscription?.asFuture();
-    // await pushSubscription?.asFuture();
+  }
+
+  void pause() {
+    pollSubscription?.pause();
+    pushSubscription?.pause();
+  }
+
+  void resume() {
+    pollSubscription?.resume();
+    pushSubscription?.resume();
+  }
+
+  void forEach(void Function(StreamSubscription? subscription) action) {
+    action(pollSubscription);
+    action(pushSubscription);
   }
 
   bool get isStopped => (pollSubscription == null && pushSubscription == null);
@@ -196,4 +205,14 @@ class VarSingleController<V> {
     }
     return null;
   }
+}
+
+class PollingScope {
+  PollingScope._(this._controller, Iterable<VarKey> keys) : _keys = Set.unmodifiable(keys);
+  final VarStreamController _controller;
+  Set<VarKey> _keys;
+
+  void update(Iterable<VarKey> keys) => _keys = Set.unmodifiable(keys);
+
+  void dispose() => _controller._releaseScope(this);
 }

@@ -82,12 +82,6 @@ class VarCache {
 
   void dispose() => _cache.forEach((_, value) => value.dispose());
 
-  // for checking has listners
-  // void _null() {}
-  // void addIndirectListeners(Iterable<VarKey> keys) => varsOf(keys).forEach((element) => element.addListener(_null));
-  // void removeIndirectListeners() => _cache.forEach((_, varEntry) => varEntry.removeListener(_null));
-  // void setIndirectListeners(Iterable<VarKey> keys) => (this..removeIndirectListeners()).addIndirectListeners(keys);
-
   ////////////////////////////////////////////////////////////////////////////////
   /// Per Instance
   ////////////////////////////////////////////////////////////////////////////////
