@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:binary_data/data/basic_types.dart';
 import 'package:cmdr/var_notifier/widgets/var_menu.dart';
 
-import '../../interfaces/stringifier.dart';
+import '../../type_ext/stringifier.dart';
 import '../../widgets/flyweight_menu/flyweight_menu.dart';
 import '../../widgets/flyweight_menu/flyweight_menu_widgets.dart';
 import '../../widgets/io_field/io_field.dart';

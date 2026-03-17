@@ -1,125 +1,249 @@
+import 'dart:typed_data';
+
 import 'package:meta/meta.dart';
 
 import 'index_map.dart';
 
 export 'index_map.dart';
 
-/// [Structure]
-/// KeyedData, EnumData
-/// Similar to a [Map]
-///   fixed set of keys
-///   getOrNull/setOrNot
+/// [Structure] — zero-cost keyed view over an existing object.
 ///
-/// Provides Key interface to an Object, for iterative field access, e.g. serialization
-/// mixin for withX and serialization
+/// Provides `operator[]` access via [Field] keys without allocation.
+/// The wrapped object's memory layout is unchanged; all dispatch goes
+/// through [Field.getIn]/[Field.setIn].
 ///
-/// subclass determines mutability
-/// interface and implementation
+/// Contraint provided by type markers `K extends Field` ensures that only valid keys can be used
 ///
-// extend to fill class variables.
-// Field may use a type parameter other than V, used to determine the value of V
-abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>  */ {
-  const Structure();
+/// ```dart
+/// final view = Structure<PersonField, Object>(personInstance);
+/// print(view[PersonField.name]); // delegates to PersonField.name.getIn(person)
+/// ```
+/// keep V for some heterogenous cases
+/// Field `V` may use a type parameter other than Structure's `V`
+extension type const Structure<K extends Field, V>(Object _this) implements Object {
+  V operator [](K key) => key.getIn(_this);
+  void operator []=(K key, V value) => key.setIn(_this, value);
 
-  // Map
-
-  // mixin for asMap()
-  V operator [](covariant K key) => get(key);
-  void operator []=(covariant K key, V value) => set(key, value);
-  // with type constraint
   // `field` referring to the field value
-  // V field(K key) => get(key);
-  // void setField(K key, V value) => set(key, value);
+  V field(K key) => key.getIn(_this);
+  void setField(K key, V value) => key.setIn(_this, value);
 
-  // mixin 2 additional for Map interface
-  // void clear();
-  // V remove(covariant K key);
+  V? fieldOrNull(K key) => key.testBoundsOf(_this) ? key.getIn(_this) : null;
 
-  // Struct - implemented by Field key. keep Field<T> type withing local scope
-  //alternatively
-  // overwrite with key.callWithType()
+  bool trySetField(K key, V value) {
+    if (!key.testBoundsOf(_this)) return false;
+    key.setIn(_this, value);
+    return true;
+  }
+
+  FieldEntry<K, V> fieldEntry(K key) => (key: key, value: field(key));
+
+  // copy operations need context of keys
+
+  /// optionally keep in keys class
+  Iterable<V> fields(Iterable<K> keys) => keys.map((key) => field(key)); //valuesOf
+
+  Iterable<FieldEntry<K, V>> fieldEntries(Iterable<K> keys) => keys.map((key) => fieldEntry(key)); //entriesOf
+
+  Iterable<MapEntry<K, V>> map(Iterable<K> keys) => keys.map((key) => MapEntry(key, this[key]));
+
+  /// optionally — accepts base Field type for internal/generic dispatch
   @protected
-  V get(Field key) => key.getIn(this); // valueOf(Field key);
+  V get(Field key) => key.getIn(_this);
   @protected
-  void set(Field key, V value) => key.setIn(this, value);
+  void set(Field key, V value) => key.setIn(_this, value);
   @protected
-  bool testBounds(Field key) => key.testBoundsOf(this);
+  bool testBounds(Field key) => key.testBoundsOf(_this); //contains
 
   @protected
   V? getOrNull(Field key) => testBounds(key) ? get(key) : null;
-  @protected // trySet
+  @protected
   bool setOrNot(Field key, V value) {
     if (!testBounds(key)) return false;
     set(key, value);
     return true;
   }
+}
 
-  V? fieldOrNull(K key) => getOrNull(key);
-  bool setFieldOrNot(K key, V value) => setOrNot(key, value); // trySetField
+/// [StructureType]
+/// TypeClass
+/// Common viewer interface
+/// `List<Enum>` includes serialization
+/// Combine with Structure extension type, satisfies common data interface and serialization
+// dont need subtype here its only for data viewing
+extension type const StructureType<K extends Field, V>(List<K> fields) {
+  Structure<K, V> cast(StructureBase<dynamic, K, V> struct) => struct.data; // can cast if the K,V match
+
+  Map<K, V> createMap(Structure<K, V> struct) => {for (final key in fields) key: key.getIn(struct)};
+  // keys must be Enum or have index
+  FixedMap<K, V> createFixedMap(Structure<K, V> struct) => IndexMap<K, V>.of(fields, fields.map((key) => key.getIn(struct)));
+
+  // Iterable<V> fieldsOf(Structure<K, V> struct) => fields.map((key) => struct[key]); //valuesOf
+  // Iterable<FieldEntry<K, V>> fieldEntries(Structure<K, V> struct) => fields.map((key) => struct.fieldEntry(key)); //entriesOf
+  // Iterable<MapEntry<K, V>> map(Iterable<K> keys) => keys.map((key) => MapEntry(key, this[key]));
+}
+
+/// [Field] — key to a value in a host struct, carrying accessor logic and type scope
+///
+/// Although the containing class with full context of relationships between fields
+/// By defining accessors on the key rather than the struct, the struct itself can remain a plain object (or extension type wrapper).
+/// The key maintains the type scope of `V`.
+///
+/// When `K extends Enum` & `K implements Field`, serialization comes for free via [EnumMapByName] on `Map<Enum, V>`.
+abstract interface class Field<V> {
+  /// Read this field's value from [struct].
+  @protected
+  V getIn(covariant Object struct); // getWithin
+
+  /// Write [value] into this field of [struct].
+  @protected
+  void setIn(covariant Object struct, V value); //setWithin
+
+  /// Whether this field is present/valid for [struct].
+  /// Defaults to `true` (fixed-schema). Override for optional/sparse fields.
+  bool testBoundsOf(covariant Object struct) => true; //isWithin
+
+  /// Optional default; enables `Map<K, V?>` patterns and `clear()`.
+  // V? get defaultValue => null;
+
+  // int get index; // for index map by default
+}
+
+typedef FieldEntry<K, V> = ({K key, V value});
+
+/// User Subtype handling + [Serailizable] mixin
+
+/// [StructureBase] — abstract base user subtype
+///
+/// holds data and TypeObject
+///
+/// Unlike [Structure] (which wraps an _external_ object), subclasses of
+/// [StructureBase] hold data directly in their own fields. [Field.getIn] /
+/// [Field.setIn] receive `this` as the host object.
+///
+/// [StructureBase] provides opt-in value equality via [keys]. When `K` also
+/// extends [Enum], the existing `EnumMapByName` extension on `Map<Enum, V>`
+/// gives serialization for free — just call `toMap().toJson()`.
+///
+/// `StructureBase` cannot implement `Structure` (an extension type). Instead,
+/// [data] returns `Structure<K, V>(this)` — a zero-cost wrapper around `this`
+/// — so that all keyed access delegates through the same [Field]-based dispatch.
+/// This also allows `inner` to be passed to APIs that accept `Structure<K, V>`.
+///
+/// optionally implement Map
+abstract mixin class StructureBase<S extends StructureBase<S, K, V>, K extends Field, V> /* implements FixedMap<K, V> */ {
+  const StructureBase();
+
+  /// a method from its TypeObject
+  /// The ordered list of keys — defines the schema.
+  /// Typically returns `MyField.values` for an enum-based key type.
+  @protected
+  List<K> get keys; // Child class defines fixed keys
+  /// Proxy to allow the same keys
+  Structure<K, V> get data; // data passed to Keys
+  // Object get data; // data passed to Keys
+
+  // mixin 2 additional for Map interface
+  // void clear();
+  // V remove(covariant K key);
+
+  V operator [](covariant K key) => key.getIn(data);
+  void operator []=(covariant K key, V value) => data[key] = value;
+
+  // V field(K key) =>  inner[key];
+  // void setField(K key, V value) => inner[key] = value;
+
+  V? fieldOrNull(K key) => data.fieldOrNull(key);
+  bool trySetField(K key, V value) => data.trySetField(key, value); // trySetField
 
   FieldEntry<K, V> fieldEntry(K key) => (key: key, value: this[key]);
 
-  Iterable<V> valuesOf(Iterable<K> keys) => keys.map((key) => this[key]);
-  Iterable<FieldEntry<K, V>> entriesOf(Iterable<K> keys) => keys.map((key) => fieldEntry(key));
+  //
+  // Interface extended Structure
+  Iterable<V> get fields => data.fields(keys); //valuesOf
+  Iterable<FieldEntry<K, V>> get fieldEntries => data.fieldEntries(keys); //entriesOf
 
-  /// Iteration over all keys — mirrors Map.forEach without requiring MapBase
-  // void forEach(void Function(K key, V value) action) {
-  //   for (final key in keys) {
-  //     action(key, this[key]);
-  //   }
+  // ---------------------------------------------------------------------------
+  // Conversion — bridge to Map (and therefore to serialization)
+  // ---------------------------------------------------------------------------
+  StructureType<K, V> get _type => StructureType<K, V>(keys);
+
+  /// Snapshot as an [IndexMap]. If `K extends Enum`, call `.toJson()` on the
+  /// result to serialise via [EnumMapByName].
+  Map<K, V> toMap() => _type.createMap(data);
+  // IndexMap<K, V> toMap() => IndexMap<K, V>.of(keys, valuesOf(keys));
+
+  // /// iterativee access delegate to map
+  // /// Map implements .values and .entries
+  // Iterable<FieldEntry<K, V>> get fieldEntries => keys.map((key) => fieldEntry(key));
+
+  // Iterable<V> valuesOf(Iterable<K> keys) => keys.map((key) => this[key]);
+  // // Iterable<FieldEntry<K, V>> entriesOf(Iterable<K> keys) => keys.map((key) => fieldEntry(key));
+
+  // ---------------------------------------------------------------------------
+  // Immutable copy helpers — return [StructMap] by default.
+  // Subtypes override copyWith via their own constructor.
+  // ---------------------------------------------------------------------------
+  S copyWith(); // override in child class, using index map by default
+
+  // immutable `with` copy operations, via IndexMap
+  // analogous to operator []=, but returns a new instance
+
+  // StructMap<K, V> _bufferCopy() => StructMap<K, V>._(keys, List<V>.of(valuesOf(keys), growable: false));
+
+  // //StructureBase
+  // // overwrite copyWith to cast after buffered build
+  // StructMap<K, V> _withField(K key, V value) => _bufferCopy()..[key] = value;
+  // StructMap<K, V> _withEntries(Iterable<MapEntry<K, V>> newEntries) => _bufferCopy()..addEntries(newEntries);
+  // StructMap<K, V> _withAll(Map<K, V> map) => _bufferCopy()..addAll(map);
+
+  /// Override for non-null fields from [overlay] applied onto a copy of this.
+  // StructMap<K, V> withFields(StructureBase<dynamic, K, V?> overlay) {
+  //   // return StructMap.ofMap({for (var key in keys) key: fields.field(key) ?? field(key)} as FixedMap<K, V?>);
+  //   return StructMap<K, V>(this)..forEach((key, value) {
+  //     if (fields[key] case V newValue) this[key] = newValue;
+  //   });
   // }
 
-  /// with context of this.keys
-  // @override
-  List<K> get keys; // a method that is the meta contents, fieldsList
-  // Iterable<K> get keys;
-  // List<K> get fields;
-
-  // IndexMap<K, V> asMap() => IndexMap<K, V>._(keys, valuesOf(keys));
-  // Map<K, V> toMap() => IndexMap<K, V>.of(keys, valuesOf(keys));
-
-  // default implementation for copyWith, base operation for the same keys
-  // factory Structure.cast(Structure<K, V> fields) = StructMap.new;
-
-  // Structure<K, V> copyWith() /// override in child class, using index map by default
-
-  // overwrite copyWith to cast after buffered build, or leave abstract.
-  Structure<K, V> withFields(Structure<K, V?> fields) {
-    // return StructMap.ofMap({for (var key in keys) key: fields.field(key) ?? field(key)} as FixedMap<K, V?>);
-    return StructMap<K, V>(this)..forEach((key, value) {
-      if (fields[key] case V newValue) this[key] = newValue;
-    });
-  }
-
-  /// Returns a copy of this structure with non-null fields from [fields] applied.
-  /// Overwrite [copyWith] in [StructAsSubtype] to return the concrete subtype.
-  // Structure<K, V> withFields(Structure<K, V?> fields) {
-  //   final copy = StructMap<K, V>(this);
-  //   for (final key in keys) {
-  //     if (fields[key] case final V newValue) copy[key] = newValue;
+  // Structure<K, V> _bufferCopy() => StructMap<K, V>._(keys, List<V>.of(valuesOf(keys), growable: false)).inner;
+  // Structure<K, V> _withField(K key, V value) => _bufferCopy()..[key] = value;
+  // Structure<K, V> _withEntries(Iterable<MapEntry<K, V>> newEntries) {
+  //   final copy = _bufferCopy();
+  //   for (final entry in newEntries) {
+  //     copy[entry.key] = entry.value;
   //   }
   //   return copy;
   // }
 
-  // user may overwrite once a subclass constructor is defined
-  // immutable `with` copy operations, via IndexMap
-  // analogous to operator []=, but returns a new instance
-  Structure<K, V> withField(K key, V value) => StructMap<K, V>(this)..[key] = value;
-  //
-  Structure<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => StructMap<K, V>(this)..addEntries(newEntries);
-  // A general values map representing external input, may be a partial map
-  Structure<K, V> withMap(Map<K, V> map) => StructMap<K, V>(this)..addAll(map);
+  // Structure<K, V> _withAll(Map<K, V> map) => _bufferCopy()..addAll(map);
+
+  // @mustBeOverridden
+  // S copyWithBase([Structure<K, Object?>? fields]);
+
+  // @override
+  // S withField(K key, Object? value) => copyWithBase(_withField(key, value));
+  // @override
+  // S withEntries(Iterable<MapEntry<K, Object?>> newEntries) => copyWithBase(withEntries(newEntries));
+  // @override
+  // S withMap(Map<K, Object?> map) => copyWithBase(withMap(map));
+
+  // ---------------------------------------------------------------------------
+  // Value equality
+  // ---------------------------------------------------------------------------
 
   @override
   int get hashCode => keys.fold(0, (prev, key) => prev ^ this[key].hashCode);
 
-  /// Value equality: two structures are equal if they share the same keys reference
-  /// (i.e. same type schema) and all corresponding field values are equal.
+  /// Value equality: two structures are equal if they share the same keys
+  /// reference (same schema) and all corresponding field values are equal.
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    if (other is! Structure<K, V>) return false;
-    if (!identical(keys, other.keys)) return false; // keys are const lists; identity means same schema
+    if (other is! StructureBase<S, K, V>) return false;
+    // Keys lists for enum types are const singletons; identity means same schema.
+    if (!identical(keys, other.keys)) {
+      if (keys.length != other.keys.length) return false;
+    }
     for (final key in keys) {
       if (this[key] != other[key]) return false;
     }
@@ -127,60 +251,78 @@ abstract mixin class Structure<K extends Field, V> /* implements  FixedMap<K, V>
   }
 
   @override
-  String toString() => 'Structure(${keys.map((key) => '$key: ${this[key]}').join(', ')})';
+  String toString() => '$S(${keys.map((k) => '$k: ${this[k]}').join(', ')})';
 }
 
-abstract class StructureBase<S extends Structure<K, Object?>, K extends Field> with Structure<K, Object?> {
-  const StructureBase();
-  @mustBeOverridden
-  S copyWithBase([Structure<K, Object?>? fields]);
+// simplifiy signiture for general class types.
+typedef DataStruct<S extends StructureBase<S, K, Object>, K extends Field> = StructureBase<S, K, Object>;
+
+/// allows the base layer to create a struct buffer
+/// Base map for FromMap handling if needed
+/// Map handles key via Map buffers
+/// implements [Structure] using parallel arrays
+// default for buffer
+class StructMap<K extends Field, V> extends IndexMap<K, V> with StructureBase<StructMap<K, V>, K, V> {
+  StructMap._(super.keys, super.values) : super.of();
+  // StructMap(StructureBase<StructMap<K, V>, K, V> struct) : super.of(struct.keys, struct.data.fields(struct.keys));
+
+  // /// Construct from an explicit entries iterable; all keys must be present.
+  // StructMap.fromEntries(List<K> keys, Iterable<MapEntry<K, V>> entries) : super.fromEntries(keys, entries);
+
+  // /// Construct filled with a single value (useful for nullable or default-value init).
+  // StructMap.filled(List<K> keys, V fill) : super.filled(keys, fill);
 
   @override
-  S withField(K key, Object? value) => copyWithBase(withField(key, value));
+  Structure<K, V> get data => throw StateError('StructMap is a buffer and does not have an inner data object');
+
   @override
-  S withEntries(Iterable<MapEntry<K, Object?>> newEntries) => copyWithBase(withEntries(newEntries));
+  StructureType<K, V> get _type => throw StateError('StructMap is a buffer and does not have a type');
+
   @override
-  S withMap(Map<K, Object?> map) => copyWithBase(withMap(map));
+  Map<K, V> toMap() => StructMap<K, V>._(this.keys, this.values); // return a copy to prevent external mutation
+  @override
+  FieldEntry<K, V> fieldEntry(K key) => (key: key, value: this[key]);
+  @override
+  V? fieldOrNull(K key) => this[key];
+  @override
+  bool trySetField(K key, V value) {
+    this[key] = value; // always succeeds since it's a buffer
+    return true;
+  }
+
+  @override
+  StructMap<K, V> copyWith() => this;
+
+  // @override
+  // // TODO: implement fieldEntries
+  // Iterable<FieldEntry<K, V>> get fieldEntries => throw UnimplementedError();
+
+  // @override
+  // // TODO: implement fields
+  // Iterable<V> get fields => throw UnimplementedError();
 }
+// proxy over a map
+// class StructInitializer<T extends StructureBase<T, K, V>, K extends Field, V> with StructureBase<T, K, V> {
+//   const StructInitializer(this._init);
 
-/// [Field] - key to a value in a [StructView], with type
-/// although implementation of operators may be preferable in the containing class with full context of relationships between fields
-/// define accessors on the struct within key, to keep type withing local scope
-/// the key maintains scope of V
+//   final Map<K, V> _init;
+
+//   @override
+//   Structure<K, V> get inner 
+  
+//   @override 
+//   List<K> get keys => _init.keys.toList();
+// }
+
+
+
+// 
 ///
-/// K as Enum for serialization
+/// [StructFactory] — schema + typed constructor for a struct subtype.
 ///
-/// effectively allows StructView to be abstract
-abstract mixin class Field<V> {
-  @protected
-  V getIn(covariant Object struct);
-  @protected
-  void setIn(covariant Object struct, V value);
-  // not yet replaceable
-  // @protected
-  // isBounded
-  /// Returns true if this field is in-bounds for [struct].
-  /// Default assumes the field is always bounded (fixed-schema structs).
-  /// Override for optional/sparse fields.
-  bool testBoundsOf(covariant Object struct) => true;
-
-  // @protected
-  // V? getInOrNull(covariant Object struct) {
-  //   return testBoundsOf(struct) ? getIn(struct) : null;
-  // }
-
-  // @protected
-  // bool setInOrNot(covariant Object struct, V value) {
-  //   if (testBoundsOf(struct)) {
-  //     setIn(struct, value);
-  //     return true;
-  //   }
-  //   return false;
-  // }
-
-  V? get defaultValue => null; // allows additional handling of Map<K, V?>
-}
-
+/// Decouples the key schema (a const [List<K>]) from the concrete [S] constructor,
+/// enabling generic factory methods (fill, fromEntries, fromMap, copy) that return
+/// the concrete subtype without requiring [S] to expose parametric constructors.
 // class StructFactory<S extends Structure<K, V>, K extends Field, V> {
 //   const StructFactory(this.fields, {this.constructor});
 //   final List<K> fields;
@@ -189,39 +331,14 @@ abstract mixin class Field<V> {
 //   Structure<K, V> createBase([List<V>? values]) => StructMap<K, V>._(fields, values ?? List.filled(fields.length, null as V));
 // }
 
-//
-// extension type const StructFactory<S extends Structure<K, V>, K extends Field, V>(List<K> fields) {
-//   // StructFactory.withC(S Function([List<V>?]) constructor) : fields = constructor().keys;
-// // extension type const StructFactory<S, K extends Field, V>(List<K> fields, S Function([List<V>?])? constructor)
-//   StructMap<K, V> createBase([List<V>? values]) => StructMap<K, V>._(fields, values ?? List.filled(fields.length, null as V));
-//   // Map.fromEntries(fields.map((key) => MapEntry(key, values[fields ])));
-//   // S create([List<V>? values]) => createBase(values).copyWith() as S; // implicitly call constructor
-//   // Structure<K, V> cast(Structure<Field, Object?> struct) {}
-//   // S castMap(Map<K, V> map) => castBase(_fromEntries(map.entries));
-// }
-
-// extension type const StructSubtypeFactory<S extends Structure>(S Function([List? values]) constructor) {}
-
-/// [StructFactory] — schema + typed constructor for a struct subtype.
-///
-/// Decouples the key schema (a const [List<K>]) from the concrete [S] constructor,
-/// enabling generic factory methods (fill, fromEntries, fromMap, copy) that return
-/// the concrete subtype without requiring [S] to expose parametric constructors.
-///
-/// Usage:
-/// ```dart
-/// class Point extends Structure<PointField, double> { ... }
-/// const pointFactory = StructFactory(PointField.values, Point.fromBase);
-/// final p = pointFactory.filled(0.0);
-/// ```
-// class StructFactory<S extends Structure<K, V>, K extends Field, V> {
-//   const StructFactory(this.keys, this.constructor);
+// abstract class StructFactory<S extends StructureBase<S, K, V>, K extends Field, V> {
+//   const StructFactory(this.keys);
 
 //   /// The canonical ordered list of keys — defines the schema.
 //   final List<K> keys;
 
 //   /// User-supplied function that converts a generic [Structure<K, V>] buffer into [S].
-//   final S Function(Structure<K, V>) constructor;
+//   S constructor([Structure<K, V>? buffer]);
 
 //   /// Create [S] by copying all fields from [source].
 //   S from(Structure<K, V> source) => constructor(StructMap<K, V>(source));
@@ -238,50 +355,4 @@ abstract mixin class Field<V> {
 //   /// Return an unfilled mutable [StructMap] buffer with [keys] set.
 //   /// Useful for incremental construction before calling [constructor].
 //   StructMap<K, V> buffer(V fill) => StructMap<K, V>.filled(keys, fill);
-// }
-
-/// typedefs
-typedef FieldEntry<K, V> = ({K key, V value});
-
-/// implement Structure using parallel arrays
-class StructMap<K extends Field, V> extends IndexMap<K, V> with Structure<K, V> {
-  StructMap(Structure<K, V> struct) : super.of(struct.keys, struct.valuesOf(struct.keys));
-  StructMap._(super.keys, super.values) : super.of();
-
-  /// Construct from an explicit entries iterable; all keys must be present.
-  StructMap.fromEntries(List<K> keys, Iterable<MapEntry<K, V>> entries) : super.fromEntries(keys, entries);
-
-  /// Construct filled with a single value (useful for nullable or default-value init).
-  StructMap.filled(List<K> keys, V fill) : super.filled(keys, fill);
-}
-
-/// default implementation of immutable copy as subtype
-/// auto typing return as Subtype class.
-/// copy references to a new buffer, then pass to child constructor
-mixin StructAsSubtype<S extends Structure<K, V>, K extends Field, V> on Structure<K, V> {
-  // Overridden the in child class
-  //  calls the child class constructor
-  //  return an instance of the child class type
-  //  passing empty parameters always copies all values
-  @override
-  @mustBeOverridden
-  S copyWith();
-
-  @override
-  S withField(K key, V value) => (super.withField(key, value) as StructAsSubtype<S, K, V>).copyWith();
-  @override
-  S withEntries(Iterable<MapEntry<K, V>> newEntries) => (super.withEntries(newEntries) as StructAsSubtype<S, K, V>).copyWith();
-  @override
-  S withMap(Map<K, V> map) => (super.withMap(map) as StructAsSubtype<S, K, V>).copyWith();
-  @override
-  S withFields(Structure<K, V?> fields) => (super.withFields(fields) as StructAsSubtype<S, K, V>).copyWith();
-}
-
-// mixin FixedMapWith<K, V> on FixedMap<K, V> {
-//   // analogous to operator []=, but returns a new instance
-//   FixedMap<K, V> withField(K key, V value) => (IndexMap<K, V>.fromBase(this)..[key] = value);
-//   //
-//   FixedMap<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => IndexMap<K, V>.fromBase(this)..addEntries(newEntries);
-//   // A general values map representing external input, may be a partial map
-//   FixedMap<K, V> withAll(Map<K, V> map) => IndexMap<K, V>.fromBase(this)..addAll(map);
 // }

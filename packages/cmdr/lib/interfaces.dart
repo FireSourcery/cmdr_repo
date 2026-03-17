@@ -22,4 +22,4 @@
 /// ```
 library cmdr.interfaces;
 
-export 'interfaces/service_io.dart';
+export 'var_notifier/service_io.dart';

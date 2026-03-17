@@ -3,7 +3,7 @@ import 'package:recase/recase.dart';
 
 import 'package:binary_data/binary_data.dart';
 
-import '../../interfaces/stringifier.dart';
+import '../../type_ext/stringifier.dart';
 
 // interface, a field with value that reduces to bool
 typedef FlagField = ({Enum key, bool value});

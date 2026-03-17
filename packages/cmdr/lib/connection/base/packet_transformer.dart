@@ -88,6 +88,7 @@ class HeaderStatus {
   bool? get isChecksumValid => packet.isChecksumFieldValid; // (isPacketComplete == true), buffer.length == buffer.lengthFieldOrNull
 }
 
+// todo use indepedent status. move to packet module
 /// combine partial/fragmented packets
 /// emitted [Packet] is a reference to the buffer, not a copy. handling must be synchronous, before returning control to the transformer
 class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> implements EventSink<Uint8List> {

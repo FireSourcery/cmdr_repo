@@ -25,7 +25,7 @@ export 'bits_map.dart';
 /// base class enforce data implementation. ensure correct correspondance with remote devices
 ////////////////////////////////////////////////////////////////////////////////
 
-abstract class BitStruct<K extends BitField> extends BitsBase with MapBase<K, int>, BitFieldMap<K> implements BitsMap<K, int> {
+abstract class BitStruct<K extends BitField> extends BitData with MapBase<K, int>, BitFieldMap<K> implements BitsMap<K, int> {
   const BitStruct();
   const factory BitStruct.view(List<K> keys, Bits bits) = _BitStruct<K>;
   // const factory BitStruct.withType(List<K> keys, Bits bits) = _BitStruct<K>;
@@ -117,27 +117,6 @@ abstract class BitStruct<K extends BitField> extends BitsBase with MapBase<K, in
   }
 }
 
-//todo  //   for interface
-// sufficent for iterative access, common serialization
-// extension type BitStruct1<K extends BitField>(BitsBase bits) implements BitsBase {
-//   int operator [](K key) => bits.getBits(key.bitmask);
-
-//   // BitStruct1 view(BitStructBase base) => BitStruct1(base.bits);
-// }
-
-// // wrap
-// include class varibles
-// abstract class BitStructBase<T extends BitStruct1<K>, K extends BitField> {
-//   BitStructBase(this._inner);
-//   final BitStruct1<K> _inner;
-
-//   @protected
-//   List<K> get fields;
-
-//   int operator [](covariant K key) => _inner[key];
-//   void operator []=(covariant K key, int value) => _inner[key] = value;
-// }
-
 /// mixn to override [copyWithBits]/copyWith to return a subtype
 /// Subtype considerations:
 /// to return a subtype,[S extends BitStruct<K>]:
@@ -218,48 +197,6 @@ base class _BitStruct<K extends BitField> extends ConstBitStruct<K> {
   final Iterable<K> keys;
 }
 
-// Keys list effectively define type and act as factory
-// factories returning as super interface type
-// Separates subtype `class variables` from instance
-// inheritable over BitStruct factory constructors, with redeclare
-// extension type const BitStructFormat<T extends BitField>(List<T> keys) {
-//   // BitStruct<T> castBase(BitsBase base) {
-//   //   return switch (base) {
-//   //     ConstBitStruct() => _BitStruct(keys, base.bits),
-//   //     // MutableBitStruct() => MutableBitStruc (keys, base.bits),
-//   //     BitsBase() => throw StateError(''),
-//   //   };
-//   // }
-
-//   // BitStruct<T> castBits(int value) => _BitStruct<T>(keys, Bits(value));
-
-//   // unmodifiableView
-//   BitStruct<T> view(int value) => _BitStruct<T>(keys, Bits(value));
-
-//   // alternatively default constructors can return partial implementation without Keys/MapOperator
-//   // BitStruct<T> create([int value = 0, bool mutable = true]) {
-//   //   return switch (mutable) {
-//   //     true => _BitStruct(keys, Bits(value)),
-//   //     false => _BitStruct(keys, Bits(value)),
-//   //   };
-//   // }
-
-//   // Alternatively subclass directly call Bits constructors to derive Bits value
-//   // enum map by default copies into an array
-//   // BitStruct<T> fromValues(Iterable<int> values, [bool mutable = true]) {
-//   //   return create(Bits.ofIterables(keys.bitmasks, values), mutable);
-//   // }
-
-//   // BitStruct<T> fromMap(Map<T, int> map, [bool mutable = true]) {
-//   //   return create(Bits.ofEntries(map.bitsEntries), mutable);
-//   // }
-// }
-
-// extension on List<BitField> {
-//   BitStruct encode(int value) => BitStruct.view(this, value as Bits);
-//   int decode(BitStruct bits) => bits.value;
-// }
-
 // return as subtype needs constructor
 // typedef BitStructCaster<T extends BitStruct> = T Function(BitsBase bitsBase);
 // extension type const BitStructSubType<S extends BitStruct<T>, T extends BitField>(List<T> keys) implements BitStructType<T> {
@@ -268,10 +205,4 @@ base class _BitStruct<K extends BitField> extends ConstBitStruct<K> {
 //   S castBase(BitsBase base) => throw UnimplementedError('castBase must be implemented in the subtype');
 
 //   // S castBits(int value) => (this as BitStructType<T>).castBits(value) as S;
-// }
-
-// abstract class BitStructClass<S extends BitStruct, K extends BitField> {
-//   List<K> get keys;
-//   S cast(BitsBase base);
-//   // S createBuffer([Bits initialValue = const Bits.allZeros()]) => constructor(initialValue);
 // }

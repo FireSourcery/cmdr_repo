@@ -32,6 +32,7 @@ typedef NumConverter = num Function(num);
 typedef NumConversion = ({NumConverter decode, NumConverter encode});
 
 /// LinearConversion Factory
+/// NumScalar
 extension type const LinearConversion(num coefficient) {
   num of(num x) => (x * coefficient);
   num invOf(num y) => (y / coefficient);

@@ -4,11 +4,11 @@ import 'package:flutter/foundation.dart' hide BitField;
 
 import 'package:binary_data/binary_data.dart';
 
-import '../interfaces/num_union.dart';
-import '../interfaces/service_io.dart';
+import '../type_ext/num_union.dart';
+import 'service_io.dart';
 
 export 'package:binary_data/binary_data.dart';
-export '../interfaces/service_io.dart';
+export 'service_io.dart';
 
 part 'var_cache.dart';
 part 'var_controller.dart';

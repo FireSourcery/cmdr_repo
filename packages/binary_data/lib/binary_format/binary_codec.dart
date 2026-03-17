@@ -1,9 +1,3 @@
-import 'package:binary_data/data/enum_types.dart';
-import 'package:binary_data/data/num_ext.dart';
-
-import '../bits/bit_struct.dart';
-import 'binary_format.dart';
-
 export 'binary_format.dart';
 
 ///

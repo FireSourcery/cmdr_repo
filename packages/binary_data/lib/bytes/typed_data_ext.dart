@@ -74,19 +74,59 @@ int bytesPerElementOf<T extends TypedData>() {
   };
 }
 
+/// [TypedArray<T extends TypedData>] - `Generic TypedData`
+/// wrapped + additional constructors for [TypedData] and [TypedDataList]
+// extension type const TypedArray<T extends TypedDataList>._(T _this) implements TypedData, TypedDataList {
+//   TypedArray(int length) : this._(typedList<T>(length));
+
+//   // constructor for arrayAt<T>() using end
+//   // offset uses parameter 'data' instance type, not T type,
+//   // sublistView handle range error
+//   // alternatively unified calculation on buffer directly
+//   TypedArray.cast(TypedData data, [int start = 0, int? end]) : this._(sublistView<T>(data, start, end));
+
+//   // TypedArray.cast(TypedData data, [int typedOffset = 0, int? end])
+//   //   : _this = switch (T) {
+//   //       // prefer super function anti pattern. cannot compose from all sub type groups without overlap
+//   //       const (TypedData) || const (dynamic) => data.typeRestrictedKey.callWithRestrictedType(<G extends TypedData>() => sublistView<G>(data, typedOffset, end) as T),
+//   //       _ => sublistView<T>(data, typedOffset, end),
+//   //       // const (ByteData) => throw UnsupportedError('ByteData is not a typed list'),
+//   //     };
+
+//   /// effectively sublist with extendable length
+//   /// length in T size
+//   /// same as `TypedData.fromList` when `length < this.length`
+//   /// fills length when `length > this.length` and accepts [Iterable<int>] where as `TypedData.fromList` does not
+//   factory TypedArray.fromData(TypedData data, [int? length]) {
+//     final byteLength = (length != null) ? length * bytesPerElementOf<T>() : data.lengthInBytes;
+//     final copyLength = min(byteLength, data.lengthInBytes);
+//     return TypedArray<T>.cast(Uint8List(byteLength)..setAll(0, Uint8List.sublistView(data, 0, copyLength)));
+
+//     // return TypedArray<T>(length ?? data.lengthInBytes ~/ bytesPerElementOf<T>()).._this.buffer.asUint8List().setAll(0, Uint8List.sublistView(data, 0, copyLength));
+//   }
+
+//   //
+//   factory TypedArray.fromValues(TypedDataList values, [int? length]) {
+//     final newLength = length ?? values.length;
+//     return TypedArray<T>(newLength)..setAll(0, values.take(newLength));
+
+//     // if (length != null) {
+//     //   return TypedArray<T>(length)..setAll(0, values.take(length));
+//     // } else {
+//     //   return fromList(elements);
+//     // }
+//   }
+
+//   T get asThis => _this;
+
+// }
 ////////////////////////////////////////////////////////////////////////////////
 /// implementations on TypedData returning as `this` type
 /// parameters in element size of `this` type
 ////////////////////////////////////////////////////////////////////////////////
 extension TypedDataLength on TypedData {
   int get length => lengthInBytes ~/ elementSizeInBytes;
-
-  bool testBounds(int start, int? end) {
-    assert(start >= 0, 'Start must be non-negative: $start');
-    if (start > length) return false;
-    if (end != null && (end > length)) return false;
-    return true;
-  }
+  // int get offset => offsetInBytes ~/ elementSizeInBytes;
 }
 
 /// Slices returning TypedData
@@ -116,39 +156,3 @@ extension TypedDataListSeek<T extends TypedDataList<int>> on T {
   String asString([int start = 0, int? end]) => String.fromCharCodes(this, start, end);
   // String toStringAsCode([int start = 0, int? end]) => String.fromCharCodes(this, start, end);
 }
-
-// class EndianCastList<R extends TypedData> extends ListBase<num> {
-//   EndianCastList(this._source, this._endian);
-
-//   static Endian hostEndian = Endian.host; // resolve once storing results
-//   final TypedData _source;
-//   final Endian _endian;
-
-//   // List<num> numListViewHost<R extends TypedData>([int typedOffset = 0, Endian endian = Endian.little]) {
-//   //   return (hostEndian != endian) ? EndianCastList<R>(this, endian) : sublistView<R>(typedOffset) as R;
-//   // }
-//   @override
-//   int get length => _source.lengthInBytes ~/ _source.elementSizeInBytes;
-//   // int get length => (_source as List<int>).length;
-
-//   @override
-//   num operator [](int index) {
-//     final byteData = ByteData.sublistView(_source);
-//     return switch (R) {
-//       const (Uint16List) => byteData.getUint16(index * _source.elementSizeInBytes, _endian),
-//       // const (Uint16List) => Uint16List.sublistView(this, typedOffset),
-//       // const (Uint32List) => Uint32List.sublistView(this, typedOffset),
-//       // const (Int8List) => Int8List.sublistView(this, typedOffset),
-//       // const (Int16List) => Int16List.sublistView(this, typedOffset),
-//       // const (Int32List) => Int32List.sublistView(this, typedOffset),
-//       // const (ByteData) => throw UnsupportedError('ByteData is not a typed list'),
-//       _ => throw UnimplementedError(),
-//     };
-//   }
-
-//   @override
-//   void operator []=(int index, num value) {}
-
-//   @override
-//   set length(int newLength) {}
-// }

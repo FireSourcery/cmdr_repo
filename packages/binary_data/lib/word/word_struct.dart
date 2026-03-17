@@ -64,4 +64,12 @@ abstract mixin class WordField<V extends NativeType> implements BitField, TypedF
 
   // int get size => _sizeOf<T>();
   // int get end => offset + size; // index of the last byte + 1
+
+  /// unused for now
+  @override
+  int getIn(BitData struct) => struct.getBits(bitmask);
+  @override
+  void setIn(BitData struct, int value) => struct.setBits(bitmask, value);
+  @override
+  bool testBoundsOf(BitData struct) => bitmask.shift + bitmask.width <= struct.width;
 }

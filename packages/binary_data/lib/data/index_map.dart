@@ -10,7 +10,7 @@ abstract mixin class FixedMap<K, V> implements Map<K, V> {
   const FixedMap();
 
   @override
-  Iterable<K> get keys; // for implementation with const map literal
+  Iterable<K> get keys; // for implementation wrapping const map literal
   // List<K> get keys;
 
   @override
@@ -24,8 +24,17 @@ abstract mixin class FixedMap<K, V> implements Map<K, V> {
   @override
   V remove(covariant K key);
 
-//   // List<V>? get defaultValues;
+  //   // List<V>? get defaultValues;
 }
+
+// extension FixedMapExtensions<K, V> on FixedMap<K, V> {
+//   // analogous to operator []=, but returns a new instance
+//   FixedMap<K, V> withField(K key, V value) => (IndexMap<K, V>.fromBase(this)..[key] = value);
+//   //
+//   FixedMap<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => IndexMap<K, V>.fromBase(this)..addEntries(newEntries);
+//   // A general values map representing external input, may be a partial map
+//   FixedMap<K, V> withAll(Map<K, V> map) => IndexMap<K, V>.fromBase(this)..addAll(map);
+// }
 
 /// [IndexMap]
 /// Default implementation using parallel arrays
@@ -42,21 +51,22 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
   const IndexMap._(this._keysReference, this._valuesBuffer) : assert(_keysReference.length == _valuesBuffer.length);
 
   IndexMap._assert(this._keysReference, this._valuesBuffer)
-      : assert(_keysReference.indexed.every((e) => e.$1 == e.$2.index), 'Keys must have index property'),
-        assert(_valuesBuffer.length == _keysReference.length, 'Values buffer must match keys length');
+    : assert(_keysReference.indexed.every((e) => e.$1 == e.$2.index), 'Keys must have index property'),
+      assert(_valuesBuffer.length == _keysReference.length, 'Values buffer must match keys length');
 
   /// constructors pass original keys, do not derive from Map.keys
   // a new values buffer list is allocated for a new map
 
+  // values enfoce List to indcate matched length
   IndexMap.of(List<K> keys, Iterable<V> values) : this._(keys, List<V>.of(values, growable: false));
 
   IndexMap.filled(List<K> keys, V fill) : this._(keys, List<V>.filled(keys.length, fill, growable: false));
 
   // possibly with nullable entries value V checking key for default value first
   IndexMap.fromEntries(List<K> keys, Iterable<MapEntry<K, V>> entries)
-      : assert(keys.every((key) => entries.map((entry) => entry.key).contains(key))),
-        _keysReference = keys,
-        _valuesBuffer = List.from((IndexMap<K, V?>.filled(keys, null)..addEntries(entries))._valuesBuffer);
+    : assert(keys.every((key) => entries.map((entry) => entry.key).contains(key))),
+      _keysReference = keys,
+      _valuesBuffer = List.from((IndexMap<K, V?>.filled(keys, null)..addEntries(entries))._valuesBuffer);
 
   // default copyFrom implementation
   // IndexMap.fromBase(IndexMap<K, V?> state) : this._(state.keys, List<V>.from(state.values, growable: false));
@@ -150,6 +160,7 @@ class ProxyIndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
   @override
   V remove(covariant K key) => throw UnsupportedError("Cannot modify unmodifiable");
 }
+
 // mixin FixedMapWith<K, V> on FixedMap<K, V> {
 //   // analogous to operator []=, but returns a new instance
 //   FixedMap<K, V> withField(K key, V value) => (IndexMap<K, V>.fromBase(this)..[key] = value);

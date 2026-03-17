@@ -21,10 +21,11 @@
 ///   child: MyWidget(),
 /// )
 /// ```
-library cmdr.var_notifier;
 
 // Core variable notifier classes
 export 'var_notifier/var_notifier.dart';
+
+export 'var_notifier/service_io.dart';
 
 // Context management
 export 'var_notifier/var_context.dart';

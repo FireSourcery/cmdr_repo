@@ -91,7 +91,6 @@ sealed class BinaryFormat<S extends NativeType, V> with NativeTypeFormat<S> impl
 /// Int/Fract
 sealed class NumFormat<S extends NativeType, V extends num> extends BinaryFormat<S, V> {
   const NumFormat();
-  // num get formatScalar;
   ({num min, num max}) get valueRange => range;
 
   int signedOf(int raw) => signExtension?.call(raw) ?? raw;
@@ -102,7 +101,6 @@ sealed class NumFormat<S extends NativeType, V extends num> extends BinaryFormat
 
 class IntFormat<S extends NativeType> extends NumFormat<S, int> {
   const IntFormat();
-  // get formatScalar => 1;
   int decode(int raw) => signedOf(raw);
   int encode(int value) => value.clamp(binaryRange.min, binaryRange.max);
 }
@@ -254,6 +252,10 @@ final class Scalar100 extends ScalarBase10<Int16> {
 }
 
 // optionally typedef. handled by type tag
+// final class FixedPointFormat<S extends NativeType> extends NumFormat<S, double> with FixedPoint<S> {
+//   const FixedPointFormat(this.fractBits);
+//   final int fractBits;
+// }
 /// Raw integer pass-through
 final class Int16Int extends IntFormat<Int16> {
   const Int16Int();
@@ -290,13 +292,6 @@ final class Fixed16 extends FixedPoint<Int16> {
   const Fixed16(this.fractBits);
   final int fractBits;
 }
-
-// final class FixedPointFormat<S extends NativeType> extends NumFormat<S, double> with FixedPoint<S> {
-//   const FixedPointFormat(this.fractBits);
-//   final int fractBits;
-// }
-// todo special types
-// enum signed
 
 /// marker for special handling closing the sealed hierarchy, simplifies caller defs
 class Adcu extends NumFormat<Uint16, double> {
@@ -364,103 +359,45 @@ class BitStructFormat<K extends BitField> extends BinaryFormat<Int, BitStruct<K>
 // }
 
 // Registry
-abstract final class BinaryFormats {
-  static const fract16 = Fract16();
-  static const ufract16 = Ufract16();
-  static const accum16 = Accum16();
-  static const uaccum16 = Uaccum16();
-  static const percent16 = Percent16();
-  static const angle16 = Angle16();
-  static const angle16Deg = Angle16Deg();
-  static const angle16Rad = Angle16Rad();
-  static const scalar10 = Scalar10();
-  static const scalar100 = Scalar100();
-  static const scalarInv10 = ScalarInv10();
-  static const int16 = Int16Int();
-  static const uint16 = Uint16Int();
-  static const int8 = Int8Int();
-  static const uint8 = Uint8Int();
-  static const int32 = Int32Int();
-  static const uint32 = Uint32Int();
-  static const boolean = BoolFormat();
-  static const sign = SignFormat();
+// abstract final class BinaryFormats {
+//   static const fract16 = Fract16();
+//   static const ufract16 = Ufract16();
+//   static const accum16 = Accum16();
+//   static const uaccum16 = Uaccum16();
+//   static const percent16 = Percent16();
+//   static const angle16 = Angle16();
+//   static const angle16Deg = Angle16Deg();
+//   static const angle16Rad = Angle16Rad();
+//   static const scalar10 = Scalar10();
+//   static const scalar100 = Scalar100();
+//   static const scalarInv10 = ScalarInv10();
+//   static const int16 = Int16Int();
+//   static const uint16 = Uint16Int();
+//   static const int8 = Int8Int();
+//   static const uint8 = Uint8Int();
+//   static const int32 = Int32Int();
+//   static const uint32 = Uint32Int();
+//   static const boolean = BoolFormat();
+//   static const sign = SignFormat();
 
-  static const values = <BinaryFormat>[
-    fract16,
-    ufract16,
-    accum16,
-    uaccum16,
-    percent16,
-    angle16,
-    angle16Rad,
-    scalar10,
-    scalar100,
-    scalarInv10,
-    int16,
-    uint16,
-    int8,
-    uint8,
-    int32,
-    uint32,
-    boolean,
-    sign,
-  ];
-}
-
-// class BinaryCodec<S extends NativeType, V extends Object> {
-//   const BinaryCodec(this.format, {this.endian = Endian.little});
-
-//   final BinaryFormat<S, V> format;
-//   final Endian endian;
-
-//   int get byteWidth => format.byteWidth;
-
-//   /// Read raw int from [bytes] at [offset]
-//   int readRaw(ByteData bytes, int offset) => switch (byteWidth) {
-//         1 => format.isSigned ? bytes.getInt8(offset)   : bytes.getUint8(offset),
-//         2 => format.isSigned ? bytes.getInt16(offset, endian) : bytes.getUint16(offset, endian),
-//         4 => format.isSigned ? bytes.getInt32(offset, endian) : bytes.getUint32(offset, endian),
-//         _ => throw UnsupportedError('Unsupported byteWidth: $byteWidth'),
-//       };
-
-//   /// Write raw int to [bytes] at [offset]
-//   void writeRaw(ByteData bytes, int offset, int raw) => switch (byteWidth) {
-//         1 => format.isSigned ? bytes.setInt8(offset, raw)   : bytes.setUint8(offset, raw),
-//         2 => format.isSigned ? bytes.setInt16(offset, endian: endian, raw) : bytes.setUint16(offset, raw, endian),
-//         4 => format.isSigned ? bytes.setInt32(offset, raw, endian) : bytes.setUint32(offset, raw, endian),
-//         _ => throw UnsupportedError('Unsupported byteWidth: $byteWidth'),
-//       };
-
-//   /// Decode value from [bytes] at [offset]
-//   V read(ByteData bytes, int offset) => format.decode(readRaw(bytes, offset));
-
-//   /// Encode value to [bytes] at [offset]
-//   void write(ByteData bytes, int offset, V value) => writeRaw(bytes, offset, format.encode(value));
-
-//   /// Decode from a flat byte list at field [index] (stride = byteWidth)
-//   V readAt(ByteData bytes, int index) => read(bytes, index * byteWidth);
-
-//   /// Encode to a flat byte list at field [index] (stride = byteWidth)
-//   void writeAt(ByteData bytes, int index, V value) => write(bytes, index * byteWidth, value);
-
-//   /// Decode all values from [bytes] (full buffer)
-//   List<V> readAll(ByteData bytes) => [
-//         for (var i = 0; i < bytes.lengthInBytes ~/ byteWidth; i++) readAt(bytes, i),
-//       ];
-
-//   /// Encode all [values] into a new [ByteData]
-//   ByteData encodeAll(List<V> values) {
-//     final bytes = ByteData(values.length * byteWidth);
-//     for (var i = 0; i < values.length; i++) writeAt(bytes, i, values[i]);
-//     return bytes;
-//   }
-
-//   /// Copy single value into a new [ByteData]
-//   ByteData encodeSingle(V value) => encodeAll([value]);
-
-//   /// Decode single value from the start of [bytes]
-//   V decodeSingle(ByteData bytes) => read(bytes, 0);
-
-//   @override
-//   String toString() => 'BinaryCodec<${format.runtimeType}>(endian: $endian)';
+//   static const values = <BinaryFormat>[
+//     fract16,
+//     ufract16,
+//     accum16,
+//     uaccum16,
+//     percent16,
+//     angle16,
+//     angle16Rad,
+//     scalar10,
+//     scalar100,
+//     scalarInv10,
+//     int16,
+//     uint16,
+//     int8,
+//     uint8,
+//     int32,
+//     uint32,
+//     boolean,
+//     sign,
+//   ];
 // }

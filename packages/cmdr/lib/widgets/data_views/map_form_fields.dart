@@ -1,7 +1,7 @@
 import 'package:binary_data/word/word.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:binary_data/data/basic_ext.dart';
+import 'package:binary_data/utilities/basic_ext.dart';
 
 /// A singular FormField partitioned corresponding to the Map input.
 /// Displays a TextField for each Map entry, with initial values from the map.

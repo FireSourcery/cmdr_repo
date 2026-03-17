@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
-import 'package:meta/meta.dart';
 
 typedef ServiceGetSlice<K, V> = ({Iterable<K> keys, Iterable<V>? values});
 typedef ServiceSetSlice<K, V, S> = ({Iterable<(K, V)> pairs, Iterable<S>? statuses});
@@ -54,6 +53,7 @@ abstract mixin class ServiceIO<K, V, S> {
   /// Splits input/output into slices of [maxBatchSize]
   /// Caller locks [keys] from modifications before building slices
   ////////////////////////////////////////////////////////////////////////////////
+  /// know List use `List.slices` instead
   Stream<ServiceGetSlice<K, V>> getAll(Iterable<K> keys, {Duration delay = const Duration(milliseconds: 1)}) {
     return _getSlices(keys.slices(maxGetBatchSize ?? keys.length), delay: delay);
   }
@@ -75,21 +75,18 @@ abstract mixin class ServiceIO<K, V, S> {
     }
   }
 
+  /// caller optimize, if keys is iterable allocates slices, if list sliced with list view.
   Stream<ServiceGetSlice<K, V>> pollFlex(Iterable<K> Function() keysGetter, {Duration delay = const Duration(milliseconds: 1)}) async* {
     while (true) {
       var keys = keysGetter();
       if (keys.isEmpty) {
         await Future.delayed(const Duration(milliseconds: 50)); // subsitute time of 1 iteration
-        yield* const Stream.empty(); // so empty keys can be canceled
+        // yield* const Stream.empty(); // so empty keys can be canceled
+        continue;
       } else {
         yield* getAll(keys, delay: delay);
       }
     }
-
-    // List<K> keys = []; // Reusable buffer
-    // keys.setAll(0, keysGetter());
-    // var sliceLength = maxGetBatchSize ?? keys.length;
-    // yield* _getSlices(keys.mapIndexed((index, key) => ListSlice(keys, index * sliceLength, index * sliceLength + sliceLength)), delay: delay);
   }
 
   Stream<ServiceSetSlice<K, V, S>> push(Iterable<(K, V)> Function() pairsGetter, {Duration delay = const Duration(milliseconds: 1)}) async* {
@@ -97,17 +94,11 @@ abstract mixin class ServiceIO<K, V, S> {
       var pairs = pairsGetter();
       if (pairs.isEmpty) {
         await Future.delayed(const Duration(milliseconds: 50));
-        yield* const Stream.empty(); //
+        // yield* const Stream.empty();
+        continue;
       } else {
         yield* setAll(pairs, delay: delay);
       }
     }
   }
-
-  // Stream<ServiceSetSlice<K, V, S>> pushFixed(Iterable<K> keys, Iterable<V> Function() valuesGetter, {Duration delay = const Duration(milliseconds: 1)}) async* {
-  //   if (keys.isEmpty) return;
-  //   while (true) {
-  //     yield* setAll(Iterable.generate(keys.length, (index) => (keys.elementAt(index), valuesGetter().elementAt(index))), delay: delay);
-  //   }
-  // }
 }

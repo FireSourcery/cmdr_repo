@@ -32,8 +32,21 @@ to `/example` folder.
 const like = 'sample';
 ```
 
-## Additional information
+# binary_data Architecture
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+## Struct Hierarchy
+
+| Type | Backing Storage | Field Granularity | Use Case |
+|------|----------------|-------------------|----------|
+| `BitStruct` | Single integer | Bit ranges | Hardware registers, flags |
+| `WordStruct` | Single word (extends BitStruct) | Bit ranges within a word | Calibration fields |
+| `ByteStruct` | `TypedData` buffer | Byte offsets via `TypedField` | Multi-byte packet payloads |
+
+## Collections
+
+| Type | Key Type | Use Case |
+|------|----------|----------|
+| `EnumMap<E, V>` | Enum | Compile-time safe enum-keyed maps |
+| `IndexMap<V>` | int | Dense integer-indexed collections |
+| `BitsMap` | BitField enum | Bit-flag collections |
+| `BoolMap` | Enum | Boolean-flag collections |

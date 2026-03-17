@@ -44,6 +44,19 @@ abstract mixin class ByteStruct<K extends ByteField<NativeType>> /* implements S
   // V getAs<R extends ByteStruct, V>(ByteStructCaster<R> caster, [dynamic  stateMeta]) => caster(byteData).parse(this, stateMeta);
 }
 
+/// view ByteData or ByteStruct subtypes as base type. sufficent for iterative access.
+extension type const ByteStruct1<K extends ByteField>(ByteData _this) implements Structure<K, int> {
+  ByteStruct1.cast(ByteStructBase base) : this(base.data as ByteData);
+}
+
+abstract class ByteStructBase<S extends ByteStructBase<S, K>, K extends ByteField> with StructureBase<S, K, int> {
+  const ByteStructBase._(this.data);
+  const ByteStructBase(ByteData inner) : this._(inner as ByteStruct1<K>);
+  final ByteStruct1<K> data; //aka ByteData
+
+  List<K> get keys; // a method that is the meta contents, fieldsList
+}
+
 /// Typed Offset
 abstract mixin class ByteField<V extends NativeType> implements TypedField<V>, Field<int> {
   const factory ByteField(int offset) = _ByteField<V>;

@@ -17,8 +17,16 @@ export 'bits.dart';
 /// A collection of `Bit-fields`, in a primitive type variable, e.g int,
 /// should be known as Bit-Fields, or Bits Field, Bit Struct, Bit-Field Struct
 ////////////////////////////////////////////////////////////////////////////////
-abstract mixin class BitField /* implements Field<int> */ {
+abstract mixin class BitField implements Field<int> {
   Bitmask get bitmask;
+
+  /* implements Field<int> */
+  @override
+  int getIn(BitData struct) => struct.getBits(bitmask);
+  @override
+  void setIn(BitData struct, int value) => struct.setBits(bitmask, value);
+  @override
+  bool testBoundsOf(BitData struct) => bitmask.shift + bitmask.width <= struct.width;
 
   // implements Bitmask maintains all masks as as list
   // int get shift => bitmask.shift; // index of the first bit
@@ -26,22 +34,20 @@ abstract mixin class BitField /* implements Field<int> */ {
 
   // int get valueMax => (1 << width) - 1);
 
-  /* implements Field<int> */
-  // @override
-  // int getIn(BitsBase struct) => struct.getBits(bitmask);
-  // @override
-  // void setIn(BitsBase struct, int value) => struct.setBits(bitmask, value);
-  // @override
-  // bool testBoundsOf(BitsBase struct) => bitmask.shift + bitmask.width <= struct.width;
-
   // @override
   // int get defaultValue => 0; // default value for the type
 }
 
-/// BitIndexField special case
+/// BitIndexField /// Special case: single-bit field addressed by index.
 abstract mixin class BitIndexField implements BitField {
   int get index;
   Bitmask get bitmask => Bitmask.index(index);
+  @override
+  int getIn(BitData struct) => struct.getBits(bitmask);
+  @override
+  void setIn(BitData struct, int value) => struct.setBits(bitmask, value);
+  @override
+  bool testBoundsOf(BitData struct) => bitmask.shift + bitmask.width <= struct.width;
 }
 
 // as record
@@ -63,13 +69,13 @@ extension BitKeysMethods on Iterable<BitField> {
   }
 }
 
-extension BitsMapMethods on Map<BitField, int> {
-  Iterable<MapEntry<Bitmask, int>> get bitsEntries => keys.map((e) => MapEntry(e.bitmask, this[e]!));
-}
+// extension BitsMapMethods on Map<BitField, int> {
+//   Iterable<MapEntry<Bitmask, int>> get bitsEntries => keys.map((e) => MapEntry(e.bitmask, this[e]!));
+// }
 
-extension BitsEntrysMethods on Iterable<MapEntry<BitField, int>> {
-  Iterable<MapEntry<Bitmask, int>> get bitsEntries => map((e) => MapEntry(e.key.bitmask, e.value));
-}
+// extension BitsEntrysMethods on Iterable<MapEntry<BitField, int>> {
+//   Iterable<MapEntry<Bitmask, int>> get bitsEntries => map((e) => MapEntry(e.key.bitmask, e.value));
+// }
 
 extension BitIndexKeysMethods on Iterable<BitIndexField> {
   int get totalWidth => length;

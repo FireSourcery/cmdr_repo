@@ -2,7 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 import '../bytes/byte_struct.dart';
-import '../data/basic_ext.dart';
+import '../utilities/basic_ext.dart';
 export '../bytes/byte_struct.dart';
 
 /// Collective def of Packet format. Descriptor/'Class variables'

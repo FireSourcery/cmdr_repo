@@ -26,6 +26,8 @@ class BinaryQuantityCodec<V extends num> implements BinaryCodec<V> {
   final NumDataConversion numConversion;
   final ({num min, num max})? numLimits;
 
+  // ({num min, num max}) get effectiveNumLimits => numLimits ?? format.valueRange;
+
   // num _clamp(num value) => (numLimits != null) ? value.clamp(numLimits!.min, numLimits!.max) : value;
 
   @override

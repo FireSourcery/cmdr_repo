@@ -2,7 +2,6 @@ part of 'bits_map.dart';
 
 /// [BoolMap]
 ///
-/// implements foundation.BitField<T>,
 abstract mixin class BoolMap<K extends dynamic> implements BitsMap<K, bool> {
   const BoolMap._();
 

@@ -79,8 +79,8 @@ extension type const Bits(int _bits) implements int {
 }
 
 extension BitsOfInt on int {
-  Bits get bits => Bits(this); // asBits();
-  int get byteLength => ((bitLength - 1) ~/ 8) + 1; // (bitLength / 8).ceil();
+  Bits get bits => Bits(this); // asBits
+  int get byteLength => ((bitLength - 1) ~/ 8) + 1;
 }
 
 /// Bitmask
@@ -107,9 +107,6 @@ class Bitmask {
   int applyOff(int source) => (source & bitmask) >>> shift; // get as shifted back
   int modify(int source, int value) => clear(source) | applyOn(value); // ready for write back
 
-  // int operator *(int value) => ((value << shift) & _bitmask); // apply as compile time const??
-  // int call(int value) => (value & _bitmask);
-
   // int operator |(int value) => (value | bitmask); // fill bits
 }
 
@@ -121,14 +118,15 @@ extension BitmasksMethods on Iterable<Bitmask> {
   int get totalWidth => map((e) => e.width).sum;
 }
 
-/// [BitsBase]/[BitData]/ - base for classes backed by Bits
+/// [BitData]
 ///   contain bits for setters - Cannot be extension type
 ///     allows `pass by pointer`
-///   gives Bits a type for matching, distinguish from int
-///   cast with any sub type
 ///  use by BitsMap. BitsStuct, BoolMap, etc.
-abstract class BitsBase {
-  const BitsBase();
+// make ffinal
+abstract mixin class BitData {
+  const BitData();
+  factory BitData.mutable([Bits bits]) = MutableBits;
+  factory BitData.constant(Bits bits) = ConstBits;
 
   Bits get bits;
   set bits(Bits value); // only dependency for unmodifiable
@@ -154,7 +152,7 @@ abstract class BitsBase {
   String toStringAsBits() => bits.toRadixString(2); // 000
 
   @override
-  bool operator ==(covariant BitsBase other) {
+  bool operator ==(covariant BitData other) {
     if (identical(this, other)) return true;
     return other.bits == bits;
   }
@@ -164,9 +162,8 @@ abstract class BitsBase {
 }
 
 /// base for Map or Struct
-base class MutableBits extends BitsBase {
+base class MutableBits extends BitData {
   MutableBits([this.bits = const Bits.allZeros()]);
-  // MutableBits.castBase(BitsBase state) : this(state.bits);
 
   @override
   Bits bits;
@@ -176,11 +173,9 @@ base class MutableBits extends BitsBase {
 
 // although only MutableBits must wrap Bits, this way they both implement and derive the same interfaces
 @immutable
-base class ConstBits extends BitsBase {
+base class ConstBits extends BitData {
   const ConstBits(this.bits);
   // const ConstBits.value(int bits) : this(bits as Bits);
-  // ConstBits(int value) : this( );
-  // ConstBits.castBase(BitsBase state) : this(state.bits);
 
   @override
   final Bits bits;
@@ -191,8 +186,8 @@ base class ConstBits extends BitsBase {
 }
 
 // @immutable
-// class BitsInitializer<K> with BitsBase {
-//   const BitsInitializer(this._init);
+// class BitDataInitializer<K> with BitData {
+//   const BitDataInitializer(this._init);
 
 //   final Map<Bitmask, int> _init;
 

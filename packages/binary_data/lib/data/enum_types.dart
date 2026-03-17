@@ -1,9 +1,9 @@
 import 'dart:math';
 
 extension EnumByNullable<T extends Enum> on List<T> {
-  T byIndex(int index, [T? defaultValue]) => elementAtOrNull(index) ?? defaultValue ?? elementAt(min(index, length - 1));
+  T byIndex(int index, [T? defaultValue]) => elementAtOrNull(index) ?? defaultValue ?? elementAt(index.clamp(0, length - 1));
 
-  T? resolve(int? index) => (index != null) ? elementAtOrNull(index) : null;
+  T? resolve(int? index) => (index != null) ? byIndex(index) : null;
 
   Map<V, T> asReverseMap<V>([V Function(T)? valueOf]) {
     if (valueOf != null) return {for (final key in this) valueOf(key): key};
@@ -11,7 +11,7 @@ extension EnumByNullable<T extends Enum> on List<T> {
     throw ArgumentError('EnumMap: $V must be defined for reverseMap');
   }
 
-  // EnumCodec<T> asCodec() => EnumCodec.of(this);
+  // EnumCodec<T> asCodec() => EnumCodecDefault.of(this);
 }
 
 abstract interface class EnumCodec<V extends Enum> /* implements Codec<V> */ {
@@ -49,11 +49,12 @@ class EnumCodecByHandlers<V extends Enum> implements EnumCodec<V> {
   int encode(V view) => encoder(view);
 }
 
-// class _EnumCodec <V extends Enum> with EnumCodec<V> {
-//   const _EnumCodec (this.values);
-//   final List<V> values;
-// }
 /// concrete
+class EnumCodecDefault<V extends Enum> with EnumCodecByIndex<V> {
+  const EnumCodecDefault(this.values);
+  final List<V> values;
+}
+
 class EnumCodecOffset<V extends Enum> with EnumCodecByOffset<V> {
   const EnumCodecOffset(this.values, this.zeroIndex);
   final List<V> values;
@@ -66,12 +67,7 @@ class EnumCodecSign<V extends Enum> with EnumCodecByOffset<V> {
   final int zeroIndex = 1; // default to offset of 1 for sign enums with -1, 0, 1 values
 }
 
-class EnumCodecDefault<V extends Enum> with EnumCodecByIndex<V> {
-  const EnumCodecDefault(this.values);
-  final List<V> values;
-  V decode(int data) => values.byIndex(data);
-}
-
+// optional or move to models
 ///
 abstract mixin class Sign<T extends Sign<T>> implements Enum {
   // as class variables
@@ -92,6 +88,7 @@ enum SignId with Sign<SignId> {
   EnumCodecSign<SignId> get codec => factory;
 }
 
+// union
 // class EnumUnionCodecDefault {
 //   const EnumUnionCodecDefault(this.switcher);
 
