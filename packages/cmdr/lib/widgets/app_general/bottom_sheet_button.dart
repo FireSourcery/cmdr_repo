@@ -111,6 +111,18 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
   }
 }
 
+// class BottomSheetObserver extends NavigatorObserver {
+// BottomSheetButtonState bottomSheetButtonState;
+// Widget Function(Route route)? onRoute;
+
+//   @override
+//   void didPush(Route route, Route? previousRoute) => bottomSheetButtonState.exitRootBottomSheet();
+//   @override
+//   void didPop(Route route, Route? previousRoute) => bottomSheetButtonState.exitRootBottomSheet();
+//   @override
+//   void didReplace({Route? newRoute, Route? oldRoute}) => bottomSheetButtonState.exitRootBottomSheet();
+// }
+
 class _MaterialWrap extends StatelessWidget {
   const _MaterialWrap({super.key, required this.color, required this.theme, required this.shape, required this.child});
 

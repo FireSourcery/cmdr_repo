@@ -135,7 +135,7 @@ enum VarStatusUnknown with VarStatus, VarEnumStatus {
   bool get isSuccess => false;
 }
 
-// enum VarHandlerStatus with VarStatus, VarEnumStatus { unknownId, outOfRange, noResponse, 
+// enum VarHandlerStatus with VarStatus, VarEnumStatus { unknownId, outOfRange, noResponse,
 //   @override
 //   int get code => -1; }
 
@@ -146,3 +146,21 @@ enum VarStatusUnknown with VarStatus, VarEnumStatus {
 //   num get viewMax => viewMaxs.max;
 //   num get viewMin => viewMins.min;
 // }
+
+// sealed class VarState<V> {}
+
+// class VarData<V> extends VarState<V> {
+//   final V value;
+// }
+
+// class VarPending<V> extends VarState<V> {
+//   final V pendingValue;
+// }
+
+// class VarError<V> extends VarState<V> {
+//   final Object error;
+// }
+
+// class VarStale<V> extends VarState<V> {
+//   final V lastValue;
+// }  // poll timeout

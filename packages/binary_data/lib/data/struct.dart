@@ -24,28 +24,26 @@ extension type const Structure<K extends Field, V>(Object _this) implements Obje
   V operator [](K key) => key.getIn(_this);
   void operator []=(K key, V value) => key.setIn(_this, value);
 
+  // map key implementations to data
   // `field` referring to the field value
   V field(K key) => key.getIn(_this);
   void setField(K key, V value) => key.setIn(_this, value);
 
   V? fieldOrNull(K key) => key.testBoundsOf(_this) ? key.getIn(_this) : null;
-
   bool trySetField(K key, V value) {
     if (!key.testBoundsOf(_this)) return false;
     key.setIn(_this, value);
     return true;
   }
 
+  // derived
   FieldEntry<K, V> fieldEntry(K key) => (key: key, value: field(key));
 
   // copy operations need context of keys
-
-  /// optionally keep in keys class
+  // optionally keep in keys class
   Iterable<V> fields(Iterable<K> keys) => keys.map((key) => field(key)); //valuesOf
-
   Iterable<FieldEntry<K, V>> fieldEntries(Iterable<K> keys) => keys.map((key) => fieldEntry(key)); //entriesOf
-
-  Iterable<MapEntry<K, V>> map(Iterable<K> keys) => keys.map((key) => MapEntry(key, this[key]));
+  Iterable<MapEntry<K, V>> mapEntries(Iterable<K> keys) => keys.map((key) => MapEntry(key, this[key]));
 
   /// optionally — accepts base Field type for internal/generic dispatch
   @protected
@@ -65,6 +63,20 @@ extension type const Structure<K extends Field, V>(Object _this) implements Obje
   }
 }
 
+extension type const StructureBuffer<K extends Field, V>(Map<K, V> _this) implements Structure<K, V>, Map<K, V> {
+  V operator [](K key) => _this[key] as V;
+  void operator []=(K key, V value) => _this[key] = value;
+
+  V field(K key) => _this[key] as V;
+  void setField(K key, V value) => _this[key] = value;
+
+  V? fieldOrNull(K key) => _this[key];
+  bool trySetField(K key, V value) {
+    _this[key] = value;
+    return true;
+  }
+}
+
 /// [StructureType]
 /// TypeClass
 /// Common viewer interface
@@ -78,9 +90,9 @@ extension type const StructureType<K extends Field, V>(List<K> fields) {
   // keys must be Enum or have index
   FixedMap<K, V> createFixedMap(Structure<K, V> struct) => IndexMap<K, V>.of(fields, fields.map((key) => key.getIn(struct)));
 
-  // Iterable<V> fieldsOf(Structure<K, V> struct) => fields.map((key) => struct[key]); //valuesOf
-  // Iterable<FieldEntry<K, V>> fieldEntries(Structure<K, V> struct) => fields.map((key) => struct.fieldEntry(key)); //entriesOf
-  // Iterable<MapEntry<K, V>> map(Iterable<K> keys) => keys.map((key) => MapEntry(key, this[key]));
+  /// Conversion — bridge to Map (and therefore to serialization)
+  Map<K, V> toMap(Structure<K, V> struct) => {for (final key in fields) key: key.getIn(struct)};
+  Structure<K, V> fromMap(Map<K, V> map) => StructureBuffer(map);
 }
 
 /// [Field] — key to a value in a host struct, carrying accessor logic and type scope
@@ -255,7 +267,7 @@ abstract mixin class StructureBase<S extends StructureBase<S, K, V>, K extends F
 }
 
 // simplifiy signiture for general class types.
-typedef DataStruct<S extends StructureBase<S, K, Object>, K extends Field> = StructureBase<S, K, Object>;
+// typedef DataStruct<S extends StructureBase<S, K, Object>, K extends Field> = StructureBase<S, K, Object>;
 
 /// allows the base layer to create a struct buffer
 /// Base map for FromMap handling if needed

@@ -66,6 +66,7 @@ class HeaderParser extends PacketBuffer {
 
 /// immutable view of packet parsing status
 /// determine complete, error, or wait for more data
+/// as state machine state
 class HeaderStatus {
   const HeaderStatus(this.packet);
   @protected
@@ -178,3 +179,9 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
   @override
   Stream<Packet> bind(Stream<Uint8List> stream) => Stream<Packet>.eventTransformed(stream, _mapSink);
 }
+
+sealed class PacketStatus {}
+
+enum PacketStatusOk implements PacketStatus { ok }
+
+enum PacketStatusException implements PacketStatus, Exception { meta, checksum }

@@ -78,9 +78,15 @@ class VarCache {
 
   bool get isEmpty => _cache.isEmpty;
   bool contains(VarKey varKey) => _cache.containsKey(varKey.value);
-  void zero() => _cache.forEach((key, value) => value.numView = 0);
+  void zero() => _cache.forEach((_, value) => value.numView = 0);
 
   void dispose() => _cache.forEach((_, value) => value.dispose());
+
+  // for checking has listners
+  // void _null() {}
+  // void addIndirectListeners(Iterable<VarKey> keys) => varsOf(keys).forEach((element) => element.addListener(_null));
+  // void removeIndirectListeners() => _cache.forEach((_, varEntry) => varEntry.removeListener(_null));
+  // void setIndirectListeners(Iterable<VarKey> keys) => (this..removeIndirectListeners()).addIndirectListeners(keys);
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Per Instance

@@ -127,29 +127,26 @@ class VarStreamController extends VarCacheController {
   void removePollingAll() => _pollingKeys.clear();
   void selectPolling(Iterable<VarKey> keys) => (_pollingKeys..clear()).addAll(keys);
 
-  // void addPolling(Iterable<VarKey> keys) => cache.varsOf(keys).forEach((element) => element.hasIndirectListeners = true);
-  // void removePollingAll() => cache.varEntries.forEach((element) => element.hasIndirectListeners = false);
-  // void selectPolling(Iterable<VarKey> keys) => (this..removePollingAll()).addPolling(keys);
-
   Future<bool> beginPeriodic({void Function(Object error)? onError, void Function()? onDone, bool? cancelOnError}) async {
     if (!protocolService.isConnected) return false;
-    // if (!isStopped) return true;
-    // _pollingKeys.addAll(_readKeys);
+
+    // await endPeriodic(); // cancel previous if exists, or assert isStopped
     pollSubscription ??= _readStream.listen(_onReadSlice, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
     pushSubscription ??= _writeStream.listen(_onWriteSlice, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
-    // pushHandler.begin();
+
     return true;
   }
 
   Future<void> endPeriodic() async {
-    // _pollingKeys.clear();
     await pollSubscription?.cancel().whenComplete(() => pollSubscription = null);
     await pushSubscription?.cancel().whenComplete(() => pushSubscription = null);
     // await pollSubscription?.asFuture();
     // await pushSubscription?.asFuture();
   }
 
-  void get isStopped => (pollSubscription == null && pushSubscription == null);
+  bool get isStopped => (pollSubscription == null && pushSubscription == null);
+
+  // Future<void> get stopped async => endPeriodic()
 }
 
 ///
@@ -160,6 +157,7 @@ extension VarNotifierAwait on VarNotifier {
     }
   }
 
+  // todo await on status
   // of a polling, read/write
   // assuming no periodic writes
   // needs to be set with listeners, add to polling

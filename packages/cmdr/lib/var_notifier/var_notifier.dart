@@ -174,6 +174,7 @@ mixin class VarValue<V> {
   /// does not update/overwrite [view] if it was set by the UI
   set data(int newValue) {
     serverData = newValue; // codec handle sign extension
+    // or remove and manually call commit
     // auto restore control to serverData for read/write-only cases
     if (_viewValue case V val when val == viewOf(newValue)) _viewValue = null; // clear pending, view as serverData again, only if user value matches server value,
   }
@@ -204,6 +205,13 @@ mixin class VarValue<V> {
   bool get isLastUpdateByView => _viewValue != null;
   bool get isLastUpdateByData => _viewValue == null;
   // bool get isSynced => isLastUpdateByData;
+
+  // enum VarLastUpdate { view, data, synced } as combined status
+  //   VarLastUpdate get lastUpdate {
+  //     (_viewValue == null)
+  // (viewOf(serverData) == _viewValue) ? VarLastUpdate.data : VarLastUpdate.view;
+  //     hasPendingChanges ? VarLastUpdate.view : VarLastUpdate.data;
+  //   }
 
   ////////////////////////////////////////////////////////////////////////////////
   /// [numView] The num view representation of the [view] value as a num.
@@ -268,7 +276,7 @@ mixin class VarValue<V> {
 /// Does not mixin ValueNotifier<VarStatus> to not take up single inheritance
 /// S does not have to be generic if all vars share the same status type
 ///
-/// alternatively ValueNotifier<VarStatus>, let VarStatus handle union
+// todo as async status contain response status handle user iniiated await
 ////////////////////////////////////////////////////////////////////////////////
 abstract mixin class VarStatusNotifier implements ChangeNotifier {
   int _statusCode = 0;

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
+
 import '../base/link.dart';
 import '../base/protocol.dart';
 import '../links/serial_link.dart';
@@ -63,4 +65,7 @@ class MotConnection {
 
     return isConnected;
   }
+
+  // connection callback todo
+  // ValueNotifier<Link, ProtocolStatus> get connectionStatus => activeProtocol.link.connectionStatus;
 }
