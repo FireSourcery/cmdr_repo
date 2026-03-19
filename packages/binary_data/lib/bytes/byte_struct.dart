@@ -15,69 +15,49 @@ export 'typed_data_buffer.dart';
 ///   mixin keyed access for serialization map
 ///
 /// Wrapper over extension type. see [Structure]
-abstract mixin class ByteStruct<K extends ByteField<NativeType>> /* implements Structure<K, int>  */ {
-  const ByteStruct();
-  //  factory _ByteStruct._(this.structData);
-  //  factory _ByteStruct.origin(ByteBuffer bytesBuffer, [int offset = 0, int? length]) : structData = ByteStruct(bytesBuffer.asByteData(offset, length));
-  //  factory _ByteStruct(TypedData typedData, [int offset = 0, int? length]) : structData = ByteStruct(ByteData.sublistView(typedData, offset, offset + (length ?? 0)));
 
-  // field access implemented by Structure
-  List<K> get keys;
-  // Iterable<K> get keys;
-  // List<K> get fields;
+/// view ByteData or ByteStruct subtypes as base type. sufficent for iterative access.
+extension type const ByteStruct<K extends ByteField>(ByteData _this) implements Structure<K, int> {
+  int get length => _this.lengthInBytes;
+}
+
+abstract class ByteStructBase<S extends ByteStructBase<S, K>, K extends ByteField> with StructureBase<S, K, int> {
+  // const ByteStructBase._(this.data);
+  const ByteStructBase(this.byteData);
 
   // handle Array access
   // only primitive types are keyed (and included in serialization). array sizes individual define by subclass. e.g. payload
   // handled with extension on bytedata
-  ByteData get byteData; // ByteData as base type of TypedData for immediate keyed access
+  @override
+  final ByteData byteData;
 
-  // final ByteData byteData;
-
-  int get length => byteData.lengthInBytes;
-
-  int operator [](covariant K key) => key.getIn(byteData);
-  void operator []=(covariant K key, int value) => key.setIn(byteData, value);
-  // dynamic buildAs<V>(V values);
-  // V parseAs<V>( );
-
-  // dynamic setAs<T extends ByteStruct, V>(ByteStructCaster<T> caster, V values) => caster(byteData).build(values, this);
-  // V getAs<R extends ByteStruct, V>(ByteStructCaster<R> caster, [dynamic  stateMeta]) => caster(byteData).parse(this, stateMeta);
-}
-
-/// view ByteData or ByteStruct subtypes as base type. sufficent for iterative access.
-extension type const ByteStruct1<K extends ByteField>(ByteData _this) implements Structure<K, int> {
-  ByteStruct1.cast(ByteStructBase base) : this(base.data as ByteData);
-}
-
-abstract class ByteStructBase<S extends ByteStructBase<S, K>, K extends ByteField> with StructureBase<S, K, int> {
-  const ByteStructBase._(this.data);
-  const ByteStructBase(ByteData inner) : this._(inner as ByteStruct1<K>);
-  final ByteStruct1<K> data; //aka ByteData
+  ByteStruct<K> get data => byteData as ByteStruct<K>; // ByteData as base type of TypedData for immediate keyed access
 
   List<K> get keys; // a method that is the meta contents, fieldsList
+
+  int get length => byteData.lengthInBytes;
 }
 
 /// Typed Offset
 abstract mixin class ByteField<V extends NativeType> implements TypedField<V>, Field<int> {
   const factory ByteField(int offset) = _ByteField<V>;
 
+  // handle for offsets > word length
+  // call passing T
+  // Although handling of keyed access is preferable in the data source class.
+  // T must handled in it's local scope. No type inference when passing `Field` to ByteData
   // replaceable by ffi.Struct
   @override
   int getIn(ByteData byteData) => byteData.wordAt<V>(offset);
   @override
   void setIn(ByteData byteData, int value) => byteData.setWordAt<V>(offset, value);
 
-  // @override
-  // int getIn(ByteStruct struct) => struct.byteData.wordAt<V>(offset);
-  // @override
-  // void setIn(ByteStruct struct, int value) => struct.byteData.setWordAt<V>(offset, value);
-
   // not yet replaceable
   @override
-  bool testBoundsOf(ByteData byteData) => end <= byteData.lengthInBytes;
-  @override
+  bool testAccess(ByteData byteData) => end <= byteData.lengthInBytes;
+
+  // or packet implements bytestruct base
   int? getInOrNull(ByteData byteData) => byteData.wordOrNullAt<V>(offset);
-  @override
   bool setInOrNot(ByteData byteData, int value) => byteData.setWordOrNotAt<V>(offset, value);
 }
 
@@ -87,6 +67,10 @@ class _ByteField<V extends NativeType> with TypedField<V>, ByteField<V> {
   @override
   final int offset;
 }
+
+///
+
+// optionally move to packet for now
 
 /// T is [ByteStruct] or [ffi.Struct]
 typedef TypedDataCaster<T> = T Function(TypedData typedData);
@@ -155,28 +139,3 @@ class ByteStructClass<T, K extends ByteField<NativeType>> {
 
   T create() => caster(ByteData(lengthMax));
 }
-
-// combine or wrap buffer
-// class ByteConstruct<T> {
-//   const ByteConstruct._(this.structData);
-//   ByteConstruct.origin(ByteBuffer bytesBuffer, [int offset = 0, int? length]) : structData = (bytesBuffer.asByteData(offset, length));
-//   ByteConstruct(TypedData typedData, [int offset = 0, int? length]) : structData = (ByteData.sublistView(typedData, offset, offset + (length ?? 0)));
-
-//   final ByteStruct structData;
-
-//   ByteStructClass<T, ByteField<NativeType>> get structClass;
-
-//   // @override
-//   // int operator [](covariant ByteField<NativeType> key) => structData[key];
-//   // @override
-//   // void operator []=(covariant ByteField<NativeType> key, int value)  => structData[key] = value;
-//   // @override
-//   // void clear()  => structData.clear();
-//   // @override
-//   // List<ByteField<NativeType>> get keys => structClass.keys;
-//   // @override
-//   // int remove(covariant ByteField<NativeType> key)  => structData.remove(key);
-
-//   // @override
-//   // ByteStruct<K> copyWith() => this;
-// }

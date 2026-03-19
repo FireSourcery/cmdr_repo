@@ -69,8 +69,8 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
       _valuesBuffer = List.from((IndexMap<K, V?>.filled(keys, null)..addEntries(entries))._valuesBuffer);
 
   // default copyFrom implementation
-  // IndexMap.fromBase(IndexMap<K, V?> state) : this._(state.keys, List<V>.from(state.values, growable: false));
-  IndexMap.fromBase(List<K> keys, FixedMap<K, V?> state) : this._(keys, List<V>.from(state.values, growable: false));
+  IndexMap.fromBase(IndexMap<K, V?> state) : this._(state.keys, List<V>.from(state.values, growable: false));
+  // IndexMap.fromBase(List<K> keys, FixedMap<K, V?> state) : this._(keys, List<V>.from(state.values, growable: false));
 
   IndexMap.fromMap(List<K> keys, Map<K, V?> state) : this._(keys, List<V>.from(state.values, growable: false));
 
@@ -111,7 +111,7 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
       _valuesBuffer[key.index] = null as V;
       return value;
     }
-    // else if (key.defaultValue != null) // throws via noSuchMethod
+    // else if (defaultValue != null) // throws via noSuchMethod
     // {}
     throw UnsupportedError('IndexMap default remove operation not defined');
   }
@@ -160,12 +160,3 @@ class ProxyIndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
   @override
   V remove(covariant K key) => throw UnsupportedError("Cannot modify unmodifiable");
 }
-
-// mixin FixedMapWith<K, V> on FixedMap<K, V> {
-//   // analogous to operator []=, but returns a new instance
-//   FixedMap<K, V> withField(K key, V value) => (IndexMap<K, V>.fromBase(this)..[key] = value);
-//   //
-//   FixedMap<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => IndexMap<K, V>.fromBase(this)..addEntries(newEntries);
-//   // A general values map representing external input, may be a partial map
-//   FixedMap<K, V> withAll(Map<K, V> map) => IndexMap<K, V>.fromBase(this)..addAll(map);
-// }

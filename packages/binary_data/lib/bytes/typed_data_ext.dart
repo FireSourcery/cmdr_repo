@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:collection/collection.dart';
+
 ////////////////////////////////////////////////////////////////////////////////
 /// Wrappers as top level functions
 ////////////////////////////////////////////////////////////////////////////////
@@ -22,12 +24,6 @@ T typedList<T extends TypedDataList>(int length) {
 
 // T fromList<T extends TypedDataList<E>, E>(List<E> elements) {
 //     return switch (T) {
-//       const (Uint8List) => Uint8List.fromList(elements),
-//       const (Uint16List) => Uint16List.fromList(elements),
-//       const (Uint32List) => Uint32List.fromList(elements),
-//       const (Int8List) => Int8List.fromList(elements),
-//       const (Int16List) => Int16List.fromList(elements),
-//       const (Int32List) => Int32List.fromList(elements),
 //       _ => throw UnsupportedError('$T is not a typed data list'),
 //     } as T;
 // }
@@ -47,7 +43,6 @@ T fromListInt<T extends TypedDataList<int>>(List<int> elements) {
 
 /// GenericSublistView
 /// offset in elements, type of [data], not [T] type.
-// alternatively unified calculation on buffer directly
 T sublistView<T extends TypedData>(TypedData data, [int start = 0, int? end]) {
   return switch (T) {
         const (Uint8List) => Uint8List.sublistView(data, start, end),
@@ -72,6 +67,42 @@ int bytesPerElementOf<T extends TypedData>() {
     const (Int32List) => Int32List.bytesPerElement,
     _ => throw UnimplementedError(),
   };
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// implementations on TypedData returning as `this` type
+/// parameters in element size of `this` type
+////////////////////////////////////////////////////////////////////////////////
+extension TypedDataLength on TypedData {
+  int get length => lengthInBytes ~/ elementSizeInBytes;
+  // int get offset => offsetInBytes ~/ elementSizeInBytes;
+}
+
+/// Slices returning TypedData
+/// Slices on [List] cannot return TypedData
+extension TypedDataSlices<T extends TypedData> on T {
+  // todo handle size with fill/truncate
+  Iterable<T> typedSlices(int sliceLength) sync* {
+    if (sliceLength < 1) throw RangeError.range(sliceLength, 1, null, 'length');
+
+    for (var offset = 0; offset < length; offset += sliceLength) {
+      yield sublistView<T>(this, offset, min(offset + sliceLength, length));
+    }
+  }
+}
+
+/// TypedList version of List<int>.skip
+// effectively asTypedList<T>() with this type
+extension TypedDataListSeek<T extends TypedDataList<int>> on T {
+  /// avoid naming collision with List.indexOf
+  int indexOfSequence(Iterable<int> match) => String.fromCharCodes(this).indexOf(String.fromCharCodes(match));
+
+  T? seek(int index) => (index > -1) ? sublistView<T>(this, index) : null;
+
+  T? seekChar(int match) => seek(indexOf(match));
+  T? seekSequence(Iterable<int> match) => seek(indexOfSequence(match));
+
+  String asString([int start = 0, int? end]) => String.fromCharCodes(this, start, end);
 }
 
 /// [TypedArray<T extends TypedData>] - `Generic TypedData`
@@ -120,39 +151,3 @@ int bytesPerElementOf<T extends TypedData>() {
 //   T get asThis => _this;
 
 // }
-////////////////////////////////////////////////////////////////////////////////
-/// implementations on TypedData returning as `this` type
-/// parameters in element size of `this` type
-////////////////////////////////////////////////////////////////////////////////
-extension TypedDataLength on TypedData {
-  int get length => lengthInBytes ~/ elementSizeInBytes;
-  // int get offset => offsetInBytes ~/ elementSizeInBytes;
-}
-
-/// Slices returning TypedData
-/// Slices on [List] cannot return TypedData
-extension TypedDataSlices<T extends TypedData> on T {
-  // todo handle size with fill/truncate
-  Iterable<T> typedSlices(int sliceLength) sync* {
-    if (sliceLength < 1) throw RangeError.range(sliceLength, 1, null, 'length');
-
-    for (var offset = 0; offset < length; offset += sliceLength) {
-      yield sublistView<T>(this, offset, min(offset + sliceLength, length));
-    }
-  }
-}
-
-/// TypedList version of List<int>.skip
-// effectively asTypedList<T>() with this type
-extension TypedDataListSeek<T extends TypedDataList<int>> on T {
-  /// avoid naming collision with List.indexOf
-  int indexOfSequence(Iterable<int> match) => String.fromCharCodes(this).indexOf(String.fromCharCodes(match));
-
-  T? seek(int index) => (index > -1) ? sublistView<T>(this, index) : null;
-
-  T? seekChar(int match) => seek(indexOf(match));
-  T? seekSequence(Iterable<int> match) => seek(indexOfSequence(match));
-
-  String asString([int start = 0, int? end]) => String.fromCharCodes(this, start, end);
-  // String toStringAsCode([int start = 0, int? end]) => String.fromCharCodes(this, start, end);
-}

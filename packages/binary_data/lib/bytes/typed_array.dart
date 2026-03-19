@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'typed_data_ext.dart';
@@ -58,19 +57,19 @@ extension ByteDataTypedArray on ByteData {
   // let ByteBuffer handle RangeError
   T arrayAt<T extends TypedDataList<int>>([int offset = 0, int? length]) => asTypedIntList<T>(offset, length);
 
-  // // testPart
-  // /// `this.length`
-  bool testLength(int offset, int length) => (offset + length > offsetInBytes + lengthInBytes);
+  // testPart
+  /// `this.length`
+  bool testLength(int offset, int length) => (offset + length <= lengthInBytes);
   T? arrayOrNullAt<T extends TypedDataList<int>>([int offset = 0, int? length]) => testLength(offset, length ?? 0) ? arrayAt<T>(offset, length) : null;
 }
 
 
-// ///  offsets in elements
+///  offsets in elements
 // extension on TypedData {  
-  // bool testEnd(int start, int end) => (offset + start > length) || (end > offset + start + length);
-  // bool testLength(int start, int length)
-  // R asTypedArray<R extends TypedData>([int typedOffset = 0, int? end]) => TypedArray<R>.cast(this, typedOffset, end) as R;
-  // R? asTypedArrayOrNull<R extends TypedData>([int typedOffset = 0, int? end]) => testBounds(typedOffset, end) ? asTypedArray<R>(typedOffset, end) : null;
+//   bool testEnd(int start, int end) =>  
+//   bool testLength(int start, int length)
+//   R asTypedArray<R extends TypedData>([int typedOffset = 0, int? end]) => sublistView(this, typedOffset, end) as R;
+//   R? asTypedArrayOrNull<R extends TypedData>([int typedOffset = 0, int? end]) => testBounds(typedOffset, end) ? asTypedArray<R>(typedOffset, end) : null;
 // }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -137,8 +137,12 @@ abstract mixin class BitData {
   // int operator [](Bitmask index) => bitAt(index);
   // void operator []=(Bitmask index, int value) => setBitAt(index, value);
 
+  // wrap the main operations for convenience
   int getBits(Bitmask mask) => bits.getBits(mask);
+  BitData withBits(Bitmask mask, int value) => BitData.constant(bits.withBits(mask, value));
+  BitData withEach(Iterable<(Bitmask mask, int value)> entries) => BitData.constant(bits.withEach(entries));
 
+  // add set functions. passthrough with and getAt
   void setBits(Bitmask mask, int value) => bits = bits.withBits(mask, value);
   void setBitsAt(int offset, int width, int value) => bits = bits.withBitsAt(offset, width, value);
   void setBitAt(int index, int value) => bits = bits.withBitAt(index, value);
@@ -174,28 +178,14 @@ base class MutableBits extends BitData {
 // although only MutableBits must wrap Bits, this way they both implement and derive the same interfaces
 @immutable
 base class ConstBits extends BitData {
-  const ConstBits(this.bits);
-  // const ConstBits.value(int bits) : this(bits as Bits);
+  const ConstBits(this._value);
+
+  final Bits _value;
 
   @override
-  final Bits bits;
+  Bits get bits => Bits(_value);
   @override
-  set bits(Bits value) => throw UnsupportedError('Cannot modify unmodifiable');
+  set bits(Bits _) => throw UnsupportedError('Cannot modify unmodifiable');
   @override
-  int get width => bits.bitLength;
+  int get width => _value.bitLength; // keyed view overwrite
 }
-
-// @immutable
-// class BitDataInitializer<K> with BitData {
-//   const BitDataInitializer(this._init);
-
-//   final Map<Bitmask, int> _init;
-
-//   @override
-//   Bits get bits => Bits.ofMap(_init); // in order to init using const Map, bits must be derived at run time
-//   @override
-//   set bits(Bits value) => throw UnsupportedError('Cannot modify unmodifiable');
-
-//   @override
-//   int get width => _init.keys.map((e) => e.width).sum;
-// }

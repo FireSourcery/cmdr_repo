@@ -309,7 +309,8 @@ class BitStructFormat<K extends BitField> extends BinaryFormat<Int, BitStruct<K>
   const BitStructFormat(this.fields);
   final List<K> fields;
   get binaryRange => (min: 0, max: 2 ^ fields.totalWidth);
-  BitStruct<K> decode(int raw) => BitStruct.view(fields, raw as Bits);
+  // BitStruct<K> decode(int raw) => BitStruct<K>.from(raw);
+  BitStruct<K> decode(int raw) => BitForm<K>(fields).cast(ConstBits(raw as Bits));
   int encode(BitStruct<K> value) => value.value;
 }
 

@@ -26,7 +26,7 @@ abstract mixin class BitField implements Field<int> {
   @override
   void setIn(BitData struct, int value) => struct.setBits(bitmask, value);
   @override
-  bool testBoundsOf(BitData struct) => bitmask.shift + bitmask.width <= struct.width;
+  bool testAccess(BitData struct) => bitmask.shift + bitmask.width <= struct.width;
 
   // implements Bitmask maintains all masks as as list
   // int get shift => bitmask.shift; // index of the first bit
@@ -47,7 +47,7 @@ abstract mixin class BitIndexField implements BitField {
   @override
   void setIn(BitData struct, int value) => struct.setBits(bitmask, value);
   @override
-  bool testBoundsOf(BitData struct) => bitmask.shift + bitmask.width <= struct.width;
+  bool testAccess(BitData struct) => bitmask.shift + bitmask.width <= struct.width;
 }
 
 // as record

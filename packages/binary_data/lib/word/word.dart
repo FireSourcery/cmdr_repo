@@ -34,12 +34,12 @@ extension type const Word(int _value) implements Bits, int {
   // optionally -1 to remove null terminator
   Word.string(String string, [int length = 8]) : this.chars(string.runes.take(string.length.clamp(0, 8)), _stringEndian);
   // Word.runes(Runes runes, [int? unitWidth = 1, Endian endian = _stringEndian]) : this();
+  static const Endian _stringEndian = Endian.little; // Must maintain consistency between fromString and toString. Select little endian to simplify discarding remainder
 
   static const int sizeMax = 8;
   static const int _mask8 = 0xFF;
   static const int _mask16 = 0xFFFF;
   static const int _mask32 = 0xFFFFFFFF;
-  static const Endian _stringEndian = Endian.little; // Must maintain consistency between fromString and toString. Select little endian to simplify discarding remainder
 
   Bits get bits => this;
 
@@ -59,7 +59,6 @@ extension type const Word(int _value) implements Bits, int {
   ////////////////////////////////////////////////////////////////////////////////
   /// TypedData Byte List operations
   // converts singular register into bytes
-  // todo with mask?
 
   // fixed size buffer then trim view with length likely better performance than iterative build with flex size BytesBuilder
   // bytes.length always returns 8 from new buffer
@@ -70,6 +69,9 @@ extension type const Word(int _value) implements Bits, int {
   // ToBytesTrimmed
   ByteData toByteDataAs(Endian endian, [int? byteLength]) => toByteData(endian).trimWord(byteLength ?? this.byteLength, endian);
   Uint8List toBytesAs(Endian endian, [int? byteLength]) => Uint8List.sublistView(toByteDataAs(endian, byteLength));
+
+  // by offset
+  // ByteData toByteDataAt(Endian endian, [int start = 0, int? end]) => ByteData.sublistView(toByteData(endian), start, end);
 
   // R toList<R extends TypedData>(Endian endian, [int? byteLength]) => toByteData(endian).trim(byteLength ?? this.byteLength, endian).sublistView<R>();
 
@@ -141,36 +143,3 @@ extension SizedWord on ByteData {
   // constructing trimAsLE back to Word preserves value
   ByteData trimTrailing(int targetLength) => ByteData.sublistView(this, 0, targetLength);
 }
-
-////////////////////////////////////////////////////////////////////////////////
-// ///
-// ////////////////////////////////////////////////////////////////////////////////
-// // converts singular register into bytes
-// extension BytesOfInt on int {
-//   /// TypedData Byte List operations
-//   // fixed size buffer then trim view with length likely better performance than iterative build with flex size BytesBuilder
-//   // bytes.length always returns 8 from new buffer
-//   // ByteData.get[Word] must use same endian
-//   ByteData toByteData([Endian endian = Endian.little]) => ByteData(8)..setUint64(0, this, endian);
-//   Uint8List toBytes([Endian endian = Endian.little]) => Uint8List.sublistView(toByteData(endian));
-
-//   // todo with mask?
-//   // ToBytesTrimmed
-//   ByteData toByteDataAs(Endian endian, [int? byteLength]) => toByteData(endian).trimWord(byteLength ?? this.byteLength, endian);
-//   Uint8List toBytesAs(Endian endian, [int? byteLength]) => Uint8List.sublistView(toByteDataAs(endian, byteLength));
-
-//   // R toList<R extends TypedData>(Endian endian, [int? byteLength]) => toByteData(endian).trim(byteLength ?? this.byteLength, endian).sublistView<R>();
-
-//   /// String Char operations using Bits
-//   String charOfCode(int index) => String.fromCharCode(byteAt(index)); // 0x31 => '1'
-//   int withCharAsCode(int index, String char) => withByteAt(index, char.runes.single); // '1' => 0x31
-
-//   // num literal only
-//   String charOfLiteral(int index, [bool isSigned = false]) => byteAt(index).toString(); // 1 => '1'
-//   int withCharAsLiteral(int index, String char) => withByteAt(index, int.parse(char)); // '1' => 1
-
-//   String toCharAsCode() => String.fromCharCode(this);
-
-//   // char size 1 for now
-//   String toStringAsCode([Endian endian = Endian.little, int charSize = 1]) => String.fromCharCodes(toBytes(endian), 0, byteLength);
-// }

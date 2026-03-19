@@ -25,8 +25,8 @@ abstract mixin class NumUnionCodec<V> {
   int encode(V view) => encodeAs<V>(view);
 
   num clamp(num value) => (numLimits != null) ? value.clamp(numLimits!.min, numLimits!.max) : value;
-  Enum? enumOf(int value) => enumRange?.elementAtOrNull(value);
-  BitStruct bitsOf(int value) => BitStruct.view(bitsKeys ?? <BitField>[], value as Bits);
+  Enum? enumOf(int value) => enumRange?.byIndex(value);
+  BitStruct bitsOf(int value) => BitStruct.from(value);
 
   // default without conversion
   R decodeAs<R>(int data) {
@@ -35,8 +35,8 @@ abstract mixin class NumUnionCodec<V> {
           const (double) => data.toDouble(),
           const (num) => data,
           const (bool) => (data != 0),
-          const (Enum) => enumRange!.elementAtOrNull(data.clamp(0, enumRange!.length - 1)),
-          const (BitStruct) => BitStruct.view(bitsKeys ?? <BitField>[], data as Bits),
+          const (Enum) => enumRange!.byIndex(data),
+          const (BitStruct) => BitStruct.from(data),
           _ => throw UnsupportedError('Unsupported type: $R'),
         }
         as R;
