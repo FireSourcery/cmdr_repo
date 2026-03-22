@@ -17,9 +17,11 @@ export 'typed_data_buffer.dart';
 /// Wrapper over extension type. see [Structure]
 
 /// view ByteData or ByteStruct subtypes as base type. sufficent for iterative access.
-extension type const ByteStruct<K extends ByteField>(ByteData _this) implements Structure<K, int> {
+extension type const ByteStruct<K extends ByteField>(ByteData _this) implements ByteData, Structure<K, int> {
   int get length => _this.lengthInBytes;
 }
+
+extension type const ByteForm<K extends ByteField>(List<K> _fields) implements StructForm<K, int> {}
 
 abstract class ByteStructBase<S extends ByteStructBase<S, K>, K extends ByteField> with StructureBase<S, K, int> {
   // const ByteStructBase._(this.data);
@@ -48,13 +50,13 @@ abstract mixin class ByteField<V extends NativeType> implements TypedField<V>, F
   // T must handled in it's local scope. No type inference when passing `Field` to ByteData
   // replaceable by ffi.Struct
   @override
-  int getIn(ByteData byteData) => byteData.wordAt<V>(offset);
+  int getIn(ByteStruct<ByteField<V>> byteData) => byteData.wordAt<V>(offset);
   @override
-  void setIn(ByteData byteData, int value) => byteData.setWordAt<V>(offset, value);
+  void setIn(ByteStruct<ByteField<V>> byteData, int value) => byteData.setWordAt<V>(offset, value);
 
   // not yet replaceable
   @override
-  bool testAccess(ByteData byteData) => end <= byteData.lengthInBytes;
+  bool testAccess(ByteStruct<ByteField<V>> byteData) => end <= byteData.lengthInBytes;
 
   // or packet implements bytestruct base
   int? getInOrNull(ByteData byteData) => byteData.wordOrNullAt<V>(offset);

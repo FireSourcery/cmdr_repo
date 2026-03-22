@@ -1,2 +1,2 @@
-export "models/packet.dart";
+export "packet/packet.dart";
 export "models/version.dart";

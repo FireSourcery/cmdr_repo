@@ -26,7 +26,7 @@ abstract interface class BitsMap<K, V> with MapBase<K, V> implements Map<K, V> /
   }
 
   @override
-  final Iterable<K> keys;
+  final List<K> keys;
 
   Bits get bits;
   set bits(Bits value);

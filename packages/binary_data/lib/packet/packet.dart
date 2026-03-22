@@ -67,7 +67,7 @@ abstract interface class PacketClass<T extends Packet> {
 
 /// [Packet] as interface for `immutable view` of `varying view length`.
 ///
-/// Cannot extending Struct directly.
+/// Cannot extend Struct directly.
 /// ffi.Struct current does not allow length < full struct length, or mixin
 /// alternatively, use extension type on TypedData
 ///
@@ -139,8 +139,7 @@ abstract class Packet {
   /// with range check
   /// under length packet will be reject at parser
   R payloadAt<R extends TypedDataList<int>>([int byteOffset = 0, int? length]) => packetData.arrayAt<R>(byteOffset + payloadIndex, length);
-  // List<int> payloadAt<R extends TypedData>(int byteOffset) => payload.asIntListOrEmpty<R>(byteOffset );
-  // List<int> payloadAt<R extends TypedDataList<int>>([int byteOffset = 0, int? length]) => packetData.arrayOrEmptyAt<R>(byteOffset + payloadIndex);
+  R? payloadAtOrNull<R extends TypedDataList<int>>([int byteOffset = 0, int? length]) => packetData.arrayOrNullAt<R>(byteOffset + payloadIndex);
 
   int payloadWordAt<R extends NativeType>(int byteOffset) => payloadWords.wordAt<R>(byteOffset, packetClass.endian);
   // throws if header parser fails, length reports lesser value, while checksum passes

@@ -21,6 +21,7 @@ extension type const EnumMapFactory<T extends Enum>(List<T> enums) implements Li
 
   // Iterable<(String, V)> mapByName<V>(Map<T, V> map) => map((e) => (e.name, map[e]!));
 
+  // complete map only. partial can use addMapByName
   Map<T, V> fromMapByName<V>(Map<String, V> map) {
     if (enums.every((e) => map.containsKey(e.name))) {
       // return IndexMap.ofMap(this, map) as EnumMap<T, V>;

@@ -10,8 +10,7 @@ abstract mixin class FixedMap<K, V> implements Map<K, V> {
   const FixedMap();
 
   @override
-  Iterable<K> get keys; // for implementation wrapping const map literal
-  // List<K> get keys;
+  List<K> get keys;
 
   @override
   V operator [](covariant K key);
@@ -23,18 +22,7 @@ abstract mixin class FixedMap<K, V> implements Map<K, V> {
   void clear();
   @override
   V remove(covariant K key);
-
-  //   // List<V>? get defaultValues;
 }
-
-// extension FixedMapExtensions<K, V> on FixedMap<K, V> {
-//   // analogous to operator []=, but returns a new instance
-//   FixedMap<K, V> withField(K key, V value) => (IndexMap<K, V>.fromBase(this)..[key] = value);
-//   //
-//   FixedMap<K, V> withEntries(Iterable<MapEntry<K, V>> newEntries) => IndexMap<K, V>.fromBase(this)..addEntries(newEntries);
-//   // A general values map representing external input, may be a partial map
-//   FixedMap<K, V> withAll(Map<K, V> map) => IndexMap<K, V>.fromBase(this)..addAll(map);
-// }
 
 /// [IndexMap]
 /// Default implementation using parallel arrays

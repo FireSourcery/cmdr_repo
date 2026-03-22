@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 import 'package:synchronized/synchronized.dart';
-import 'package:binary_data/models/packet.dart';
+import 'package:binary_data/packet/packet.dart';
 
 import 'link.dart';
 import 'packet_transformer.dart';

@@ -22,8 +22,6 @@ export 'word.dart';
 /// subclass to passthrough constructors for convenience
 /// alternatively extension type WordStruct(BitsStruct _)
 /// caller wrap inner constructor for const. WordStruct(Word())
-// abstract base class WordStruct<T extends WordField> extends BitStructBase<WordStruct<T>, T> {
-// keep an data viewing interface
 extension type const WordStruct<K extends WordField>(Word word) implements Word, Bits, Structure<K, int> {
   WordStruct.intializer(Map<WordField, int> map) : this(Bits.ofMap(map.map((key, value) => MapEntry(key.bitmask, value))) as Word);
   // int get byteLength => bits.byteLength;
@@ -37,7 +35,7 @@ extension type const WordForm<K extends WordField>(List<K> _fields) implements S
 
 // extension type const BitInitializer<K extends WordField>(CoStructure<K, int> data) implements CoStructure<K, int>,   WordStruct<K> {}
 
-abstract base class WordBase<T extends WordBase<T, K>, K extends WordField> with MapBase<K, int>, StructureBase<T, K, int> {
+abstract class WordBase<T extends WordBase<T, K>, K extends WordField> with MapBase<K, int>, StructureBase<T, K, int> {
   const WordBase(this.word);
   const WordBase.value(int value) : word = value as WordStruct<K>;
   WordBase.intializer(Map<WordField, int> map) : word = WordStruct.intializer(map);
@@ -66,9 +64,7 @@ abstract base class WordBase<T extends WordBase<T, K>, K extends WordField> with
   void clear() {}
 
   @override
-  int remove(covariant K key) {
-    return 0;
-  }
+  int remove(covariant K key) => 0;
 
   T copyWithData(WordStruct<K> word);
 
@@ -85,15 +81,8 @@ abstract mixin class WordField<V extends NativeType> implements Field<int>, Type
   @override
   Bitmask get bitmask => Bitmask.bytes(offset, size);
 
-  int getIn(Word struct) => struct.getBits(bitmask);
-  void setIn(Word struct, int value) => throw UnsupportedError('Cannot modify unmodifiable');
-  bool testAccess(Word struct) => bitmask.shift + bitmask.width <= 64;
-  // bool testAccess(Word struct) => bitmask.shift + bitmask.width <= struct.bitLength;
-
-  // @override
-  // int getIn(BitData struct) => struct.getBits(bitmask);
-  // @override
-  // void setIn(BitData struct, int value) => struct.setBits(bitmask, value);
-  // @override
-  // bool testAccess(BitData struct) => bitmask.shift + bitmask.width <= struct.width;
+  int getIn(WordStruct<WordField<V>> struct) => struct.getBits(bitmask);
+  void setIn(WordStruct<WordField<V>> struct, int value) => throw UnsupportedError('Cannot modify unmodifiable');
+  bool testAccess(WordStruct<WordField<V>> struct) => bitmask.shift + bitmask.width <= 64;
+  // bool testAccess(WordStruct<WordField<V>> struct) => bitmask.shift + bitmask.width <= struct.bitLength;
 }

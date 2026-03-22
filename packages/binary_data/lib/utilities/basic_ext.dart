@@ -1,9 +1,3 @@
-// callIfNotNull
-// extension CallOnNullAsNull on Function {
-//   // callOnNullable
-//   R? callOrNull<R>(Object? input, [R Function()? onNull]) => (input != null) ? this(input) : null;
-// }
-
 // existsThen, isThen
 extension IsThen<T extends Object?> on T? {
   /// Executes the given function if the value is non-null.

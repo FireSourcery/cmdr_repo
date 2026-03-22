@@ -1,4 +1,4 @@
-import '../data/num_ext.dart';
+import '../utilities/num_ext.dart';
 import 'binary_format.dart';
 import 'binary_codec.dart';
 

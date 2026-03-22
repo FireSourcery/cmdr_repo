@@ -1,6 +1,6 @@
 // ignore_for_file: constant_identifier_names
-import 'package:binary_data/models/packet.dart';
-export 'package:binary_data/models/packet.dart';
+import 'package:binary_data/packet/packet.dart';
+export 'package:binary_data/packet/packet.dart';
 
 import 'package:binary_data/utilities/basic_types.dart';
 

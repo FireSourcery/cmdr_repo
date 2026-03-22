@@ -97,7 +97,6 @@ extension type const Word(int _value) implements Bits, int {
 ////////////////////////////////////////////////////////////////////////////////
 extension IntOfBytes on TypedData {
   // valueAt max size is 8, when lengthInBytes >= 8, toInt64 avoids copying buffer
-  // int toInt([Endian endian = Endian.little]) => (lengthInBytes >= 8) ? ByteData.sublistView(this).getInt64(0, endian) : ByteData.sublistView(this).valueAt(0, lengthInBytes, endian);
   int toInt([Endian endian = Endian.little]) => ByteData.sublistView(this).toInt(endian);
 }
 

@@ -1,6 +1,6 @@
-import 'package:collection/collection.dart';
 import 'package:binary_data/data/struct.dart';
 
+import 'bit_struct.dart';
 import 'bits.dart';
 export 'bits.dart';
 
@@ -20,13 +20,12 @@ export 'bits.dart';
 abstract mixin class BitField implements Field<int> {
   Bitmask get bitmask;
 
-  /* implements Field<int> */
   @override
-  int getIn(BitData struct) => struct.getBits(bitmask);
+  int getIn(BitStruct<BitField> struct) => struct.getBits(bitmask);
   @override
-  void setIn(BitData struct, int value) => struct.setBits(bitmask, value);
+  void setIn(BitStruct<BitField> struct, int value) => struct.setBits(bitmask, value);
   @override
-  bool testAccess(BitData struct) => bitmask.shift + bitmask.width <= struct.width;
+  bool testAccess(BitStruct<BitField> struct) => bitmask.shift + bitmask.width <= struct.width;
 
   // implements Bitmask maintains all masks as as list
   // int get shift => bitmask.shift; // index of the first bit
@@ -43,11 +42,11 @@ abstract mixin class BitIndexField implements BitField {
   int get index;
   Bitmask get bitmask => Bitmask.index(index);
   @override
-  int getIn(BitData struct) => struct.getBits(bitmask);
+  int getIn(BitStruct<BitField> struct) => struct.getBits(bitmask);
   @override
-  void setIn(BitData struct, int value) => struct.setBits(bitmask, value);
+  void setIn(BitStruct<BitField> struct, int value) => struct.setBits(bitmask, value);
   @override
-  bool testAccess(BitData struct) => bitmask.shift + bitmask.width <= struct.width;
+  bool testAccess(BitStruct<BitField> struct) => bitmask.shift + bitmask.width <= struct.width;
 }
 
 // as record

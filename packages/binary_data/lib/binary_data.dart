@@ -1,12 +1,12 @@
 /// General data types
 export 'utilities/basic_types.dart';
 export 'utilities/basic_ext.dart';
-export 'data/num_ext.dart';
+export 'utilities/num_ext.dart';
+export 'utilities/slice.dart';
 export 'data/serializable.dart';
 export 'data/enum_map.dart';
 export 'data/enum_types.dart';
 export 'data/index_map.dart';
-export 'utilities/slice.dart';
 export 'data/struct.dart';
 
 /// Bit-level structures
@@ -32,5 +32,5 @@ export 'binary_format/binary_format.dart';
 export 'binary_format/quantity_format.dart';
 
 /// Models
-export 'models/packet.dart';
+export 'packet/packet.dart';
 export 'models/version.dart';
