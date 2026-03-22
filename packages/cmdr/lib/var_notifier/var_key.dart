@@ -16,7 +16,7 @@ abstract mixin class VarKey<V> implements ValueKey<int> {
 
   /// Data numeric conversion
   BinaryCodec<V> buildViewer();
-  NumUnionCodec? buildUnionViewer();
+  // NumUnionCodec? buildUnionViewer();
 
   VarNotifier<V> create() => VarNotifier<V>.ofKey(this);
 
@@ -51,10 +51,13 @@ abstract mixin class VarKey<V> implements ValueKey<int> {
 
   // strictly by id. subtype casting not considered
   @override
-  bool operator ==(covariant VarKey other) => other.value == value;
+  bool operator ==(covariant VarKey other) {
+    if (identical(this, other)) return true;
+    return other.value == value;
+  }
 
   @override
-  int get hashCode => Object.hash(value, value);
+  int get hashCode => Object.hash(runtimeType, value);
 }
 
 enum VarReadWriteAccess {

@@ -2,7 +2,7 @@
 import 'package:binary_data/models/packet.dart';
 export 'package:binary_data/models/packet.dart';
 
-import 'package:binary_data/data/basic_types.dart';
+import 'package:binary_data/utilities/basic_types.dart';
 
 import 'dart:ffi' as ffi;
 

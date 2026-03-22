@@ -85,6 +85,15 @@ abstract mixin class BitFieldMap<K extends BitField> implements BitsMap<K, int> 
   K? get firstSetOrNull => entries.firstWhereOrNull((entry) => (entry.value != 0))?.key;
 }
 
+extension BitFieldMapMethods<K extends BitField> on BitFieldMap<K> {
+  Iterable<int> get valuesAsBits => values;
+  Iterable<bool> get valuesAsBools => values.map((e) => e != 0);
+  Iterable<MapEntry<K, int>> get entriesAsBits => keys.map((key) => MapEntry(key, this[key]));
+  Iterable<MapEntry<K, bool>> get entriesAsBools => keys.map((key) => MapEntry(key, this[key] != 0));
+  K get firstSet => entries.firstWhere((entry) => (entry.value != 0)).key;
+  K? get firstSetOrNull => entries.firstWhereOrNull((entry) => (entry.value != 0))?.key;
+}
+
 class MutableBitFieldMap<K extends BitField> extends BitsMap<K, int> with BitFieldMap<K> {
   MutableBitFieldMap(super.keys, [this.bits = const Bits.allZeros()]) : super._();
 

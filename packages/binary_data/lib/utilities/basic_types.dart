@@ -28,10 +28,3 @@ mixin class TypeRestrictedKey<T extends S, S> {
   const TypeRestrictedKey();
   R callWithRestrictedType<R>(R Function<G extends S>() callback) => callback<T>();
 }
-
-// naming convention notes
-// For classes and types -
-// consider Module/Most descriptive noun first, then adjective descriptions
-// this way Aligns characters
-// allows the first word to be the module/group name
-// unlike objects types are not called with dot notation, so placing the most descriptive noun last is less meaningful

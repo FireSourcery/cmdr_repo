@@ -1,3 +1,5 @@
+import 'package:binary_data/binary_data.dart';
+
 import '../word/word_struct.dart';
 
 export '../data/serializable.dart'; // export EnumMap
@@ -20,13 +22,15 @@ abstract base class Version<K extends WordField> extends WordBase<Version<K>, K>
   @override
   List<K> get keys;
 
+  // Version<K> copyWithData(WordStruct<K> data, {String? name});
+
   String? get name => runtimeType.toString();
 
   Bits get bits => word;
   int get byteLength => (word.byteLength > 4) ? 8 : 4;
 
   /// alias
-  Iterable<int> get values => fields;
+  // Iterable<int> get values => fields;
   List<int> get numbers => [optional, major, minor, fix]; // in big endian order // [fix, minor, major, optional]
 
   /// order by default, size determined by key type, T.
@@ -71,12 +75,13 @@ abstract base class Version<K extends WordField> extends WordBase<Version<K>, K>
   // same as implemented by WordStruct
   // Map<String, Object> toJsonVerbose() => toMap().toJson();
   Map<String, Object> toJsonVerbose() {
-    return <String, Object>{
-      'fix': fix,
-      'minor': minor,
-      'major': major,
-      'optional': optional,
-    };
+    return (toMap() as Map<Enum, Object>).toJson();
+    // return <String, Object>{
+    //   'fix': fix,
+    //   'minor': minor,
+    //   'major': major,
+    //   'optional': optional,
+    // };
   }
 
   Map<String, Object> toJson() {
@@ -119,6 +124,7 @@ base class VersionConstruct<K extends WordField> extends Version<K> {
   @override
   final String? name;
 
+  @override
   Version<K> copyWithData(WordStruct<K> data, {String? name}) {
     return VersionConstruct.withData(keys, data, name: name ?? this.name);
   }
@@ -142,8 +148,19 @@ base class VersionStandard extends Version<VersionFieldStandard> {
   int get optional => this[VersionFieldStandard.optional];
 
   // generates withX, WordBase handles copy
+  @override
   VersionStandard copyWithData(WordStruct<VersionFieldStandard> data, {String? name}) {
     return VersionStandard.withData(data, name: name ?? this.name);
+  }
+
+  Map<String, Object> toJson() {
+    return toMap().toJson();
+    // return <String, Object>{
+    //   'fix': fix,
+    //   'minor': minor,
+    //   'major': major,
+    //   'optional': optional,
+    // };
   }
 
   VersionStandard copyWith({int? optional, int? major, int? minor, int? fix, String? name}) {

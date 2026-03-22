@@ -1,4 +1,4 @@
-import 'package:binary_data/data/basic_types.dart';
+import 'package:binary_data/utilities/basic_types.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

@@ -72,6 +72,8 @@ abstract interface class PacketClass<T extends Packet> {
 /// alternatively, use extension type on TypedData
 ///
 /// Components/Header/Payload may extend Struct for convenience of defining sized fields.
+// abstract class Packet<T extends Packet> {
+// abstract class Packet<T extends Packet, H extends PacketHeader, I extends PacketId> {
 abstract class Packet {
   Packet(TypedData typedData) : packetData = ByteData.sublistView(typedData); // inherited constructor. caller pass back to PacketClass
   // Packet.cast(TypedData typedData) : packetData = ByteData.sublistView(typedData);
@@ -457,6 +459,66 @@ class PacketBuffer<T extends Packet> extends ByteStructBuffer<T> {
   }
 
   PacketSyncId? parseSyncId() => _packetBuffer.parseSyncId();
+
+  // /// `full Struct view` using a main struct type, max length buffer, with keyed fields, build functions unconstrained.
+  // @protected
+  // final T bufferAsStruct;
+  // @protected
+  // final TypedDataCaster<T> structCaster; // need to retain this?
+
+  // // check bounds with struct class
+  // // try partial view
+  // T get viewAsStruct => structCaster(viewAsBytes);
+
+  // /// `view as ByteStruct`
+  // /// view as `length available` in buffer, maybe a partial or incomplete view
+  // /// nullable accessors in effect, length is set in contents
+  // S viewAs<S>(TypedDataCaster<S> caster) => caster(viewAsBytes);
+
+  // /// `view as ffi.Struct` must be on full length or Struct.create will throw
+  // /// view as `full length`, `including invalid data.`
+  // /// a buffer backing larger than all potential calls is expected to be allocated at initialization
+  // S? viewBufferAsStruct<S extends Struct>(TypedDataCaster<S> caster) => caster(bufferAsBytes);
+}
+
+/// T is [ByteStruct] or [ffi.Struct]
+typedef TypedDataCaster<T> = T Function(TypedData typedData);
+
+/// buffer type
+/// for partial view
+// T as ffi.Struct caster or ByteStruct caster
+// wrapper around ffi.Struct or extend ByteStructBase
+class ByteStructBuffer<T> extends TypedDataBuffer {
+  ByteStructBuffer._(super._bufferView, this.structCaster) : bufferAsStruct = structCaster(_bufferView), super.of();
+
+  // caster for persistent view
+  ByteStructBuffer.caster(TypedDataCaster<T> structCaster, int size) : this._(Uint8List(size), structCaster);
+
+  // ByteStructBuffer(ByteStructClass<T, ByteField> structClass, [int? size]) : this.caster(structClass.caster, size ?? structClass.lengthMax);
+  // final ByteStructClass<T> structClass;
+
+  /// `full Struct view` using a main struct type, max length buffer, with keyed fields, build functions unconstrained.
+  @protected
+  final T bufferAsStruct;
+  @protected
+  final TypedDataCaster<T> structCaster; // need to retain this?
+
+  // check bounds with struct class
+  // try partial view
+  T get viewAsStruct => structCaster(viewAsBytes);
+
+  /// `view as ByteStruct`
+  /// view as `length available` in buffer, maybe a partial or incomplete view
+  /// nullable accessors in effect, length is set in contents
+  S viewAs<S>(TypedDataCaster<S> caster) => caster(viewAsBytes);
+
+  /// `view as ffi.Struct` must be on full length or Struct.create will throw
+  /// view as `full length`, `including invalid data.`
+  /// a buffer backing larger than all potential calls is expected to be allocated at initialization
+  S? viewBufferAsStruct<S extends Struct>(TypedDataCaster<S> caster) => caster(bufferAsBytes);
+
+  // build(dynamic values) => throw UnimplementedError();
+  // parse(dynamic values) => throw UnimplementedError();
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -519,6 +581,10 @@ abstract interface class PacketIdRequest<T, R> implements PacketId {
   PayloadCaster<T>? get requestCaster;
   PayloadCaster<R>? get responseCaster;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+///
+////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////
 /// Example

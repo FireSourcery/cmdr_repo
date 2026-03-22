@@ -1,5 +1,5 @@
 /// General data types
-export 'data/basic_types.dart';
+export 'utilities/basic_types.dart';
 export 'utilities/basic_ext.dart';
 export 'data/num_ext.dart';
 export 'data/serializable.dart';

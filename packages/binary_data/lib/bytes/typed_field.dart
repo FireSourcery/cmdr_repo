@@ -13,8 +13,7 @@ export 'dart:typed_data';
 ///   [WordStruct] - backed by [Bits/int]
 ///
 /// mixin can be applied to enum
-/// implements Field<int>
-abstract mixin class TypedField<T extends NativeType> {
+abstract mixin class TypedField<T extends NativeType> /* implements Field<int> */ {
   const TypedField._();
   // const factory TypedField(int offset) = TypedOffset<T>;
 

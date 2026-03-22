@@ -1,91 +1,144 @@
-// import 'package:binary_data/binary_data.dart';
-// import 'package:binary_data/data/serializable.dart';
-// import 'package:binary_data/data/struct.dart';
+import 'package:binary_data/binary_data.dart';
+import 'package:binary_data/data/serializable.dart';
+import 'package:binary_data/data/struct.dart';
+import 'package:test/test.dart';
 
-// /// Example 1
-// class Person {
-//   const Person(this.id, this.name, this.age);
+/// Example 1
+class Person {
+  const Person(this.id, this.name, this.age);
 
-//   final String name;
-//   final int id;
-//   final int age;
-// }
+  final String name;
+  final int id;
+  final int age;
 
-// // a key to each field, with an generated string, use as json key; an type parameter, effectively describe the memory allocation requirements
-// enum PersonField<V> implements SerializableKey<V> {
-//   id<int>(),
-//   age<int>(),
-//   name<String>();
+  Person.fromMap(Map<PersonField, Object> base) : id = base[PersonField.id] as int, name = base[PersonField.name] as String, age = base[PersonField.age] as int;
+  factory Person.fromJson(Map<String, Object?> json) => Person.fromMap(StructForm(PersonField.values).fromJson(json));
+}
 
-//   //key maps entirety of the struct
-//   //   a function using a known interface access the fields of the user's class, maps ids to getters
-//   @override
-//   V getIn(Person struct) {
-//     return switch (this) {
-//       PersonField.id => struct.id as V,
-//       PersonField.age => struct.age as V,
-//       PersonField.name => struct.name as V,
-//     };
-//   }
+// a key to each field, with an generated string, use as json key; an type parameter, effectively describe the memory allocation requirements
+enum PersonField<V extends Object> with SerializableKey<V> {
+  id<int>(),
+  age<int>(),
+  name<String>();
 
-//   @override
-//   void setIn(Person struct, V value) {
-//     throw UnimplementedError('Person is immutable');
-//     //   case PersonField.id:
-//     //     struct.id = value as int;
-//     //   case PersonField.age:
-//     //     struct.age = value as int;
-//     //   case PersonField.name:
-//     //     struct.name = value as String;
-//     // }
-//   }
+  static const form = StructForm(PersonField.values);
 
-//   @override
-//   V? get defaultValue => null;
+  // key maps entirety of the struct
+  //   a function using a known interface access the fields of the user's class, maps ids to getters
+  @override
+  V getIn(Person struct) {
+    return switch (this) {
+      PersonField.id => struct.id as V,
+      PersonField.age => struct.age as V,
+      PersonField.name => struct.name as V,
+    };
+  }
 
-//   @override
-//   bool testAccess(Object struct) => struct is Person; // all fields are bounded by the same condition in this case
-// }
+  @override
+  void setIn(Person struct, V value) {
+    throw UnimplementedError('Person is immutable');
+    //   case PersonField.id:
+    //     struct.id = value as int;
+    //   case PersonField.age:
+    //     struct.age = value as int;
+    //   case PersonField.name:
+    //     struct.name = value as String;
+    // }
+  }
 
-// const personA = Person(1, 'Alice', 30);
-// const personView = Structure<PersonField, Object>(personA);
-// final fields = personView.fields(PersonField.values).toList(); // [1, 'Alice', 30]
-// // final Iterable<MapEntry> premap = personView. (PersonField.values);
-// const personType = StructForm(PersonField.values);
-// final testMap2 = StructForm(PersonField.values).map(personView); // {PersonField.id: 1, PersonField.age: 30, PersonField.name: 'Alice'}
+  @override
+  V? get defaultValue => null;
 
-// /// Example 2
-// // short hand with mixin
+  @override
+  bool testAccess(Object struct) => struct is Person; // all fields are bounded by the same condition in this case
+}
 
-// class PersonB with Serializable<PersonField> {
-//   const PersonB(this.id, this.name, this.age);
+/// Example 2
+// short hand with mixin
+// person.toMap() instead of StructForm(PersonField.values).mapWithData(person)
 
-//   final String name;
-//   final int id;
-//   final int age;
+enum PersonBField<V extends Object> with SerializableKey<V> {
+  id<int>(),
+  age<int>(),
+  name<String>();
 
-//   // the user side class  provide a function to map the values of a known memory layout/interface to the user's class' memory layout
-//   // one point of interface to the base class
-//   // PersonB.castBase(PersonB map) : id = map[PersonField.id], name = map[(PersonField.name)], age = map[(PersonField.age)];
-//   PersonB.cast(Structure<PersonField, Object> map) : id = map[PersonField.id] as int, name = map[PersonField.name] as String, age = map[PersonField.age] as int;
+  static const form = StructForm(PersonBField.values);
 
-//   // function composition, go through a intermediary step of jsonMap -> known memory layout/interface -> user's class, at runtime.
-//   // Form.fromJson(json) -> Structure -> PersonB.cast(Structure) -> PersonB, at runtime.
-//   // where as code gen can directly map jsonMap -> user class, which is most direct during runtime.
-//   // however the code for mapping json directly to the user class, unique to each user class, would also require additional code size
-//   factory PersonB.fromJson(Map<String, Object?> json) => PersonB.cast(StructForm(PersonField.values).fromJson(json));
+  // key maps entirety of the struct
+  //   a function using a known interface access the fields of the user's class, maps ids to getters
+  @override
+  V getIn(PersonB struct) {
+    return switch (this) {
+      PersonBField.id => struct.id as V,
+      PersonBField.age => struct.age as V,
+      PersonBField.name => struct.name as V,
+    };
+  }
 
-//   @override
-//   Structure<PersonField, Object> get data => this as Structure<PersonField, Object>; // point at itself
+  @override
+  void setIn(PersonB struct, V value) => throw UnimplementedError('Person is immutable');
 
-//   List<PersonField> get keys => PersonField.values;
+  @override
+  V? get defaultValue => null;
 
-//   Map get test => this.toJson();
+  @override
+  bool testAccess(Object struct) => struct is Person; // all fields are bounded by the same condition in this case
+}
 
-//   @override
-//   Serializable<PersonField<dynamic>> copyWithData(Structure<PersonField, Object> data) {
-//     return PersonB.cast(data);
-//   }
+class PersonB with Immutable<PersonB>, Serializable<PersonB> {
+  const PersonB(this.id, this.name, this.age);
 
-//   // inherit toJson from extension on Map<Enum, Object?>
-// }
+  final String name;
+  final int id;
+  final int age;
+
+  // the user side class  provide a function to map the values of a known memory layout/interface to the user's class' memory layout
+  // one point of interface to the base class
+  PersonB.fromMap(Map<SerializableKey, Object?> base) : id = base[PersonBField.id] as int, name = base[PersonBField.name] as String, age = base[PersonBField.age] as int;
+
+  // function composition, go through a intermediary step of jsonMap -> known memory layout/interface -> user's class, at runtime.
+  // Form.fromJson(json) -> Structure -> PersonB.cast(Structure) -> PersonB, at runtime.
+  // code gen can directly map jsonMap -> user class, which is most direct during runtime.
+  // however the code for mapping json directly to the user class, unique to each user class, would also require additional code size
+  factory PersonB.fromJson(Map<String, Object?> json) => PersonB.fromMap(const StructForm(PersonBField.values).fromJson(json));
+
+  List<PersonBField> get keys => PersonBField.values;
+
+  @override
+  PersonB copyWithMap(covariant Map<SerializableKey, Object?> data) => PersonB.fromMap(data);
+
+  // inherit toJson from extension on Map<Enum, Object?>
+}
+
+void main() {
+  const testJson = {'id': 1, 'name': 'Alice', 'age': 30};
+  const testJsonError = {'id': 1, 'name': 'Alice', 'age': '30'};
+  const personA = Person(1, 'Alice', 30);
+  const personAView = Structure<PersonField, Object>(personA); //
+  final personAMap = PersonField.form.mapWithData(personAView); // {PersonField.id: 1, PersonField.name: 'Alice', PersonField.age: 30}
+
+  test('structure_test', () {
+    print(StructForm(PersonField.values).mapWithData(personAView));
+    print(StructForm(PersonField.values).unmapEntriesByName(testJson));
+    print(StructForm(PersonField.values).fromJson(testJson));
+    print(StructForm(PersonField.values).fromJson(testJson));
+    print(Person.fromJson(testJson));
+    print(StructForm(PersonField.values).mapWithData(personAView).toJson());
+    print(PersonB.fromJson(testJson));
+    print(PersonB.fromJson(testJson).withField(PersonField.age, 31));
+    print(PersonB.fromJson(testJson).toJson());
+
+    try {
+      print(PersonB.fromJson(testJson)[PersonBField.age]);
+      print(PersonB.fromJson(testJson)[PersonField.age]);
+    } catch (e) {
+      print('Error accessing PersonB field: $e');
+    }
+
+    try {
+      print(PersonB.fromJson(testJsonError).toJson());
+    } catch (e) {
+      print('Error parsing Person from JSON: $e');
+    }
+  });
+}

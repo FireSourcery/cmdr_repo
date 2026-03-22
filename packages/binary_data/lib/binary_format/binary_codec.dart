@@ -47,3 +47,20 @@ class BinaryCodecIdentity implements BinaryCodec<int> {
 //   V decode(covariant num data);
 //   num encode(V view);
 // }
+
+// swap implementation
+// class StorageConverter<S, T> with Converter<S, T> {
+//   const StorageConverter(this._convert);
+//   final T Function(S input) _convert;
+//   @override
+//   T convert(S input) => _convert(input);
+// }
+
+// abstract mixin class StorageCodec<S, T> implements Codec<S, T> {
+//   const StorageCodec._();
+
+//   Converter<S, T> get encoder => StorageConverter(encode);
+//   Converter<T, S> get decoder => StorageConverter(decode);
+//   T encode(S input);
+//   S decode(T encoded);
+// }

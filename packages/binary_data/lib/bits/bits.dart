@@ -126,7 +126,7 @@ extension BitmasksMethods on Iterable<Bitmask> {
 abstract mixin class BitData {
   const BitData();
   factory BitData.mutable([Bits bits]) = MutableBits;
-  factory BitData.constant(Bits bits) = ConstBits;
+  const factory BitData.constant(Bits bits) = ConstBits;
 
   Bits get bits;
   set bits(Bits value); // only dependency for unmodifiable
@@ -179,6 +179,7 @@ base class MutableBits extends BitData {
 @immutable
 base class ConstBits extends BitData {
   const ConstBits(this._value);
+  const ConstBits.value(int value) : this(value as Bits);
 
   final Bits _value;
 

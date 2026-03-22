@@ -1,61 +1,42 @@
-import 'basic_types.dart';
+import '../utilities/basic_types.dart';
 import 'index_map.dart';
 
 export 'index_map.dart';
 
-/// directly construct a Map<K, V> from Map<String, V>
+/// construct a Map<K, V> from Map<String, V>
 /// on creation ensure all fields are valid
-// returning a regular HashMap, which is likely already index based in the case of Enum
-// alternatively wrap with FixedMap constraints
 extension type const EnumMapFactory<T extends Enum>(List<T> enums) implements List<T> {
-  // V determined by keys
-  IndexMap<T, V> _fixedMap<V>(Iterable<V> values) {
-    if (values.length != length) throw ArgumentError('Values length must match keys length');
-    return IndexMap.of(this, values);
-  }
-
-  Map<T, V> _hashMap<V>(Iterable<V> values) {
-    if (values.length != length) throw ArgumentError('Values length must match keys length');
-    return <T, V>{for (final e in this) e: values.elementAt(e.index)};
-  }
-
   /// iterable values must be in order of each index
-  Map<T, V> withValues<V>(Iterable<V> values) => _fixedMap(values);
-
-  Map<T, V> fromJson<V>(Map<String, Object?> json) {
-    if (json case Map<String, V>()) {
-      return _fromJson<V>(json);
-    } else {
-      return _fromJsonMixed(json) as Map<T, V>;
-    }
-  }
-  // check caller use cases to determine whether to return nullable
+  Map<T, V> mapWithValues<V>(Iterable<V> values) => IndexMap.of(this, values);
 
   // Iterable<MapEntry<T, V>>
   // less iteration, by going through enum list
-  // without reverse by name lookup, string compare either way
-  Iterable<(T, V)> mapByName<V>(Map<String, V> values) => map((e) => (e, values[e.name]!));
+  // without reverse by name lookup
+  Iterable<(T, V)> unmapByName<V>(Map<String, V> values) => map((e) => (e, values[e.name]!));
 
-  Iterable<(T, V?)> mapByNameOrNull<V>(Map<String, V> values) => map((e) => (e, values[e.name]));
+  Iterable<(T, V?)> unmapByNameOrNull<V>(Map<String, V?> values) => map((e) => (e, values[e.name]));
 
-  // fast path if types already match
-  Map<T, V> _fromJson<V>(Map<String, Object?> json) {
-    if (json is Map<String, V>) {
-      return <T, V>{for (final entry in mapByName(json)) entry.$1: entry.$2};
+  // known Map contains all keys
+  Iterable<MapEntry<T, V>> unmapEntriesByName<V>(Map<String, V> values) => map((e) => MapEntry(e, values[e.name]!));
+
+  // Iterable<(String, V)> mapByName<V>(Map<T, V> map) => map((e) => (e.name, map[e]!));
+
+  Map<T, V> fromMapByName<V>(Map<String, V> map) {
+    if (enums.every((e) => map.containsKey(e.name))) {
+      // return IndexMap.ofMap(this, map) as EnumMap<T, V>;
+      return {for (final e in enums) e: map[e.name] as V};
+      // return map.map((k, v) => MapEntry(enums.byName(k), v)); // can this allocate a view only?
     } else {
-      throw FormatException('$enums: $json is not of type Map<String, $V>');
+      throw FormatException('$enums: $map keys must match enum names');
     }
   }
 
-  // mixed types case, V is Object?
-  Map<T, Object?> _fromJsonMixed(Map<String, Object?> json) {
-    if (enums case List<TypeKey>()) {
-      return <T, Object?>{
-        for (final (key, value) in mapByName(json))
-          if ((key as TypeKey).compareType(value)) key: value,
-      };
+  // serializable handl Object? cases
+  Map<T, V> fromJson<V>(Map<String, Object?> json) {
+    if (json case Map<String, V> map) {
+      return fromMapByName<V>(map);
     } else {
-      throw FormatException('EnumType: $T must implement TypeKey for type checking');
+      throw FormatException('$enums: $json is not of type Map<String, $V>');
     }
   }
 
@@ -63,54 +44,54 @@ extension type const EnumMapFactory<T extends Enum>(List<T> enums) implements Li
   // or  then return nullable values or throw error if missing keys
 }
 
+/// [EnumMap]
+/// A [Map] with the additional constraint that Keys are a `fixed set`, via [Enum].
+/// creation implements [FixedMap]/[IndexMap] constraints
+/// factory constructors build [IndexMap] by default
+
+/// Adds Serialization using Enum.name to a [Map],
+/// Keys inherit from Enum -
+///   index via Enum.index -> create a parallel array map by default
+///   String name via Enum.name -> directly use for serialization
+///
+/// effectively mixin [List<K> keys] for serialization
 // hold constructors
-// V is determine dby keys
-extension type EnumMap<K extends Enum, V>._(IndexMap<K, V> map) implements IndexMap<K, V> {
+extension type EnumMap<K extends Enum, V>._(Map<K, V> map) implements Map<K, V> {
   factory EnumMap.fromJson(List<K> keys, Map<String, Object?> json) {
     return EnumMapFactory<K>(keys).fromJson(json) as EnumMap<K, V>;
   }
 }
 
 /// Serialization of [Map<Enum, V>] interface
-/// Apply to all types of [Map<Enum, V>]
+/// Methods on loose contraints [Map<Enum, V>]
 /// Enum.name base methods are applicable regardless of EnumMap FixedMap constraints
 /// [add] fills existing Map only
 extension EnumMapByName<K extends Enum, V> on Map<K, V> {
   ////////////////////////////////////////////////////////////////////////////////
   /// Buffer Case -
   ////////////////////////////////////////////////////////////////////////////////
-  Map<String, V> toMapByName() => {for (final key in keys) key.name: this[key] as V};
-  void addAllByName(Map<String, V> map) => addEntries(map.entries.map((e) => MapEntry(keys.byName(e.key), e.value)));
+  // Map<String, V> toMapByName() => {for (final key in keys) key.name: this[key] as V};
+  Map<String, V> toMapByName() => map((k, v) => MapEntry(k.name, v));
+
+  void fromMapByName(Map<String, V> map) => addEntries(map.entries.map((e) => MapEntry(keys.byName(e.key), e.value)));
+  void addMapByName(Map<String, V> map) {
+    for (final key in keys.where((k) => map.containsKey(k.name))) {
+      if (map[key.name] case V value when value != null) this[key] = value;
+    }
+  }
 
   ////////////////////////////////////////////////////////////////////////////////
   /// Json -
   ///   only if child class is implemented as mutable
   ///   i.e. []= is defined
   ////////////////////////////////////////////////////////////////////////////////
-  Map<String, Object?> toJson() => toMapByName();
+  Map<String, V> toJson() => toMapByName();
 
-  // fill values from json  // loadFromJson
-  // return as object implemented in Factory class
-  void addJson(Map<String, Object?> json) => addAllByName(_validateJson(json));
-
-  // handle mixed types case, V is defined as Object?
-  bool _validateTypes(Map<String, V> json) => (keys as List<TypeKey>).every((key) => key.compareType(json[(key as Enum).name]));
-
-  // bool _validateV(Map<String, Object?> json) => (json is Map<String, V>);
-  // bool _validateObject(Map<String, Object?> json) {}
-
-  Map<String, V> _validateJson(Map<String, Object?> json) {
-    if (json is Map<String, V>) {
-      // handle mixed types case, V is defined as Object?
-      if (keys case List<TypeKey> typedKeys) {
-        for (final key in typedKeys) {
-          //json[(key as Enum).name] return null matches key type if nullable
-          if (!key.compareType(json[(key as Enum).name])) throw FormatException('$runtimeType: ${(key as Enum).name} is not of type ${key.type}');
-        }
-      }
-      return json;
+  void addJson(Map<String, Object?> json) {
+    // if (null is V) return; // need Field to check type. eg this[key] is null, json[key.name] is valid,
+    for (final key in keys.where((k) => json.containsKey(k.name))) {
+      if (json[key.name] case V value when value != null) this[key] = value;
     }
-    throw FormatException('$runtimeType: $json is not of type Map<String, $V>');
   }
 }
 
@@ -120,18 +101,6 @@ extension EnumNamedValues<K extends Enum, V> on Iterable<MapEntry<K, V>> {
   Iterable<(String name, V value)> get namedValues => map((e) => (e.key.name, e.value));
 }
 
-/// [EnumMap]
-/// A [Map] with the additional constraint that Keys are a `fixed set`, via [Enum].
-/// implements [FixedMap]/[IndexMap] constraints
-/// factory constructors build [IndexMap] by default
-
-/// Adds Serialization using Enum.name to a [Map],
-/// Keys inherit from Enum -
-///   index via Enum.index -> create a parallel array map by default
-///   String name via Enum.name -> directly use for serialization
-///
-/// effectively mixin [List<K> keys] for serialization
-///
 /// `abstract mixin class` combines interface and implemented methods
 // abstract mixin class EnumMap<K extends Enum, V> implements FixedMap<K, V> {
 //   const EnumMap();
@@ -150,6 +119,3 @@ extension EnumNamedValues<K extends Enum, V> on Iterable<MapEntry<K, V>> {
 //   // void clear();
 //   // V remove(covariant K key);
 // }
-
-// class EnumIndexMap<K extends Enum, V> = IndexMap<K, V> with EnumMap<K, V>;
-// class EnumProxyMap<K extends Enum, V> = ProxyIndexMap<K, V> with EnumMap<K, V>;
