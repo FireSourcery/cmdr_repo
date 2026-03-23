@@ -22,7 +22,6 @@
 
 // Base connection classes
 export 'connection/base/link.dart';
-export 'connection/base/packet_transformer.dart';
 export 'connection/base/protocol.dart';
 
 // Connection view widgets

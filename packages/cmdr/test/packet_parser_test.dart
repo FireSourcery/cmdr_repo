@@ -35,8 +35,9 @@ Uint8List packetInRepeatStart2 = Uint8List.fromList([165, 165]);
 // _Uint8ArrayView ([165, 162, 165, 219, 145, 1, 10, 0])
 
 final StreamController<Uint8List> inputController = StreamController.broadcast();
-final Stream<Packet> packetStream =
-    inputController.stream.transform(PacketTransformer(parserBuffer: headerHandler)).handleError(handleProtocolException, test: (error) => (error is ProtocolException));
+final Stream<Packet> packetStream = inputController.stream
+    .transform(PacketTransformer(parserBuffer: headerHandler))
+    .handleError(handleProtocolException, test: (error) => (error is ProtocolException));
 
 void main() {
   test('test', () async {

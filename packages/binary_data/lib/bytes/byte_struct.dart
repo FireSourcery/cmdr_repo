@@ -24,7 +24,6 @@ extension type const ByteStruct<K extends ByteField>(ByteData _this) implements 
 extension type const ByteForm<K extends ByteField>(List<K> _fields) implements StructForm<K, int> {}
 
 abstract class ByteStructBase<S extends ByteStructBase<S, K>, K extends ByteField> with StructureBase<S, K, int> {
-  // const ByteStructBase._(this.data);
   const ByteStructBase(this.byteData);
 
   // handle Array access
@@ -46,8 +45,6 @@ abstract mixin class ByteField<V extends NativeType> implements TypedField<V>, F
 
   // handle for offsets > word length
   // call passing T
-  // Although handling of keyed access is preferable in the data source class.
-  // T must handled in it's local scope. No type inference when passing `Field` to ByteData
   // replaceable by ffi.Struct
   @override
   int getIn(ByteStruct<ByteField<V>> byteData) => byteData.wordAt<V>(offset);

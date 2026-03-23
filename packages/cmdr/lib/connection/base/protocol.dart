@@ -5,15 +5,15 @@ import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:binary_data/packet/packet.dart';
+import 'package:binary_data/packet/packet_transformer.dart';
 
 import 'link.dart';
-import 'packet_transformer.dart';
 
 class Protocol {
   Protocol(this.link, this.packetInterface) : headerParser = HeaderParser(packetInterface, packetInterface.lengthMax * 4);
 
   final Link link; // optionally mutable for inert state
-  final PacketClass packetInterface;
+  final PacketFormat packetInterface;
   final HeaderParser headerParser; // the rx buffer
   final Map<PacketId, ProtocolSocket> respSocketMap = {}; // map response id to socket, listeners table
   final Lock _lock = Lock();
@@ -28,9 +28,6 @@ class Protocol {
   StreamSubscription<Packet>? begin() {
     if (!link.isConnected) return null;
     return link.streamIn.transform(PacketTransformer(parserBuffer: headerParser)).listen(_demux, onError: _onError);
-    // if (packetStream != null) return null; // return if already set, alternatively listen on single subscription stream terminates, todo reset function
-    // packetStream = link.streamIn.transform(PacketTransformer(parserBuffer: headerParser)); // creates a new stream, if streamIn is a getter
-    // return packetStream!.listen(_demux, onError: onError);
   }
 
   /// central distributor for socket streams
@@ -41,22 +38,22 @@ class Protocol {
   //  the check id routine must run for each socket. but a map would not be necessary.
   //  sync ids is passed to all sockets, alternatively 2 levels of keys
   void _demux(Packet packet) {
-    if (kDebugMode) print("RX $packet");
+    debugLog("RX $packet");
     if (respSocketMap[packet.packetId] case ProtocolSocket socket) {
-      print("Socket [${socket.hashCode}] Time: ${socket.timer.elapsedMilliseconds}");
+      debugLog("Socket [${socket.hashCode}] Time: ${socket.timer.elapsedMilliseconds}");
       socket.add(packet);
     } else {
-      handleProtocolException(const ProtocolException('No matching socket'));
+      _onError(const ProtocolException('No matching socket'));
     }
   }
 
   @protected
   Future<void> trySend(Packet packet) async {
     try {
-      if (kDebugMode) print("TX $packet");
+      debugLog("TX $packet");
       return await link.send(packet.bytes); // lock buffer, or await on blocking function
     } on TimeoutException {
-      if (kDebugMode) print("trySend Timeout");
+      debugLog("trySend Timeout");
     } catch (e) {
       _onError(e);
     } finally {}
@@ -67,7 +64,6 @@ class Protocol {
   /// `listenResponse` - map responseId to socket
   void mapResponse(PacketId responseId, ProtocolSocket socket) {
     _lock.synchronized(() {
-      // respSocketMap.putIfAbsent(responseId, () => socket);
       respSocketMap[responseId] = socket; // update to most recent socket, for responseId, if not implemented with socket id
     });
   }
@@ -81,9 +77,6 @@ class Protocol {
   // alternatively send ack to all sockets
   void mapSync(ProtocolSocket socket) {
     _lock.synchronized(() {
-      // respSocketMap.putIfAbsent(packetInterface.ack, () => socket);
-      // respSocketMap.putIfAbsent(packetInterface.nack, () => socket);
-      // respSocketMap.putIfAbsent(packetInterface.abort, () => socket);
       respSocketMap[packetInterface.ack] = socket;
       respSocketMap[packetInterface.nack] = socket;
       respSocketMap[packetInterface.abort] = socket;
@@ -96,31 +89,22 @@ class Protocol {
   //   return trySend(socket.packetBufferOut.viewAsPacket);
   // }
 
-  @protected
-  void handleProtocolException(ProtocolException exception) {
-    // status = exception;
-    print(exception.message);
-    switch (exception) {
-      case ProtocolException.meta || ProtocolException.id:
-      // link.flushInput();
-      case ProtocolException.checksum:
-      default:
-    }
-  }
-
   void _onError(Object error) {
     switch (error) {
       case ProtocolException():
-        handleProtocolException(error);
+      // handleProtocolException(error);
+      case PacketStatusException.checksum:
+      case PacketStatusException.meta:
+      // link.flushInput();
       case TimeoutException():
-        print("Protocol Timeout");
+        debugLog("Protocol Timeout");
       case Exception():
-        print("Protocol Unnamed Exception");
-        print(error);
+        debugLog("Protocol Unnamed Exception");
+        debugLog(error);
       // case LinkException():
-      //   print(error.message);
+      //   debugLog(error.message);
       default:
-        print(error);
+        debugLog(error);
     }
   }
 }
@@ -137,7 +121,7 @@ class ProtocolSocket implements Sink<Packet> {
   @protected
   final PacketBuffer packetBufferOut;
 
-  PacketClass get packetInterface => protocol.packetInterface;
+  PacketFormat get packetInterface => protocol.packetInterface;
 
   final Lock _lock = Lock();
   // Completer<Packet> _recved = Completer.sync();
@@ -172,9 +156,9 @@ class ProtocolSocket implements Sink<Packet> {
     try {
       return await _lock.synchronized<R?>(
         () async {
-          print('');
-          print('--- New Request');
-          print('Socket [$hashCode] Request [$requestId] | waiting on lock [$waitingOnLockCount]');
+          debugLog('');
+          debugLog('--- New Request');
+          debugLog('Socket [$hashCode] Request [$requestId] | waiting on lock [$waitingOnLockCount]');
 
           if (syncOptions != null) {
             return await _requestResponseOptions<T, R>(requestId, requestArgs, syncOptions: syncOptions, timeout: timeout);
@@ -185,13 +169,13 @@ class ProtocolSocket implements Sink<Packet> {
         timeout: timeout,
       );
     } on TimeoutException catch (e) {
-      print(e);
+      debugLog(e);
       return null;
     } catch (e) {
-      print(e);
+      debugLog(e);
       return null;
     } finally {
-      print('--- End Request');
+      debugLog('--- End Request');
       waitingOnLockCount--;
     }
     // return null;
@@ -294,16 +278,16 @@ class ProtocolSocket implements Sink<Packet> {
     try {
       return await _recved.first.timeout(timeout).then((_) => parse());
     } on TimeoutException {
-      print("Socket Recv Response Timeout");
+      debugLog("Socket Recv Response Timeout");
       rethrow;
     } on ProtocolException catch (e) {
       //should be handled by protocol
-      print("Unhandled ProtocolException on Socket");
-      print(e.message);
+      debugLog("Unhandled ProtocolException on Socket");
+      debugLog(e.message);
     } catch (e) {
-      print("ProtocolSocket Exception");
-      print(e);
-      print(packetBufferIn.viewAsBytes);
+      debugLog("ProtocolSocket Exception");
+      debugLog(e);
+      debugLog(packetBufferIn.viewAsBytes);
       // payload parser may throw if invalid packet passes header parser as valid
     } finally {}
     return null;
@@ -325,7 +309,7 @@ class ProtocolSocket implements Sink<Packet> {
 
   @override
   void close() {
-    if (kDebugMode) print('Socket Closed');
+    debugLog('Socket Closed');
   }
 
   /// Must return as stream, so callback can run following each response. This way eliminates additional buffering.
@@ -358,21 +342,7 @@ class ProtocolSocket implements Sink<Packet> {
       await Future.delayed(delay); // todo as byte time
     }
   }
-
-  // @visibleForTesting
-  // Stream<(Iterable<int> segmentIds, int? respCode, List<int> values)> streamDebug(Iterable<int> segmentIds) {
-  //   Stopwatch debugStopwatch = Stopwatch()..start();
-  //   final stream = periodicRequest(id, segmentIds, delay: const Duration(milliseconds: 5));
-  //   return stream.map((event) => (event.$1, 0, <int>[for (var i = 0; i < event.$1.length; i++) ((debugStopwatch.elapsedMilliseconds / 1000) * 32767).toInt()]));
-  //   //  (cos(debugStopwatch.elapsedMilliseconds / 1000) * 32767).toInt(),
-  // }
 }
-// alternatively
-// request formats, match in this layer, provides more than one pairing than packet id
-// abstract interface class ProtocolRequest<T, R> {
-//   PacketIdPayload<T>? get requestId;
-//   PacketIdPayload<R>? get responseId;
-// }
 
 enum ProtocolSyncOptions {
   none,
@@ -398,11 +368,18 @@ class ProtocolException implements Exception {
   const ProtocolException([this.message = "Undefined Protocol Exception", this.socketId]);
   final String message;
   final int? socketId;
-  static const ProtocolException meta = ProtocolException('Error Response Meta');
-  static const ProtocolException id = ProtocolException('Error Response Id Invalid');
-  static const ProtocolException checksum = ProtocolException('Error Response Checksum');
+  // static const ProtocolException meta = ProtocolException('Error Response Meta');
+  // static const ProtocolException id = ProtocolException('Error Response Id Invalid');
+  // static const ProtocolException checksum = ProtocolException('Error Response Checksum');
   static const ProtocolException noConnect = ProtocolException('No Connect');
   static const ProtocolException errorInit = ProtocolException('Init Fail');
   static const ProtocolException ok = ProtocolException('Ok');
   static const ProtocolException link = ProtocolException(' ');
 }
+
+// alternatively
+// request formats, match in this layer, provides more than one pairing than packet id
+// abstract interface class ProtocolRequestPair<T, R> {
+//   PacketIdPayload<T>? get requestId;
+//   PacketIdPayload<R>? get responseId;
+// }

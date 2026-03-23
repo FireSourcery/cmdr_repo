@@ -40,14 +40,15 @@ extension type const Structure<K extends Field<V>, V>(Object _data) implements O
 }
 
 /// [Field] — key to a value in a host struct, carrying accessor logic and type scope
+///
 /// Virtualized Field / Descriptor
 /// _interface_ common between Structure and Map
+/// When `K extends Enum & Field`, serialization comes for free via [EnumMapByName] on `Map<Enum, V>`.
 ///
 /// Although the containing class with full context of relationships between fields
 /// By defining accessors on the key rather than the struct, the struct itself can remain a plain object (or extension type wrapper).
 /// The key maintains the type scope of `V`.
 ///
-/// When `K extends Enum` & `K implements Field`, serialization comes for free via [EnumMapByName] on `Map<Enum, V>`.
 abstract interface class Field<V> {
   /// Read this field's value from [struct].
   @protected

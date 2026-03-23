@@ -36,6 +36,13 @@ const like = 'sample';
 
 ## Struct Hierarchy
 
+
+View (ext type)	Schema (ext type)	Base class	Field mixin
+Bit	BitStruct<K>	BitForm<K>	BitStructBase<T,K>	BitField
+Byte	ByteStruct<K>	ByteForm<K>	ByteStructBase<S,K>	ByteField<V>
+Word	WordStruct<K>	WordForm<K>	WordBase<T,K>	WordField<V>
+
+
 | Type | Backing Storage | Field Granularity | Use Case |
 |------|----------------|-------------------|----------|
 | `BitStruct` | Single integer | Bit ranges | Hardware registers, flags |

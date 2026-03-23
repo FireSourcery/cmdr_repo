@@ -9,7 +9,7 @@ export '../bytes/byte_struct.dart';
 // Abstract factory pattern
 // effectively Packet `subtype` encapsulated
 // values available without a Packet instance  {
-abstract interface class PacketClass<T extends Packet> {
+abstract interface class PacketFormat<T extends Packet> {
   // 'Packet' factory / subtype constructor
   TypedDataCaster<T> get caster;
   T cast(TypedData typedData);
@@ -73,13 +73,13 @@ abstract interface class PacketClass<T extends Packet> {
 ///
 /// Components/Header/Payload may extend Struct for convenience of defining sized fields.
 // abstract class Packet<T extends Packet> {
-// abstract class Packet<T extends Packet, H extends PacketHeader, I extends PacketId> {
+// abstract class Packet<T extends Packet, H extends PacketHeader, S extends PacketSyncHeader> {0
 abstract class Packet {
   Packet(TypedData typedData) : packetData = ByteData.sublistView(typedData); // inherited constructor. caller pass back to PacketClass
   // Packet.cast(TypedData typedData) : packetData = ByteData.sublistView(typedData);
 
   /// Class variables per subtype class, or should this be mixin
-  PacketClass get packetClass;
+  PacketFormat get packetClass;
   // header must be complete in ffi.Struct case
   // can resolve as field in class if compiler does not optimize
   PacketHeader get asHeader => packetClass.headerOf(packetData);
@@ -161,7 +161,7 @@ abstract class Packet {
       for (var i = 0; i < 8; ++i) {
         int temp = (crc << 1);
         if (crc & 0x8000 != 0) {
-          temp ^ (0x1021);
+          temp ^= (0x1021);
         }
         crc = temp;
       }
@@ -316,13 +316,64 @@ typedef PacketCaster<P extends Packet> = P Function(TypedData typedData);
 ////////////////////////////////////////////////////////////////////////////////
 /// Struct Components Header/Payload
 ////////////////////////////////////////////////////////////////////////////////
-
+// extension type const HeaderView<K extends ByteField>(ByteStruct<K> _struct) {
+//   // All fields accessible, bounds-checked
+//   int? operator [](K key) => key.getInOrNull(_struct);
+//   void operator []=(K key, int value) => key.setIn(_struct, value);
+// }
 ////////////////////////////////////////////////////////////////////////////////
 /// [Header]
 ////////////////////////////////////////////////////////////////////////////////
 typedef PacketHeaderCaster = PacketHeader Function(TypedData typedData);
 // typedef PacketHeaderSyncCaster = PacketHeaderSync Function(TypedData typedData);
 // typedef PacketHeaderCaster<P extends PacketHeader> = P Function(TypedData typedData);
+
+// abstract interface class HeaderFormat {
+//   ByteField get startField;
+//   ByteField get idField;
+//   ByteField get lengthField;
+//   ByteField get checksumField;
+
+//   List<ByteField> get fields;
+//   int get length;
+//   int get syncLength;
+
+//   // Build operations (currently on Packet)
+//   void buildSync(ByteData target, int startId, PacketId packetId);
+//   void buildRequest(ByteData target, int startId, PacketId requestId, int payloadLength, int Function(int) checksumFn);
+
+//   // Validate operations (currently on Packet)
+//   bool? isStartValid(ByteData data, int expectedStart);
+//   bool? isIdValid(ByteData data, PacketId? Function(int) idLookup);
+// }
+
+// collective handler.
+// abstract class PacketHeader extends ByteStructBase<PacketHeader, ByteField> {
+//   PacketHeader(super.byteData);
+
+//   int get startField;
+//   int get idField;
+//   int get lengthField;
+//   int get checksumField;
+
+//   set startField(int value);
+//   set idField(int value);
+//   set lengthField(int value);
+//   set checksumField(int value);
+
+//   // bool get isIdValid => isValidId(headerAsSyncType.idFieldValue);
+//   // bool get isLengthValid => isValidLength(headerAsPayloadType.lengthFieldValue);
+//   // bool get isChecksumValid => isValidChecksum(headerAsPayloadType.checksumFieldValue);
+
+//   // void buildHeaderAsRequest(PacketId requestId, int payloadLength) {
+//   // void buildHeaderAsSync(PacketId requestId, int payloadLength) {
+//   // void build(PacketId packetId, Packet? packet); // can be overridden for additional types
+//   // void buildHeaderAsRequest(PacketId requestId, int payloadLength) {
+//   // packetClass.startFieldDef.setInOrNot(packetData, packetClass.startId);
+//   // packetClass.idFieldDef.setInOrNot(packetData, requestId.intId);
+//   // packetClass.lengthFieldDef.setInOrNot(packetData, payloadLength + packetClass.headerLength);
+//   // packetClass.checksumFieldDef.setInOrNot(packetData, checksum(payloadLength + packetClass.headerLength));
+// }
 
 /// Minimal header
 /// ControlChar
@@ -418,11 +469,11 @@ class PayloadMeta {
 ////////////////////////////////////////////////////////////////////////////
 /// Packet with `mutable length`, copyBytes + cast view
 ///
-/// pass [PacketCaster] or [PacketClass]
+/// pass [PacketCaster] or [PacketFormat]
 class PacketBuffer<T extends Packet> extends ByteStructBuffer<T> {
   PacketBuffer(this.packetClass, [int? size]) : super.caster(packetClass.caster, size ?? packetClass.lengthMax);
 
-  final PacketClass<T> packetClass;
+  final PacketFormat<T> packetClass;
   int get _headerLength => packetClass.headerLength;
   int get _syncHeaderLength => packetClass.syncHeaderLength;
   int get _payloadIndex => packetClass.headerLength;
