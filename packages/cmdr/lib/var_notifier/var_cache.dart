@@ -1,4 +1,8 @@
-part of 'var_notifier.dart';
+import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
+
+import 'var_key.dart';
+import 'var_notifier.dart';
 
 ////////////////////////////////////////////////////////////////////////////////
 /// [VarCache] - Model of Client Side Entity

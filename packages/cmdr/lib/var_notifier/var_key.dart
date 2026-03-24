@@ -1,4 +1,5 @@
-part of 'var_notifier.dart';
+import 'package:flutter/foundation.dart';
+import 'var_notifier.dart';
 
 /// [VarKey] is an immutable key for [VarNotifier].
 /// immutable properties of a VarNotifier
@@ -49,7 +50,7 @@ abstract mixin class VarKey<V> implements ValueKey<int> {
   @override
   String toString() => '[$runtimeType<$value>]$label<${viewType.type}>';
 
-  // strictly by id. subtype casting not considered
+  // strictly by id. disregard subtype and generic type
   @override
   bool operator ==(covariant VarKey other) {
     if (identical(this, other)) return true;
@@ -57,7 +58,7 @@ abstract mixin class VarKey<V> implements ValueKey<int> {
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, value);
+  int get hashCode => value.hashCode;
 }
 
 enum VarReadWriteAccess {

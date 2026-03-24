@@ -1,5 +1,3 @@
-import 'dart:math';
-
 extension EnumByNullable<T extends Enum> on List<T> {
   T byIndex(int index, [T? defaultValue]) => elementAtOrNull(index) ?? defaultValue ?? elementAt(index.clamp(0, length - 1));
 

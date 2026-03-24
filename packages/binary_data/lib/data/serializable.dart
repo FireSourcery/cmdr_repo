@@ -23,15 +23,6 @@ mixin Serializable<S extends Serializable<S>> on Object implements StructureBase
   StructForm<SerializableKey, Object?> get _type => StructForm<SerializableKey, Object?>(keys);
 
   SerializableData<SerializableKey, Object?> toMap() => _type.mapWithData(data);
-  // S copyWithMap(covariant SerializableData<SerializableKey, Object?> data);
-
-  // SerializableData<SerializableKey, Object?> _bufferCopy() => toMap();
-  // // using index map by default
-  // // optionally override each in the  child class,=
-  // S withField<V>(covariant SerializableKey<V> key, V value) => copyWithMap(_bufferCopy()..[key] = value);
-  // // tod copy non null only, let copyWithMap handle mapping only
-  // S withFields(covariant Iterable<FieldEntry<SerializableKey, Object?>> newEntries) => copyWithMap(_bufferCopy()..addEntries(newEntries.map((e) => MapEntry(e.key, e.value))));
-  // S withMap(covariant Map<SerializableKey, Object?> map) => copyWithMap(_bufferCopy()..addAll(map));
 
   // ---------------------------------------------------------------------------
   // Value equality
@@ -62,32 +53,9 @@ mixin Serializable<S extends Serializable<S>> on Object implements StructureBase
 // typedef _SerializableNullable<S extends StructureBase<S, Field<Object?>, Object?>> = StructureBase<S, Field<Object?>, Object?>;
 // mixin SerializableDef<S extends SerializableDef<S>> on Object implements _SerializableDef<S> {}
 
-/// optional
-// caller ahndle Object? if nullable
-mixin Immutable<S extends Immutable<S>> {
-  // ---------------------------------------------------------------------------
-  // Subtypes override copyWith via their own constructor.
-  // ---------------------------------------------------------------------------
-  // immutable `with` copy operations, via IndexMap
-  // analogous to operator []=, but returns a new instance
-
-  S copyWithMap(Map<Field, Object?> data);
-  Map<Field, Object?> toMap();
-  Map<Field, Object?> _bufferCopy() => toMap();
-
-  // using index map by default
-  // optionally override each in the  child class,=
-  S withField<V>(Field<V> key, V value) => copyWithMap(_bufferCopy()..[key] = value);
-
-  // tod copy non null only, let copyWithMap handle mapping only
-  S withFields(Iterable<FieldEntry<Field, Object?>> newEntries) => copyWithMap(_bufferCopy()..addEntries(newEntries.map((e) => MapEntry(e.key, e.value))));
-  S withMap(Map<Field, Object?> map) => copyWithMap(_bufferCopy()..addAll(map));
-}
-
 // [NamedField]
 abstract mixin class SerializableKey<V> implements Enum, Field<V> {
   V getIn(covariant Object struct);
-
   void setIn(covariant Object struct, V value);
   bool testAccess(covariant Object struct);
 
@@ -113,24 +81,11 @@ extension SerializableKeys<K extends SerializableKey<V>, V> on StructForm<K, V> 
     }
   }
 
-  // handle non map related interface including completeness
-  // Structure<K, V?> _validate(Structure<K, Object?> struct) {
-  //   if (V == Object && null is V) return struct as Structure<K, V?>; // skip validation if nullable
-  //   return
-  // }
-
-  // Structure<K, V> cast(Structure struct) => Structure<K, V>(struct); //   cast if the K,V match
-
-  // operators with creation reuturn StructBase on IndexMap
-  // StructBase<K, V> createWith(Structure<K, V> struct, Iterable<StructField<V>> fields) => CoStructure(IndexMap<K, V>.of(fields, struct.fields(fields))..[key] = value);
-  // index map handles checking keys passed.
-  //  inherit by serializable keys
-  // StructBase<K, V>? validate(Map<K, V> struct)
-  // {
-  //     fields.indexed.every((e) => e.$1 == e.$2.index)
-  //     assert(_valuesBuffer.length == fields.length, 'Values buffer must match keys length');
-  //     CoStructure.of(fields, fields.map((key) => struct[key] as V));
-  // }
+  bool compareTypes(Iterable<Object?> objects) => objects.indexed.every((e) => fields[e.$1].compareType(e.$2));
+  Map<K, V>? validate(Map<K, V> struct) {
+    if (compareTypes(struct.values)) return struct;
+    return null;
+  }
 }
 
 extension SerializableKeysType<K extends SerializableKey<Object>> on StructForm<K, Object> {
@@ -148,8 +103,30 @@ extension SerializableKeysType<K extends SerializableKey<Object>> on StructForm<
   }
 }
 
-extension SerializableMethods on Serializable<dynamic> {
+extension SerializableMethods on Serializable {
   Map<String, Object?> toJson() => toMap().toJson();
 }
 
 typedef SerializableData<K extends SerializableKey<V>, V> = Map<K, V>;
+
+/// optional
+// caller ahndle Object? if nullable
+mixin Immutable<S extends Immutable<S>> {
+  // ---------------------------------------------------------------------------
+  // Subtypes override copyWith via their own constructor.
+  // ---------------------------------------------------------------------------
+  // immutable `with` copy operations, via IndexMap
+  // analogous to operator []=, but returns a new instance
+
+  S copyWithMap(Map<Field, Object?> data);
+  Map<Field, Object?> toMap();
+  Map<Field, Object?> _bufferCopy() => toMap();
+
+  // using index map by default
+  // optionally override each in the  child class,=
+  S withField<V>(Field<V> key, V value) => copyWithMap(_bufferCopy()..[key] = value);
+
+  // tod copy non null only, let copyWithMap handle mapping only
+  S withFields(Iterable<FieldEntry<Field, Object?>> newEntries) => copyWithMap(_bufferCopy()..addEntries(newEntries.map((e) => MapEntry(e.key, e.value))));
+  S withMap(Map<Field, Object?> map) => copyWithMap(_bufferCopy()..addAll(map));
+}

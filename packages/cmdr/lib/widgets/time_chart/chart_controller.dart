@@ -137,32 +137,10 @@ class ChartController with TimerNotifier, ChangeNotifier {
   // double get tSamplesRange => updateInterval.inSeconds * chartData.samplesMax * 1.0;
 
   bool get useScalarView => true;
-  // dynamic view - auto switch
-  // smallest max and largest max over 100
-  // bool get useScalarView {
-  //   // double min = double.infinity;
-  //   // double max = double.negativeInfinity;
-  //   // for (final entry in chartEntries) {
-  //   //   var value = entry.normalRef;
-  //   //   if (value < min) min = value;
-  //   //   if (value > max) max = value;
-  //   // }
-  //   // return max.abs() / min.abs() > 100;
-  //   return false;
-  // }
 
   List<FlSpot> _flSpotsViewOf(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y))];
   List<FlSpot> _flSpotsViewOfAsScalar(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y / chartEntries[index].normalRef))];
-  // ...chartData.lineDataPoints(index).map((e) {
-  //   // if (chartEntries.elementAtOrNull(index)?.normalRef case double ref) {
-  //   if (chartEntries[index].normalRef case double ref) {
-  //     assert(ref.isFinite);
-  //     return FlSpot(e.x, e.y / ref);
-  //   } else {
-  //     return FlSpot(e.x, 0);
-  //   }
-  //   // return FlSpot(e.x, e.y / (chartEntries.elementAtOrNull(index)?.normalRef ?? 1));
-  // })
+
   List<FlSpot> flSpotsViewOf(int index) {
     if (index >= chartData.lineEntries.length) return [];
     return (useScalarView) ? _flSpotsViewOfAsScalar(index) : _flSpotsViewOf(index);

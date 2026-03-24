@@ -63,7 +63,10 @@ extension type const BitForm<K extends BitField>(List<K> _fields) implements Str
 /// — so keyed access delegates through the same [Field]-based dispatch as [Structure].
 ///
 /// caller compose compile time const  const BitStructBase(ConstBits(11))
+///
+/// `bitstruct.toMap()` instead of BitForm(BitFieldT.values).mapWithData(bitstruct)
 ////////////////////////////////////////////////////////////////////////////////
+// Directly extending BitData would give const constructors but would require handling mutable and immutable variants
 // abstract base class BitStructBase<T extends BitStructBase<T>> with MapBase<BitField, int>, BitFieldMap<BitField>, StructureBase<T, BitField, int> {
 abstract class BitStructBase<T extends BitStructBase<T, K>, K extends BitField> with MapBase<K, int>, StructureBase<T, K, int> {
   const BitStructBase(this.bitData);
@@ -80,12 +83,10 @@ abstract class BitStructBase<T extends BitStructBase<T, K>, K extends BitField> 
   @override
   BitStruct<K> get data => bitData as BitStruct<K>;
 
-  @override
-  Bits get bits => bitData.bits;
-  @override
-  set bits(Bits value) => bitData.bits = value; // throws for ConstBits; works for MutableBits
-
   int get width => BitForm(keys).totalWidth;
+
+  Bits get bits => bitData.bits;
+  set bits(Bits value) => bitData.bits = value; // throws for ConstBits; works for MutableBits
 
   @override
   // Map<K, int> toMap() => BitsMap.of(keys, bits);
@@ -145,23 +146,36 @@ class _BitStruct<K extends BitField> extends BitStructBase<_BitStruct<K>, K> {
 ///
 /// [BitsInitializer]
 /// compile time const definition using map literal
-/// BitStruct<EnumType> example = BitsInitializer({
+///   example = BitsInitializer({
 ///   EnumType.name1: 2,
 ///   EnumType.name2: 3,
 /// });
-class BitStructInitializer<T extends BitStructBase<T, K>, K extends BitField> extends StructInitializer<T, K, int> {
-  const BitStructInitializer(super._init) : _init = _init, super();
+// class BitStructInitializer<T extends BitStructBase<T, K>, K extends BitField> extends StructInitializer<T, K, int> {
+//   const BitStructInitializer(super._init) : _init = _init, super();
+
+//   final Map<K, int> _init;
+
+//   @override
+//   BitStruct<K> get data => BitStruct.fromMap(_init); // base for copy, copys value
+
+//   @override
+//   bool operator ==(Object other) {
+//     if (other is! T) return false;
+//     return (other.bits == data.bits);
+//   }
+
+//   @override
+//   int get hashCode => keys.hashCode ^ data.bits.hashCode;
+// }
+
+class BitsInitializer<K extends BitField> extends BitData {
+  const BitsInitializer(this._init);
 
   final Map<K, int> _init;
 
-  BitStruct<K> get bitData => BitStruct.fromMap(_init); // base for copy, copys value
+  int get width => BitForm(_init.keys.toList()).totalWidth;
+  Bits get bits => Bits.ofMap(_init.map((key, value) => MapEntry(key.bitmask, value)));
 
   @override
-  bool operator ==(Object other) {
-    if (other is! T) return false;
-    return (other.bits == bitData.bits);
-  }
-
-  @override
-  int get hashCode => keys.hashCode ^ bitData.bits.hashCode;
+  set bits(Bits value) => throw UnsupportedError('Cannot modify unmodifiable');
 }

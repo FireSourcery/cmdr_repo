@@ -1,18 +1,13 @@
-import 'dart:async';
-import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart' hide BitField;
+import 'package:flutter/foundation.dart';
 
 import 'package:binary_data/binary_data.dart';
-
-import '../type_ext/num_union.dart';
-import 'service_io.dart';
+import 'var_key.dart';
 
 export 'package:binary_data/binary_data.dart';
 export 'service_io.dart';
-
-part 'var_cache.dart';
-part 'var_controller.dart';
-part 'var_key.dart';
+export 'var_cache.dart';
+export 'var_controller.dart';
+export 'var_key.dart';
 
 ///
 /// each retrievable value as a View Model
@@ -322,49 +317,3 @@ class VarEventNotifier<V> extends ChangeNotifier {
     notifyListeners();
   }
 }
-
-/// same id updated codec
-// class VarProxyNotifier<V> extends VarNotifier<V> {
-//   VarProxyNotifier(this.source, {super.codec}) : super(varKey: source.varKey) {
-//     source.addListener(_onSourceUpdate);
-//   }
-
-//   // VarProxyNotifier._of(this.source, super.proxyKey) : super.ofKey() {
-//   //   source.addListener(_onSourceUpdate);
-//   // }
-
-//   // // factory VarProxyNotifier.of(VarNotifier source, VarKey varKey) {
-//   // //   assert(V == dynamic, 'V is determined by VarKey.viewType');
-//   // //   return varKey.viewType(<G>() => VarProxyNotifier<G>._of(source, varKey) as VarProxyNotifier<V>);
-//   // // }
-
-//   // factory VarProxyNotifier.of(VarNotifier source, BinaryUnionCodec<V> codec) {
-//   //   assert(V == dynamic, 'V is determined by VarKey.viewType');
-//   //   return varKey.viewType(<G>() => VarProxyNotifier<G>._of(source, varKey) as VarProxyNotifier<V>);
-//   // }
-
-//   final VarNotifier source;
-
-//   // do not update to the source codec
-//   @override
-//   void initReferences() {
-//     // super.initReferences();
-//     // codec = codec ?? source.codec as BinaryUnionCodec<V>;
-//     // codec = codec ?? source.codec;
-//   }
-
-//   void _onSourceUpdate() {
-//     data = source.data; // sync by data value
-//     notifyListeners(); // on dataValue change
-//   }
-
-//   // @override
-//   // void addListener(VoidCallback listener) {
-//   //   source.addListener(listener);
-//   // }
-
-//   // @override
-//   // void removeListener(VoidCallback listener) {
-//   //   source.removeListener(listener);
-//   // }
-// }

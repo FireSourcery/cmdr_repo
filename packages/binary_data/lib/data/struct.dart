@@ -25,7 +25,6 @@ extension type const Structure<K extends Field<V>, V>(Object _data) implements O
 
   // StructField<V> field(K key) => (key: key, value: this[key]);
   StructField<R> field<R>(Field<R> key) => (key: key, value: this[key as K] as R); // handles user side casting
-
   V1 unmap<V1>(Field<V1> key) => key.getIn(this as Structure<Field<V1>, V1>); // handles user side casting
 
   V? fieldOrNull(K key) => key.testAccess(this) ? key.getIn(this) : null;
@@ -35,8 +34,10 @@ extension type const Structure<K extends Field<V>, V>(Object _data) implements O
     return true;
   }
 
-  Iterable<V> valuesAs(List<K> keys) => keys.map((k) => this[k]);
-  Iterable<StructField<V>> fieldsAs(List<K> keys) => keys.map((k) => field(k));
+  // implementatio handled by form
+  Iterable<V> valuesAs(StructForm<K, V> type) => type(this).values;
+  Iterable<StructField<V>> fieldsAs(StructForm<K, V> type) => type(this).fields;
+  Map<K, V> toMapWith(StructForm<K, V> type) => type.mapWithData(this);
 }
 
 /// [Field] — key to a value in a host struct, carrying accessor logic and type scope
@@ -69,10 +70,6 @@ abstract interface class Field<V> {
   // int get index; // for index map by default
 }
 
-// extension FieldMethods<V> on Field<V> {
-//   // FieldEntry<Field<V>, V> call(Structure<Field<V>, V> struct) => (key: this, value: getIn(struct));
-// }
-
 /// [StructForm]
 /// Structure TypeClass
 /// Common viewer interface
@@ -83,21 +80,26 @@ abstract interface class Field<V> {
 /// Combine with Structure extension type, satisfies common data interface and serialization
 /// `Structure<PersonField, Object>(personA).valuesAs(PersonField.values).toMap();`
 ///
-/// Form(PersonField.values).cast()
-// dont need subtype here its only for data viewing
 extension type const StructForm<K extends Field<V>, V>(List<K> fields) {
   // keys must be Enum or have index
   // index map handling all keys present
-  IndexMap<K, V> _structMap(Structure<K, V> struct) => IndexMap<K, V>.of(fields, struct.valuesAs(fields));
-  // Map<K, V> _createMap(Structure<K, V> struct) => {for (final key in fields) key: struct[key]};
+  IndexMap<K, V> _structMap(Structure<K, V> struct) => IndexMap<K, V>.of(fields, struct.valuesAs(this));
+  Map<K, V> _hashMap(Structure<K, V> struct) => {for (final key in fields) key: struct[key]};
 
   Map<K, V> mapWithData(Structure<K, V> struct) => _structMap(struct);
 
   /// `Form(PersonField.values)(personA).toMap();`
-  // Iterable<StructField<V>> call(Structure<K, V> struct) => fields.map((key) => (key: key, value: struct[key]));
+  ({StructForm<K, V> type, Structure<K, V> data}) call(Structure<K, V> struct) => (type: this, data: struct);
 
   // viewer
-  // StructureBase<dynamic, K, V> call(Structure<K, V> struct) => StructPrototype<Never, K, V>(fields, struct);
+  // StructureBase<dynamic, K, V> view(Structure<K, V> struct) => StructPrototype<Never, K, V>(fields, struct);
+}
+
+// return context with both
+extension TypedStruct<K extends Field<V>, V> on ({StructForm<K, V> type, Structure<K, V> data}) {
+  Map<K, V> toMap() => type.mapWithData(data);
+  Iterable<V> get values => type.fields.map((k) => data[k]);
+  Iterable<StructField<V>> get fields => type.fields.map((k) => data.field(k));
 }
 
 typedef FieldEntry<K extends Field<V>, V> = ({K key, V value});
@@ -136,15 +138,13 @@ mixin StructureBase<S extends StructureBase<S, K, V>, K extends Field<V>, V> {
 
   V operator [](covariant K key) => data[key];
   void operator []=(covariant K key, V value) => data[key] = value;
-
   V? fieldOrNull(K key) => data.fieldOrNull(key);
   bool trySetField(K key, V value) => data.trySetField(key, value);
-
   StructField<V1> field<V1>(Field<V1> key) => data.field(key);
 
   // Interface extended Structure
-  Iterable<V> get values => data.valuesAs(keys);
-  Iterable<StructField<V>> get fields => data.fieldsAs(keys);
+  Iterable<V> get values => StructForm(keys)(data).values;
+  Iterable<StructField<V>> get fields => StructForm(keys)(data).fields;
 
   // ---------------------------------------------------------------------------
   // Conversion — bridge to Map (and therefore to serialization)
@@ -152,9 +152,6 @@ mixin StructureBase<S extends StructureBase<S, K, V>, K extends Field<V>, V> {
   /// Snapshot as an [IndexMap]. If `K extends Enum`, call `.toJson()` on the
   /// result to serialise via [EnumMapByName].
   Map<K, V> toMap() => IndexMap.of(keys, values);
-  // Map<K, V> withFieldAsMap(K key, V value) => toMap()..[key] = value;
-  // Map<K, V> withFieldsAsMap(Iterable<FieldEntry<K, V>> newEntries) => toMap()..addEntries(newEntries.map((e) => MapEntry(e.key, e.value)));
-  // Map<K, V> withMapAsMap(Map<K, V> map) => toMap()..addAll(map);
 
   // toStringAsNamed() => '$S(${keys.map((k) => '$k: ${this[k]}').join(', ')})';
 }
@@ -167,9 +164,6 @@ class StructPrototype<S extends StructureBase<S, K, V>, K extends Field<V>, V> w
   const StructPrototype(this.keys, this.data);
   final List<K> keys;
   final Structure<K, V> data;
-
-  // @override
-  // S copyWithData(covariant Structure<K, V?> data);
 }
 
 /// proxy over a map

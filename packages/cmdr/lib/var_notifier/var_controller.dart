@@ -1,4 +1,8 @@
-part of 'var_notifier.dart';
+import 'dart:async';
+
+import 'var_notifier.dart';
+import 'service_io.dart';
+import 'var_cache.dart';
 
 /// [VarRepo]/[VarCache] with [Serivce]
 ///

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:typed_data';
 
 abstract interface class Link {
-  Link();
   const factory Link.uninitialized() = _LinkUninitialized; // a dummy state, so that send and recv can be called without checking for null
 
   String? get portActiveName;

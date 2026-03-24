@@ -28,11 +28,10 @@ class LineData {
   Iterable<Point<double>> mapAsPoints(List<double> timeData) => Iterable.generate(min(timeData.length, values.length), (index) => Point(timeData[index], values[index]));
 
   factory LineData.fromJson(Map<String, Object?> json) {
-    if (json
-        case {
-          'name': String name,
-          'values': String stringList,
-        }) {
+    if (json case {
+      'name': String name,
+      'values': String stringList,
+    }) {
       if (jsonDecode(stringList) case List jsonList) {
         return LineData.from(name, List<double>.from(jsonList));
       }
@@ -47,7 +46,7 @@ class LineData {
     };
   }
 
-  factory LineData.fromMapEntry(MapEntry<String, List> mapEntry) => LineData.from(mapEntry.key, List<double>.from(mapEntry.value.map((e) => e ?? 0.0))); // handle non num?
+  factory LineData.fromMapEntry(MapEntry<String, List> mapEntry) => LineData.from(mapEntry.key, List<double>.from(mapEntry.value.map((e) => e ?? 0.0)));
   factory LineData.ofMapEntry(MapEntry<String, List<double>> mapEntry) => LineData.from(mapEntry.key, List<double>.of(mapEntry.value));
 
   MapEntry<String, List<double>> toMapEntry() => MapEntry<String, List<double>>(name, values.toList());
@@ -71,12 +70,12 @@ class ChartData {
 
   // include 1 initial point as it is required by the view
   ChartData.zero({required this.linesMax, required this.samplesMax, Iterable<String>? lineNames})
-      : assert((lineNames?.length ?? 0) <= linesMax),
-        timeData = LineData.capacity('time', samplesMax)..update(0.0), // start with 1 element for tMin
-        lineEntries = [
-          if (lineNames != null)
-            for (final name in lineNames) LineData.capacity(name, samplesMax)..update(0.0)
-        ];
+    : assert((lineNames?.length ?? 0) <= linesMax),
+      timeData = LineData.capacity('time', samplesMax)..update(0.0), // start with 1 element for tMin
+      lineEntries = [
+        if (lineNames != null)
+          for (final name in lineNames) LineData.capacity(name, samplesMax)..update(0.0),
+      ];
 
   final List<LineData> lineEntries; // indexed parallel with colors list, alternatively use Map<String, List<double>>
   // final QueueList<double> timeData;
@@ -140,7 +139,7 @@ class ChartData {
     throw const FormatException('Unexpected CSV format');
   }
 
-// json map
+  // json map
   Map<String, Object?> toJson() {
     return {
       'time': timeData.toString(),
@@ -151,13 +150,12 @@ class ChartData {
   }
 
   factory ChartData.fromJson(Map<String, Object?> json) {
-    if (json
-        case {
-          'time': String timeJson,
-          'entires': List entriesJson, // List<Map<String,Object>>
-          'entriesMax': int entriesMax,
-          'samplesMax': int samplesMax,
-        }) {
+    if (json case {
+      'time': String timeJson,
+      'entires': List entriesJson, // List<Map<String,Object>>
+      'entriesMax': int entriesMax,
+      'samplesMax': int samplesMax,
+    }) {
       if (jsonDecode(timeJson) case List timeList) {
         if (entriesJson case List<Map<String, Object?>>()) {
           if (timeList case List<double>()) {

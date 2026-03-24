@@ -75,7 +75,7 @@ class MultiSelectChips<T> extends StatelessWidget {
     this.builder,
   });
 
-  final Iterable<T> selectable; // must be a new list, iterable non-primitives may not add to set properly
+  final Iterable<T> selectable; // must be a new list
   final Set<T> selectedState; // externally maintained state
 
   final ValueSetter<T>? onSelected; // does not include add/remove info
@@ -97,7 +97,7 @@ class MultiSelectChips<T> extends StatelessWidget {
           selected: selectedState.contains(item),
           onSelected: (bool value) {
             if (value) {
-              if (selectMax case int max when selectedState.length < max || selectMax == null) {
+              if (selectMax == null || selectedState.length < selectMax!) {
                 selectedState.add(item);
                 onAdd?.call(item);
               }

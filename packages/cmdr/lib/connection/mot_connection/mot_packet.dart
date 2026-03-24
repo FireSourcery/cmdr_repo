@@ -5,6 +5,8 @@ export 'package:binary_data/packet/packet_transformer.dart';
 
 import 'dart:ffi' as ffi;
 
+import 'package:binary_data/packet/packet_header.dart';
+
 mixin class MotPacketInterface implements PacketFormat<MotPacket> {
   const MotPacketInterface();
 
