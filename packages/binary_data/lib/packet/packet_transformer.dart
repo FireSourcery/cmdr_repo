@@ -57,13 +57,6 @@ class HeaderParser extends PacketBuffer {
   // headerParser need caster to shift view packet.cast
   // disallow changing dataView as pointer directly, caller use length
   // int get viewLength => dataView.lengthInBytes;
-  // @protected
-  // set viewLength(int value) {
-  //   // runtime assertion is handled by parser
-  //   assert(value <= lengthMax); // minus offset if view does not start at buffer 0, case of inheritance
-  //   dataView = _byteBuffer.asUint8List(0, value);
-  //   // _bytesView = _byteBuffer.asUint8List(0, value); // need Uint8List.view. sublistView will not exceed current length
-  // }
 }
 
 /// immutable view of packet parsing status

@@ -31,9 +31,3 @@ class Slicer<T> {
 extension RecordSlices<T extends Record> on T {
   Iterable<T> slices(T Function(int start, int end) slicer, int totalLength, int sliceLength) => Slicer(slicer, totalLength).slices(sliceLength);
 }
-
-// with length property
-// extension LengthSlices<T extends dynamic> on T {
-//   int get totalLength => this.length;
-//   Iterable<T> slices(T Function(int start, int end) slicer, int sliceLength) => Slicer(slicer, totalLength).slices(sliceLength);
-// }

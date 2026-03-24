@@ -23,9 +23,7 @@ extension type const Structure<K extends Field<V>, V>(Object _data) implements O
   V operator [](K key) => key.getIn(this);
   void operator []=(K key, V value) => key.setIn(this, value);
 
-  // StructField<V> field(K key) => (key: key, value: this[key]);
   StructField<R> field<R>(Field<R> key) => (key: key, value: this[key as K] as R); // handles user side casting
-  V1 unmap<V1>(Field<V1> key) => key.getIn(this as Structure<Field<V1>, V1>); // handles user side casting
 
   V? fieldOrNull(K key) => key.testAccess(this) ? key.getIn(this) : null;
   bool trySetField(K key, V value) {
@@ -53,18 +51,17 @@ extension type const Structure<K extends Field<V>, V>(Object _data) implements O
 abstract interface class Field<V> {
   /// Read this field's value from [struct].
   @protected
-  V getIn(covariant Object struct); // getWithin
-  // V getIn1(covariant Object  struct); // getWithin
+  V getIn(covariant Object struct);
 
   /// Write [value] into this field of [struct].
   @protected
-  void setIn(covariant Object struct, V value); //setWithin
+  void setIn(covariant Object struct, V value);
 
   /// Whether this field is present/valid for [struct].
   /// Defaults to `true` (fixed-schema). Override for optional/sparse fields.
-  bool testAccess(covariant Object struct) => true; //isWithin
+  bool testAccess(covariant Object struct) => true;
 
-  /// Optional default; enables `Map<K, V?>` patterns and `clear()`.
+  // Optional default; enables `Map<K, V?>`
   // V? get defaultValue => null;
 
   // int get index; // for index map by default
@@ -181,14 +178,18 @@ class StructInitializer<T extends StructureBase<T, K, V>, K extends Field<V>, V>
   @override
   V operator [](covariant K key) => _init[key]!;
   @override
-  void operator []=(covariant K key, V value) => throw UnsupportedError('Cannot modify unmodifiable');
+  void operator []=(covariant K key, V value) => _init[key] = value;
 
   @override
   StructField<V1> field<V1>(Field<V1> key) => (key: key, value: _init[key as K] as V1);
   @override
   V? fieldOrNull(K key) => _init[key];
   @override
-  bool trySetField(K key, V value) => false; // cannot modify unmodifiable
+  bool trySetField(K key, V value) {
+    if (_init is UnmodifiableMapBase) return false;
+    _init[key] = value;
+    return true;
+  }
 
   @override
   Iterable<V> get values => _init.values;

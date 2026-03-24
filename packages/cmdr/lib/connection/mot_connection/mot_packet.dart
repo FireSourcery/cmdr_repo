@@ -1,11 +1,10 @@
 // ignore_for_file: constant_identifier_names
-import 'package:binary_data/packet/packet.dart';
-export 'package:binary_data/packet/packet.dart';
-export 'package:binary_data/packet/packet_transformer.dart';
-
 import 'dart:ffi' as ffi;
 
 import 'package:binary_data/packet/packet_header.dart';
+import 'package:binary_data/packet/packet.dart';
+export 'package:binary_data/packet/packet.dart';
+export 'package:binary_data/packet/packet_transformer.dart';
 
 mixin class MotPacketInterface implements PacketFormat<MotPacket> {
   const MotPacketInterface();
@@ -65,7 +64,7 @@ class MotPacket extends Packet {
   MotPacket.cast(super.bytes);
 
   @override
-  PacketFormat<Packet> get packetClass => const MotPacketInterface();
+  PacketFormat<Packet> get format => const MotPacketInterface();
 
   // @override
   // MotPacketHeader get packetHeader => super.packetHeader as MotPacketHeader;
@@ -75,18 +74,18 @@ class MotPacket extends Packet {
   // return 'MotPacket{startField: $startField, idField: $idField, checksumField: $checksumField, lengthField: $lengthField, sequenceField: $sequenceField, flexUpper16Field: $flexUpper16Field}';
 }
 
-// enum MotHeaderField<V extends NativeType> with ByteField<V>, TypedField<V> {
-//   start<Uint8>(0),
-//   id<Uint8>(1),
-//   length<Uint8>(2),
-//   sequence<Uint8>(3),
-//   checksum<Uint16>(4),
-//   flex<Uint16>(6);
+enum MotHeaderField<V extends NativeType> with ByteField<V>, TypedField<V> {
+  start<Uint8>(0),
+  id<Uint8>(1),
+  length<Uint8>(2),
+  sequence<Uint8>(3),
+  checksum<Uint16>(4),
+  flex<Uint16>(6);
 
-//   const MotHeaderField(this.offset);
-//   @override
-//   final int offset;
-// }
+  const MotHeaderField(this.offset);
+  @override
+  final int offset;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Header

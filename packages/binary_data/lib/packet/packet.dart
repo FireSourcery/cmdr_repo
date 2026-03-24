@@ -32,7 +32,6 @@ abstract interface class PacketFormat<T extends Packet> {
   PacketSyncId get abort;
 
   PacketId? idOf(int intId);
-  // PacketIdCaster get idClass;
 
   /// Header Definition
   /// defined position, relative to `packet`.
@@ -73,18 +72,16 @@ abstract interface class PacketFormat<T extends Packet> {
 /// alternatively, use extension type on TypedData
 ///
 /// Components/Header/Payload may extend Struct for convenience of defining sized fields.
-// abstract class Packet<T extends Packet> {
-// abstract class Packet<T extends Packet, H extends PacketHeader, S extends PacketSyncHeader> {0
 abstract class Packet {
   Packet(TypedData typedData) : packetData = ByteData.sublistView(typedData); // inherited constructor. caller pass back to PacketClass
   // Packet.cast(TypedData typedData) : packetData = ByteData.sublistView(typedData);
 
   /// Class variables per subtype class, or should this be mixin
-  PacketFormat get packetClass;
+  PacketFormat get format;
   // header must be complete in ffi.Struct case
   // can resolve as field in class if compiler does not optimize
-  PacketHeader get asHeader => packetClass.headerOf(packetData);
-  PacketSyncHeader get asSync => packetClass.syncHeaderOf(packetData);
+  PacketHeader get asHeader => format.headerOf(packetData);
+  PacketSyncHeader get asSync => format.syncHeaderOf(packetData);
 
   // per instance
   // pointer to a buffer, immutable view/length
@@ -95,8 +92,8 @@ abstract class Packet {
 
   /// derive from either header or packetInterface
   /// alternatively, define as SizeField key
-  int get payloadIndex => packetClass.headerLength;
-  int get payloadLengthMax => packetClass.lengthMax - payloadIndex;
+  int get payloadIndex => format.headerLength;
+  int get payloadLengthMax => format.lengthMax - payloadIndex;
 
   /// immutable, of varying length, by default
   /// mutable with mixin, or PacketBuffer
@@ -108,19 +105,13 @@ abstract class Packet {
   /// Header/Payload Pointers using defined boundaries
   ////////////////////////////////////////////////////////////////////////////////
   // rename bytes
-  Uint8List get idHeader => Uint8List.sublistView(packetData, 0, packetClass.lengthMin);
-  Uint8List get header => Uint8List.sublistView(packetData, 0, packetClass.headerLength);
+  Uint8List get idHeader => Uint8List.sublistView(packetData, 0, format.lengthMin);
+  Uint8List get header => Uint8List.sublistView(packetData, 0, format.headerLength);
   Uint8List get payload => Uint8List.sublistView(packetData, payloadIndex);
 
-  // @override
-  // String toString();
-
-  ////////////////////////////////////////////////////////////////////////////////
-  ///
-  ////////////////////////////////////////////////////////////////////////////////
-  ByteData get headerWords => ByteData.sublistView(header, 0, packetClass.headerLength);
+  ByteData get headerWords => ByteData.sublistView(header, 0, format.headerLength);
   @visibleForTesting
-  Uint8List get headerAvailable => Uint8List.sublistView(packetData, 0, packetClass.headerLength.clamp(0, length));
+  Uint8List get headerAvailable => Uint8List.sublistView(packetData, 0, format.headerLength.clamp(0, length));
 
   /// for building/parsing payload 'as' packet,
   /// not needed when payload is a struct with named fields,
@@ -142,12 +133,12 @@ abstract class Packet {
   R payloadAt<R extends TypedDataList<int>>([int byteOffset = 0, int? length]) => packetData.arrayAt<R>(byteOffset + payloadIndex, length);
   R? payloadAtOrNull<R extends TypedDataList<int>>([int byteOffset = 0, int? length]) => packetData.arrayOrNullAt<R>(byteOffset + payloadIndex);
 
-  int payloadWordAt<R extends NativeType>(int byteOffset) => payloadWords.wordAt<R>(byteOffset, packetClass.endian);
+  int payloadWordAt<R extends NativeType>(int byteOffset) => payloadWords.wordAt<R>(byteOffset, format.endian);
   // throws if header parser fails, length reports lesser value, while checksum passes
-  int? payloadWordAtOrNull<R extends NativeType>(int byteOffset) => payloadWords.wordOrNullAt<R>(byteOffset, packetClass.endian);
+  int? payloadWordAtOrNull<R extends NativeType>(int byteOffset) => payloadWords.wordOrNullAt<R>(byteOffset, format.endian);
 
   @override
-  String toString() => '[start: $startFieldOrNull, id: $idFieldOrNull, length: $lengthFieldOrNull, checksum: $checksumFieldOrNull][${bytes.skip(packetClass.headerLength)}]';
+  String toString() => '[start: $startFieldOrNull, id: $idFieldOrNull, length: $lengthFieldOrNull, checksum: $checksumFieldOrNull][${bytes.skip(format.headerLength)}]';
   // String toString() => '${bytes.take(packetClass.headerLength)} ${bytes.skip(packetClass.headerLength)}';
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -177,8 +168,8 @@ abstract class Packet {
   // static int sum(int previousValue, int element) => previousValue + element;
   // int Function(int previousValue, int element) get checksumAlgorithm => sum;
 
-  int get checksumIndex => packetClass.checksumFieldDef.offset;
-  int get checksumSize => packetClass.checksumFieldDef.size;
+  int get checksumIndex => format.checksumFieldDef.offset;
+  int get checksumSize => format.checksumFieldDef.size;
 
   /// all bytes excluding checksumField
   /// using length contained in [bytes] view, or length param length
@@ -203,7 +194,7 @@ abstract class Packet {
   /// alternatively extension?
   ////////////////////////////////////////////////////////////////////////////////
 
-  void fillStartField() => asSync.startField = packetClass.startId;
+  void fillStartField() => asSync.startField = format.startId;
 
   void buildHeaderAsSync(PacketId packetId) {
     fillStartField();
@@ -213,8 +204,8 @@ abstract class Packet {
   void buildHeaderAsRequest(PacketId requestId, int payloadLength) {
     fillStartField();
     asHeader.idField = requestId.intId;
-    asHeader.lengthField = payloadLength + packetClass.headerLength;
-    asHeader.checksumField = checksum(payloadLength + packetClass.headerLength);
+    asHeader.lengthField = payloadLength + format.headerLength;
+    asHeader.checksumField = checksum(payloadLength + format.headerLength);
   }
 
   void buildHeader(PacketId packetId, int payloadLength) {
@@ -232,17 +223,17 @@ abstract class Packet {
   /// parse header
   ////////////////////////////////////////////////////////////////////////////////
   // use shorter type, casting as longer header on smaller bytes will throw. optionally use field offset
-  PacketId? get packetId => packetClass.idOf(asSync.idField); // idOf(idFieldPart.fieldValue(headerWords));
+  PacketId? get packetId => format.idOf(asSync.idField); // idOf(idFieldPart.fieldValue(headerWords));
   PacketSyncId? parseSyncId() => switch (packetId) {
     PacketSyncId syncId => syncId,
     _ => null,
   };
-  int get parsePayloadLength => asHeader.lengthField - packetClass.headerLength; // until casting is available
+  int get parsePayloadLength => asHeader.lengthField - format.headerLength; // until casting is available
 
   /// for valueOrNull from header status
-  bool isValidStart(int value) => (value == packetClass.startId);
-  bool isValidId(int value) => (packetClass.idOf(value) != null);
-  bool isValidLength(int value) => (value == value.clamp(packetClass.headerLength, packetClass.lengthMax)); // where length is total length
+  bool isValidStart(int value) => (value == format.startId);
+  bool isValidId(int value) => (format.idOf(value) != null);
+  bool isValidLength(int value) => (value == value.clamp(format.headerLength, format.lengthMax)); // where length is total length
   bool isValidChecksum(int value) => (value == checksum());
 
   // bool get isStartValid => isValidStart(headerAsSyncType.startFieldValue);
@@ -255,10 +246,10 @@ abstract class Packet {
   /// using cast length
   ////////////////////////////////////////////////////////////////////////////////
   // header struct cannot cast less than full length
-  int? get startFieldOrNull => packetClass.startFieldDef.getInOrNull(packetData);
-  int? get idFieldOrNull => packetClass.idFieldDef.getInOrNull(packetData);
-  int? get lengthFieldOrNull => packetClass.lengthFieldDef.getInOrNull(packetData);
-  int? get checksumFieldOrNull => packetClass.checksumFieldDef.getInOrNull(packetData);
+  int? get startFieldOrNull => format.startFieldDef.getInOrNull(packetData);
+  int? get idFieldOrNull => format.idFieldDef.getInOrNull(packetData);
+  int? get lengthFieldOrNull => format.lengthFieldDef.getInOrNull(packetData);
+  int? get checksumFieldOrNull => format.checksumFieldDef.getInOrNull(packetData);
 
   // null if not yet received
   bool? get isStartFieldValid => startFieldOrNull.ifNonNull(isValidStart);
@@ -270,12 +261,12 @@ abstract class Packet {
   /// derived values using field offset + size
   // null if not found or invalid..
   PacketId? get packetIdOrNull => switch (idFieldOrNull) {
-    int value => packetClass.idOf(value),
+    int value => format.idOf(value),
     null => null,
   };
 
   int? get packetLengthOrNull => switch (packetIdOrNull) {
-    PacketSyncId() => packetClass.syncHeaderLength,
+    PacketSyncId() => format.syncHeaderLength,
     PacketId() => lengthFieldOrNull,
     null => null,
   };

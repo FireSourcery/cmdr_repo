@@ -49,6 +49,7 @@ mixin Serializable<S extends Serializable<S>> on Object implements StructureBase
   @override
   String toString() => '$S(${keys.map((k) => '$k: ${this[k]}').join(', ')})';
 }
+
 // typedef _SerializableDef<S extends StructureBase<S, Field<Object>, Object>> = StructureBase<S, Field<Object>, Object>;
 // typedef _SerializableNullable<S extends StructureBase<S, Field<Object?>, Object?>> = StructureBase<S, Field<Object?>, Object?>;
 // mixin SerializableDef<S extends SerializableDef<S>> on Object implements _SerializableDef<S> {}

@@ -188,5 +188,5 @@ base class ConstBits extends BitData {
   @override
   set bits(Bits _) => throw UnsupportedError('Cannot modify unmodifiable');
   @override
-  int get width => _value.bitLength; // keyed view overwrite
+  int get width => _value.bitLength; // keyed view overwrite with width including leading zeros
 }

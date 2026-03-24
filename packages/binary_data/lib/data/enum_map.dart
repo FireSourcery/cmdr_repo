@@ -12,20 +12,13 @@ extension type const EnumMapFactory<T extends Enum>(List<T> enums) implements Li
   // less iteration, by going through enum list
   // without reverse by name lookup
   Iterable<(T, V)> unmapByName<V>(Map<String, V> values) => map((e) => (e, values[e.name]!));
-
   Iterable<(T, V?)> unmapByNameOrNull<V>(Map<String, V?> values) => map((e) => (e, values[e.name]));
-
-  // known Map contains all keys
   Iterable<MapEntry<T, V>> unmapEntriesByName<V>(Map<String, V> values) => map((e) => MapEntry(e, values[e.name]!));
-
-  // Iterable<(String, V)> mapByName<V>(Map<T, V> map) => map((e) => (e.name, map[e]!));
 
   // complete map only. partial can use addMapByName
   Map<T, V> fromMapByName<V>(Map<String, V> map) {
     if (enums.every((e) => map.containsKey(e.name))) {
-      // return IndexMap.ofMap(this, map) as EnumMap<T, V>;
       return {for (final e in enums) e: map[e.name] as V};
-      // return map.map((k, v) => MapEntry(enums.byName(k), v)); // can this allocate a view only?
     } else {
       throw FormatException('$enums: $map keys must match enum names');
     }
@@ -100,22 +93,3 @@ extension EnumNamedValues<K extends Enum, V> on Iterable<MapEntry<K, V>> {
   Iterable<(String name, MapEntry<K, V> entry)> get named => map((e) => (e.key.name, e));
   Iterable<(String name, V value)> get namedValues => map((e) => (e.key.name, e.value));
 }
-
-/// `abstract mixin class` combines interface and implemented methods
-// abstract mixin class EnumMap<K extends Enum, V> implements FixedMap<K, V> {
-//   const EnumMap();
-//   factory EnumMap.of(List<K> keys, Iterable<V> values) = EnumIndexMap.of;
-
-//   /// keys => Enum.values which implement byName(String name)
-//   // factory EnumMap.fromJson(List<K> keys, Map<String, Object?> json) {
-//   //   // return EnumIndexMap<K, V>.fromBase(keys, EnumIndexMap<K, V?>.filled(keys, null)..addJson(json));
-//   //   return EnumIndexMap<K, V>.fromMap(keys, <K, V>{}..addJson(json));
-//   // }
-
-//   @override
-//   List<K> get keys; // Enum.values
-//   // V operator [](covariant K key);
-//   // void operator []=(covariant K key, V value);
-//   // void clear();
-//   // V remove(covariant K key);
-// }

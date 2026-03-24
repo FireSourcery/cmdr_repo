@@ -2,7 +2,6 @@ import 'package:meta/meta.dart';
 
 import 'typed_array.dart';
 import 'typed_field.dart';
-import 'typed_data_buffer.dart';
 import '../data/struct.dart';
 
 export 'typed_array.dart';
@@ -37,6 +36,9 @@ abstract class ByteStructBase<S extends ByteStructBase<S, K>, K extends ByteFiel
   List<K> get keys; // a method that is the meta contents, fieldsList
 
   int get length => byteData.lengthInBytes;
+
+  T arrayAt<T extends TypedDataList<int>>([int offset = 0, int? length]) => byteData.arrayAt<T>(offset, length);
+  T? arrayOrNullAt<T extends TypedDataList<int>>([int offset = 0, int? length]) => byteData.arrayOrNullAt<T>(offset, length);
 }
 
 /// Typed Offset

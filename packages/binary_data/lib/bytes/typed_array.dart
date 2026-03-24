@@ -45,13 +45,9 @@ extension TypedDataCast on TypedData {
   }
 
   ByteData asByteData([int offsetInBytes = 0, int? length]) => buffer.asByteData(this.offsetInBytes + offsetInBytes, length);
-  // ByteData dataAt(int offset, [int? length]) => asByteData(offset, length);
 }
 
 extension ByteDataTypedArray on ByteData {
-  // int get end => offsetInBytes + lengthInBytes; // index of last byte + 1
-  // int get length => lengthInBytes;
-
   /// offsetInBytes
   /// length using parameter T type size
   // let ByteBuffer handle RangeError

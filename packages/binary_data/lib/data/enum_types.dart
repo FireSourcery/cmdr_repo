@@ -108,18 +108,3 @@ enum SignId with Sign<SignId> {
 //   @override
 //   int encodeAs<V extends Enum>(V view) => view.index;
 // }
-// T is only used for nested types, if the subtype implements a common type
-// extension type const EnumUnionType<T extends Enum>(Set<List<T>> valuesUnion) implements Set<List<T>> {
-//   // if S extends T then non-null is guaranteed by class definition
-//   List<S> subtype<S extends T>() => valuesUnion.whereType<List<S>>().single;
-//   S bySubtype<S extends T>(int index) => subtype<S>().elementAt(index);
-
-//   S? resolve<S extends T>(int? index) => subtype<S>().resolve(index);
-
-//   // List<S>? subtypeOrNull<S extends Enum>() => valuesUnion.whereType<List<S>>().singleOrNull;
-//   // S? resolve<S extends Enum>(int? index) => subtypeOrNull<S>()?.resolve(index);
-
-//   // Map<Type, Map<int, T>> asMap() {
-//   //   return {for (var values in valuesUnion) values.first.runtimeType: valuesUnion.map((list) => list.asMap())};
-//   // }
-// }
