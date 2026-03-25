@@ -53,7 +53,7 @@ abstract mixin class ServiceIO<K, V, S> {
   /// Splits input/output into slices of [maxBatchSize]
   /// Caller locks [keys] from modifications before building slices
   ////////////////////////////////////////////////////////////////////////////////
-  /// know List use `List.slices` instead
+  /// known List uses `List.slices` instead
   Stream<ServiceGetSlice<K, V>> getAll(Iterable<K> keys, {Duration delay = const Duration(milliseconds: 1)}) {
     return _getSlices(keys.slices(maxGetBatchSize ?? keys.length), delay: delay);
   }
@@ -81,11 +81,11 @@ abstract mixin class ServiceIO<K, V, S> {
       var keys = keysGetter();
       if (keys.isEmpty) {
         await Future.delayed(const Duration(milliseconds: 50)); // subsitute time of 1 iteration
-        // yield* const Stream.empty(); // so empty keys can be canceled
         continue;
       } else {
         yield* getAll(keys, delay: delay);
       }
+      // await Future.delayed(perIterationDelay); // an additional delay after each round
     }
   }
 
@@ -94,7 +94,6 @@ abstract mixin class ServiceIO<K, V, S> {
       var pairs = pairsGetter();
       if (pairs.isEmpty) {
         await Future.delayed(const Duration(milliseconds: 50));
-        // yield* const Stream.empty();
         continue;
       } else {
         yield* setAll(pairs, delay: delay);
@@ -102,3 +101,79 @@ abstract mixin class ServiceIO<K, V, S> {
     }
   }
 }
+
+class ServicePollStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceGetSlice<K, V>> {
+  ServicePollStreamHandler(this.protocolService, this.inputGetter, super.onDataSlice);
+
+  final ServiceIO<K, V, S> protocolService;
+  final Iterable<K> Function() inputGetter;
+
+  @override
+  Stream<ServiceGetSlice<K, V>> get stream => protocolService.pollFlex(inputGetter, delay: const Duration(milliseconds: 1));
+}
+
+class ServicePushStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceSetSlice<K, V, S>> {
+  ServicePushStreamHandler(this.protocolService, this.inputGetter, super.onDataSlice);
+
+  final ServiceIO<K, V, S> protocolService;
+  final Iterable<(K, V)> Function() inputGetter;
+
+  @override
+  Stream<ServiceSetSlice<K, V, S>> get stream => protocolService.push(inputGetter, delay: const Duration(milliseconds: 1));
+}
+
+abstract class ServiceStreamHandler<T> {
+  ServiceStreamHandler(this.onDataSlice);
+
+  // createStream()
+  Stream<T> get stream; // creates a new stream, call from begin() only
+
+  final void Function(T data) onDataSlice;
+
+  StreamSubscription? streamSubscription;
+  bool get isStopped => streamSubscription == null;
+
+  void _restartOnError(Object error) {
+    if (streamSubscription == null) return; // intentional stop, do not restart
+    final wasPaused = streamSubscription?.isPaused ?? false;
+    streamSubscription = stream.listen(onDataSlice, onError: _restartOnError);
+    if (wasPaused) streamSubscription?.pause();
+  }
+
+  StreamSubscription listenWithRestart() {
+    return streamSubscription ??= stream.listen(onDataSlice, onError: _restartOnError);
+  }
+
+  Future<void> end() async => streamSubscription?.cancel().whenComplete(() => streamSubscription = null);
+
+  // StreamSubscription? begin() {
+  //   if (!isStopped) return null;
+  //   return streamSubscription = stream.listen(onDataSlice);
+  // }
+  // Future<void> restart() async => end().whenComplete(() => begin());
+}
+
+// class StreamSubscriptionWith<T> {
+//   StreamSubscriptionWith(this.stream, this.onDataSlice);
+
+//   final Stream<T> Function() streamFactory;
+//   final void Function(T data) onDataSlice;
+
+//   StreamSubscription<T>? subscription;
+
+//   void _restartOnError(Object error) {
+//     if (subscription == null) return; // intentional stop, do not restart
+//     final wasPaused = subscription?.isPaused ?? false;
+//     subscription = stream.listen(onDataSlice, onError: _restartOnError);
+//     if (wasPaused) subscription?.pause();
+//   }
+// }
+
+// extension StreamExtensions<T> on Stream<T> {
+//   StreamSubscriptionWith<T> listenWithRestart(void Function(T) onData, {Function? onError, void Function()? onDone, bool? cancelOnError}) {
+//     StreamSubscriptionWith<T> subscriptionWith = StreamSubscriptionWith(this, onData);
+
+//     subscriptionWith.subscription = listen(onData, onError: subscriptionWith._restartOnError, onDone: onDone, cancelOnError: cancelOnError);
+//     return subscriptionWith;
+//   }
+// }

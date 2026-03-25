@@ -3,13 +3,6 @@ import 'package:meta/meta.dart';
 
 import 'package:binary_data/binary_data.dart';
 
-void debugLog(Object? message) {
-  assert(() {
-    print(message);
-    return true;
-  }());
-}
-
 /// [Packet Rx Meta Parser Buffer]
 /// Rx Packet Buffer and the state of the PacketTransformer
 class HeaderParser extends PacketBuffer {
@@ -91,6 +84,13 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
 
   late final EventSink<Packet> _outputSink;
   final HeaderParser parserBuffer;
+
+  void debugLog(Object? message) {
+    // assert(() {
+    //   print(message);
+    //   return true;
+    // }());
+  }
 
   @override
   void add(Uint8List bytesIn) {

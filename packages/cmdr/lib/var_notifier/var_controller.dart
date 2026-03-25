@@ -103,15 +103,13 @@ class VarCacheController {
 class VarStreamController extends VarCacheController {
   VarStreamController({required super.cache, required super.protocolService});
 
-  Stream<ServiceGetSlice<int, int>> get _readStream => protocolService.pollFlex(_readKeysGetter);
-  Stream<ServiceSetSlice<int, int, int>> get _writeStream => protocolService.push(_writePairsGetter);
-
-  StreamSubscription? pollSubscription;
-  StreamSubscription? pushSubscription;
-
   final List<int> _readBuffer = []; // reuse allocation, no new List each cycle
   final List<(int, int)> _writeBuffer = [];
   final Set<PollingScope> _scopes = {};
+
+  void dispose() {
+    endPeriodic().whenComplete(() => cache.dispose());
+  }
 
   PollingScope createScope(Iterable<VarKey> keys) {
     final scope = PollingScope._(this, keys);
@@ -129,17 +127,50 @@ class VarStreamController extends VarCacheController {
   Iterable<VarKey> get _writeKeys => cache.varEntries.where((e) => e.varKey.isPushing || e.hasPendingChanges).map((e) => e.varKey);
   List<(int, int)> _writePairsGetter() => (_writeBuffer..clear())..addAll(cache.dataPairsOf(_writeKeys));
 
+  // optionally move to StreamHandler
+  // late final ServicePollStreamHandler<int, int, int> pollHandler = ServicePollStreamHandler(protocolService, _readKeysGetter, _onReadSlice);
+  // late final ServicePushStreamHandler<int, int, int> pushHandler = ServicePushStreamHandler(protocolService, _writePairsGetter, _onWriteSlice);
+
+  Stream<ServiceGetSlice<int, int>> get _readStream => protocolService.pollFlex(_readKeysGetter);
+  Stream<ServiceSetSlice<int, int, int>> get _writeStream => protocolService.push(_writePairsGetter);
+
+  StreamSubscription? pollSubscription;
+  StreamSubscription? pushSubscription;
+
+  void Function(Object error)? _onError;
+
+  // cancelOnError: true (default) cancels the dead subscription, then re-subscribe with a fresh stream
+  // endPeriodic nulls subscriptions, so the null check prevents restart after intentional stop
+  void _restartPollOnError(Object error) {
+    _onError?.call(error);
+    if (pushSubscription == null) return;
+    final pause = (pushSubscription?.isPaused ?? false);
+    pollSubscription = _readStream.listen(_onReadSlice, onError: _restartPollOnError);
+    if (pause) pushSubscription?.pause();
+  }
+
+  void _restartPushOnError(Object error) {
+    _onError?.call(error);
+    if (pushSubscription == null) return;
+    final pause = (pushSubscription?.isPaused ?? false);
+    pushSubscription = _writeStream.listen(_onWriteSlice, onError: _restartPushOnError);
+    if (pause) pushSubscription?.pause();
+  }
+
   ///
-  bool beginPeriodic({void Function(Object error)? onError, void Function()? onDone, bool? cancelOnError}) {
+  bool beginPeriodic({void Function(Object error)? onError}) {
     if (!protocolService.isConnected) return false;
-    pollSubscription ??= _readStream.listen(_onReadSlice, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
-    pushSubscription ??= _writeStream.listen(_onWriteSlice, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
+    _onError = onError;
+    pollSubscription ??= _readStream.listen(_onReadSlice, onError: _restartPollOnError);
+    pushSubscription ??= _writeStream.listen(_onWriteSlice, onError: _restartPushOnError);
     return true;
   }
 
   Future<void> endPeriodic() async {
-    await pollSubscription?.cancel().whenComplete(() => pollSubscription = null);
-    await pushSubscription?.cancel().whenComplete(() => pushSubscription = null);
+    await pollSubscription?.cancel();
+    pollSubscription = null;
+    await pushSubscription?.cancel();
+    pushSubscription = null;
   }
 
   void pause() {
@@ -152,10 +183,10 @@ class VarStreamController extends VarCacheController {
     pushSubscription?.resume();
   }
 
-  void forEach(void Function(StreamSubscription? subscription) action) {
-    action(pollSubscription);
-    action(pushSubscription);
-  }
+  // void forEach(void Function(StreamSubscription? subscription) action) {
+  //   action(pollSubscription);
+  //   action(pushSubscription);
+  // }
 
   bool get isStopped => (pollSubscription == null && pushSubscription == null);
 

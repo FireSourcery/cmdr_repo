@@ -18,7 +18,6 @@ class VarCache {
   VarCache() : _cache = {};
 
   // stores key in value when using dynamically generated iterable
-  // VarCache.preallocate(Iterable<VarKey> varKeys) : _cache = {for (final varKey in varKeys) varKey.value: varKey.viewType(<G>() => VarNotifier<G>.of(varKey as VarKey<G>))};
   VarCache.preallocate(Iterable<VarKey> varKeys) : _cache = {for (final varKey in varKeys) varKey.value: varKey.create()};
 
   // VarCache.fixed(Iterable<VarKey> varKeys) : _cache = Map.unmodifiable({for (final varKey in varKeys) varKey.value: VarNotifier.of(varKey)});
@@ -39,12 +38,6 @@ class VarCache {
   final Map<int, VarNotifier> _cache; // map key to entire state containing the key
   // final int? lengthMax;
 
-  // final Map<VarKey, ValueSetter<VarCache>>? onUpdate; // (onUpdate callbacks for dependent keys, if any)
-  // final Map<VarKey, ValueSetter<Iterable<VarNotifier>>>? onUpdate; // (onUpdate callbacks for dependent keys, if any)
-  // VarEvent lastEvent
-  // final ValueNotifier _eventNotifier = ValueNotifier(null);
-  // ValueListenable get eventNotifier => _eventNotifier; // for listeners to subscribe to events
-
   /// Maps VarKey to VarNotifier
   /// `allocate` the same VarNotifier storage if found. `create if not found`
   ///
@@ -55,17 +48,8 @@ class VarCache {
 
   VarNotifier<V> allocate<V>(VarKey<V> varKey) {
     // if (lengthMax case int max when _cache.length >= max) _cache.remove(_cache.entries.first.key)?.dispose();
-    // return _cache.putIfAbsent(varKey.value, () => constructor<V>(varKey)) as VarNotifier<V>;
     return _cache.putIfAbsent(varKey.value, () => varKey.create()) as VarNotifier<V>;
   }
-
-  /// current listeners would need to reattach to the new VarNotifier
-  // VarNotifier reallocate(VarKey varKey) {
-  //   return _cache.update(varKey.value, (value) {
-  //     value.dispose(); // remove listeners
-  //     return constructor(varKey);
-  //   });
-  // }
 
   // in preallocated case, where size is not constrained. deallocate and replace is not necessary
   // remove viewer
@@ -89,7 +73,7 @@ class VarCache {
   ////////////////////////////////////////////////////////////////////////////////
   /// Per Instance
   ////////////////////////////////////////////////////////////////////////////////
-  VarNotifier? operator [](VarKey varKey) => _cache[varKey.value]; // alternatively ?? undefined;
+  VarNotifier? operator [](VarKey varKey) => _cache[varKey.value];
 
   // directely return value. useful for sync update
   @protected

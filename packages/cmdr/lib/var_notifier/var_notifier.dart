@@ -1,3 +1,4 @@
+import 'package:cmdr/cmdr.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:binary_data/binary_data.dart';
@@ -75,6 +76,23 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
 
   // for set before loading num limits
   void updateByFile(num newValue) => numView = newValue;
+
+  // ////////////////////////////////////////////////////////////////////////////////
+  // /// PollingScope
+  // ////////////////////////////////////////////////////////////////////////////////
+  // PollingScope? polling;
+
+  // @override
+  // void addListener(VoidCallback listener) {
+  //   polling?.add(this);
+  //   super.addListener(listener);
+  // }
+
+  // @override
+  // void removeListener(VoidCallback listener) {
+  //   super.removeListener(listener);
+  //   if (!hasListeners) polling?.remove(this);
+  // }
 }
 
 extension VarNotifiers on Iterable<VarNotifier> {

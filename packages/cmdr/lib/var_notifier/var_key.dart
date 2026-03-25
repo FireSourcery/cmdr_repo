@@ -17,8 +17,8 @@ abstract mixin class VarKey<V> implements ValueKey<int> {
 
   /// Data numeric conversion
   BinaryCodec<V> buildViewer();
-  // NumUnionCodec? buildUnionViewer();
 
+  /// create with V type
   VarNotifier<V> create() => VarNotifier<V>.ofKey(this);
 
   // optionally override with subtype
@@ -42,10 +42,9 @@ abstract mixin class VarKey<V> implements ValueKey<int> {
 
   int? get valueStringDigits;
 
-  String get label;
+  String get label; // Key label
   String? get suffix;
   String? get tip;
-  // VarTag? get tag;
 
   @override
   String toString() => '[$runtimeType<$value>]$label<${viewType.type}>';
