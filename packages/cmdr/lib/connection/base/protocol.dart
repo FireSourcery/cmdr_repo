@@ -47,6 +47,7 @@ class Protocol {
 
   @protected
   Future<void> trySend(Packet packet) async {
+    assert(link.isConnected);
     try {
       debugLog("TX $packet");
       return await link.send(packet.bytes); // lock buffer, or await on blocking function

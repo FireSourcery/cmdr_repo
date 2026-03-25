@@ -20,7 +20,7 @@ class SerialLink implements Link {
   SerialPort? _serialPort; // alternatively allocating a SerialPort with '' name is effectively port with internal nullptr
   SerialPortReader? _serialPortReader;
 
-  // alternatively move to SerialPortConfigViewController
+  // may need a seperate config object as buffer.
   SerialPortConfig portConfig = SerialPortConfig()
     ..baudRate = 19200
     ..parity = 0

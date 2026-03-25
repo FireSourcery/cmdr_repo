@@ -63,7 +63,7 @@ class MotConnection {
       varWrite = MotProtocolSocket(_serial);
     }
 
-    return isConnected;
+    return isConnected; // todo fix selection logic
   }
 
   // connection callback todo
