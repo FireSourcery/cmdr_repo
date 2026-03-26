@@ -33,7 +33,6 @@ class SerialLink implements Link {
   String? get portActiveName => _serialPort?.name;
 
   @override
-  // Stream<Uint8List> streamIn = const Stream.empty(); //  connect() creates a new stream
   Stream<Uint8List>? get streamIn => _serialPortReader?.stream.handleError(_onStreamError);
 
   @override
@@ -45,19 +44,19 @@ class SerialLink implements Link {
     portConfig = config ?? portConfig;
     portConfig.baudRate = baudRate ?? portConfig.baudRate;
 
-    if (isConnected) return LinkConnected('Already Connected $portActiveName');
-
     if (portConfigName == null) return const LinkError('No Port Selected');
+    _serialPort = SerialPort(portConfigName!);
+
+    if (isConnected) return LinkConnected('Already Connected $portActiveName');
+    _serialPort!.config = portConfig;
 
     try {
-      _serialPort = SerialPort(portConfigName!);
       if (_serialPort!.openReadWrite()) {
-        _serialPort!.config = portConfig;
         _serialPortReader = SerialPortReader(_serialPort!);
-        // streamIn = _serialPortReader!.stream.asBroadcastStream().handleError(_onStreamError);
         return LinkConnected('$portActiveName');
       } else {
-        return LinkError('Cannot Open $portConfigName');
+        // _serialPort!.dispose();
+        return LinkError('Cannot Open $portConfigName ${SerialPort.lastError}');
       }
     } on SerialPortError catch (e) {
       return LinkError('Driver ${e.message}');
@@ -69,8 +68,8 @@ class SerialLink implements Link {
     if (!isConnected) return const LinkDisconnected('Not Connected');
 
     try {
-      _serialPort!.close();
-      _serialPort!.dispose();
+      dispose();
+      // portConfig.dispose();
       return LinkDisconnected('$portActiveName');
     } on SerialPortError catch (e) {
       return LinkError('Driver ${e.message}');
@@ -84,13 +83,14 @@ class SerialLink implements Link {
 
   @override
   void dispose() {
+    _serialPortReader?.close();
+    _serialPort?.close();
     _serialPort?.dispose();
   }
 
   @override
   Future<Uint8List> recv([int? byteCount]) async {
-    // return await streamIn.first.timeout(const Duration(milliseconds: 1000));
-    return _serialPort!.read(byteCount ?? 1024, timeout: 1000);
+    return _serialPort!.read(byteCount ?? _serialPort!.bytesAvailable, timeout: 1000);
   }
 
   @override

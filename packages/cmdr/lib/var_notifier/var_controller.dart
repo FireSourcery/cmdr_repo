@@ -144,17 +144,17 @@ class VarStreamController extends VarCacheController {
   void _restartPollOnError(Object error) {
     _onError?.call(error);
     if (pushSubscription == null) return;
-    final pause = (pushSubscription?.isPaused ?? false);
+    // final pause = (pushSubscription?.isPaused ?? false);
     pollSubscription = _readStream.listen(_onReadSlice, onError: _restartPollOnError);
-    if (pause) pushSubscription?.pause();
+    // if (pause) pushSubscription?.pause();
   }
 
   void _restartPushOnError(Object error) {
     _onError?.call(error);
     if (pushSubscription == null) return;
-    final pause = (pushSubscription?.isPaused ?? false);
+    // final pause = (pushSubscription?.isPaused ?? false);
     pushSubscription = _writeStream.listen(_onWriteSlice, onError: _restartPushOnError);
-    if (pause) pushSubscription?.pause();
+    // if (pause) pushSubscription?.pause();
   }
 
   ///
@@ -173,14 +173,15 @@ class VarStreamController extends VarCacheController {
     pushSubscription = null;
   }
 
+  // pause once only.
   void pause() {
-    pollSubscription?.pause();
-    pushSubscription?.pause();
+    if (pollSubscription?.isPaused == false) pollSubscription!.pause();
+    if (pushSubscription?.isPaused == false) pushSubscription!.pause();
   }
 
   void resume() {
-    pollSubscription?.resume();
-    pushSubscription?.resume();
+    while (pollSubscription?.isPaused == true) pollSubscription?.resume();
+    while (pushSubscription?.isPaused == true) pushSubscription?.resume();
   }
 
   // void forEach(void Function(StreamSubscription? subscription) action) {
@@ -189,6 +190,8 @@ class VarStreamController extends VarCacheController {
   // }
 
   bool get isStopped => (pollSubscription == null && pushSubscription == null);
+
+  bool get isActive => (pollSubscription?.isPaused == false && pushSubscription?.isPaused == false);
 
   // Future<void> get stopped async => endPeriodic()
 }

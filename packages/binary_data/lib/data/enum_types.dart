@@ -1,5 +1,6 @@
 extension EnumByNullable<T extends Enum> on List<T> {
-  T byIndex(int index, [T? defaultValue]) => elementAtOrNull(index) ?? defaultValue ?? elementAt(index.clamp(0, length - 1));
+  // T byIndex(int index, [T? defaultValue]) => elementAtOrNull(index) ?? defaultValue ?? elementAt(index.clamp(0, length - 1));
+  T byIndex(int index, [T? defaultValue]) => elementAt(index.clamp(0, length - 1));
 
   T? resolve(int? index) => (index != null) ? byIndex(index) : null;
 

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 
 import '../base/link.dart';
@@ -22,21 +20,12 @@ class MotConnection {
   MotConnection._();
   static final MotConnection _singleton = MotConnection._();
   factory MotConnection() => _singleton;
-  // static MotConnection get main => _singleton;
 
   final SerialLink serialLink = SerialLink();
-  // final BluetoothLink bluetoothLink = BluetoothLink();
 
   static final Protocol _uninitialized = Protocol(const Link.uninitialized(), const MotPacketInterface());
   late final Protocol _serial = Protocol(serialLink, const MotPacketInterface());
 
-  // late final Protocol protocol = Protocol(serialLink, const MotPacketInterface());
-  // late final MotProtocolSocket general = MotProtocolSocket(protocol);
-  // late final MotProtocolSocket stop = MotProtocolSocket(protocol);
-  // late final MotProtocolSocket varRead = MotProtocolSocket(protocol);
-  // late final MotProtocolSocket varWrite = MotProtocolSocket(protocol);
-  //   final MotProtocolSocket events = MotProtocolSocket(protocol);
-  // Link activeLink = const Link.uninitialized();
   Link get activeLink => activeProtocol.link;
 
   Protocol activeProtocol = _uninitialized;

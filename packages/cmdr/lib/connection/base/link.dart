@@ -17,7 +17,6 @@ abstract interface class Link {
 
   /// Establish a connection. Returns a [LinkStatus] describing the outcome.
   LinkStatus connect();
-  // LinkStatus connect({onDisconnect});
 
   /// Tear down the connection. Returns a [LinkStatus] describing the outcome.
   LinkStatus disconnect();
