@@ -1,16 +1,19 @@
 import 'dart:async';
 import 'package:meta/meta.dart';
 
-import 'package:binary_data/binary_data.dart';
+import 'packet.dart';
+
+export 'packet.dart';
 
 /// [Packet Rx Meta Parser Buffer]
 /// Rx Packet Buffer and the state of the PacketTransformer
+// handles framing, caller validate data
 class HeaderParser extends PacketBuffer {
   HeaderParser(PacketFormat packetInterface, [int? size]) : super(packetInterface, size ?? packetInterface.lengthMax * 4);
 
   late Uint8List trailing = Uint8List.sublistView(viewAsBytes);
 
-  int get startId => packetClass.startId;
+  int get _startId => packetClass.startId;
 
   HeaderStatus get status => HeaderStatus(viewAsPacket);
 
@@ -21,14 +24,14 @@ class HeaderParser extends PacketBuffer {
   void receive(Uint8List bytes) {
     // handle trailing here
     if (isEmpty) {
-      if (bytes.seekChar(startId) case Uint8List result) copy(result);
+      if (bytes.seekChar(_startId) case Uint8List result) copy(result);
     } else {
       add(bytes);
     }
   }
 
   void seekStart() {
-    if (viewAsBytes.seekChar(startId) case Uint8List view) {
+    if (viewAsBytes.seekChar(_startId) case Uint8List view) {
       copy(view);
     } else {
       clear(); // no startId found, clear buffer
@@ -77,6 +80,10 @@ class HeaderStatus {
   bool? get isChecksumValid => packet.isChecksumFieldValid; // (isPacketComplete == true), buffer.length == buffer.lengthFieldOrNull
 }
 
+extension PacketFormatTransformer on PacketFormat {
+  PacketTransformer get transformer => PacketTransformer(parserBuffer: HeaderParser(this));
+}
+
 /// combine partial/fragmented packets
 /// emitted [Packet] is a reference to the buffer, not a copy. handling must be synchronous, before returning control to the transformer
 class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> implements EventSink<Uint8List> {
@@ -98,7 +105,7 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
     debugLog('--- bytesIn: $bytesIn');
     debugLog('remainder: ${parserBuffer.viewAsBytes}');
 
-    parserBuffer.receive(bytesIn);
+    parserBuffer.receive(bytesIn); // optional optimize by checking fragment state first
 
     try {
       // while - potentially 1+ packets queued, do while HeaderStatus(isPacketComplete: false)
@@ -113,6 +120,7 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
           case HeaderStatus(isIdValid: false):
             throw PacketStatusException.meta;
 
+          // isFullLength
           case HeaderStatus(isPacketComplete: true):
             parserBuffer.completePacket(); // set length for checksum operation
             debugLog('parserBuffer completePacket() ${parserBuffer.viewAsBytes} trailing ${parserBuffer.trailing}');
@@ -127,7 +135,7 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
                 throw PacketStatusException.checksum;
             }
 
-          /// in case of [sync][sync], todo check before complete
+          /// in case of [sync][sync], todo check before check complete
           case HeaderStatus(isLengthValid: false):
             throw PacketStatusException.meta;
 

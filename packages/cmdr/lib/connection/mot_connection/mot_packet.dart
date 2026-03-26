@@ -6,7 +6,7 @@ import 'package:binary_data/packet/packet.dart';
 export 'package:binary_data/packet/packet.dart';
 export 'package:binary_data/packet/packet_transformer.dart';
 
-mixin class MotPacketInterface implements PacketFormat<MotPacket> {
+class MotPacketInterface implements PacketFormat<MotPacket> {
   const MotPacketInterface();
 
   @override

@@ -10,7 +10,10 @@ export '../bytes/byte_struct.dart';
 // Abstract factory pattern
 // effectively Packet `subtype` encapsulated
 // values available without a Packet instance  {
+// include handlers for header and payload format
+@immutable
 abstract interface class PacketFormat<T extends Packet> {
+  const PacketFormat();
   // 'Packet' factory / subtype constructor
   TypedDataCaster<T> get caster;
   T cast(TypedData typedData);
@@ -31,7 +34,15 @@ abstract interface class PacketFormat<T extends Packet> {
   PacketSyncId get nack;
   PacketSyncId get abort;
 
+  // factory functions
   PacketId? idOf(int intId);
+  PacketHeader headerOf(TypedData typedData);
+  PacketSyncHeader syncHeaderOf(TypedData typedData);
+  // PacketIdCaster({required Iterable<List<PacketId>> idLists, required List<PacketSyncId> syncIds})
+  // : _lookUpMap = Map<int, PacketId>.unmodifiable({
+  //     for (final idList in idLists)
+  //       for (final id in idList) id.intId: id,
+  //   });
 
   /// Header Definition
   /// defined position, relative to `packet`.
@@ -44,25 +55,6 @@ abstract interface class PacketFormat<T extends Packet> {
   ByteField get checksumFieldDef;
 
   List<ByteField> get keys => [startFieldDef, idFieldDef, lengthFieldDef, checksumFieldDef];
-
-  // factory functions
-  // not all types must be implemented
-  PacketHeader headerOf(TypedData typedData);
-  PacketSyncHeader syncHeaderOf(TypedData typedData);
-  // TypedDataCaster<PacketHeader> get headerCaster;
-  // TypedDataCaster<PacketHeader> get idHeaderCaster; // minimal header to determine id, consistent for all types
-
-  // R headerAs<R extends PacketHeader>(TypedData typedData);
-
-  // PayloadCaster<V> caster<V>(); include in id
-
-  // at least one header type must be implemented, with fields able to determine completion
-  // PacketIdHeader idHeaderOf(TypedData typedData);
-  // PacketFixedHeader fixedHeaderOf(TypedData typedData);
-  // PacketVariableHeader variableHeaderOf(TypedData typedData);
-
-  // pass to build idOf internally
-  // PacketIdCaster get idCaster;
 }
 
 /// [Packet] as interface for `immutable view` of `varying view length`.
@@ -74,7 +66,7 @@ abstract interface class PacketFormat<T extends Packet> {
 /// Components/Header/Payload may extend Struct for convenience of defining sized fields.
 abstract class Packet {
   Packet(TypedData typedData) : packetData = ByteData.sublistView(typedData); // inherited constructor. caller pass back to PacketClass
-  // Packet.cast(TypedData typedData) : packetData = ByteData.sublistView(typedData);
+  // const Packet.view(this.packetData);
 
   /// Class variables per subtype class, or should this be mixin
   PacketFormat get format;
@@ -305,47 +297,6 @@ abstract class Packet {
 typedef PacketCaster<P extends Packet> = P Function(TypedData typedData);
 // typedef PacketCaster = Packet Function(TypedData typedData);
 
-////////////////////////////////////////////////////////////////////////////////
-/// [Payload<V>]
-////////////////////////////////////////////////////////////////////////////////
-/// extends Struct and Payload
-/// Payload need to contain a static cast function
-/// factory Child.cast(TypedData target);
-/// convert in place, on allocated buffer
-/// build/parse with a reference to the header, although both are part of a contiguous buffer
-/// payload class without direct context of header
-///   allows stronger encapsulation
-///   does not have to declare filler header fields
-/// for simplicity, the packet header includes all meta parameters, parsing a payload does not need stateMeta
-//  Alternative
-// Codec functions would double buffer with return Uint8List
-// same as cast, build, asTypedData
-// Uint8List encodePayload(T input);
-// T decodePayload(Uint8List input);
-
-abstract interface class Payload<V> {
-  PayloadMeta build(V values, covariant Packet header);
-  V parse(covariant Packet header, covariant PayloadMeta? stateMeta);
-  // parseMeta(Packet header)
-}
-
-// abstract interface class PayloadFixed<V extends Record> {
-//   V get values;
-//   set values(V values);
-// }
-
-/// [Payload] Constructor - handler per id
-/// Struct.create<T>
-typedef PayloadCaster<V> = Payload<V> Function(TypedData typedData);
-
-/// any additional state not included in the header
-// length state maintained by caller. cannot be included as struct field, that would be a part of the payload data
-class PayloadMeta {
-  const PayloadMeta(this.length, [this.other]);
-  final int length;
-  final Record? other;
-}
-
 ////////////////////////////////////////////////////////////////////////////
 ///
 ////////////////////////////////////////////////////////////////////////////
@@ -468,12 +419,6 @@ class PacketIdCaster {
   final Map<int, PacketId> _lookUpMap;
 
   PacketId? call(int intId) => _lookUpMap[intId];
-
-  // if expand to PacketIdClass
-  // final List<PacketIdSync> syncIds = [];
-  // PacketIdSync get ack;
-  // PacketIdSync get nack;
-  // PacketIdSync get abort;
 }
 
 // separate type label allow pattern matching
@@ -512,6 +457,47 @@ abstract interface class PacketIdRequest<T, R> implements PacketId {
   PacketId? get responseId; // null for 1-way or matching response, override for non matching
   PayloadCaster<T>? get requestCaster;
   PayloadCaster<R>? get responseCaster;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// [Payload<V>]
+////////////////////////////////////////////////////////////////////////////////
+/// extends Struct and Payload
+/// Payload need to contain a static cast function
+/// factory Child.cast(TypedData target);
+/// convert in place, on allocated buffer
+/// build/parse with a reference to the header, although both are part of a contiguous buffer
+/// payload class without direct context of header
+///   allows stronger encapsulation
+///   does not have to declare filler header fields
+/// for simplicity, the packet header includes all meta parameters, parsing a payload does not need stateMeta
+//  Alternative
+// Codec functions would double buffer with return Uint8List
+// same as cast, build, asTypedData
+// Uint8List encodePayload(T input);
+// T decodePayload(Uint8List input);
+
+abstract interface class Payload<V> {
+  PayloadMeta build(V values, covariant Packet header);
+  V parse(covariant Packet header, covariant PayloadMeta? stateMeta);
+  // parseMeta(Packet header)
+}
+
+// abstract interface class PayloadFixed<V extends Record> {
+//   V get values;
+//   set values(V values);
+// }
+
+/// [Payload] Constructor - handler per id
+/// Struct.create<T>
+typedef PayloadCaster<V> = Payload<V> Function(TypedData typedData);
+
+/// any additional state not included in the header
+// length state maintained by caller. cannot be included as struct field, that would be a part of the payload data
+class PayloadMeta {
+  const PayloadMeta(this.length, [this.other]);
+  final int length;
+  final Record? other;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

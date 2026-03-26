@@ -4,9 +4,10 @@ import 'typed_array.dart';
 import 'typed_field.dart';
 import '../data/struct.dart';
 
-export 'typed_array.dart';
 export 'typed_field.dart';
 export 'typed_data_buffer.dart';
+export 'typed_array.dart';
+export 'typed_data_ext.dart';
 
 /// [ByteStruct] is a [TypedData] with keyed/named access to fields.
 /// [TypedData] + [] Map operators returning [int]
@@ -20,7 +21,9 @@ extension type const ByteStruct<K extends ByteField>(ByteData _this) implements 
   int get length => _this.lengthInBytes;
 }
 
-extension type const ByteForm<K extends ByteField>(List<K> _fields) implements StructForm<K, int> {}
+extension type const ByteForm<K extends ByteField>(List<K> _fields) implements StructForm<K, int> {
+  ByteStruct<K> cast(ByteData data) => ByteStruct<K>(data);
+}
 
 abstract class ByteStructBase<S extends ByteStructBase<S, K>, K extends ByteField> with StructureBase<S, K, int> {
   const ByteStructBase(this.byteData);

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:typed_data';
-import 'package:meta/meta.dart';
 
 import 'package:libserialport/libserialport.dart';
 export 'package:libserialport/libserialport.dart';
@@ -17,10 +16,9 @@ class SerialLink implements Link {
   static const List<int> baudList = [19200];
   static List<String> get portsAvailable => SerialPort.availablePorts;
 
-  SerialPort? _serialPort; // alternatively allocating a SerialPort with '' name is effectively port with internal nullptr
+  SerialPort? _serialPort; // alternatively allocating a SerialPort('') name is effectively port with internal nullptr
   SerialPortReader? _serialPortReader;
 
-  // may need a seperate config object as buffer.
   SerialPortConfig portConfig = SerialPortConfig()
     ..baudRate = 19200
     ..parity = 0
@@ -28,63 +26,59 @@ class SerialLink implements Link {
     ..stopBits = 1
     ..setFlowControl(SerialPortFlowControl.none);
 
-  /// view hovered selection name, SerialPort(portName) changes active pointer
+  /// View/selection buffer — the port name chosen by the user before connecting.
   String? portConfigName;
 
   @override
   String? get portActiveName => _serialPort?.name;
 
-  // this way only connect() creates a new stream
   @override
-  Stream<Uint8List> streamIn = const Stream.empty();
+  // Stream<Uint8List> streamIn = const Stream.empty(); //  connect() creates a new stream
+  Stream<Uint8List>? get streamIn => _serialPortReader?.stream.handleError(_onStreamError);
 
   @override
-  bool get isConnected => (_serialPort?.isOpen ?? false); // ensures null values are initialized
+  bool get isConnected => _serialPort?.isOpen ?? false;
 
   @override
-  LinkStatus? lastStatus;
-  @override
-  Exception? lastException;
-
-  @override
-  LinkConnectionStatus connect({String? name, int? baudRate, SerialPortConfig? config}) {
+  LinkStatus connect({String? name, int? baudRate, SerialPortConfig? config}) {
     portConfigName = name ?? portConfigName;
     portConfig = config ?? portConfig;
     portConfig.baudRate = baudRate ?? portConfig.baudRate;
 
-    if (isConnected) return lastStatus = LinkConnectionStatus.success('Already Connected $portActiveName', linkType: SerialLink);
+    if (isConnected) return LinkConnected('Already Connected $portActiveName');
 
-    if (portConfigName == null) return lastStatus = const LinkConnectionStatus.error('No Port Selected', linkType: SerialLink);
+    if (portConfigName == null) return const LinkError('No Port Selected');
 
     try {
       _serialPort = SerialPort(portConfigName!);
       if (_serialPort!.openReadWrite()) {
         _serialPort!.config = portConfig;
         _serialPortReader = SerialPortReader(_serialPort!);
-        streamIn = _serialPortReader!.stream.asBroadcastStream().handleError(_onStreamError);
-        return lastStatus = LinkConnectionStatus.success('$portActiveName', linkType: SerialLink);
+        // streamIn = _serialPortReader!.stream.asBroadcastStream().handleError(_onStreamError);
+        return LinkConnected('$portActiveName');
       } else {
-        return lastStatus = LinkConnectionStatus.error('Cannot Open $portConfigName', linkType: SerialLink);
+        return LinkError('Cannot Open $portConfigName');
       }
     } on SerialPortError catch (e) {
-      return lastStatus = LinkConnectionStatus.error('Driver ${e.message}', linkType: SerialLink);
+      return LinkError('Driver ${e.message}');
     }
   }
 
   @override
-  void disconnect() {
-    if (isConnected) {
-      try {
-        _serialPort!.close();
-        _serialPort!.dispose();
-      } on SerialPortError catch (e) {
-        lastStatus = LinkConnectionStatus.error('Driver ${e.message}', linkType: SerialLink);
-      }
+  LinkStatus disconnect() {
+    if (!isConnected) return const LinkDisconnected('Not Connected');
+
+    try {
+      _serialPort!.close();
+      _serialPort!.dispose();
+      return LinkDisconnected('$portActiveName');
+    } on SerialPortError catch (e) {
+      return LinkError('Driver ${e.message}');
     }
   }
 
   void _onStreamError(Object object, StackTrace stackTrace) {
-    lastStatus = LinkStatus('Link Rx Stream Error: $object', linkType: SerialLink);
+    // lastStatus = LinkStatus('Link Rx Stream Error: $object' );
     flushInput();
   }
 
@@ -95,38 +89,14 @@ class SerialLink implements Link {
 
   @override
   Future<Uint8List> recv([int? byteCount]) async {
-    try {
-      return await streamIn.first.timeout(const Duration(milliseconds: 1000));
-    } on TimeoutException {
-      flushInput();
-      lastStatus = const LinkStatus('Link Rx Timeout', linkType: SerialLink);
-      rethrow;
-    } catch (e) {
-      flushInput();
-      lastStatus = LinkStatus('Link Rx: $e', linkType: SerialLink);
-      rethrow;
-    } finally {}
+    // return await streamIn.first.timeout(const Duration(milliseconds: 1000));
+    return _serialPort!.read(byteCount ?? 1024, timeout: 1000);
   }
 
-  /// Caller check [isConnected]
   @override
   Future<void> send(Uint8List bytes) async {
-    try {
-      // implicit await blocking, allow driver to initiate timeout, block reentrant, or ignore reentrant call. ensure blocking calls do not stack
-      // although without explicit await, exceptions cannot be caught here
-      if (_serialPort!.write(bytes, timeout: 1000) < bytes.length) throw TimeoutException('Serial Write Incomplete');
-
-      // reentrant async calls handled in the same order they arrive?
-      // if (await Future(() => serialPort!.write(bytes, timeout: 500)).timeout(const Duration(milliseconds: 1000)) < bytes.length) throw TimeoutException('SerialPort Tx Timeout');
-    } on TimeoutException {
-      flushOutput();
-      lastStatus = const LinkStatus('Link Tx Timeout', linkType: SerialLink);
-      rethrow;
-    } catch (e) {
-      lastStatus = LinkStatus('Link Tx: $e', linkType: SerialLink);
-      flushOutput();
-      rethrow;
-    } finally {}
+    // implicit await blocking, allow driver to initiate timeout, block reentrant, or ignore reentrant call.
+    if (_serialPort!.write(bytes, timeout: 1000) < bytes.length) throw TimeoutException('Serial Write Incomplete');
   }
 
   @override

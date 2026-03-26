@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 import '../base/link.dart';
 import '../base/protocol.dart';
@@ -45,16 +45,15 @@ class MotConnection {
   MotProtocolSocket varRead = MotProtocolSocket(_uninitialized);
   MotProtocolSocket varWrite = MotProtocolSocket(_uninitialized);
 
-  StreamSubscription<Packet>? packetSubscription;
-
+  final ValueNotifier<LinkStatus> status = ValueNotifier(const LinkDisconnected());
   bool get isConnected => activeProtocol.link.isConnected;
 
-  bool begin({Enum? linkType, String? name, int? baudRate}) {
+  LinkStatus begin({Enum? linkType, String? name, int? baudRate}) {
     //  switch on link type
+    final LinkStatus result = serialLink.connect(name: name, baudRate: baudRate);
 
-    if (serialLink.connect(name: name, baudRate: baudRate).isConnected) {
-      packetSubscription?.cancel(); // begin central demux
-      packetSubscription = _serial.begin();
+    if (result.isConnected) {
+      _serial.begin();
 
       activeProtocol = _serial;
       general = MotProtocolSocket(_serial);
@@ -63,9 +62,7 @@ class MotConnection {
       varWrite = MotProtocolSocket(_serial);
     }
 
-    return isConnected; // todo fix selection logic
+    status.value = result;
+    return result;
   }
-
-  // connection callback todo
-  // ValueNotifier<Link, ProtocolStatus> get connectionStatus => activeProtocol.link.connectionStatus;
 }

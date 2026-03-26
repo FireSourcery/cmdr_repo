@@ -1,35 +1,38 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+/// Bidirectional data link interface.
+///
+/// Implementations manage a persistent connection to a physical or virtual port.
+/// Connection lifecycle is managed via [connect]/[disconnect], which return a
+/// [LinkStatus] result suitable for direct display in UI.
 abstract interface class Link {
-  const factory Link.uninitialized() = _LinkUninitialized; // a dummy state, so that send and recv can be called without checking for null
+  const factory Link.uninitialized() = _LinkUninitialized;
 
   String? get portActiveName;
-  Stream<Uint8List> get streamIn;
+  Stream<Uint8List>? get streamIn;
 
-  /// Protocol Interface
+  /// Whether the underlying transport is currently open.
   bool get isConnected;
+
+  /// Establish a connection. Returns a [LinkStatus] describing the outcome.
+  LinkStatus connect();
+  // LinkStatus connect({onDisconnect});
+
+  /// Tear down the connection. Returns a [LinkStatus] describing the outcome.
+  LinkStatus disconnect();
+
   Future<Uint8List?> recv([int? byteCount]);
   Future<void> send(Uint8List bytes);
   void flushInput();
   void flushOutput();
 
   FutureOr<void> dispose();
-
-  LinkConnectionStatus? connect();
-  void disconnect();
-
-  LinkStatus? get lastStatus;
-  Exception? get lastException;
 }
 
+/// Inert placeholder — safe to call any method without null checks.
 class _LinkUninitialized implements Link {
   const _LinkUninitialized();
-
-  @override
-  LinkStatus? get lastStatus => const LinkStatus('Link Uninitialized', linkType: Link);
-  @override
-  Exception? get lastException => null;
 
   @override
   String? get portActiveName => null;
@@ -37,41 +40,51 @@ class _LinkUninitialized implements Link {
   Stream<Uint8List> get streamIn => const Stream.empty();
   @override
   bool get isConnected => false;
+  // ValueListenable<LinkStatus> get status;
+
+  @override
+  LinkStatus connect() => const LinkError('Link Uninitialized');
+  @override
+  LinkStatus disconnect() => const LinkDisconnected();
+
   @override
   Future<Uint8List?> recv([int? byteCount]) async => null;
   @override
   Future<void> send(Uint8List bytes) async {}
-
   @override
   void flushInput() {}
   @override
   void flushOutput() {}
   @override
   FutureOr<void> dispose() {}
-
-  @override
-  LinkConnectionStatus? connect() => null;
-
-  @override
-  void disconnect() {}
 }
 
-class LinkStatus {
-  const LinkStatus(this.message, {this.linkType = Link});
-  // LinkStatus.ofException(Exception e) : message = e.message;
-
+////////////////////////////////////////////////////////////////////////////////
+/// Link operation result — sealed type for pattern matching.
+///
+/// Every variant carries a [message] suitable for direct display in UI.
+////////////////////////////////////////////////////////////////////////////////
+sealed class LinkStatus {
+  const LinkStatus(this.message);
   final String message;
-  final Type linkType;
-  // final Exception? exception;
+
+  bool get isConnected => switch (this) {
+    LinkConnected() => true,
+    _ => false,
+  };
 }
 
-class LinkConnectionStatus extends LinkStatus {
-  const LinkConnectionStatus.error(super.message, {super.linkType}) : isConnected = false;
-  const LinkConnectionStatus.success(super.message, {super.linkType}) : isConnected = true;
-
-  final bool isConnected;
+/// Connection established successfully.
+class LinkConnected extends LinkStatus {
+  const LinkConnected([super.message = '']);
 }
 
-// class LinkStatusError extends LinkStatus implements Exception {
-//   const LinkStatusError(super.message, {super.linkType});
-// }
+/// Connection is closed (either was never open, or cleanly disconnected).
+class LinkDisconnected extends LinkStatus {
+  const LinkDisconnected([super.message = '']);
+}
+
+/// An error prevented the operation from completing.
+class LinkError extends LinkStatus {
+  const LinkError(super.message);
+}
