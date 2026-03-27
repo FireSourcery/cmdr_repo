@@ -1,4 +1,4 @@
-import 'package:binary_data/binary_format/quantity_format.dart';
+import 'package:struct_data/binary_format/quantity_format.dart';
 
 class VDivider {
   const VDivider(this.r1, this.r2);
@@ -15,7 +15,7 @@ class VDivider {
   num voltsOf(int adcu) => adcu * voltsPerAdcu;
   int adcuOf(num volts) => volts ~/ voltsPerAdcu;
 
-  NumDataConversion? get conversion => NumLinearConversion(voltsPerAdcu).conversion;
+  NumDataConversion? get conversion => NumDataScale(voltsPerAdcu).conversion;
 
   @override
   bool operator ==(covariant VDivider other) {

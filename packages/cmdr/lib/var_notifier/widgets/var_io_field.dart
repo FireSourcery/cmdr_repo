@@ -1,7 +1,7 @@
-import 'package:binary_data/binary_format/quantity_format.dart';
+import 'package:struct_data/binary_format/quantity_format.dart';
 import 'package:flutter/material.dart';
 
-import 'package:binary_data/utilities/basic_types.dart';
+import 'package:struct_data/utilities/basic_types.dart';
 import 'package:cmdr/var_notifier/widgets/var_menu.dart';
 
 import '../../type_ext/stringifier.dart';

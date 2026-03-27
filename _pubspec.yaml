@@ -1,4 +1,4 @@
-name: cmdr_monorepo
+name: cmdr_repo
 description: "Monorepo for the cmdr package and its dependencies."
 version: 0.0.1
 homepage: https://github.com/FireSourcery/cmdr

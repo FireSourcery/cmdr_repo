@@ -1,10 +1,10 @@
 // ignore_for_file: constant_identifier_names
 import 'dart:ffi' as ffi;
 
-import 'package:binary_data/packet/packet_header.dart';
-import 'package:binary_data/packet/packet.dart';
-export 'package:binary_data/packet/packet.dart';
-export 'package:binary_data/packet/packet_transformer.dart';
+import 'package:struct_data/packet/packet_header.dart';
+import 'package:struct_data/packet/packet.dart';
+export 'package:struct_data/packet/packet.dart';
+export 'package:struct_data/packet/packet_transformer.dart';
 
 class MotPacketInterface implements PacketFormat<MotPacket> {
   const MotPacketInterface();

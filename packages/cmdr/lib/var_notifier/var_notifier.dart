@@ -1,10 +1,10 @@
 import 'package:cmdr/cmdr.dart';
 import 'package:flutter/foundation.dart';
 
-import 'package:binary_data/binary_data.dart';
+import 'package:struct_data/struct_data.dart';
 import 'var_key.dart';
 
-export 'package:binary_data/binary_data.dart';
+export 'package:struct_data/struct_data.dart';
 export 'service_io.dart';
 export 'var_cache.dart';
 export 'var_controller.dart';

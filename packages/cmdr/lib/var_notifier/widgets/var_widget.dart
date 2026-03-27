@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:binary_data/utilities/basic_types.dart';
+import 'package:struct_data/utilities/basic_types.dart';
 
 import '../var_context.dart';
 import '../var_notifier.dart';

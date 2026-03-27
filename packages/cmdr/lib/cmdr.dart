@@ -19,7 +19,7 @@
 library cmdr;
 
 // External package exports
-export 'package:binary_data/binary_data.dart';
+export 'package:struct_data/struct_data.dart';
 
 // Core module exports
 export 'connection.dart';

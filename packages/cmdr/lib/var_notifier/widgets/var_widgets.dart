@@ -1,4 +1,4 @@
-import 'package:binary_data/binary_format/quantity_format.dart';
+import 'package:struct_data/binary_format/quantity_format.dart';
 import 'package:flutter/material.dart';
 
 import '../var_notifier.dart';

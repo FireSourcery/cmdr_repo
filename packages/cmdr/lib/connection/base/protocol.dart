@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:meta/meta.dart';
 import 'package:synchronized/synchronized.dart';
-import 'package:binary_data/packet/packet_transformer.dart';
+import 'package:struct_data/packet/packet_transformer.dart';
 
 import 'link.dart';
 
