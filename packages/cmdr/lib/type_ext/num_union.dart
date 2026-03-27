@@ -1,4 +1,4 @@
-import '../binary_data.dart';
+import 'package:struct_data/struct_data.dart';
 
 ///
 

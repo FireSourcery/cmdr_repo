@@ -11,7 +11,7 @@ environment:
   flutter: ^3.32.0  
 
 dependencies: 
-  struct_data: ^0.1.0
+  struct_data:  
 
   flutter:
     sdk: flutter
