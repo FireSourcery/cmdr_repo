@@ -1,5 +1,7 @@
 // ignore_for_file: constant_identifier_names
-import 'dart:ffi' as ffi;
+
+import 'dart:ffi';
+import 'dart:typed_data';
 
 import 'package:struct_data/packet/packet_header.dart';
 import 'package:struct_data/packet/packet.dart';

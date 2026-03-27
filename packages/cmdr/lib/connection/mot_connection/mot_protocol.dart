@@ -1,7 +1,7 @@
 // ignore_for_file: constant_identifier_names, camel_case_types
 
 import 'dart:math';
-import 'package:struct_data/bytes/typed_data_ext.dart';
+import 'dart:typed_data';
 
 import '../base/protocol.dart';
 import 'mot_packet.dart';
