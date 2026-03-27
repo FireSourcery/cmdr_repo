@@ -39,6 +39,4 @@ formatter:
 #   - cmdr_repo/packages/cmdr
 #   - cmdr_repo/packages/binary_data
   
-# melos:
-#   packages: 
-#     - packages/**
+ 

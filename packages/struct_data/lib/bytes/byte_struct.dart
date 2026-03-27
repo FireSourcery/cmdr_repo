@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../general/struct.dart';
 import 'typed_array.dart';
 import 'typed_field.dart';
@@ -6,6 +8,8 @@ export 'typed_field.dart';
 export 'typed_data_buffer.dart';
 export 'typed_array.dart';
 export 'typed_data_ext.dart';
+
+// export 'dart:typed_data';
 
 /// [ByteStruct] is a [TypedData] with keyed/named access to fields.
 /// [TypedData] + [] Map operators returning [int]

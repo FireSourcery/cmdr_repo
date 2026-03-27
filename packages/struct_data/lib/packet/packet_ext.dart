@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'packet.dart';
 
 extension PacketExt on Packet {

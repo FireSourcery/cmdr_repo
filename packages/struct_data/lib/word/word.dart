@@ -1,9 +1,9 @@
+import 'dart:typed_data';
+
 import '../bits/bits.dart';
-import '../bytes/typed_array.dart';
 import '../bytes/typed_data_ext.dart';
 
 export '../bits/bits.dart';
-export '../bytes/typed_array.dart';
 
 /// [Word] - A register width variable.
 /// Implementation of [Bits] with byte granularity constructors/accessors.

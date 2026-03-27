@@ -1,7 +1,6 @@
 name: struct_data
 description: >-
-  Binary data manipulation, and serialization utilities for Dart. Binary value conversions. Structured view using Field descriptors.  
-  Lightweight serialization for general classes without code generation. Inspired by C-style structs and unions, with a Dart twist.
+  Binary data utilities. Structured data using Field descriptors. Lightweight serialization for general classes without code generation. Inspired by C-style structs and unions. 
 version: 0.1.1
 homepage: https://github.com/FireSourcery/cmdr/tree/main/packages/struct_data
 repository: https://github.com/FireSourcery/cmdr
@@ -12,6 +11,8 @@ topics:
   - bitwise
   - struct
   - typed-data
+
+resolution: workspace
 
 environment:
   sdk: ^3.10.0

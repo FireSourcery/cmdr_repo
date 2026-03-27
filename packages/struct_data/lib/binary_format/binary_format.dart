@@ -3,9 +3,9 @@
 import 'dart:ffi';
 import 'dart:math';
 
-import '../bits/bit_struct.dart';
 import '../utilities/basic_types.dart';
 import '../general/enum_types.dart';
+import '../bits/bit_struct.dart';
 import 'binary_codec.dart';
 
 export 'binary_codec.dart';

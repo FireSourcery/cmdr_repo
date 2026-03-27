@@ -1,8 +1,7 @@
-import 'dart:ffi';
 import 'dart:typed_data';
+import 'dart:ffi';
 
-export 'dart:ffi';
-export 'dart:typed_data';
+export '../src/type_markers.dart';
 
 /// [StructField]/[NativeKey]/[StructKey], Typed 0,1,2,4,8 bytes
 ///

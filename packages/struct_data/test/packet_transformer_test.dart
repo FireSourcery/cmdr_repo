@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:struct_data/packet/packet_transformer.dart';
 
