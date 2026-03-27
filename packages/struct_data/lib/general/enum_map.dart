@@ -56,9 +56,9 @@ extension type EnumMap<K extends Enum, V>._(Map<K, V> map) implements Map<K, V> 
 /// Enum.name base methods are applicable regardless of EnumMap FixedMap constraints
 /// [add] fills existing Map only
 extension EnumMapByName<K extends Enum, V> on Map<K, V> {
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Buffer Case -
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   Map<String, V> toMapByName() => map((k, v) => MapEntry(k.name, v));
 
   void fromMapByName(Map<String, V> map) => addEntries(map.entries.map((e) => MapEntry(keys.byName(e.key), e.value)));

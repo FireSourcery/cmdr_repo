@@ -1,5 +1,4 @@
 import 'dart:collection';
-export 'dart:collection';
 
 /// [FixedMap] - interface for Map constraints
 /// FixedMap - fixed set of keys

@@ -13,7 +13,7 @@ import '../binary_data.dart';
 /// Contraint provided by type markers `K extends Field` ensures that only valid keys can be used
 ///
 /// ```dart
-/// final view = Structure<PersonField, Object>(personInstance);
+/// final view = StructData<PersonField, Object>(personInstance);
 /// print(view[PersonField.name]); // delegates to PersonField.name.getIn(person)
 /// ```
 ///
@@ -43,7 +43,7 @@ extension type const StructData<K extends Field<V>, V>(Object _data) implements 
 /// [Field] — key to a value in a host struct, carrying accessor logic and type scope
 ///
 /// Virtualized Field / Descriptor
-/// _interface_ common between Structure and Map
+/// _interface_ common between StructData and Map
 /// When `K extends Enum & Field`, serialization comes for free via [EnumMapByName] on `Map<Enum, V>`.
 ///
 /// Although the containing class with full context of relationships between fields
@@ -65,14 +65,14 @@ abstract interface class Field<V> {
 }
 
 /// [StructForm]
-/// Structure TypeClass
+/// StructData TypeClass
 /// Common viewer interface
 /// handle creation, creation here gurantees all keys are 'Struct' keys are present
 /// Conversion — bridge to Map (and therefore to serialization)
 ///
 /// `List<Enum>` includes serialization
-/// Combine with Structure extension type, satisfies common data interface and serialization
-/// `Structure<PersonField, Object>(personA).valuesAs(PersonField.values).toMap();`
+/// In combination with [StructData], provides a common data interface and serialization
+/// `StructData<PersonField, Object>(personA).valuesAs(PersonField.values).toMap();`
 ///
 extension type const StructForm<K extends Field<V>, V>(List<K> fields) {
   // keys must be Enum or have index
@@ -82,11 +82,11 @@ extension type const StructForm<K extends Field<V>, V>(List<K> fields) {
 
   Map<K, V> mapWithData(StructData<K, V> struct) => _structMap(struct);
 
-  /// `Form(PersonField.values)(personA).toMap();`
   ({StructForm<K, V> type, StructData<K, V> data}) call(StructData<K, V> struct) => (type: this, data: struct);
 }
 
-// return context with both keys and data
+/// return context with both keys and data
+/// `StructForm(PersonField.values)(personA).toMap();`
 extension TypedStructReference<K extends Field<V>, V> on ({StructForm<K, V> type, StructData<K, V> data}) {
   Map<K, V> toMap() => type.mapWithData(data);
   Iterable<V> get values => type.fields.map((k) => data[k]);
@@ -110,10 +110,10 @@ typedef StructField<K extends Field<V>, V> = ({K key, V value});
 /// extends [Enum], the existing `EnumMapByName` extension on `Map<Enum, V>`
 /// gives serialization for free — just call `toMap().toJson()`.
 ///
-/// `StructureBase` cannot implement `Structure` (an extension type). Instead,
-/// [data] returns `Structure<K, V>(this)` — a zero-cost wrapper around `this`
+/// `StructureBase` cannot implement `StructData` (an extension type). Instead,
+/// [data] returns `StructData<K, V>(this)` — a zero-cost wrapper around `this`
 /// — so that all keyed access delegates through the same [Field]-based dispatch.
-/// This also allows `inner` to be passed to APIs that accept `Structure<K, V>`.
+/// This also allows `inner` to be passed to APIs that accept `StructData<K, V>`.
 ///
 mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   /// a method from its TypeObject
@@ -123,7 +123,7 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   List<K> get keys; // Child class defines fixed keys
 
   /// Proxy to allow the same keys
-  /// [Object] as [Structure<K, V>] data passed to Keys
+  /// [Object] as [StructData<K, V>] data passed to Keys
   StructData<K, V> get data;
 
   V operator [](covariant K key) => data[key];
@@ -167,7 +167,6 @@ class StructInitializer<T extends StructBase<T, K, V>, K extends Field<V>, V> im
   V? fieldOrNull(K key) => _init[key];
   @override
   bool trySetField(K key, V value) {
-    if (_init is UnmodifiableMapBase) return false;
     _init[key] = value;
     return true;
   }
@@ -188,5 +187,5 @@ class StructInitializer<T extends StructBase<T, K, V>, K extends Field<V>, V> im
 // class StructPrototype<S extends StructureBase<S, K, V>, K extends Field<V>, V> with StructureBase<S, K, V> {
 //   const StructPrototype(this.keys, this.data);
 //   final List<K> keys;
-//   final Structure<K, V> data;
+//   final StructData<K, V> data;
 // }

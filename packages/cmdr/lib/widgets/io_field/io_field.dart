@@ -460,10 +460,10 @@ class IOFieldMenu<T> extends StatelessWidget with _IOFieldStringBox<T> implement
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// Visual
 /// connected widget using same config
-////////////////////////////////////////////////////////////////////////////////
+///
 abstract interface class IOFieldVisual<T> extends IOField<T> {
   factory IOFieldVisual(IOFieldConfig<T> config, {Key? key}) {
     return switch (T) {
@@ -558,9 +558,9 @@ enum IOFieldBoolStyle {
   momentaryButton,
 }
 
-////////////////////////////////////////////////////////////////////////////////
 ///
-////////////////////////////////////////////////////////////////////////////////
+///
+///
 extension InputDecorationHide on InputDecoration {
   InputDecoration copyWithHide({bool showLabel = true, bool showPrefix = true, bool showSuffix = true}) {
     return InputDecoration(

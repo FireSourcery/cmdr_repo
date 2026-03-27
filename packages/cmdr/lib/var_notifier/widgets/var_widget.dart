@@ -152,9 +152,9 @@ class VarBaseBuilder extends StatelessWidget {
 //   }
 // }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// convenience interface for mapping widget callbacks
-////////////////////////////////////////////////////////////////////////////////
+///
 /// implicitly casts the VarNotifier
 /// getters preferred over config object, as the widget can select which callbacks are retained
 // extension VarNotifierViewer<V> on VarNotifier {

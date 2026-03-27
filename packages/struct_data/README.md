@@ -74,6 +74,10 @@ print(version.toJsonVerbose());     // {fix: 0, minor: 3, major: 2, optional: 1}
 // Immutable copy
 final patched = version.withField(VersionFieldStandard.fix, 1);
 print(patched); // 1.2.3.1
+
+// Chain with dot syntax
+final chain = chain.withField(fix, 8).withField(.minor, 7).withField(.major, 6).withField(.opt, 5) ;
+print(chain); // 5.6.7.8
 ```
 
 ### Enum-keyed serialization
@@ -102,6 +106,60 @@ enum PersonField<V extends Object> with SerializableKey<V> {
 // Use StructForm for JSON round-tripping
 final map = StructForm(PersonField.values).fromJson({'id': 1, 'name': 'Alice', 'age': 30});
 print(map.toJson()); // {id: 1, name: Alice, age: 30}
+```
+
+### Enum-keyed serialization mixin
+
+```dart 
+enum SerializablePersonField<V extends Object> with SerializableField<V> {
+  id<int>(),
+  age<int>(),
+  name<String>()
+  ;
+
+  static const form = StructForm(SerializablePersonField.values);
+
+  @override
+  V getIn(SerializablePerson struct) {
+    return switch (this) {
+      SerializablePersonField.id => struct.id as V,
+      SerializablePersonField.age => struct.age as V,
+      SerializablePersonField.name => struct.name as V,
+    };
+  }
+
+  @override
+  void setIn(SerializablePerson struct, V value) => throw UnimplementedError('Person is immutable');
+
+  V? get defaultValue => null;
+
+  @override
+  bool testAccess(Object struct) => struct is Person;
+}
+
+class SerializablePerson with Immutable<SerializablePerson>, Serializable<SerializablePerson> {
+  const SerializablePerson(this.id, this.name, this.age);
+
+  final String name;
+  final int id;
+  final int age;
+
+  SerializablePerson.fromMap(Map<SerializableField, Object?> base)
+    : id = base[SerializablePersonField.id] as int,
+      name = base[SerializablePersonField.name] as String,
+      age = base[SerializablePersonField.age] as int;
+
+  factory SerializablePerson.fromJson(Map<String, Object?> json) => SerializablePerson.fromMap(const StructForm(SerializablePersonField.values).fromJson(json));
+
+  List<SerializablePersonField> get keys => SerializablePersonField.values;
+
+  @override
+  SerializablePerson copyWithMap(covariant Map<SerializableField, Object?> data) => SerializablePerson.fromMap(data);
+}
+
+// Use StructForm for JSON round-tripping
+final person = SerializablePerson.fromJson({'id': 1, 'age': 30, 'name': 'Alice'}).withField(PersonField.age, 31).toJson(); 
+print(person); // {id: 1, name: Alice, age: 31}
 ```
 
 ### Binary format codecs
@@ -158,7 +216,6 @@ print(colors.toJson());              // {red: 16711680, green: 65280, blue: 255}
 
 ## Additional Information
 
-- **License:** BSD 3-Clause
+- **License:** MIT License 
 - **Repository:** [github.com/FireSourcery/cmdr](https://github.com/FireSourcery/cmdr)
-- **Issues:** [github.com/FireSourcery/cmdr/issues](https://github.com/FireSourcery/cmdr/issues)
-- **Platform support:** Dart VM and native platforms (uses `dart:ffi` type markers; not web-compatible)
+- **Issues:** [github.com/FireSourcery/cmdr/issues](https://github.com/FireSourcery/cmdr/issues) 

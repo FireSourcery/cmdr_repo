@@ -89,11 +89,11 @@ enum MotHeaderField<V extends NativeType> with ByteField<V>, TypedField<V> {
   final int offset;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// Header
 /// `[Start, Id, Checksum[2], Length, Flex[3]]`
 ///  [PayLoad][32]
-////////////////////////////////////////////////////////////////////////////////
+///
 @Packed(1)
 base class MotPacketHeader extends Struct implements PacketHeader {
   factory MotPacketHeader.cast(TypedData typedData) => Struct.create<MotPacketHeader>(typedData);
@@ -123,10 +123,10 @@ base class MotPacketHeader extends Struct implements PacketHeader {
   void build(PacketId packetId, Packet? packet) => UnimplementedError();
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// Id/SyncHeader
 /// `[Start, Id]`
-////////////////////////////////////////////////////////////////////////////////
+///
 @Packed(1)
 base class MotPacketHeaderSync extends Struct implements PacketSyncHeader {
   factory MotPacketHeaderSync.cast(TypedData typedData) => Struct.create<MotPacketHeaderSync>(typedData);
@@ -207,15 +207,15 @@ enum MotPacketRequestId<T, R> implements PacketIdRequest<T, R>, MotPacketId {
   String toString() => name;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// Struct for defining a region of memory, giving a name to each field.
-////////////////////////////////////////////////////////////////////////////////
+///
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// Read Vars
 /// Req     [Length, Resv, IdSum] /  [MotVarIds][16]
 /// Resp    [Length, Resv, IdSum] /  [Value16][16]
-////////////////////////////////////////////////////////////////////////////////
+///
 typedef VarReadRequestValues = Iterable<int>;
 typedef VarReadResponseValues = List<int>;
 
@@ -269,11 +269,11 @@ final class VarReadResponse extends Struct implements Payload<VarReadResponseVal
   PayloadMeta build(VarReadResponseValues args, MotPacket header) => throw UnimplementedError();
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// Write Vars
 /// Req     [IdChecksum, Flags16]   [MotVarIds, Value16][8]
 /// Resp    [IdChecksum, Status16]  [VarStatus8][8]
-////////////////////////////////////////////////////////////////////////////////
+///
 typedef VarWriteRequestValues = Iterable<(int id, int value)>;
 typedef VarWriteResponseValues = List<int>; // statuses
 
@@ -321,9 +321,9 @@ base class VarWriteResponse extends Struct implements Payload<VarWriteResponseVa
   PayloadMeta build(VarWriteResponseValues args, MotPacket header) => throw UnimplementedError();
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// Stop
-////////////////////////////////////////////////////////////////////////////////
+///
 class StopRequest implements Payload<void> {
   StopRequest();
   factory StopRequest.cast(TypedData typedData) => StopRequest();
@@ -349,11 +349,11 @@ base class StopResponse extends Struct implements Payload<int> {
   PayloadMeta build(int args, MotPacket header) => throw UnimplementedError();
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// Version
 /// Request:
 /// Response: [Ver_LSB, Ver1, Ver2, Ver_MSB][4]
-////////////////////////////////////////////////////////////////////////////////
+///
 typedef VersionResponseValues = ({int protocol, int library, int firmware});
 
 class VersionRequest implements Payload<void> {
@@ -397,9 +397,9 @@ base class VersionResponse extends Struct implements Payload<VersionResponseValu
   // List<int>? parseVersionAsList() => payloadAt<Uint32List>(0);
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// Call
-////////////////////////////////////////////////////////////////////////////////
+///
 typedef CallRequestValues = ({int id, int? arg});
 typedef CallResponseValues = ({int id, int status});
 
@@ -439,9 +439,9 @@ base class CallResponse extends Struct implements Payload<CallResponseValues> {
   PayloadMeta build(CallResponseValues args, MotPacket header) => throw UnimplementedError();
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// Mem Read
-////////////////////////////////////////////////////////////////////////////////
+///
 typedef MemReadRequestValues = ({int address, int size, int config}); // should probably user named parameters for extension
 
 typedef MemReadResponseValues = ({int status, Uint8List data});
@@ -490,9 +490,9 @@ base class MemReadResponse extends Struct implements Payload<MemReadResponseValu
   PayloadMeta build(MemReadResponseValues args, MotPacket header) => throw UnimplementedError();
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// Mem Write
-////////////////////////////////////////////////////////////////////////////////
+///
 typedef MemWriteRequestValues = ({int address, int size, int config, Uint8List data}); // change to List<int>?
 
 typedef MemWriteResponseValues = int;
@@ -545,10 +545,10 @@ base class MemWriteResponse extends Struct implements Payload<MemWriteResponseVa
   PayloadMeta build(MemWriteResponseValues args, MotPacket header) => throw UnimplementedError();
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// MOT_PACKET_DATA_MODE_WRITE
 /// MOT_PACKET_DATA_MODE_READ
-////////////////////////////////////////////////////////////////////////////////
+///
 typedef DataModeRequestValues = ({int address, int size, int flags});
 
 @Packed(1)

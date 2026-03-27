@@ -3,40 +3,49 @@ description: "Monorepo for the cmdr package and its dependencies."
 version: 0.0.1
 homepage: https://github.com/FireSourcery/cmdr
 
-# publish_to: 'none'
+publish_to: 'none'
 
 environment:
-  sdk: ^3.8.0
-  flutter: ^3.32.0 
+  sdk: ^3.10.0
+#   flutter: ^3.32.0 
 
-dependencies:
-  flutter:
-    sdk: flutter
-  collection: ^1.18.0
-  csv: ^6.0.0
-  file_picker: ^8.0.3
-  fl_chart: ^0.68.0
-  intel_hex: ^1.2.1
-  libserialport: ^0.3.0+1
-  meta: ^1.11.0
-  recase: ^4.1.0
-  shared_preferences: ^2.2.3
-  synchronized: ^3.1.0+1
-  quiver: ^3.2.2
+# dependencies:
+#   struct_data:
+#   cmdr:
+#   flutter:
+#     sdk: flutter
+#   # collection: ^1.18.0
+#   # csv: ^6.0.0
+#   # file_picker: ^8.0.3
+#   # fl_chart: ^0.68.0
+#   # intel_hex: ^1.2.1
+#   # libserialport: ^0.3.0+1
+#   # meta: ^1.11.0
+#   # recase: ^4.1.0
+#   # shared_preferences: ^2.2.3
+#   # synchronized: ^3.1.0+1
+#   # quiver: ^3.2.2
 
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^4.0.0
-  melos: ^6.2.0
-  lints: ^4.0.0
-# flutter:
+# dev_dependencies:
+#   flutter_test:
+#     sdk: flutter
+#   # flutter_lints: ^4.0.0
+#   # # melos: ^6.2.0
+#   # lints: ^4.0.0
+# # flutter:
 
 formatter:
   trailing_commas: preserve
 
-# workspace: 
-#   - cmdr_repo/packages/cmdr
-#   - cmdr_repo/packages/binary_data
-  
+resolution: workspace
+
+workspace: 
+  - packages/cmdr
+  - packages/struct_data
+ 
+melos:
+  packages: 
+    - packages/cmdr
+    - packages/struct_data
+ 
  

@@ -48,11 +48,11 @@ abstract mixin class ServiceIO<K, V, S> {
     }
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// One-Shot Stream
   /// Splits input/output into slices of [maxBatchSize]
   /// Caller locks [keys] from modifications before building slices
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// known List uses `List.slices` instead
   Stream<ServiceGetSlice<K, V>> getAll(Iterable<K> keys, {Duration delay = const Duration(milliseconds: 1)}) {
     return _getSlices(keys.slices(maxGetBatchSize ?? keys.length), delay: delay);
@@ -62,11 +62,11 @@ abstract mixin class ServiceIO<K, V, S> {
     return _setSlices(pairs.slices(maxSetBatchSize ?? pairs.length), delay: delay);
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Periodic Stream
   // getters resolve each full iteration of all keys, creates new slices
   // while the getter iterates, the caller must not add/remove from the source
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   Stream<ServiceGetSlice<K, V>> pollFixed(Iterable<K> keys, {Duration delay = const Duration(milliseconds: 1)}) async* {
     if (keys.isEmpty) return; // input does not change
     while (true) {

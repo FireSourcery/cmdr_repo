@@ -9,6 +9,7 @@ import '../bits/bit_struct.dart';
 import 'binary_codec.dart';
 
 export 'binary_codec.dart';
+export '../src/type_markers.dart';
 
 /// [NativeTypeBase]
 /// Descriptor using NativeType as marker only.

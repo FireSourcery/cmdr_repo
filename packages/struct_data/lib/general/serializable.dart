@@ -8,8 +8,15 @@ export 'enum_map.dart';
 /// [Serializable] -
 /// mixin in 1 step for serialization
 /// provide toMap or implements MapBase and duplicate code until combine mixin is support
-/// mixin toMap<K extends Enum, V>
+/// mixin toMap
 /// implmenting Map would require subclasses to mixin MapBase
+
+// if K parameter is included.
+// mixin Serializable<S extends Serializable<S>, K extends Field<Object?>> on Object implements StructBase<S, K, Object?>
+// class definition becomes slightly more verbose -> class Person with  Serializable<Person, PersonField>
+// however access can use dot notation -> person[.age] instead of person[PersonField.age]
+//   person.withField(.age, 31) instead of person.withField(PersonField.age, 31)
+
 mixin Serializable<S extends Serializable<S>> on Object implements StructBase<S, SerializableField, Object?> {
   List<SerializableField<Object?>> get keys;
   StructData<SerializableField, dynamic> get data => this as StructData<SerializableField, dynamic>; // data passed to Keys
@@ -27,9 +34,7 @@ mixin Serializable<S extends Serializable<S>> on Object implements StructBase<S,
 
   FieldMap<SerializableField, Object?> toMap() => _type.mapWithData(data);
 
-  // ---------------------------------------------------------------------------
   // Value equality
-  // ---------------------------------------------------------------------------
   @override
   int get hashCode => keys.fold(0, (prev, key) => prev ^ this[key].hashCode);
 
@@ -145,7 +150,7 @@ mixin Immutable<S extends Immutable<S>> {
 
   // using index map by default
   // optionally override each in the  child class,=
-  S withField<V>(Field<V> key, V value) => copyWithMap(_bufferCopy()..[key] = value);
+  S withField(Field key, Object? value) => copyWithMap(_bufferCopy()..[key] = value);
 
   // tod copy non null only, let copyWithMap handle mapping only
   S withFields(Iterable<StructField<Field, Object?>> newEntries) => copyWithMap(_bufferCopy()..addEntries(newEntries.map((e) => MapEntry(e.key, e.value))));

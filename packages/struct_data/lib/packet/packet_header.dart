@@ -2,17 +2,17 @@
 
 import 'dart:typed_data';
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// Struct Components Header/Payload
-////////////////////////////////////////////////////////////////////////////////
+///
 // extension type const HeaderView<K extends ByteField>(ByteStruct<K> _struct) {
 //   // All fields accessible, bounds-checked
 //   int? operator [](K key) => key.getInOrNull(_struct);
 //   void operator []=(K key, int value) => key.setIn(_struct, value);
 // }
-////////////////////////////////////////////////////////////////////////////////
+///
 /// [Header]
-////////////////////////////////////////////////////////////////////////////////
+///
 typedef PacketHeaderCaster = PacketHeader Function(TypedData typedData);
 // typedef PacketHeaderSyncCaster = PacketHeaderSync Function(TypedData typedData);
 // typedef PacketHeaderCaster<P extends PacketHeader> = P Function(TypedData typedData);

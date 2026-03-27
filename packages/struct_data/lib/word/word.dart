@@ -52,10 +52,10 @@ extension type const Word(int _value) implements Bits, int {
   int get byte6 => (this >> 48) & _mask8;
   int get byte7 => (this >> 56) & _mask8;
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Bytes Of Int
   /// cast [int] as [Word] for access
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// TypedData Byte List operations
   // converts singular register into bytes
 
@@ -91,9 +91,9 @@ extension type const Word(int _value) implements Bits, int {
   String asString() => _bytesString.asString(0, _value.byteLength);
 }
 
-////////////////////////////////////////////////////////////////////////////////
 ///
-////////////////////////////////////////////////////////////////////////////////
+///
+///
 extension TypedDataToInt on TypedData {
   // valueAt max size is 8, when lengthInBytes >= 8, toInt64 avoids copying buffer
   int toInt([Endian endian = Endian.little]) => ByteData.sublistView(this).toInt(endian);

@@ -3,19 +3,17 @@ import '../general/struct.dart';
 import 'bit_struct.dart';
 export 'bits.dart';
 
-////////////////////////////////////////////////////////////////////////////////
 /// [BitField]
 /// Key for [BitStruct] and [BitFieldMap]
 /// as mixin, applicable to [enum]
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-/// A Bit-field is a class data `member` with explicit size, in bits.
-/// https://en.cppreference.com/w/cpp/language/bit_field
-/// https://learn.microsoft.com/en-us/cpp/c-language/c-bit-fields?view=msvc-170
 ///
-/// A collection of `Bit-fields`, in a primitive type variable, e.g int,
-/// should be known as Bit-Fields, or Bits Field, Bit Struct, Bit-Field Struct
-////////////////////////////////////////////////////////////////////////////////
+// A Bit-field is a class data `member` with explicit size, in bits.
+// https://en.cppreference.com/w/cpp/language/bit_field
+// https://learn.microsoft.com/en-us/cpp/c-language/c-bit-fields?view=msvc-170
+//
+// A collection of `Bit-fields`, in a primitive type variable, e.g int,
+// should be known as Bit-Fields, or Bits Field, Bit Struct, Bit-Field Struct
+//
 abstract mixin class BitField implements Field<int> {
   Bitmask get bitmask;
 

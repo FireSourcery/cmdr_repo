@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'var_key.dart';
 import 'var_notifier.dart';
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// [VarCache] - Model of Client Side Entity
 ///   map views to shared listenable value -
 ///     keeps views in sync, each Var entry occurs only once in the cache.
@@ -13,7 +13,7 @@ import 'var_notifier.dart';
 ///   Write-Only Vars => use to maintain synced view only
 ///
 /// ServiceIO can mixin to this module, still both derive from the same context
-////////////////////////////////////////////////////////////////////////////////
+///
 class VarCache {
   VarCache() : _cache = {};
 
@@ -70,9 +70,9 @@ class VarCache {
 
   void dispose() => _cache.forEach((_, value) => value.dispose());
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Per Instance
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   VarNotifier? operator [](VarKey varKey) => _cache[varKey.value];
 
   // directely return value. useful for sync update
@@ -81,9 +81,9 @@ class VarCache {
   @protected
   void setValueOf(VarKey varKey, num value) => _cache[varKey.value]?.numView = value;
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Collective App View
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   // by results of the keys' generative constructor stored in VarNotifier, will not create new keys
   // name as 'keys' creates some conflict on cast<>()
   Iterable<VarKey> get varKeys => _cache.values.map((e) => e.varKey);
@@ -99,9 +99,9 @@ class VarCache {
   Iterable<(int, int)> get dataPairs => varEntries.map((e) => e.dataPair);
   Iterable<(int, int)> dataPairsOf(Iterable<VarKey> keys) => varsOf(keys).map((e) => e.dataPair);
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Collective Data Read Response - Update by Packet
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   // caller clear varNotifier.lastUpdate to overwrite
   // Prevent sending results of fetch/poll, updateByData is blocked by isUpdatedByView,
   // handle case where value is polling response is received in between mark updateByView and send
@@ -127,9 +127,9 @@ class VarCache {
     }
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Collective Data Write
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// awaiting push
   // Iterable<VarNotifier> get varsUpdatedByView => varEntries.where((e) => e.lastUpdate == VarLastUpdate.byView);
   Iterable<VarNotifier> get varsUpdatedByView => varEntries.where((e) => e.hasPendingChanges);
@@ -163,14 +163,14 @@ class VarCache {
     }
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Assigned by VarKey
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   Iterable<VarNotifier> dependentsOf(VarKey key) => varsOf(key.dependents ?? []);
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Json
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// load from json
   /// existing ids only
   void loadFromJson(List<Map<String, Object?>> json) {
@@ -188,9 +188,9 @@ class VarCache {
   @override
   String toString() => describeIdentity(this);
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// debug
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   @visibleForTesting
   void printCache() {
     print(this);
@@ -198,14 +198,14 @@ class VarCache {
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 // / [VarCacheNotifier] - with context of [VarCache]
 // / A notifier separate from [VarNotifier.value] [updateByView] updates
 // /    UI events as collective
 // /    Var selection - e.g. change select with Menu
 // /    Submit notifier - e.g. generating dialog
 // /    Updating dependents residing in the same VarCache
-////////////////////////////////////////////////////////////////////////////////
+///
 // abstract mixin class VarCacheNotifier implements VarCache, ValueNotifier<VarViewEvent> {
 //   // propagateSet
 //   // caller provides function via switch case

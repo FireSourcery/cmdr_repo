@@ -32,11 +32,11 @@ void main() {
     });
 
     test('withField chains produce correct field values', () {
-      final updated = serialNumber.withField(SerialNumberField.sn0, 1).withField(SerialNumberField.sn1, 2).withField(SerialNumberField.sn2, 3).withField(SerialNumberField.sn3, 4);
-      expect(updated[SerialNumberField.sn0], 1);
-      expect(updated[SerialNumberField.sn1], 2);
-      expect(updated[SerialNumberField.sn2], 3);
-      expect(updated[SerialNumberField.sn3], 4);
+      final updated = serialNumber.withField(.sn0, 1).withField(.sn1, 2).withField(.sn2, 3).withField(.sn3, 4);
+      expect(updated[.sn0], 1);
+      expect(updated[.sn1], 2);
+      expect(updated[.sn2], 3);
+      expect(updated[.sn3], 4);
       expect(updated.toStringAsVersion(), '4.3.2.1');
     });
 

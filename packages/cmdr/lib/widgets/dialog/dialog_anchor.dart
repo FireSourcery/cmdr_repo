@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// [DialogAnchor] - Wraps a widget with a dialog that is shown on focus or event.
 ///
 /// e.g. warning dialog before editing a field, and a dialog after submitting a field
-////////////////////////////////////////////////////////////////////////////////
+///
 class DialogAnchor<T> extends StatefulWidget {
   const DialogAnchor({super.key, this.initialDialogBuilder, this.eventNotifier, this.eventGetter, this.eventDialogBuilder, /*  this.eventMatch, */ this.notificationMatch, required this.child});
 
@@ -92,9 +92,9 @@ class _DialogAnchorState<T> extends State<DialogAnchor<T>> {
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// [DialogButton] is a button that opens a dialog when pressed.
-////////////////////////////////////////////////////////////////////////////////
+///
 class DialogButton<T> extends StatelessWidget {
   const DialogButton({super.key, required this.dialogBuilder, this.child, this.onPressed, this.onPop, this.useRootNavigator = true, this.styleId, this.barrierDismissible = false});
   // use the warning theme

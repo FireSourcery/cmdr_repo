@@ -9,9 +9,9 @@ import 'mot_packet.dart';
 class MotProtocolSocket extends ProtocolSocket {
   MotProtocolSocket(super.protocol);
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Base wrappers
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   @override
   Future<PacketSyncId?> ping([MotPacketSyncId id = MotPacketSyncId.MOT_PACKET_PING, MotPacketSyncId? respId, Duration timeout = ProtocolSocket.timeoutDefault]) async => super.ping(id, respId);
 
@@ -21,16 +21,16 @@ class MotProtocolSocket extends ProtocolSocket {
   Future<CallResponseValues?> call(int id, int? arg, [Duration timeout = const Duration(milliseconds: 1000)]) async =>
       requestResponse(MotPacketRequestId.MOT_PACKET_CALL, (id: id, arg: arg), timeout: timeout);
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Vars by Key
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   Future<VarReadResponseValues?> readVars(VarReadRequestValues ids) async => requestResponse(MotPacketRequestId.MOT_PACKET_VAR_READ, ids);
   Future<VarWriteResponseValues?> writeVars(VarWriteRequestValues pairs) async => requestResponse(MotPacketRequestId.MOT_PACKET_VAR_WRITE, pairs);
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Mem
   /// 8 bytes overhead on write, potentially 4, moving size and config to header
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   Future<MemReadResponseValues?> readMem(int address, int size, int config) async {
     assert(size <= MemReadRequest.sizeMax);
     return await requestResponse(MotPacketRequestId.MOT_PACKET_MEM_READ, (address: address, size: size, config: config), timeout: const Duration(milliseconds: 1000));
@@ -56,9 +56,9 @@ class MotProtocolSocket extends ProtocolSocket {
     return await writeMemSlicesRecursive(address + sliceSize, size - sliceSize, config, Uint8List.sublistView(data, sliceSize), successCode);
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// DataMode
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   Future<int?> initDataModeWrite(int address, int sizeBytes, int flags) async {
     return requestResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE, (address, sizeBytes, flags), syncOptions: ProtocolSyncOptions.sendAndRecv, timeout: const Duration(milliseconds: 2000));
   }

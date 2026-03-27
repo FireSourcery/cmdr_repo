@@ -1,4 +1,4 @@
-## 0.1.0
+## 0.1.2
 
 * Initial public release.
 * **Bits**: Bitwise operations on integers via `Bits` extension type, with `Bitmask` for field extraction and modification.

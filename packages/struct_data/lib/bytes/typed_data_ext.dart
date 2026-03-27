@@ -1,9 +1,9 @@
 import 'dart:math';
 import 'dart:typed_data';
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// Wrappers as top level functions
-////////////////////////////////////////////////////////////////////////////////
+///
 
 /// length is in elements
 /// same as `ByteData(length * bytesPerElementOf<T>())`
@@ -61,10 +61,10 @@ int bytesPerElementOf<T extends TypedData>() {
   };
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// implementations on TypedData returning as `this` type
 /// parameters in element size of `this` type
-////////////////////////////////////////////////////////////////////////////////
+///
 extension TypedDataLength on TypedData {
   int get length => lengthInBytes ~/ elementSizeInBytes;
   // int get offset => offsetInBytes ~/ elementSizeInBytes;

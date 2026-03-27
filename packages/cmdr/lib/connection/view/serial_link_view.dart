@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../links/serial_link.dart';
 export '../links/serial_link.dart';
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// SerialLinkView
-////////////////////////////////////////////////////////////////////////////////
+///
 class SerialLinkConfigController with ChangeNotifier {
   SerialLinkConfigController(this.serialLink);
   final SerialLink serialLink;
@@ -21,9 +21,9 @@ class SerialLinkConfigController with ChangeNotifier {
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// SerialLinkView
-////////////////////////////////////////////////////////////////////////////////
+///
 abstract class SerialLinkView extends StatelessWidget {
   const SerialLinkView._inner(this.configController, {super.key});
 
@@ -35,9 +35,9 @@ abstract class SerialLinkView extends StatelessWidget {
   SerialLink get serialLink => configController.serialLink;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// SerialLinkView
-////////////////////////////////////////////////////////////////////////////////
+///
 class SerialLinkPortView extends SerialLinkView {
   const SerialLinkPortView(super.configController, {super.key}) : super._inner();
 
@@ -63,9 +63,9 @@ class SerialLinkPortView extends SerialLinkView {
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// SerialLinkView
-////////////////////////////////////////////////////////////////////////////////
+///
 class SerialLinkConfigView extends SerialLinkView {
   const SerialLinkConfigView(super.configController, {super.key}) : super._inner();
 
@@ -103,9 +103,9 @@ class SerialLinkPortDetailsView extends SerialLinkView {
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// libserialport SerialPort View
-////////////////////////////////////////////////////////////////////////////////
+///
 class PortDetailsView extends StatelessWidget {
   const PortDetailsView(this.serialPortName, {super.key});
 
@@ -134,7 +134,7 @@ class PortDetailsView extends StatelessWidget {
             _ListTile('Product Name', port.productName),
             _ListTile('Serial Number', port.serialNumber),
             _ListTile('MAC Address', port.macAddress),
-          ]
+          ],
         ],
       ),
     );
@@ -170,7 +170,12 @@ extension SerialPortInt on int {
   String toHex() => '0x${toRadixString(16)}';
   String toPadded([int width = 3]) => toString().padLeft(width, '0');
   String toTransport() {
-    return switch (this) { SerialPortTransport.usb => 'USB', SerialPortTransport.bluetooth => 'Bluetooth', SerialPortTransport.native => 'Native', _ => 'Unknown' };
+    return switch (this) {
+      SerialPortTransport.usb => 'USB',
+      SerialPortTransport.bluetooth => 'Bluetooth',
+      SerialPortTransport.native => 'Native',
+      _ => 'Unknown',
+    };
   }
 }
 

@@ -2,10 +2,10 @@ import 'dart:typed_data';
 
 import 'typed_data_ext.dart';
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// [sublistView] using [length] instead of [end]
 /// Effectively moving up [ByteBuffer] layer, to [TypedData] view segment accounting for [this.offsetInBytes]
-////////////////////////////////////////////////////////////////////////////////
+///
 /// offsets in bytes for simplicity, correspond with [ByteBuffer]
 /// length using type size
 extension TypedDataCast on TypedData {

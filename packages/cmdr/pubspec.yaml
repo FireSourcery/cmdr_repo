@@ -2,13 +2,14 @@ name: cmdr
 description: "Commander/Host side utilities for interfacing with embedded devices + other general utilities."
 version: 0.0.1
 # homepage:
-resolution: workspace
 
 publish_to: "none"
 
 environment:
   sdk: ^3.8.0
   flutter: ^3.32.0  
+
+resolution: workspace
 
 dependencies: 
   struct_data:  
@@ -32,7 +33,6 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
-  # melos: ^7.2.0
+  flutter_lints: ^6.0.0 
   lints: ^6.1.0
   test: ^1.25.5

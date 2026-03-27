@@ -7,7 +7,7 @@ import 'bit_field.dart';
 export 'bit_field.dart';
 export 'bits_map.dart';
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// [BitStruct] — zero-cost keyed view over a [BitData] object.
 ///
 /// [Bits] + [BitField] keys, [] operators, returning [int]
@@ -19,7 +19,7 @@ export 'bits_map.dart';
 ///
 /// Wrap around [BitData] instead of Bits to pass mutable and immutable variants to BitData layer
 /// extending [BitData] would need to handle mutable and immutable variants,
-////////////////////////////////////////////////////////////////////////////////
+///
 extension type const BitStruct<K extends BitField>(BitData bitData) implements BitData, StructData<K, int> {
   // unique in that the entire memory layout is known
   // can construct without keys
@@ -44,7 +44,7 @@ extension type const BitForm<K extends BitField>(List<K> _fields) implements Str
   int get totalWidth => bitmasks.totalWidth;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// [BitStructBase] — abstract base for user-defined bit struct subtypes.
 /// Analogue of [StructBase] for the bit domain.
 ///
@@ -58,7 +58,6 @@ extension type const BitForm<K extends BitField>(List<K> _fields) implements Str
 ///
 /// [data] returns [BitStruct<K>(bitData)] — a zero-cost wrapper around [bitData]
 /// — so keyed access delegates through the same [Field]-based dispatch as [StructData].
-////////////////////////////////////////////////////////////////////////////////
 // Directly extending BitData would give const constructors but would require handling mutable and immutable variants
 abstract class BitStructBase<T extends BitStructBase<T, K>, K extends BitField> with MapBase<K, int>, StructBase<T, K, int> {
   /// caller compose for compile time const. const BitStructBase(ConstBits(11))

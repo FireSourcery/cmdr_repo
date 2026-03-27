@@ -24,9 +24,9 @@ abstract mixin class TypedField<T extends NativeType> /* implements Field<int> *
   int get defaultValue => 0;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// Word value
-////////////////////////////////////////////////////////////////////////////////
+///
 int _sizeOf<T extends NativeType>() {
   return switch (T) {
     const (Int8) || const (Uint8) => 1,

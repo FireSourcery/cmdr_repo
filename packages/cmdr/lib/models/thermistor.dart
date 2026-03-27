@@ -2,9 +2,9 @@ import 'dart:math';
 
 import 'package:struct_data/binary_format/quantity_format.dart';
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// Math
-////////////////////////////////////////////////////////////////////////////////
+///
 const double absoluteZeroCelsius = -273.15;
 const double roomTemperatureKelvin = 25 - absoluteZeroCelsius;
 
@@ -80,11 +80,11 @@ class Thermistor {
   static double vInRef = 5;
   static int adcMax = 4095;
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Instance
   /// thermistor as pull down only
   /// pull down case treat rParallel 0 as null/infinite
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   double kelvinOf(int adcu) {
     final rNet = rPullDownOf(rSeries, vInRef, vAdcRef, adcMax, adcu);
     final rThermistor = rParallelOf(rNet, rParallel);

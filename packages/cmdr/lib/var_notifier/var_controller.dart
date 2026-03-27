@@ -14,9 +14,9 @@ class VarCacheController {
 
   void dispose() => cache.dispose();
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Collective Read Vars `Fetch/Load`
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
 
   /// todo statuses
   // change multi tto VarHandlerStatus?
@@ -39,9 +39,9 @@ class VarCacheController {
     return VarStatusDefault.success;
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Collective Write Vars `Send/Update`
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   VarStatus? _onWriteSlice(ServiceSetSlice<int, int, int> slice) {
     if (slice.statuses == null) return null; // no response error
     cache.updateByDataResponse(slice.pairs, slice.statuses!); // clears scheduled write
@@ -67,9 +67,9 @@ class VarCacheController {
     return _write(cache.dataPairsUpdatedByView);
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// `Single` Read/Write Var
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   // fetch
   Future<V?> read<V>(VarKey<V> key) async {
     if (await protocolService.get(key.value) case int value) {
@@ -215,11 +215,11 @@ extension VarNotifierAwait on VarNotifier {
   // }
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// if a single var update is required. Batch updates via VarCacheController handles most cases.
 /// call service immediately
 /// value will not be synced with cache
-////////////////////////////////////////////////////////////////////////////////
+///
 class VarSingleController<V> {
   const VarSingleController({required this.varNotifier, required this.protocolService});
 

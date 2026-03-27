@@ -12,9 +12,9 @@ import '../var_notifier.dart';
 import 'var_widget.dart';
 import 'var_input_dialog.dart';
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// IO Field
-////////////////////////////////////////////////////////////////////////////////
+///
 /// Interface without type parameter to be determined by Var
 abstract interface class VarIOField extends StatelessWidget {
   // assigns type, maps additional options to config

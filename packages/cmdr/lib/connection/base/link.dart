@@ -58,11 +58,11 @@ class _LinkUninitialized implements Link {
   FutureOr<void> dispose() {}
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// Link operation result — sealed type for pattern matching.
 ///
 /// Every variant carries a [message] suitable for direct display in UI.
-////////////////////////////////////////////////////////////////////////////////
+///
 sealed class LinkStatus {
   const LinkStatus(this.message);
   final String message;

@@ -96,9 +96,9 @@ abstract class Packet {
   int get length => packetData.lengthInBytes;
   int get payloadLength => length - payloadIndex; // only if casting does not throw
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Header/Payload Pointers using defined boundaries
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   // rename bytes
   Uint8List get idHeader => Uint8List.sublistView(packetData, 0, format.lengthMin);
   Uint8List get header => Uint8List.sublistView(packetData, 0, format.headerLength);
@@ -136,10 +136,10 @@ abstract class Packet {
   String toString() => '[start: $startFieldOrNull, id: $idFieldOrNull, length: $lengthFieldOrNull, checksum: $checksumFieldOrNull][${bytes.skip(format.headerLength)}]';
   // String toString() => '${bytes.take(packetClass.headerLength)} ${bytes.skip(packetClass.headerLength)}';
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// [Checksum]
   /// overridable for alternate field offsets and algorithms
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
 
   static int sum(Uint8List data) => data.sum;
 
@@ -164,12 +164,12 @@ abstract class Packet {
   @visibleForTesting
   int get checksumTest => checksum();
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// [Header]
   ///   header context included in 'this'
   ///   cannot be implemented in packet header, ffi.Struct cannot mixin,
   /// alternatively extension?
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
 
   void fillStartField() => asSync.startField = format.startId;
 
@@ -195,10 +195,10 @@ abstract class Packet {
 
   // void buildHeaderAs(PacketHeaderCaster caster, PacketId packetId) => caster(header).build(packetId, this);
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// alternatively move to header parser
   /// parse header
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   // use shorter type, casting as longer header on smaller bytes will throw. optionally use field offset
   PacketId? get packetId => format.idOf(asSync.idField); // idOf(idFieldPart.fieldValue(headerWords));
   PacketSyncId? parseSyncId() => switch (packetId) {
@@ -218,10 +218,10 @@ abstract class Packet {
   // bool get isLengthValid => isValidLength(headerAsPayloadType.lengthFieldValue);
   // bool get isChecksumValid => isValidChecksum(headerAsPayloadType.checksumFieldValue);
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// On partial header, truncated view, header status during parsing
   /// using cast length
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   // header struct cannot cast less than full length
   int? get startFieldOrNull => format.startFieldDef.getInOrNull(packetData);
   int? get idFieldOrNull => format.idFieldDef.getInOrNull(packetData);
@@ -253,11 +253,11 @@ abstract class Packet {
     null => false,
   };
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// [Payload]
   /// build with Id, pass Header reference
   /// typed with user input values, directly accepting struct would miss deriving meta
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   // full context is PacketId<V, dynamic> packetId, V requestArgs, TypedData buffer
 
   PayloadMeta buildPayloadAs<V>(PayloadCaster<V> caster, V values) => caster(payload).build(values, this);
@@ -442,9 +442,10 @@ abstract interface class PacketIdRequest<T, R> implements PacketId {
 extension PacketIdMethods on PacketId {
   String toStringAsHex() => '$name(0x${intId.toRadixString(16).toUpperCase().padLeft(2, '0')})';
 }
-////////////////////////////////////////////////////////////////////////////////
+
+///
 /// [Payload<V>]
-////////////////////////////////////////////////////////////////////////////////
+///
 /// extends Struct and Payload
 /// Payload need to contain a static cast function
 /// factory Child.cast(TypedData target);
@@ -484,6 +485,6 @@ class PayloadMeta {
   final Record? other;
 }
 
-////////////////////////////////////////////////////////////////////////////////
 ///
-////////////////////////////////////////////////////////////////////////////////
+///
+///

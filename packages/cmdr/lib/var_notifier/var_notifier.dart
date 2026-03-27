@@ -44,9 +44,9 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
   @override
   VarStatus statusOf(int statusCode) => varKey.varStatusOf(statusCode);
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Stringify
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   String get valueString => varKey.stringify<V>(value);
 
   @override
@@ -54,9 +54,9 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
 
   // ValueListenable<String> get toTextListenable => ValueNotifier<String>(valueString);
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Json
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   Map<String, Object?> toJson() {
     return {'varId': dataKey, 'varValue': numView, 'dataValue': dataValue, 'description': varKey.label};
   }
@@ -77,9 +77,9 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
   // for set before loading num limits
   void updateByFile(num newValue) => numView = newValue;
 
-  // ////////////////////////////////////////////////////////////////////////////////
+  // ///
   // /// PollingScope
-  // ////////////////////////////////////////////////////////////////////////////////
+  // ///
   // PollingScope? polling;
 
   // @override
@@ -113,9 +113,9 @@ extension VarNotifiers on Iterable<VarNotifier> {
 ///   - Sync local and remote values, with pending change tracking
 /// It be can further combined with a status notifier.
 abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V> {
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// Typed view [value] as view side
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   @override
   V get value => view;
   @override
@@ -140,9 +140,9 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
     }
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// [dataValue] Inbound data from server/packets
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   int get dataValue => data;
 
   void updateByData(int bytesValue) {
@@ -150,9 +150,9 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
     if (_viewValue == null) notifyListeners(); // Only notify if effective value changed
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// runtime variables
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   bool get hasPendingChanges => _viewValue != null;
 }
 
@@ -226,10 +226,10 @@ mixin class VarValue<V> {
   //     hasPendingChanges ? VarLastUpdate.view : VarLastUpdate.data;
   //   }
 
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   /// [numView] The num view representation of the [view] value as a num.
   /// serialization use
-  ////////////////////////////////////////////////////////////////////////////////
+  ///
   num get numView {
     return switch (V) {
       const (int) || const (double) || const (num) => view as num,
@@ -276,7 +276,7 @@ mixin class VarValue<V> {
 //   set view(V newValue) => data = dataOf(newValue);
 // }
 
-////////////////////////////////////////////////////////////////////////////////
+///
 /// [VarStatusNotifier]
 /// implement as mixin
 ///   optionally mixin to share notifier
@@ -290,7 +290,7 @@ mixin class VarValue<V> {
 /// S does not have to be generic if all vars share the same status type
 ///
 // todo as async status contain response status handle user iniiated await
-////////////////////////////////////////////////////////////////////////////////
+///
 abstract mixin class VarStatusNotifier implements ChangeNotifier {
   int _statusCode = 0;
   int get statusCode => _statusCode;

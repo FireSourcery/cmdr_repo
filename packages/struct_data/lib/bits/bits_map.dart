@@ -1,4 +1,6 @@
+import 'dart:collection';
 import 'package:collection/collection.dart';
+
 import '../general/index_map.dart';
 
 import "bit_field.dart";
@@ -10,7 +12,6 @@ part 'bool_map.dart';
 /// Enforce concrete keys as base.
 /// A special case of [FixedMap], all values retrieve from a [Bits] object
 /// Map operators implemented by subclass depending on V type, int or bool.
-//  alternatively as abstract class to enforce keys as data member
 abstract interface class BitsMap<K, V> with MapBase<K, V> implements Map<K, V> {
   const BitsMap._(this.keys);
 
