@@ -2,7 +2,6 @@ import 'dart:collection';
 import 'package:collection/collection.dart';
 
 import '../general/index_map.dart';
-
 import "bit_field.dart";
 
 part 'bool_map.dart';

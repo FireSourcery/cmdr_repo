@@ -6,17 +6,38 @@ import 'dart:math';
 import '../utilities/basic_types.dart';
 import '../general/enum_types.dart';
 import '../bits/bit_struct.dart';
+import '../src/type_markers.dart';
 import 'binary_codec.dart';
 
 export 'binary_codec.dart';
 export '../src/type_markers.dart';
 
-/// [NativeTypeBase]
-/// Descriptor using NativeType as marker only.
-/// Handles size and signed
+/// [BinaryFormat<S, V>] defines `value` handling
+/// type V to and from a binary representation as an [int],
+/// It provides a declarative way to handle various data formats,
+/// including integers, fixed-point numbers, booleans, signs, and enums,
+/// with support for custom encoding/decoding logic through handlers.
+/// [V] determines value conversion
+sealed class BinaryFormat<S extends NativeType, V> with NativeTypeBase<S> implements BinaryCodec<V> {
+  const BinaryFormat();
+
+  // NativeTypeFormat<S> get baseType => NativeTypeFormat<S>();
+  TypeKey<V> get viewType => TypeKey<V>();
+
+  ({int min, int max}) get binaryRange => range;
+
+  int encode(V value);
+  V decode(int raw);
+
+  @override
+  String toString() => 'BinaryFormat<${S.toString()}, ${V.toString()}>';
+}
+
+/// [NativeTag] - `StorageType`. Descriptor using NativeType as marker only.
+/// NativeType [S] determines the `size` and `signedness` of the underlying binary data.
+/// if lets unspecified, defaults to 32-bit signed int (Int32).
 mixin class NativeTypeBase<S extends NativeType> {
   const NativeTypeBase();
-  // static const NativeTypeFormat uint8 = NativeTypeFormat<Uint8>();
 
   ({int min, int max}) get range => switch (S) {
     const (Uint8) => (min: 0, max: 0xFF),
@@ -37,54 +58,45 @@ mixin class NativeTypeBase<S extends NativeType> {
     const (Uint16) || const (Int16) => 2,
     const (Uint32) || const (Int32) => 4,
     const (Bool) => 1,
+    const (Int) || const (NativeType) => 4, // default to 32-bit for int and NativeType
     _ => throw UnsupportedError('Unsupported type: $S'),
   };
   int get bitWidth => byteSize * 8;
 
   int _signExtend(int raw) => raw.toSigned(bitWidth);
-  int mask(int raw) => raw & ((1 << bitWidth) - 1);
+  // int mask(int raw) => raw & ((1 << bitWidth) - 1);
 
   bool get isSigned => range.min < 0;
   int Function(int)? get signExtension => isSigned ? _signExtend : null;
-
   int signedOf(int raw) => signExtension?.call(raw) ?? raw;
-
-  // static const NativeTypeFormat<Uint8> uint8 = NativeTypeFormat<Uint8>();
 }
 
-/// Serialization and storage on base [int] type
-/// V handle base value conversion
-sealed class BinaryFormat<S extends NativeType, V> with NativeTypeBase<S> implements BinaryCodec<V> {
-  const BinaryFormat();
-
-  // NativeTypeFormat<S> get baseType => NativeTypeFormat<S>();
-  TypeKey<V> get viewType => TypeKey<V>();
-
-  ({int min, int max}) get binaryRange => range;
-
-  int encode(V value);
-  V decode(int raw);
-
-  @override
-  String toString() => 'BinaryFormat<${S.toString()}, ${V.toString()}>';
-}
-
-/// Hierarchy axis on handling
+/// Hierarchy axis on handling, rather than storage
+/// Base sttorage type can be "inherited" by typedef with type marker
 // BinaryFormat
-//  ├─ NumFormat<S, V>          ← has signedness/width
-//  │   ├─ IntFormat<S>         ← raw integer pass-through
-//  │   └─ FractFormat<S>       ← fractional (reference-based)
+//  ├─ NumFormat<S, V>          ← (num) has signedness/width
+//  │   ├─ IntFormat<S>         ← (int) raw integer pass-through
+//  │   └─ FractFormat<S>       ← (double) fractional (reference-based)
 //  │       ├─ FixedPoint<S>    ← reference = 2^n  (Q format)
-//  │       ├─ ScalarBase10<S>  ← reference = 10^n
-//  │       └─ Angle16          ← wrapping angular
+//  │       ├─ FixedBase10<S>   ← reference = 10^n
+//  ├─ EnumFormat<V>
 //  ├─ BoolFormat
 //  ├─ SignFormat
-//  └─ EnumFormat<V>
+//
+//  return switch (_format) {
+//   EnumFormat() =>
+//   FractFormat() =>
+//   IntFormat() =>
+//   BoolFormat() =>
+//   SignFormat() =>
+//   BitStructFormat() =>
+//   Adcu() =>
+// }
 
 /// Int/Fract
 sealed class NumFormat<S extends NativeType, V extends num> extends BinaryFormat<S, V> {
   const NumFormat();
-  ({num min, num max}) get valueRange => range;
+  ({num min, num max}) get valueRange => binaryRange;
   // num clampValue(num value) => value.clamp(valueRange.min, valueRange.max);
 }
 
@@ -92,6 +104,7 @@ class IntFormat<S extends NativeType> extends NumFormat<S, int> {
   const IntFormat();
   int decode(int raw) => signedOf(raw);
   int encode(int value) => value.clamp(binaryRange.min, binaryRange.max);
+  get valueRange => binaryRange;
 }
 
 // expand to Double and Float as needed
@@ -100,7 +113,7 @@ abstract class FractFormat<S extends NativeType> extends NumFormat<S, double> {
   num get scalingFactor;
   get valueRange => (min: binaryRange.min / scalingFactor, max: binaryRange.max / scalingFactor);
   double decode(int raw) => signedOf(raw) / scalingFactor;
-  int encode(double value) => (value * scalingFactor).truncate().clamp(binaryRange.min, binaryRange.max);
+  int encode(double value) => (value * scalingFactor).round().clamp(binaryRange.min, binaryRange.max);
 }
 
 final class BoolFormat extends BinaryFormat<Bool, bool> {
@@ -111,45 +124,37 @@ final class BoolFormat extends BinaryFormat<Bool, bool> {
 
 // sign as int. alternatively map to EnumOffset
 final class SignFormat extends BinaryFormat<Int, int> {
-  const SignFormat([List<Enum>? ids]);
+  const SignFormat();
   get binaryRange => (min: -1, max: 1);
-  int decode(int raw) => raw.toSigned(8); // extend from
-  int encode(int value) => value.isNegative ? -1 : 1;
+  int decode(int raw) => raw.toSigned(8); // extend from 1 byte, effectively -1, 0, 1
+  int encode(int value) => value.isNegative ? -1 : 1; // stores as 64-bit truncated
 }
-
-// class EnumFormat<S extends NativeType, V extends Enum> extends BinaryFormat<S, V> with EnumCodecByIndex<V> {
-//   const EnumFormat(this.values);
-//   final List<V> values;
-//   get binaryRange => (min: 0, max: values.length - 1);
-// }
-
-// class EnumOffsetFormat<S extends NativeType, V extends Enum> extends EnumFormat<S, V> with EnumCodecByOffset<V> {
-//   const EnumOffsetFormat(super.values, this.zeroIndex);
-//   final int zeroIndex;
-//   get binaryRange => (min: 0 - zeroIndex, max: values.length - zeroIndex - 1);
-//   V decode(int data) => values.byIndex(signedOf(data) + zeroIndex);
-//   int encode(V view) => (view.index - zeroIndex).clamp(binaryRange.min, binaryRange.max);
-// }
 
 // default index and offset handling
 // sign extension, effectively ignored, size Int32
-class EnumFormat<V extends Enum> extends BinaryFormat<Int, V> with EnumCodecByIndex<V> {
+class EnumFormat<S extends NativeType, V extends Enum> extends BinaryFormat<S, V> with EnumCodecByIndex<V> {
   const EnumFormat(this.values);
   final List<V> values;
-  get binaryRange => (min: 0, max: values.length - 1);
+  get binaryRange => (min: 0, max: values.length - 1); // treated as unsigned
 }
 
-// without specifying base, extend at byte max value 127 for now
-class EnumOffsetFormat<V extends Enum> extends EnumFormat<V> with EnumCodecByOffset<V> {
-  const EnumOffsetFormat(super.values, this.zeroIndex);
+// Signed format must specify storage type S
+// throws when S is undefined, infered as [NativeType].
+class EnumOffsetFormat<S extends NativeType, V extends Enum> extends EnumFormat<S, V> with EnumCodecByOffset<V> {
+  const EnumOffsetFormat(super.values, this.zeroIndex) : assert(S != NativeType, 'Must specify storage type S for EnumOffsetFormat');
   final int zeroIndex;
   get binaryRange => (min: 0 - zeroIndex, max: values.length - zeroIndex - 1);
-  V decode(int data) => values.byIndex(data.toSigned(8) + zeroIndex);
+  V decode(int data) => values.byIndex(signedOf(data) + zeroIndex);
   int encode(V view) => (view.index - zeroIndex).clamp(binaryRange.min, binaryRange.max);
 }
 
-// for custom handling, separate from index-based. include list for view
-class EnumFormatByHandlers<V extends Enum> extends EnumFormat<V> {
+typedef EnumUint<V extends Enum> = EnumFormat<NativeType, V>;
+typedef EnumInt8<V extends Enum> = EnumOffsetFormat<Int8, V>;
+typedef EnumInt16<V extends Enum> = EnumOffsetFormat<Int16, V>;
+typedef EnumInt32<V extends Enum> = EnumOffsetFormat<Int32, V>;
+
+/// for custom handling, separate from index-based. include list for view
+class EnumFormatByHandlers<V extends Enum> extends EnumFormat<Int, V> {
   const EnumFormatByHandlers(super.values, {required this.decoder, required this.encoder});
 
   final DataDecoder<V> decoder;
@@ -159,14 +164,17 @@ class EnumFormatByHandlers<V extends Enum> extends EnumFormat<V> {
   int encode(V view) => encoder(view);
 }
 
-///
+// add as needed abstract class FloatingPoint<S extends NativeType> extends FractFormat<S> {
 abstract class FixedPoint<S extends NativeType> extends FractFormat<S> {
   const FixedPoint();
-  factory FixedPoint.nBits(int fractBits) = FixedPointN<S>;
-  factory FixedPoint.base10(int decimal) = FixedPointBase10<S>;
+  // ergonomic const def
+  // FixedPoint<Int16>.n(15)
+  const factory FixedPoint.n(int fractBits) = FixedPointN<S>;
+  const factory FixedPoint.base10(int decimal) = FixedPointBase10<S>;
   num get scalingFactor; // num scale 1.0
 }
 
+// define with parameter
 final class FixedPointN<S extends NativeType> extends FixedPoint<S> {
   const FixedPointN(this.fractBits);
   final int fractBits;
@@ -179,7 +187,7 @@ final class FixedPointBase10<S extends NativeType> extends FixedPoint<S> {
   num get scalingFactor => pow(10, decimalDigits);
 }
 
-/// base type is sufficient for iteration
+// base type is sufficient for iteration
 class BitStructFormat<K extends BitField> extends BinaryFormat<Int, BitStruct<K>> {
   const BitStructFormat(this.fields);
   final List<K> fields;
@@ -188,7 +196,8 @@ class BitStructFormat<K extends BitField> extends BinaryFormat<Int, BitStruct<K>
   int encode(BitStruct<K> value) => value.value;
 }
 
-/// marker for special handling closing the sealed hierarchy, simplifies caller defs
+/// Marker for special handling, closing the sealed hierarchy.
+// or move as a part of Quantity codec
 class Adcu extends NumFormat<Uint16, double> {
   const Adcu();
 
@@ -197,8 +206,9 @@ class Adcu extends NumFormat<Uint16, double> {
   int encode(double value) => value.toInt();
 }
 
-// Concrete fixed-point
+// binary_formats.dart
 
+// Concrete definitions for common formats.
 final class Fract16 extends FixedPoint<Int16> {
   const Fract16();
   num get scalingFactor => (1 << 15);
@@ -247,20 +257,28 @@ final class Angle16Rad extends Angle16 {
   get fullScale => 6.283185307179586;
 }
 
-/// 1 binary is .1f
-final class Decimal10 extends FixedPoint<Int16> {
+/// 1 binary -> 0.1f
+final class Decimal10<S extends NativeType> extends FixedPoint<S> {
   const Decimal10();
   get scalingFactor => 10;
 }
 
-/// 1 binary is 10.0f
+final class Decimal100<S extends NativeType> extends FixedPoint<S> {
+  const Decimal100();
+  get scalingFactor => 100;
+}
+
+/// 1 binary -> 10.0f
 // fract for now. alternative as int Integer10
-final class DecimalInv10 extends FixedPoint<Int16> {
+final class DecimalInv10<S extends NativeType> extends FixedPoint<S> {
   const DecimalInv10();
   get scalingFactor => 0.1;
 }
 
 /// Raw integer pass-through
+typedef Integer16 = IntFormat<Int16>;
+typedef Integer16U = IntFormat<Uint16>;
+
 final class Int16Int extends IntFormat<Int16> {
   const Int16Int();
 }
@@ -283,14 +301,4 @@ final class Int32Int extends IntFormat<Int32> {
 
 final class Uint32Int extends IntFormat<Uint32> {
   const Uint32Int();
-}
-
-/// User-defined fractBits, unsigned
-final class Ufixed16 extends FixedPointN<Uint16> {
-  const Ufixed16(super.fractBits);
-}
-
-/// User-defined fractBits, signed
-final class Fixed16 extends FixedPointN<Int16> {
-  const Fixed16(super.fractBits);
 }

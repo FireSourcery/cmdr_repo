@@ -105,14 +105,6 @@ void main() {
       expect(map[PersonField.age], 30);
     });
 
-    test('unmapEntriesByName parses string-keyed map to entries', () {
-      final entries = StructForm(PersonField.values).unmapEntriesByName(testJson).toList();
-      expect(entries.length, 3);
-      expect(entries.any((e) => e.key == PersonField.id && e.value == 1), isTrue);
-      expect(entries.any((e) => e.key == PersonField.name && e.value == 'Alice'), isTrue);
-      expect(entries.any((e) => e.key == PersonField.age && e.value == 30), isTrue);
-    });
-
     test('fromJson creates enum-keyed map from JSON', () {
       final map = StructForm(PersonField.values).fromJson(testJson);
       expect(map[PersonField.id], 1);

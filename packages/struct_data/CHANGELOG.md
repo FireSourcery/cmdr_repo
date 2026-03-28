@@ -1,4 +1,4 @@
-## 0.1.2
+## 0.1.0
 
 * Initial public release.
 * **Bits**: Bitwise operations on integers via `Bits` extension type, with `Bitmask` for field extraction and modification.
@@ -14,3 +14,8 @@
 * **Version model**: 4-field version number backed by `WordStruct` with string/JSON serialization.
 * **Utility extensions**: `NumLimits`, `LinearConversion`, `Sliceable`, `TypeKey`, null-safe helpers, and typed data slicing.
 * **TypedDataBuffer**: Fixed-size `BytesBuilder` with persistent buffer for packet assembly.
+
+
+## 0.1.3
+
+* fixes.

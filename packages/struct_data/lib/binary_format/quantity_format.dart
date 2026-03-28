@@ -1,10 +1,10 @@
 import '../utilities/basic_ext.dart';
 import '../utilities/num_ext.dart';
 import 'binary_format.dart';
-import 'binary_codec.dart';
 
 /// [Quantity Codec]
 // wrapper around num for runtime creation. conversion in 1 step. alternatively chain function calls
+// double only if other cases are handled
 class BinaryQuantityCodec<V extends num> implements BinaryCodec<V> {
   const BinaryQuantityCodec(this.format, this.numConversion, {this.numLimits});
 
@@ -29,7 +29,7 @@ class BinaryQuantityCodec<V extends num> implements BinaryCodec<V> {
   //     return numConversion.dataOfView(_clamp(view));
 
   static ({num min, num max})? numLimitsOf(NumDataConversion? conversion, BinaryFormat<dynamic, num> format) {
-    return conversion?.ifNonNull((p0) => format.binaryRange * p0.viewOfData(1));
+    return conversion?.ifNonNull((conv) => format.binaryRange * conv.viewOfData(1));
   }
 
   /// disabled conversion, direct data to view mapping
@@ -54,6 +54,10 @@ extension type const NumDataScale(num coefficient) {
   }
 }
 
+extension NumDataConversionOperators on NumDataConversion {
+  num get unit => viewOfData(1);
+}
+
 // Caller provides [NumConversion] for chaining
 // wrap format with numeric only conversion
 // class BinaryQuantityCodecWith<V extends num> implements BinaryCodec<V> {
@@ -67,4 +71,22 @@ extension type const NumDataScale(num coefficient) {
 
 //   @override
 //   int encode(V view) => format.encode(conversion.encode(view).to<V>());
+// }
+
+// extension BinaryCodecNumExt<V extends num> on BinaryCodec<V> {
+//   //   num decodeAsNum(int data) => decode(data);
+//   //   int encodeAsNum(num view) => encode(view as V);
+//   BinaryCodec fuseStatelessCodec(NumConversion conversion) => BinaryCodecByHandlers(
+//     decoder: (data) => conversion.decode(decode(data)),
+//     encoder: (view) => encode(conversion.encode(view as V) as V),
+//   );
+// }
+// mixin QuantityFormat on NumFormat<NativeType, num> {
+//   NumConversion get conversion;
+//   ({num min, num max})? get numLimits; // quantity limits.
+
+//   @override
+//   num decode(int data) => conversion.decode(super.decode(data));
+//   @override
+//   int encode(num view) => super.encode(conversion.encode(view));
 // }

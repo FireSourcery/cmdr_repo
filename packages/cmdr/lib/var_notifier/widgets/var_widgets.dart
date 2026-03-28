@@ -23,7 +23,7 @@ extension VarValueIntExt on VarValue<int> {
 }
 
 extension VarValueEnumExt<E extends Enum> on VarValue<E> {
-  List<E> get enumRange => (codec as EnumFormat<E>).values;
+  List<E> get enumRange => (codec as EnumFormat<dynamic, E>).values;
   Enum get valueAsEnum => codec.decode(data);
 }
 

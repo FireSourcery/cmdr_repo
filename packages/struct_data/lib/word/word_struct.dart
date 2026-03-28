@@ -35,6 +35,7 @@ extension type const WordStruct<K extends WordField>(Word word) implements Word,
 
 extension type const WordForm<K extends WordField>(List<K> _fields) implements StructForm<K, int> {}
 
+/// [WordStructBase] — abstract base for user-defined word struct subtypes.
 abstract class WordBase<T extends WordBase<T, K>, K extends WordField> with MapBase<K, int>, StructBase<T, K, int> {
   const WordBase(this.word);
   const WordBase.value(int value) : word = value as WordStruct<K>;

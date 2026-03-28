@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ffi';
 
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
@@ -8,6 +9,8 @@ import '../bytes/byte_struct.dart';
 import '../packet/packet_header.dart';
 
 export '../bytes/byte_struct.dart';
+
+//todo refactor
 
 /// Collective def of Packet format. Descriptor/'Class variables'
 // Abstract factory pattern
@@ -164,12 +167,11 @@ abstract class Packet {
   @visibleForTesting
   int get checksumTest => checksum();
 
-  ///
-  /// [Header]
-  ///   header context included in 'this'
-  ///   cannot be implemented in packet header, ffi.Struct cannot mixin,
-  /// alternatively extension?
-  ///
+  // todo move to header handler
+  //   header context included in 'this'
+  //   cannot be implemented in packet header, ffi.Struct cannot mixin,
+  // alternatively extension?
+  //
 
   void fillStartField() => asSync.startField = format.startId;
 
@@ -195,10 +197,7 @@ abstract class Packet {
 
   // void buildHeaderAs(PacketHeaderCaster caster, PacketId packetId) => caster(header).build(packetId, this);
 
-  ///
-  /// alternatively move to header parser
-  /// parse header
-  ///
+  //   move to header parser
   // use shorter type, casting as longer header on smaller bytes will throw. optionally use field offset
   PacketId? get packetId => format.idOf(asSync.idField); // idOf(idFieldPart.fieldValue(headerWords));
   PacketSyncId? parseSyncId() => switch (packetId) {

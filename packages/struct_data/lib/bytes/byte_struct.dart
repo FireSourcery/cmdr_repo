@@ -17,7 +17,6 @@ export 'typed_data_ext.dart';
 ///   mixin keyed access for serialization map
 ///
 /// Wrapper over extension type. see [StructData]
-
 /// view ByteData or ByteStruct subtypes as base type. sufficent for iterative access.
 extension type const ByteStruct<K extends ByteField>(ByteData _this) implements ByteData, StructData<K, int> {
   int get length => _this.lengthInBytes;
@@ -27,6 +26,7 @@ extension type const ByteForm<K extends ByteField>(List<K> _fields) implements S
   ByteStruct<K> cast(ByteData data) => ByteStruct<K>(data);
 }
 
+/// [ByteStructBase] — abstract base for user-defined byte struct subtypes.
 abstract class ByteStructBase<S extends ByteStructBase<S, K>, K extends ByteField> with StructBase<S, K, int> {
   const ByteStructBase(this.byteData);
 
@@ -45,7 +45,7 @@ abstract class ByteStructBase<S extends ByteStructBase<S, K>, K extends ByteFiel
   T? arrayOrNullAt<T extends TypedDataList<int>>([int offset = 0, int? length]) => byteData.arrayOrNullAt<T>(offset, length);
 }
 
-/// Typed Offset
+/// [ByteField] - a Typed Offset into a ByteStruct and TypedData. Defines a field of a ByteStruct by its offset and type.
 abstract mixin class ByteField<V extends NativeType> implements TypedField<V>, Field<int> {
   const factory ByteField(int offset) = _ByteField<V>;
 

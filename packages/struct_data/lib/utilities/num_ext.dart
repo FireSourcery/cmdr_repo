@@ -34,13 +34,18 @@ typedef NumConversion = ({NumConverter decode, NumConverter encode});
 typedef StatelessCodec<S, T> = ({S Function(T) decode, T Function(S) encode});
 
 extension type const Coefficient(num coefficient) implements num {
-  num of(num x) => (x * coefficient);
-  num invOf(num y) => (y / coefficient);
+  num call(num x) => (x * coefficient);
+  num inv(num y) => (y / coefficient);
 
+  // as functions
   NumConversion? get conversion {
     if (coefficient case 1 || 0 || num(isFinite: false)) return null; // no conversion needed for coefficient of 1, 0, or infinite (e.g. for unbounded quantities).
-    return (decode: of, encode: invOf);
+    return (decode: call, encode: inv);
   }
+}
+
+extension NumConversionOperators on NumConversion {
+  num get coefficient => decode(1);
 }
 
 // extension NumExt on num {

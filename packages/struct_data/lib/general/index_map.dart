@@ -46,10 +46,16 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
 
   IndexMap.filled(List<K> keys, V fill) : this._(keys, List<V>.filled(keys.length, fill, growable: false));
 
-  IndexMap.fromEntries(List<K> keys, Iterable<MapEntry<K, V>> entries)
-    : assert(keys.every((key) => entries.map((entry) => entry.key).contains(key))),
+  // IndexMap.fromEntries(List<K> keys, Iterable<MapEntry<K, V>> entries)
+  //   : assert(keys.every((key) => entries.map((entry) => entry.key).contains(key))),
+  //     _keysReference = keys,
+  //     handle ordering
+  //     _valuesBuffer = List.from((IndexMap<K, V?>.filled(keys, null)..addEntries(entries))._valuesBuffer, growable: false);
+
+  IndexMap.fromMap(List<K> keys, Map<K, V> map)
+    : assert(keys.every((key) => map.containsKey(key) || null is V)),
       _keysReference = keys,
-      _valuesBuffer = List.from((IndexMap<K, V?>.filled(keys, null)..addEntries(entries))._valuesBuffer);
+      _valuesBuffer = List.from(keys.map((key) => map[key] as V), growable: false);
 
   IndexMap.fromBase(IndexMap<K, V> state) : this._(state.keys, List<V>.from(state.values, growable: false));
 

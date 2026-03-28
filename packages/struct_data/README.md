@@ -1,23 +1,24 @@
 # struct_data
 
-A pure Dart library for bitwise operations, binary data manipulation, and structured data serialization. Provides bit-level, byte-level, and word-level typed structs with enum-keyed maps and binary codecs.
+A pure Dart library for structured data using field descriptors. Lightweight serialization without code generation. Bit-level, byte-level, and word-level typed structs inspired by C-style structs and unions. Enum-keyed maps and binary codecs for embedded protocols and data serialization.
 
 ## Features
 
-### Binary Data
+### Binary Structs
 
-- **Bit-level structs** (`BitStruct`, `BitField`) — Pack and extract fields within a single integer using bitmasks. Ideal for hardware registers, flags, and compact binary protocols.
-- **Byte-level structs** (`ByteStruct`, `ByteField`) — Keyed access to typed fields within `TypedData` buffers. Supports `Int8`, `Uint16`, `Int32`, etc. via `dart:ffi` native types.
-- **Word-level structs** (`WordStruct`, `WordField`) — Byte-aligned fields within a single 64-bit word. Useful for compact multi-field values like version numbers.
-- **Binary codecs** (`BinaryFormat`, `BinaryCodec`) — Encode/decode between typed views (`int`, `double`, `bool`, `Enum`) and raw binary integers. Includes fixed-point formats.
-- **Bits map collections** (`BitsMap`, `BoolMap`) — Efficient flag/boolean collections backed by a single integer.
+- **`BitStruct`** — Pack and extract arbitrary bit-width fields within a single integer using `Bitmask` descriptors. Ideal for hardware registers, flags, and compact binary protocols.
+- **`WordStruct`** — Byte-aligned fields within a single 64-bit integer. Useful for compact multi-field values like version numbers and calibration parameters.
+- **`ByteStruct`** — Keyed access to typed fields within `TypedData` buffers via `ByteField` descriptors. Supports `Int8`, `Uint16`, `Int32`, etc. for packet payloads and binary frames.
+- **`BinaryFormat` / `BinaryCodec`** — Encode and decode between typed values (`int`, `double`, `bool`, `Enum`) and raw binary integers. Includes fixed-point formats (`Fract16`, `Accum16`, etc.).
+- **`BitsMap` / `BoolMap`** — Efficient flag and boolean collections backed by a single integer.
 
-### General
+### Structured Data
 
-- **Serializable mixin** — Declarative field schema using enum keys with `getIn`/`setIn` accessors. Provides `toMap()`, `toJson()`, value equality, and immutable copy helpers.
-- **Enum-keyed maps** (`EnumMap`, `IndexMap`) — Type-safe, fixed-key maps backed by parallel arrays. Built-in JSON serialization via `Enum.name`.
-- **Utility extensions** — Numeric conversions, typed data slicing, null-safe helpers, and string trimming.
- 
+- **`StructData`** — Zero-cost extension type providing keyed `operator[]` access over any object via `Field` descriptors. No allocation, no wrapper overhead.
+- **`Serializable`** — Mixin for declarative JSON serialization using enum field keys. Provides `toMap()`, `toJson()`, value equality, and immutable copy helpers — without code generation.
+- **`EnumMap` / `IndexMap`** — Type-safe, fixed-key collections backed by parallel arrays. Built-in JSON serialization via `Enum.name`.
+- **Utility extensions** — Numeric conversions, typed data slicing, null-safe helpers, and string operations.
+
 ## Getting Started
 
 Add `struct_data` to your `pubspec.yaml`:
@@ -27,13 +28,14 @@ dependencies:
   struct_data: ^0.1.0
 ```
 
-Then import it:
+Import the full library or only the binary data subset:
 
 ```dart
-import 'package:struct_data/struct_data.dart';
+import 'package:struct_data/struct_data.dart';      // Full library
+import 'package:struct_data/binary_data.dart';       // Binary structs only
 ```
 
-> **Note:** This package uses `dart:ffi` native types (`Uint8`, `Int16`, etc.) as type markers for field sizing. 
+> **Note:** This package uses `dart:ffi` native types (`Uint8`, `Int16`, `Int32`, etc.) as compile-time type markers for field sizing. No FFI calls are made at runtime. Packet may selectively implement over ffi.Struct.
 
 ## Usage
 
@@ -49,9 +51,9 @@ print(flags.bitsAt(4, 4));     // 15 (upper nibble)
 
 // Named bit fields via enum
 enum StatusField with BitField {
-  ready(Bitmask(0, 1)),
-  error(Bitmask(1, 1)),
-  mode(Bitmask(2, 3));
+  ready(Bitmask(0, 1)),    // bit 0, width 1
+  error(Bitmask(1, 1)),    // bit 1, width 1
+  mode(Bitmask(2, 3));     // bits 2-4, width 3
 
   const StatusField(this.bitmask);
   @override
@@ -61,161 +63,224 @@ enum StatusField with BitField {
 final status = BitStruct<StatusField>.from(0x05);
 print(status[StatusField.ready]); // 1
 print(status[StatusField.mode]);  // 1
+
+// Immutable field update
+final errorStatus = status.withField(StatusField.error, 1);
 ```
 
-### Word-level structs (e.g., Version)
+### Word-level structs
+
+Byte-aligned fields packed in a single integer, suitable for version numbers, calibration parameters, and compact identifiers:
 
 ```dart
 // Built-in Version model — 4 byte-sized fields in a single int
-final version = VersionStandard(1, 2, 3, 0, name: 'App');
+const version = VersionStandard(1, 2, 3, 0, name: 'App');
 print(version.toStringAsVersion()); // 1.2.3.0
-print(version.toJsonVerbose());     // {fix: 0, minor: 3, major: 2, optional: 1}
 
-// Immutable copy
+// Immutable copy with modified field
 final patched = version.withField(VersionFieldStandard.fix, 1);
-print(patched); // 1.2.3.1
+print(patched.toStringAsVersion()); // 1.2.3.1
 
-// Chain with dot syntax
-final chain = chain.withField(fix, 8).withField(.minor, 7).withField(.major, 6).withField(.opt, 5) ;
-print(chain); // 5.6.7.8
+// Custom WordStruct with mixed field sizes
+enum SensorField<V extends NativeType> with WordField<V>, TypedField<V> {
+  deviceId<Uint16>(0),
+  sensorType<Uint8>(2),
+  flags<Uint8>(3),
+  reading<Int32>(4);
+
+  const SensorField(this.offset);
+  @override
+  final int offset;
+}
+
+final sensor = const WordStruct<SensorField>(Word.of32s(0x002AA005, 0x00001234));
+print(sensor[SensorField.deviceId]);   // 0x1234
+print(sensor[SensorField.reading]);    // 42
 ```
 
-### Enum-keyed serialization
+### Byte-level structs
+
+Keyed access to typed fields within `ByteData` buffers for packet payloads and binary protocols:
 
 ```dart
-// Define fields as an enum implementing SerializableKey
-enum PersonField<V extends Object> with SerializableKey<V> {
+enum TelemetryField<V extends NativeType> with ByteField<V>, TypedField<V> {
+  timestamp<Uint32>(0),
+  deviceId<Uint16>(4),
+  status<Uint8>(6),
+  value<Int32>(8);
+
+  const TelemetryField(this.offset);
+  @override
+  final int offset;
+}
+
+final buffer = ByteData(12);
+final frame = ByteStruct<TelemetryField>(buffer);
+frame[TelemetryField.timestamp] = 1700000000;
+frame[TelemetryField.deviceId] = 0x1234;
+frame[TelemetryField.value] = -42;
+
+print(frame[TelemetryField.value]); // -42
+```
+
+### Serializable mixin
+
+Declarative JSON serialization without code generation. Define a field enum with `SerializableField`, then mix `Serializable` into the data class:
+
+```dart
+enum PersonField<V extends Object> with SerializableField<V> {
   id<int>(),
   name<String>(),
   age<int>();
 
   @override
-  V getIn(Person struct) => switch (this) {
+  V getIn(covariant Person struct) => switch (this) {
     PersonField.id => struct.id as V,
     PersonField.name => struct.name as V,
     PersonField.age => struct.age as V,
   };
 
   @override
-  void setIn(Person struct, V value) => throw UnsupportedError('immutable');
+  void setIn(covariant Person struct, V value) => throw UnsupportedError('immutable');
 
   @override
   bool testAccess(Object struct) => struct is Person;
 }
 
-// Use StructForm for JSON round-tripping
-final map = StructForm(PersonField.values).fromJson({'id': 1, 'name': 'Alice', 'age': 30});
-print(map.toJson()); // {id: 1, name: Alice, age: 30}
-```
+class Person with Immutable<Person>, Serializable<Person> {
+  const Person(this.id, this.name, this.age);
 
-### Enum-keyed serialization mixin
+  Person.fromMap(Map<SerializableField, Object?> map)
+    : id = map[PersonField.id] as int,
+      name = map[PersonField.name] as String,
+      age = map[PersonField.age] as int;
 
-```dart 
-enum SerializablePersonField<V extends Object> with SerializableField<V> {
-  id<int>(),
-  age<int>(),
-  name<String>()
-  ;
+  factory Person.fromJson(Map<String, Object?> json) =>
+      Person.fromMap(const StructForm(PersonField.values).fromJson(json));
 
-  static const form = StructForm(SerializablePersonField.values);
-
-  @override
-  V getIn(SerializablePerson struct) {
-    return switch (this) {
-      SerializablePersonField.id => struct.id as V,
-      SerializablePersonField.age => struct.age as V,
-      SerializablePersonField.name => struct.name as V,
-    };
-  }
-
-  @override
-  void setIn(SerializablePerson struct, V value) => throw UnimplementedError('Person is immutable');
-
-  V? get defaultValue => null;
-
-  @override
-  bool testAccess(Object struct) => struct is Person;
-}
-
-class SerializablePerson with Immutable<SerializablePerson>, Serializable<SerializablePerson> {
-  const SerializablePerson(this.id, this.name, this.age);
-
-  final String name;
   final int id;
+  final String name;
   final int age;
 
-  SerializablePerson.fromMap(Map<SerializableField, Object?> base)
-    : id = base[SerializablePersonField.id] as int,
-      name = base[SerializablePersonField.name] as String,
-      age = base[SerializablePersonField.age] as int;
-
-  factory SerializablePerson.fromJson(Map<String, Object?> json) => SerializablePerson.fromMap(const StructForm(SerializablePersonField.values).fromJson(json));
-
-  List<SerializablePersonField> get keys => SerializablePersonField.values;
+  @override
+  List<PersonField> get keys => PersonField.values;
 
   @override
-  SerializablePerson copyWithMap(covariant Map<SerializableField, Object?> data) => SerializablePerson.fromMap(data);
+  Person copyWithMap(covariant Map<SerializableField, Object?> data) => Person.fromMap(data);
 }
 
-// Use StructForm for JSON round-tripping
-final person = SerializablePerson.fromJson({'id': 1, 'age': 30, 'name': 'Alice'}).withField(PersonField.age, 31).toJson(); 
-print(person); // {id: 1, name: Alice, age: 31}
+final person = Person.fromJson({'id': 1, 'name': 'Alice', 'age': 30});
+print(person.toJson());                                 // {id: 1, name: Alice, age: 30}
+print(person.withField(PersonField.age, 31).toJson());  // {id: 1, name: Alice, age: 31}
+print(person == Person(1, 'Alice', 30));                // true (value equality)
 ```
 
 ### Binary format codecs
 
+Encode and decode between typed values and raw binary integers:
+
 ```dart
-const format = Fract16();            // Q1.15 fixed-point
-print(format.decode(16384));         // 0.5
-print(format.encode(0.5));           // 16384
+const fract = Fract16();             // Q1.15 fixed-point
+print(fract.decode(16384));          // 0.5
+print(fract.encode(0.5));            // 16384
 
 const boolFmt = BoolFormat();
 print(boolFmt.decode(1));            // true
 print(boolFmt.encode(false));        // 0
+
+const int16 = Int16Int();
+print(int16.decode(0xFFFF));         // -1 (sign-extended)
 ```
 
-### Enum maps
+### Enum-keyed maps
+
+Type-safe, fixed-key collections with built-in JSON serialization:
 
 ```dart
 enum Color { red, green, blue }
 
-// Create a fixed-key map from enum values
 final colors = IndexMap.of(Color.values, [0xFF0000, 0x00FF00, 0x0000FF]);
-print(colors[Color.red]);            // 16711680
-print(colors.toJson());              // {red: 16711680, green: 65280, blue: 255}
+print(colors[Color.red]);           // 16711680
+print(colors.toJson());             // {red: 16711680, green: 65280, blue: 255}
 ```
 
 ## Architecture
 
+### Design Principles
+
+- **Zero-cost abstractions** — `BitStruct`, `WordStruct`, `ByteStruct`, `StructData`, and `Word` are Dart extension types. They provide typed, keyed access with no runtime allocation or wrapper overhead — the compiler erases them entirely.
+- **Field-as-descriptor** — Accessor logic lives on the key (`Field.getIn` / `Field.setIn`), not the struct. This keeps data classes plain and enables the same field schema to work across `StructData` views, `StructBase` subtypes, and serialization.
+- **Enum-driven schemas** — Field enums serve as both the schema definition and the serialization key. `Enum.name` provides JSON keys for free via `EnumMapByName`.
+- **No code generation** — All serialization, field dispatch, and binary encoding is defined in plain Dart. No `build_runner`, no generated files, no build step.
+- **Immutability-first** — Binary structs use functional `withField` / `withMap` copies. `Serializable` classes opt into immutable copies via the `Immutable` mixin.
+- **Compile-time const** — `BitStruct`, `WordStruct`, `Word`, and `Bits` values can be `const`, enabling use as enum entries and compile-time constants.
+
 ### Struct Hierarchy
 
-| Type | Backing Storage | Field Granularity | Use Case |
-|------|----------------|-------------------|----------|
-| `BitStruct` | Single integer | Bit ranges | Hardware registers, flags |
-| `WordStruct` | Single integer | Byte-aligned bit ranges | Calibration fields, version numbers |
-| `ByteStruct` | `TypedData` buffer | Byte offsets via `TypedField` | Multi-byte packet payloads |
+Three tiers of structured binary data, each backed by progressively larger storage:
+
+| Type | Backing Storage | Granularity | Typical Size | Use Case |
+|------|----------------|-------------|--------------|----------|
+| `BitStruct<K>` | `int` | Individual bit ranges | 1–64 bits | Hardware registers, flags, compact protocols |
+| `WordStruct<K>` | `int` (via `Word`) | Byte-aligned ranges | 1–8 bytes | Version numbers, calibration, identifiers |
+| `ByteStruct<K>` | `ByteData` | Typed byte offsets | Arbitrary | Packet payloads, telemetry frames |
+
+All three are extension types wrapping their backing storage. Field access is dispatched through enum keys implementing `BitField`, `WordField`, or `ByteField` respectively.
+
+### Core Abstractions
+
+| Type | Role |
+|------|------|
+| `StructData<K, V>` | Zero-cost keyed view over any object via `Field` keys |
+| `Field<V>` | Interface for field descriptors: `getIn`, `setIn`, `testAccess` |
+| `StructForm<K, V>` | Schema definition (wraps `List<K>`); bridges to `Map` and serialization |
+| `StructBase<S, K, V>` | Mixin for user-defined struct classes holding data in their own fields |
+| `Serializable<S>` | Mixin providing `toMap()`, `toJson()`, value equality via `SerializableField` keys |
+| `Immutable<S>` | Mixin providing `withField`, `withFields`, `withMap` for functional copies |
 
 ### Collections
 
 | Type | Key Type | Use Case |
 |------|----------|----------|
-| `EnumMap<E, V>` | Enum | Compile-time safe enum-keyed maps |
-| `IndexMap<V>` | int (via `.index`) | Dense integer-indexed collections |
-| `BitsMap` | BitField enum | Bit-flag collections |
-| `BoolMap` | Enum | Boolean-flag collections |
+| `EnumMap<E, V>` | `Enum` | Type-safe enum-keyed map with JSON via `Enum.name` |
+| `IndexMap<K, V>` | `Enum` (by `.index`) | Dense, fixed-size collection backed by parallel arrays |
+| `BitsMap<K>` / `BoolMap<K>` | `BitField` enum | Bit-flag and boolean collections backed by a single integer |
 
 ### Binary Formats
 
-| Format | Storage | View | Description |
-|--------|---------|------|-------------|
-| `IntFormat<S>` | `NativeType` | `int` | Raw integer pass-through with sign extension |
-| `FractFormat<S>` | `NativeType` | `double` | Fixed-point fractional |
-| `BoolFormat` | `Bool` | `bool` | Boolean 0/1 |
-| `EnumFormat<V>` | `Int` | `Enum` | Enum by index |
-| `FixedPoint<S>` | `NativeType` | `double` | Q-format fixed-point |
+Codecs for encoding typed values to and from integer storage:
 
+| Format | Dart Type | Description |
+|--------|-----------|-------------|
+| `IntFormat<S>` | `int` | Raw integer with optional sign extension |
+| `FractFormat<S>` | `double` | Fixed-point fractional (Q-format) |
+| `FixedPoint<S>` | `double` | Configurable Q-format fixed-point |
+| `BoolFormat` | `bool` | Boolean as 0/1 |
+| `EnumFormat<V>` | `Enum` | Enum by index |
+| `BinaryQuantityCodec<V>` | `num` | Value with scaling and unit conversion |
+
+## Benchmarks
+
+The `example/benchmark.dart` file provides local benchmarks for `BitStruct`, `WordStruct`, `ByteStruct`, and `Serializable`, with comparisons against published metrics for Protocol Buffers, json_serializable, freezed, and PackMe.
+
+| Approach | Encode | Decode | Wire Size | Codegen |
+|----------|--------|--------|-----------|---------|
+| `BitStruct` (8 fields)   | 0.013 µs    | 0.022 µs | Minimal (bit-packed) | None |
+| `WordStruct` (8 bytes)   | 0.039 µs    | 0.038 µs | Minimal (byte-packed) | None |
+| `ByteStruct` (16 bytes)  | 0.073 µs    | 0.079 µs | Exact (fixed layout) | None |
+| `Serializable mixin`     | 0.197 µs    | 0.150 µs | JSON | None |
+| json_serializable | ~0.3–0.5 µs | ~0.4–0.6 µs | JSON | build_runner |
+| freezed | ~0.3–0.5 µs | ~0.4–0.6 µs | JSON | build_runner |
+| Protocol Buffers | ~0.5–2.0 µs | ~0.5–2.0 µs | Compact (varint) | protoc |
+| PackMe | ~1.0–3.0 µs | ~1.0–3.0 µs | Compact (tagged) | packme CLI |
+
+Run with `dart run example/benchmark.dart`.
+
+ 
 ## Additional Information
 
-- **License:** MIT License 
+- **Minimum SDK:** Dart 3.10.0
+- **Dependencies:** `collection`, `meta`
+- **License:** MIT
 - **Repository:** [github.com/FireSourcery/cmdr](https://github.com/FireSourcery/cmdr)
-- **Issues:** [github.com/FireSourcery/cmdr/issues](https://github.com/FireSourcery/cmdr/issues) 
+- **Issues:** [github.com/FireSourcery/cmdr/issues](https://github.com/FireSourcery/cmdr/issues)

@@ -70,7 +70,11 @@ abstract mixin class SerializableField<V> implements Enum, Field<V> {
   void setIn(covariant Object struct, V value);
   bool testAccess(covariant Object struct);
 
-  bool isTypeOf(Object? object) => object is V;
+  bool isTypeOf(Object? value) => value is V;
+
+  V? validateType(Object? value) => ((value is V) ? value : null);
+
+  Type get type => V;
 }
 
 extension SerializableKeys<K extends SerializableField<V>, V> on StructForm<K, V> {
@@ -97,35 +101,45 @@ extension SerializableKeys<K extends SerializableField<V>, V> on StructForm<K, V
   }
 
   ///
-  Iterable<MapEntry<K, V>> unmapEntriesByName(Map<String, V> values) => fields.map((e) => MapEntry(e, values[e.name] as V));
+  // Iterable<MapEntry<K, V>> unmapEntriesByName(Map<String, V> values) => fields.map((e) => MapEntry(e, values[e.name] as V));
 
-  Iterable<MapEntry<K, V>> entriesFromJson(Map<String, Object?> json) {
-    if (json case Map<String, V> validMap) {
-      return unmapEntriesByName(validMap);
-    } else {
-      throw FormatException('Invalid JSON map for ${K.runtimeType}: $json');
-    }
-  }
+  // Iterable<MapEntry<K, V>> entriesFromJson(Map<String, Object?> json) {
+  //   if (json case Map<String, V> validMap) {
+  //     return unmapEntriesByName(validMap);
+  //   } else {
+  //     throw FormatException('Invalid JSON map for ${K.runtimeType}: $json');
+  //   }
+  // }
+}
 
+// V is object, non nullable version
+extension SerializableValueObjects<K extends SerializableField<Object>> on StructForm<K, Object> {
   bool compareTypes(Iterable<Object?> objects) => objects.indexed.every((e) => fields[e.$1].isTypeOf(e.$2));
 
-  Map<K, V>? validate(Map<K, V> struct) {
-    if (compareTypes(struct.values)) return struct;
-    return null;
+  FieldMap<K, Object> fromJson(Map<String, Object?> json) {
+    // Map<K, Object> enumMap = EnumMapFactory<K>(fields).fromJson<Object>(json);
+    // if (compareTypes(enumMap.values)) {
+    //   return enumMap;
+    // } else {
+    //   throw FormatException('Invalid JSON map for ${runtimeType}: $json - value types do not match expected types');
+    // }
+
+    return {
+      for (final e in fields)
+        // null as type error
+        if (e.validateType(json[e.name]) case Object? value)
+          e:
+              value ??
+              (throw FormatException(
+                'Invalid JSON map for $runtimeType: $json - value for key "${e.name}" is <${json[e.name].runtimeType}>${json[e.name]} but expected type is non-nullable ${e.type}',
+              )),
+    };
   }
 }
 
-// V is object
-extension SerializableKeysType<K extends SerializableField<Object>> on StructForm<K, Object> {
-  FieldMap<K, Object> fromJson(Map<String, Object?> json) {
-    Map<K, Object> enumMap = EnumMapFactory<K>(fields).fromJson<Object>(json); // EnumMapFactory handles V type
-    if (compareTypes(enumMap.values)) {
-      return enumMap;
-    } else {
-      throw FormatException('Invalid JSON map for ${K.runtimeType}: $json - value types do not match expected types');
-    }
-    // per item message
-    //  if (!key.isTypeOf(json[(key as Enum).name])) throw FormatException('$runtimeType: ${(key as Enum).name} is not of type ${key.type}');
+extension SerializableNullableType<K extends SerializableField<Object?>> on StructForm<K, Object?> {
+  FieldMap<K, Object?> fromJson(Map<String, Object?> json) {
+    return {for (final e in fields) e: e.validateType(json[e.name])};
   }
 }
 

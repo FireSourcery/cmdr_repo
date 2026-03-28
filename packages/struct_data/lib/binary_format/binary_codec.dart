@@ -1,5 +1,3 @@
-export 'binary_format.dart';
-
 ///
 /// [BinaryCodec<V>]
 ///

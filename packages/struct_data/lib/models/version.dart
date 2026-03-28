@@ -12,7 +12,7 @@ abstract base class Version<K extends WordField> extends WordBase<Version<K>, K>
   factory Version(int optional, int major, int minor, int fix, {String? name}) => VersionStandard(optional, major, minor, fix, name: name) as Version<K>;
   // prototype object that can be copied
   // Version.prototype
-  const factory Version.withType(List<K> keys, {int value, String? name}) = VersionConstruct<K>;
+  const factory Version.withType(List<K> keys, {int value, String? name}) = VersionPrototype<K>;
 
   // for inherting classes
   const Version.withData(super.word) : super();
@@ -114,9 +114,9 @@ abstract base class Version<K extends WordField> extends WordBase<Version<K>, K>
 
 /// protype objecct. flexible keys
 // ignore: missing_override_of_must_be_overridden
-base class VersionConstruct<K extends WordField> extends Version<K> {
-  const VersionConstruct(this.keys, {this.name, int value = 0}) : super.value(value);
-  const VersionConstruct.withData(this.keys, super.data, {this.name}) : super.withData();
+base class VersionPrototype<K extends WordField> extends Version<K> {
+  const VersionPrototype(this.keys, {this.name, int value = 0}) : super.value(value);
+  const VersionPrototype.withData(this.keys, super.data, {this.name}) : super.withData();
   @override
   final List<K> keys;
   @override
@@ -124,7 +124,7 @@ base class VersionConstruct<K extends WordField> extends Version<K> {
 
   @override
   Version<K> copyWithData(WordStruct<K> data, {String? name}) {
-    return VersionConstruct.withData(keys, data, name: name ?? this.name);
+    return VersionPrototype.withData(keys, data, name: name ?? this.name);
   }
 }
 
