@@ -18,6 +18,10 @@ abstract mixin class VarKey<V> implements ValueKey<int> {
   /// Data numeric conversion
   BinaryCodec<V> buildViewer();
 
+  // value stringifier
+  String stringify<V1>(V1 value);
+  // String stringify(V value);
+
   /// create with V type
   VarNotifier<V> create() => VarNotifier<V>.ofKey(this);
 
@@ -36,12 +40,7 @@ abstract mixin class VarKey<V> implements ValueKey<int> {
 
   List<VarKey>? get dependents;
 
-  /// Text View Widgets properties
-  // value stringifier
-  String stringify<V1>(V1 value);
-
-  int? get valueStringDigits;
-
+  /// Text View properties
   String get label; // Key label
   String? get suffix;
   String? get tip;
@@ -150,6 +149,7 @@ enum VarStatusUnknown with VarStatus, VarEnumStatus {
 //   num get viewMin => viewMins.min;
 // }
 
+// status combines with async state, split/include response status
 // sealed class VarState<V> {}
 
 // class VarData<V> extends VarState<V> {

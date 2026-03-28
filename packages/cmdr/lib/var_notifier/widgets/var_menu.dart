@@ -8,7 +8,7 @@ import 'var_widget.dart';
 export '../../widgets/flyweight_menu/flyweight_menu.dart';
 export '../../widgets/flyweight_menu/flyweight_menu_widgets.dart';
 
-/// creates the ValueWidgetBuilder<VarKey> using a widget constructor 'Widget Function(VarNotifier)'
+/// creates the `ValueWidgetBuilder<VarKey>` using a widget constructor 'Widget Function(VarNotifier)'
 class VarKeyWidgetBuilder {
   const VarKeyWidgetBuilder({required this.builder, this.varCache});
 

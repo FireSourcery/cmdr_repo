@@ -122,6 +122,8 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   @protected
   List<K> get keys; // Child class defines fixed keys
 
+  // StructForm<K, V> get type;
+
   /// Proxy to allow the same keys
   /// [Object] as [StructData<K, V>] data passed to Keys
   StructData<K, V> get data;

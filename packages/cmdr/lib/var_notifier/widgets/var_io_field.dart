@@ -1,16 +1,9 @@
-import 'package:struct_data/binary_format/quantity_format.dart';
 import 'package:flutter/material.dart';
 
-import 'package:struct_data/utilities/basic_types.dart';
-import 'package:cmdr/var_notifier/widgets/var_menu.dart';
-
 import '../../type_ext/stringifier.dart';
-import '../../widgets/flyweight_menu/flyweight_menu.dart';
-import '../../widgets/flyweight_menu/flyweight_menu_widgets.dart';
 import '../../widgets/io_field/io_field.dart';
 import '../var_notifier.dart';
-import 'var_widget.dart';
-import 'var_input_dialog.dart';
+import 'var_menu.dart';
 
 ///
 /// IO Field
