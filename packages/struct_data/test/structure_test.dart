@@ -91,6 +91,18 @@ class SerializablePerson with Immutable<SerializablePerson>, Serializable<Serial
   SerializablePerson copyWithMap(covariant Map<SerializableField, Object?> data) => SerializablePerson.fromMap(data);
 }
 
+enum SensorField<V extends NativeType> with WordField<V>, TypedField<V> {
+  deviceId<Uint16>(0),
+  sensorType<Uint8>(2),
+  flags<Uint8>(3),
+  reading<Int32>(4)
+  ;
+
+  const SensorField(this.offset);
+  @override
+  final int offset;
+}
+
 void main() {
   const testJson = {'id': 1, 'name': 'Alice', 'age': 30};
   const testJsonError = {'id': 1, 'name': 'Alice', 'age': '30'};

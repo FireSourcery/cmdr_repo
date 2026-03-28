@@ -96,6 +96,7 @@ enum SensorField<V extends NativeType> with WordField<V>, TypedField<V> {
 final sensor = const WordStruct<SensorField>(Word.of32s(0x002AA005, 0x00001234));
 print(sensor[SensorField.deviceId]);   // 0x1234
 print(sensor[SensorField.reading]);    // 42
+print(WordForm(SensorField.values)(sensor).toMap().toJson()); // {deviceId: 40965, sensorType: 42, flags: 0, reading: 4660} 
 ```
 
 ### Byte-level structs

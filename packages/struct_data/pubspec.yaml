@@ -7,9 +7,9 @@ repository: https://github.com/FireSourcery/cmdr
 topics:
   - binary
   - serialization
-  - bitwise
   - struct
   - typed-data
+  - embedded-systems
 
 resolution: workspace
 
@@ -22,5 +22,4 @@ dependencies:
 
 dev_dependencies:
   lints: ^6.1.0
-  mock_data: ^2.0.1
   test: ^1.25.8

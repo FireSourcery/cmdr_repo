@@ -77,3 +77,17 @@ class EnumCodecSign<V extends Enum> with EnumCodecByOffset<V> {
 //   @override
 //   EnumCodecSign<SignId> get codec => factory;
 // }
+
+// class EnumUnionCodec<V extends Enum> implements EnumCodec<V> {
+//   const EnumUnionCodec(this.codecs);
+
+//   final Map<Type, List<V>> codecs;
+//   @override
+//   List<V> get values => codecs[V] ?? (throw UnsupportedError('EnumUnionCodec: No codec for type $V'));
+
+//   @override
+//   V decode(int data) => values.byIndex(data);
+
+//   @override
+//   int encode(V view) => view.index;
+// }

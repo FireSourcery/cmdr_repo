@@ -14,7 +14,6 @@ extension type const EnumMapFactory<T extends Enum>(List<T> enums) implements Li
   // map can contain excess keys.
   Map<T, V> fromMapByName<V>(Map<String, V?> map) {
     if (null is V) return {for (final e in enums) e: map[e.name] as V};
-
     // handle case of Map<String, V?> while containing all values.
     return {for (final e in enums) e: map[e.name] ?? (throw FormatException('$enums: $map contains null value for key ${e.name} which is not of type $V'))};
 
@@ -63,7 +62,6 @@ extension type EnumMap<K extends Enum, V>._(Map<K, V> map) implements Map<K, V> 
 /// Enum.name base methods are applicable regardless of EnumMap FixedMap constraints
 /// [add] fills existing Map only
 extension EnumMapByName<K extends Enum, V> on Map<K, V> {
-
   Map<String, V> toMapByName() => map((k, v) => MapEntry(k.name, v));
 
   // does not add null even if V is nullable, unlike creatation
