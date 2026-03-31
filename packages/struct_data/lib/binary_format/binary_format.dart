@@ -245,12 +245,12 @@ final class Angle16 extends FractFormat<Uint16> {
   int encode(double value) => ((value % fullScale) * scalingFactor ~/ fullScale);
 }
 
-final class SAngle16 extends FractFormat<Uint16> {
+final class SAngle16 extends FractFormat<Int16> {
   const SAngle16();
   double get fullScale => 1.0;
   num get scalingFactor => 65536;
   get valueRange => (min: -32768, max: 32767);
-  double decode(int raw) => raw * fullScale / scalingFactor;
+  double decode(int raw) => signedOf(raw) * fullScale / scalingFactor;
   int encode(double value) => ((value % fullScale) * scalingFactor ~/ fullScale);
 }
 

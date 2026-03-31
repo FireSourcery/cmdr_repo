@@ -50,7 +50,8 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
   String get valueString => varKey.stringify<V>(value);
 
   @override
-  String toString() => '${describeIdentity(this)}(<$V>$value)($numView)';
+  // String toString() => '${describeIdentity(this)}(<$V>$value)($numView)';
+  String toString() => '${varKey.toString()}(<$V>$value)($numView)';
 
   // ValueListenable<String> get toTextListenable => ValueNotifier<String>(valueString);
 
