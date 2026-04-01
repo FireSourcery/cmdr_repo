@@ -174,15 +174,14 @@ mixin class VarValue<V> {
   /// [get] on transmit to server. serverData unless pending _viewValue is set
   /// value over view boundaries handle by [view]
   int get data => (_viewValue == null) ? serverData : dataOf(_viewValue as V);
+  // int get data => _viewValue?.chain(dataOf) ?? serverData;
 
   /// [set] on receive from server. always store serverData even if pending
   /// does not update/overwrite [view] if it was set by the UI
-  set data(int newValue) {
-    serverData = newValue; // codec handle sign extension
-    // or remove and manually call commit
-    // auto restore control to serverData for read/write-only cases
-    if (_viewValue case V val when val == viewOf(newValue)) _viewValue = null; // clear pending, view as serverData again, only if user value matches server value,
-  }
+  set data(int newValue) => serverData = newValue;
+  // // or remove and manually call commit
+  // // auto restore control to serverData for read/write-only cases
+  // if (_viewValue case V val when val == viewOf(newValue)) _viewValue = null; // clear pending, view as serverData again, only if user value matches server value,
 
   /// [view] value linked to UI
 
@@ -194,7 +193,6 @@ mixin class VarValue<V> {
   set view(V newValue) => _viewValue = newValue; // let codec handle clamping on [encode], view may be out of bounds
 
   /// separate clear pending.
-  /// submit/mark for outbound to server, not for view-only changes
   /// call on Status response to restore serverData as source
   /// restore get [view] to reflect serverData, [viewOf(serverData)],
   /// after calling, unaccepted [view] changes will be overwritten
@@ -203,6 +201,15 @@ mixin class VarValue<V> {
     if (_viewValue case V val) {
       serverData = dataOf(val); // update in case of write only var, no server polling updates
       _viewValue = null; // unblocks further [data] updates to affect [view]
+    }
+  }
+
+  // Only commit if the pending value hasn't changed since we sent it
+  // compare on serverData would not work for write-only vars
+  void commitViewOnResponse(int sentDataValue) {
+    if (_viewValue case V val when dataOf(val) == sentDataValue) {
+      serverData = sentDataValue;
+      _viewValue = null;
     }
   }
 

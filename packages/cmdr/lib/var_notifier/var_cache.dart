@@ -137,7 +137,6 @@ class VarCache {
 
   /// Update by Response Data
   // handle case where value is updatedByView again in between send and response
-  // isUpdatedByView should not clear on getdataids to block updateByData
   // sync note:
   //  there is a small window for error, if updateByDataResponse does not run to completion.
   //   ...
@@ -148,7 +147,7 @@ class VarCache {
   void _updateByDataResponse(int id, int value, int status) {
     if (_cache[id] case VarNotifier varNotifier) {
       varNotifier.updateStatusByData(status);
-      varNotifier.commitUserChanges();
+      varNotifier.commitViewOnResponse(value);
     }
   }
 
