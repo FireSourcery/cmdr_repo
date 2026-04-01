@@ -24,6 +24,7 @@ extension type const ByteStruct<K extends ByteField>(ByteData _this) implements 
 
 extension type const ByteForm<K extends ByteField>(List<K> _fields) implements StructForm<K, int> {
   ByteStruct<K> cast(ByteData data) => ByteStruct<K>(data);
+  int get length => _fields.fold(0, (sum, field) => sum + field.size);
 }
 
 /// [ByteStructBase] — abstract base for user-defined byte struct subtypes.

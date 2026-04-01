@@ -37,3 +37,20 @@ class BinaryCodecIdentity implements BinaryCodec<int> {
   @override
   int encode(int view) => view;
 }
+
+extension BinaryCodecAsNum<V> on BinaryCodec<V> {
+  // all types can be represented as num by binary value, num codecs use the codec.
+  num decodeAsNum(int data) {
+    return switch (V) {
+      const (double) || const (num) => decode(data) as num,
+      _ => data,
+    };
+  }
+
+  int encodeAsNum(num view) {
+    return switch (V) {
+      const (double) || const (num) => encode(view as V),
+      _ => view.toInt(),
+    };
+  }
+}

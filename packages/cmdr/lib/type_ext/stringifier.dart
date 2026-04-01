@@ -7,6 +7,7 @@ typedef GenericStringifier = String Function<T>(T input);
 // typedef GenericStringifier = String Function<T>(T? input); // non-nullable type, with nullable input, cases where T is used for selection
 
 /// select based on provided functions
+/// value string precedence: valueStringGetter > valueStringifier > valueGetter().toString()
 mixin StringifierSelect<T> {
   // ValueGetter<T?> get valueGetter;
   // ValueGetter<String>? get valueStringGetter;

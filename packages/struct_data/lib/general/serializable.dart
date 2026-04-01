@@ -16,6 +16,7 @@ export 'enum_map.dart';
 // class definition becomes slightly more verbose -> class Person with  Serializable<Person, PersonField>
 // however access can use dot notation -> person[.age] instead of person[PersonField.age]
 //   person.withField(.age, 31) instead of person.withField(PersonField.age, 31)
+// mixin Serializable<  K extends Field<Object?>> on Object implements StructBase<S, K, Object?>
 
 mixin Serializable<S extends Serializable<S>> on Object implements StructBase<S, SerializableField, Object?> {
   List<SerializableField<Object?>> get keys;

@@ -77,7 +77,7 @@ abstract interface class Field<V> {
 extension type const StructForm<K extends Field<V>, V>(List<K> fields) {
   // keys must be Enum or have index
   // index map handling all keys present
-  IndexMap<K, V> _structMap(StructData<K, V> struct) => IndexMap<K, V>.of(fields, struct.valuesAs(this));
+  IndexMap<K, V> _structMap(StructData<K, V> struct) => IndexMap<K, V>.of(fields, fields.map((k) => struct[k]));
   // Map<K, V> _hashMap(StructData<K, V> struct) => {for (final key in fields) key: struct[key]};
 
   Map<K, V> mapWithData(StructData<K, V> struct) => _structMap(struct);
@@ -122,7 +122,7 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   @protected
   List<K> get keys; // Child class defines fixed keys
 
-  // StructForm<K, V> get type;
+  // StructForm<K, V> get schema => StructForm<K, V>(keys);
 
   /// Proxy to allow the same keys
   /// [Object] as [StructData<K, V>] data passed to Keys
@@ -144,6 +144,9 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   /// result to serialise via [EnumMapByName].
   Map<K, V> toMap() => IndexMap.of(keys, values);
 }
+
+// mixin StructBase< K, V>, K extends Field<V>, V> {
+// mixin ImmutableStructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
 
 // Utility
 /// proxy over a map

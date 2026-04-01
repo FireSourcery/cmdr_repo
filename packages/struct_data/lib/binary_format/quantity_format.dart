@@ -8,6 +8,8 @@ import 'binary_format.dart';
 class BinaryQuantityCodec<V extends num> implements BinaryCodec<V> {
   const BinaryQuantityCodec(this.format, this.numConversion, {this.numLimits});
 
+  // BinaryQuantityCodec.of(this.format, this.numConversion, {({num min, num max})? numLimits}) : numLimits = numLimits ?? numLimitsOf(numConversion, format);
+
   BinaryQuantityCodec.of(this.format, {NumDataConversion? conversion, ({num min, num max})? numLimits})
     : numConversion = switch (format) {
         IntFormat() => _disabled, // handle with sign extension + bounds. // scaled down int (larger quantity) treat as fract for now.
@@ -17,7 +19,7 @@ class BinaryQuantityCodec<V extends num> implements BinaryCodec<V> {
       numLimits = numLimits ?? numLimitsOf(conversion, format);
 
   final NumFormat<dynamic, V> format;
-  final NumDataConversion numConversion;
+  final NumDataConversion numConversion; // directly from binary, ignoring format.
   final ({num min, num max})? numLimits; // quantity limits.
 
   @override
@@ -54,39 +56,32 @@ extension type const NumDataScale(num coefficient) {
   }
 }
 
-extension NumDataConversionOperators on NumDataConversion {
-  num get unit => viewOfData(1);
-}
-
 // Caller provides [NumConversion] for chaining
 // wrap format with numeric only conversion
-// class BinaryQuantityCodecWith<V extends num> implements BinaryCodec<V> {
-//   const BinaryQuantityCodecWith(this.format, this.conversion, {this.numLimits});
-//   final NumFormat<dynamic, V> format;
-//   final NumConversion conversion;
-//   final ({num min, num max})? numLimits;
+class _BinaryQuantityCodecWith<V extends num> implements BinaryCodec<V> {
+  const _BinaryQuantityCodecWith(this.format, this.conversion, {this.numLimits});
+  final BinaryCodec<V> format;
+  final NumConversion conversion;
+  final ({num min, num max})? numLimits;
 
-//   @override
-//   V decode(int data) => conversion.decode(format.decode(data)).to<V>();
+  @override
+  V decode(int data) => conversion.decode(format.decode(data)).to<V>();
 
-//   @override
-//   int encode(V view) => format.encode(conversion.encode(view).to<V>());
-// }
+  @override
+  int encode(V view) => format.encode(conversion.encode(view).to<V>());
+}
 
-// extension BinaryCodecNumExt<V extends num> on BinaryCodec<V> {
-//   //   num decodeAsNum(int data) => decode(data);
-//   //   int encodeAsNum(num view) => encode(view as V);
-//   BinaryCodec fuseStatelessCodec(NumConversion conversion) => BinaryCodecByHandlers(
-//     decoder: (data) => conversion.decode(decode(data)),
-//     encoder: (view) => encode(conversion.encode(view as V) as V),
-//   );
-// }
-// mixin QuantityFormat on NumFormat<NativeType, num> {
-//   NumConversion get conversion;
-//   ({num min, num max})? get numLimits; // quantity limits.
+extension BinaryCodecNumExt<V extends num> on BinaryCodec<V> {
+  BinaryCodec<num> fuseNumConversion(NumConversion conversion, {({num min, num max})? limits}) => _BinaryQuantityCodecWith(this, conversion, numLimits: limits);
+}
 
-//   @override
-//   num decode(int data) => conversion.decode(super.decode(data));
-//   @override
-//   int encode(num view) => super.encode(conversion.encode(view));
-// }
+extension NumFormatFuse<V extends num> on NumFormat<dynamic, V> {
+  BinaryCodec<num> fuseNumConversion(NumConversion conversion, {({num min, num max})? limits}) {
+    return BinaryQuantityCodec.of(this, conversion: NumDataScale(conversion.coefficient).conversion, numLimits: limits);
+  }
+}
+ 
+
+// extension BinaryCodecExt<V extends num> on BinaryCodec<V> {
+//   BinaryCodec fuse(Codec<V,T> conversion) 
+// } 

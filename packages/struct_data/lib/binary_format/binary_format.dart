@@ -18,6 +18,28 @@ export '../src/type_markers.dart';
 /// including integers, fixed-point numbers, booleans, signs, and enums,
 /// with support for custom encoding/decoding logic through handlers.
 /// [V] determines value conversion
+
+/// Hierarchy axis on handling, rather than storage
+/// Base sttorage type can be "inherited" by typedef with type marker
+// BinaryFormat
+//  ├─ NumFormat<S, V>          ← (num) has signedness/width
+//  │   ├─ IntFormat<S>         ← (int) raw integer pass-through
+//  │   └─ FractFormat<S>       ← (double) fractional (reference-based)
+//  │       ├─ FixedPoint<S>    ← reference = 2^n  (Q format)
+//  │       ├─ FixedBase10<S>   ← reference = 10^n
+//  ├─ EnumFormat<V>
+//  ├─ BoolFormat
+//  ├─ SignFormat
+//
+//  return switch (_format) {
+//   EnumFormat() =>
+//   FractFormat() =>
+//   IntFormat() =>
+//   BoolFormat() =>
+//   SignFormat() =>
+//   BitStructFormat() =>
+//   Adcu() =>
+// }
 sealed class BinaryFormat<S extends NativeType, V> with NativeTypeBase<S> implements BinaryCodec<V> {
   const BinaryFormat();
 
@@ -70,28 +92,6 @@ mixin class NativeTypeBase<S extends NativeType> {
   int Function(int)? get signExtension => isSigned ? _signExtend : null;
   int signedOf(int raw) => signExtension?.call(raw) ?? raw;
 }
-
-/// Hierarchy axis on handling, rather than storage
-/// Base sttorage type can be "inherited" by typedef with type marker
-// BinaryFormat
-//  ├─ NumFormat<S, V>          ← (num) has signedness/width
-//  │   ├─ IntFormat<S>         ← (int) raw integer pass-through
-//  │   └─ FractFormat<S>       ← (double) fractional (reference-based)
-//  │       ├─ FixedPoint<S>    ← reference = 2^n  (Q format)
-//  │       ├─ FixedBase10<S>   ← reference = 10^n
-//  ├─ EnumFormat<V>
-//  ├─ BoolFormat
-//  ├─ SignFormat
-//
-//  return switch (_format) {
-//   EnumFormat() =>
-//   FractFormat() =>
-//   IntFormat() =>
-//   BoolFormat() =>
-//   SignFormat() =>
-//   BitStructFormat() =>
-//   Adcu() =>
-// }
 
 /// Int/Fract
 sealed class NumFormat<S extends NativeType, V extends num> extends BinaryFormat<S, V> {

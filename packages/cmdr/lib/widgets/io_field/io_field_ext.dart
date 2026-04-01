@@ -1,11 +1,31 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 import 'io_field.dart';
 
-///
-/// Composites
-///
+/// connected widget using same config
 
+class IOFieldSlider<T extends num> extends StatelessWidget implements IOField<T> {
+  const IOFieldSlider(this.config, {super.key});
+
+  final IOFieldConfig<T> config;
+
+  void onChanged(double value) => config.valueChanged?.call(value.to<T>());
+  void onChangeEnd(double value) => config.valueSetter?.call(value.to<T>());
+
+  Widget builder(BuildContext context, Widget? child) {
+    final min = config.valueNumLimits!.min.toDouble();
+    final max = config.valueNumLimits!.max.toDouble();
+    final value = config.valueGetter()?.toDouble().clamp(min, max);
+    if (value == null) return const Text('Error');
+
+    return Slider.adaptive(label: config.idDecoration.labelText, min: min, max: max, value: value, onChanged: onChanged, onChangeEnd: onChangeEnd);
+  }
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(listenable: config.valueListenable, builder: builder);
+}
+
+// Composites
 // convenience for attaching the same config
 class IOFieldWithSlider<T extends num> extends StatelessWidget {
   const IOFieldWithSlider(this.config, {this.breakWidth = 400, super.key});
@@ -23,8 +43,6 @@ class IOFieldWithSlider<T extends num> extends StatelessWidget {
 
   final IOFieldConfig<T> config;
   final int breakWidth;
-
-  // Widget Function(BuildContext, Widget, Widget) builder;
 
   @override
   Widget build(BuildContext context) {
