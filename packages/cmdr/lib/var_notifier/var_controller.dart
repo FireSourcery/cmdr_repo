@@ -112,9 +112,11 @@ class VarStreamController extends VarCacheController {
   }
 
   PollingScope createScope(Iterable<VarKey> keys) {
-    final scope = PollingScope._(this, keys);
-    _scopes.add(scope);
-    return scope;
+    // final scope = PollingScope._(this, keys);
+    // _scopes.add(scope);
+    // return scope;
+
+    return PollingScope._(this, keys.where((e) => !e.isWriteOnly))..chain(_scopes.add);
   }
 
   void _releaseScope(PollingScope scope) => _scopes.remove(scope);

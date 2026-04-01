@@ -22,6 +22,15 @@ extension NullableOps<T extends Object?> on T? {
   };
 }
 
+extension ObjectOps<T extends Object> on T {
+  // obj.passTo(fn) returns the result of fn
+  // obj..passTo(fn) returns obj
+  R? chain<R>(R? Function(T) fn) => fn(this);
+
+  T? acceptIf(bool Function(T) test) => test(this) ? this : null;
+  T? reject(bool Function(T) test) => test(this) ? null : this;
+}
+
 extension StringTrimming on String {
   String trimNulls() => replaceAll(RegExp(r'^\u0000+|\u0000+$'), '');
   String keepNonNulls() => replaceAll(String.fromCharCode(0), '');

@@ -243,8 +243,9 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
 
   @override
   IOFieldConfig<V> copyWith({
-    InputDecoration? idDecoration,
     bool? isReadOnly,
+    // derived from varNotifier
+    InputDecoration? idDecoration,
     String? tip,
     Listenable? valueListenable,
     ValueGetter<V?>? valueGetter,

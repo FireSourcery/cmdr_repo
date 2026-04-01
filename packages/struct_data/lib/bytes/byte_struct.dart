@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:collection/collection.dart';
+
 import '../general/struct.dart';
 import 'typed_array.dart';
 import 'typed_field.dart';
@@ -19,12 +21,13 @@ export 'typed_data_ext.dart';
 /// Wrapper over extension type. see [StructData]
 /// view ByteData or ByteStruct subtypes as base type. sufficent for iterative access.
 extension type const ByteStruct<K extends ByteField>(ByteData _this) implements ByteData, StructData<K, int> {
-  int get length => _this.lengthInBytes;
+  int get size => _this.lengthInBytes;
 }
 
 extension type const ByteForm<K extends ByteField>(List<K> _fields) implements StructForm<K, int> {
+  ByteStruct<K> create() => ByteStruct<K>(ByteData(size));
   ByteStruct<K> cast(ByteData data) => ByteStruct<K>(data);
-  int get length => _fields.fold(0, (sum, field) => sum + field.size);
+  int get size => _fields.map((e) => e.size).sum;
 }
 
 /// [ByteStructBase] — abstract base for user-defined byte struct subtypes.
@@ -40,7 +43,7 @@ abstract class ByteStructBase<S extends ByteStructBase<S, K>, K extends ByteFiel
 
   List<K> get keys; // a method that is the meta contents, fieldsList
 
-  int get length => byteData.lengthInBytes;
+  int get size => byteData.lengthInBytes;
 
   T arrayAt<T extends TypedDataList<int>>([int offset = 0, int? length]) => byteData.arrayAt<T>(offset, length);
   T? arrayOrNullAt<T extends TypedDataList<int>>([int offset = 0, int? length]) => byteData.arrayOrNullAt<T>(offset, length);

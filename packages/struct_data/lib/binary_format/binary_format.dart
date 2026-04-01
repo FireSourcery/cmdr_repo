@@ -234,25 +234,38 @@ final class Percent16 extends FixedPoint<Uint16> {
   num get scalingFactor => (1 << 16);
 }
 
-// or FixedPoint
-/// [0, 65536] -> [0.0, 1)
-final class Angle16 extends FractFormat<Uint16> {
-  const Angle16();
+final class _Angle16<S extends NativeType> extends FractFormat<S> {
+  const _Angle16();
   double get fullScale => 1.0;
   num get scalingFactor => 65536;
   get valueRange => (min: 0.0, max: fullScale);
-  double decode(int raw) => raw * fullScale / scalingFactor;
-  int encode(double value) => ((value % fullScale) * scalingFactor ~/ fullScale);
-}
-
-final class SAngle16 extends FractFormat<Int16> {
-  const SAngle16();
-  double get fullScale => 1.0;
-  num get scalingFactor => 65536;
-  get valueRange => (min: -32768, max: 32767);
   double decode(int raw) => signedOf(raw) * fullScale / scalingFactor;
   int encode(double value) => ((value % fullScale) * scalingFactor ~/ fullScale);
 }
+
+typedef SAngle16 = _Angle16<Int16>;
+typedef UAngle16 = _Angle16<Uint16>;
+typedef Angle16 = _Angle16<Uint16>;
+
+// or FixedPoint
+/// [0, 65536] -> [0.0, 1)
+// final class Angle16 extends FractFormat<Uint16> {
+//   const Angle16();
+//   double get fullScale => 1.0;
+//   num get scalingFactor => 65536;
+//   get valueRange => (min: 0.0, max: fullScale);
+//   double decode(int raw) => raw * fullScale / scalingFactor;
+//   int encode(double value) => ((value % fullScale) * scalingFactor ~/ fullScale);
+// }
+
+// final class SAngle16 extends FractFormat<Int16> {
+//   const SAngle16();
+//   double get fullScale => 1.0;
+//   num get scalingFactor => 65536;
+//   get valueRange => (min: -32768, max: 32767);
+//   double decode(int raw) => signedOf(raw) * fullScale / scalingFactor;
+//   int encode(double value) => ((value % fullScale) * scalingFactor ~/ fullScale);
+// }
 
 /// [0, 65536] -> [0.0, 360.0)
 final class Angle16Deg extends Angle16 {

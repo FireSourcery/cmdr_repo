@@ -74,7 +74,7 @@ abstract interface class Field<V> {
 /// In combination with [StructData], provides a common data interface and serialization
 /// `StructData<PersonField, Object>(personA).valuesAs(PersonField.values).toMap();`
 ///
-extension type const StructForm<K extends Field<V>, V>(List<K> fields) {
+extension type const StructForm<K extends Field<V>, V>(List<K> fields) implements List<K> {
   // keys must be Enum or have index
   // index map handling all keys present
   IndexMap<K, V> _structMap(StructData<K, V> struct) => IndexMap<K, V>.of(fields, fields.map((k) => struct[k]));
@@ -87,10 +87,17 @@ extension type const StructForm<K extends Field<V>, V>(List<K> fields) {
 
 /// return context with both keys and data
 /// `StructForm(PersonField.values)(personA).toMap();`
+/// iterative operations
 extension TypedStructReference<K extends Field<V>, V> on ({StructForm<K, V> type, StructData<K, V> data}) {
   Map<K, V> toMap() => type.mapWithData(data);
   Iterable<V> get values => type.fields.map((k) => data[k]);
+
   Iterable<StructField<K, V>> get fields => type.fields.map((k) => data.field(k));
+  set fields(Iterable<StructField<K, V>> newValues) {
+    for (final element in newValues) {
+      data[element.key] = element.value;
+    }
+  }
 }
 
 typedef StructField<K extends Field<V>, V> = ({K key, V value});

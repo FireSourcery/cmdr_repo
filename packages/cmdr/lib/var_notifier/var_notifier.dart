@@ -55,6 +55,14 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
 
   // ValueListenable<String> get toTextListenable => ValueNotifier<String>(valueString);
 
+  // status with data
+  void commitByResponseStatus() {
+    if (status.isSuccess) {
+      serverData = data; // safe: serverData now matches what we sent
+      _viewValue = null; // unblocks further [data] updates to affect [view]
+    }
+  }
+
   ///
   /// Json
   ///
@@ -77,23 +85,6 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
 
   // for set before loading num limits
   void updateByFile(num newValue) => numView = newValue;
-
-  // ///
-  // /// PollingScope
-  // ///
-  // PollingScope? polling;
-
-  // @override
-  // void addListener(VoidCallback listener) {
-  //   polling?.add(this);
-  //   super.addListener(listener);
-  // }
-
-  // @override
-  // void removeListener(VoidCallback listener) {
-  //   super.removeListener(listener);
-  //   if (!hasListeners) polling?.remove(this);
-  // }
 }
 
 extension VarNotifiers on Iterable<VarNotifier> {
@@ -314,12 +305,12 @@ abstract mixin class VarStatusNotifier implements ChangeNotifier {
   bool get statusIsSuccess => statusCode == 0;
 }
 
-//////////////////////////////////////////////////////////////////////////////
+/////
 // User submit
 //   associated with UI component, instead of VarNotifier value
 //   not triggered by value changes
 //   Listeners to the VarNotifier value on another UI component will not be notified of submit
-//////////////////////////////////////////////////////////////////////////////
+/////
 class VarEventNotifier<V> extends ChangeNotifier {
   VarEventNotifier({required this.varNotifier, required this.onSubmit});
   final VarNotifier<V> varNotifier; // typed by Key. returning as dynamic.

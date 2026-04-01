@@ -1,9 +1,8 @@
-// ignore_for_file: constant_identifier_names
+// ignore_for_file: constant_identifier_names, annotate_overrides
 
 import 'dart:ffi';
 import 'dart:typed_data';
 
-import 'package:struct_data/packet/packet_header.dart';
 import 'package:struct_data/packet/packet.dart';
 export 'package:struct_data/packet/packet.dart';
 export 'package:struct_data/packet/packet_transformer.dart';
@@ -11,60 +10,34 @@ export 'package:struct_data/packet/packet_transformer.dart';
 class MotPacketInterface implements PacketFormat<MotPacket> {
   const MotPacketInterface();
 
-  @override
   int get lengthMax => 40;
-  @override
   int get lengthMin => 4;
-  @override
   int get syncHeaderLength => 4;
-  @override
   int get headerLength => 8;
-  @override
   int get startId => 0xA5;
-  @override
   Endian get endian => Endian.little;
 
-  @override
   ByteField<Uint8> get startFieldDef => const ByteField<Uint8>(0);
-  @override
   ByteField<Uint8> get idFieldDef => const ByteField<Uint8>(1);
-  @override
   ByteField<Uint8> get lengthFieldDef => const ByteField<Uint8>(2);
-
   ByteField<Uint8> get sequenceFieldDef => const ByteField<Uint8>(3);
-  @override
   ByteField<Uint16> get checksumFieldDef => const ByteField<Uint16>(4);
-
   ByteField<Uint16> get flexFieldDef => const ByteField<Uint16>(6);
 
-  @override
   PacketSyncId get ack => MotPacketSyncId.MOT_PACKET_SYNC_ACK;
-  @override
   PacketSyncId get nack => MotPacketSyncId.MOT_PACKET_SYNC_NACK;
-  @override
   PacketSyncId get abort => MotPacketSyncId.MOT_PACKET_SYNC_ABORT;
 
-  @override
   MotPacketId? idOf(int intId) => MotPacketId.of(intId);
-
-  @override
   MotPacketHeader headerOf(TypedData typedData) => MotPacketHeader.cast(typedData);
-  @override
   MotPacketHeaderSync syncHeaderOf(TypedData typedData) => MotPacketHeaderSync.cast(typedData);
-
-  @override
   MotPacket cast(TypedData typedData) => MotPacket.cast(typedData);
-
-  @override
   TypedDataCaster<MotPacket> get caster => MotPacket.cast;
-
-  @override
   List<ByteField<NativeType>> get keys => throw UnimplementedError();
 }
 
 class MotPacket extends Packet {
   MotPacket.cast(super.bytes);
-
   @override
   PacketFormat<Packet> get format => const MotPacketInterface();
 

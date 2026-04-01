@@ -37,6 +37,7 @@ extension type const BitStruct<K extends BitField>(BitData bitData) implements B
 /// Analogue of [StructForm] for the bit domain.
 /// `BitForm<K>(K.values).cast(ConstBits(raw as Bits));`
 extension type const BitForm<K extends BitField>(List<K> _fields) implements StructForm<K, int> {
+  BitStruct<K> create() => BitStruct<K>(MutableBits(0 as Bits));
   BitStruct<K> cast(BitData bitData) => BitStruct<K>(bitData);
 
   // alternatively BitField implements Bitmask

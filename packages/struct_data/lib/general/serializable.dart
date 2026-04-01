@@ -78,6 +78,7 @@ abstract mixin class SerializableField<V> implements Enum, Field<V> {
   Type get type => V;
 }
 
+// named Key
 extension SerializableKeys<K extends SerializableField<V>, V> on StructForm<K, V> {
   /// [fromJson] common implementation
   /// returrns a Map buffer to caller. necessary before the Serializable subtype memory layout is known

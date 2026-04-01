@@ -1,6 +1,6 @@
 // ignore_for_file: annotate_overrides
 
-import 'dart:typed_data';
+part of 'packet.dart';
 
 ///
 /// Struct Components Header/Payload
@@ -10,9 +10,9 @@ import 'dart:typed_data';
 //   int? operator [](K key) => key.getInOrNull(_struct);
 //   void operator []=(K key, int value) => key.setIn(_struct, value);
 // }
-///
-/// [Header]
-///
+
+// todo with struct and decriptor fields. headr does not need to build inplace.
+
 typedef PacketHeaderCaster = PacketHeader Function(TypedData typedData);
 // typedef PacketHeaderSyncCaster = PacketHeaderSync Function(TypedData typedData);
 // typedef PacketHeaderCaster<P extends PacketHeader> = P Function(TypedData typedData);
