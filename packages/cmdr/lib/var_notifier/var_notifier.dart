@@ -122,7 +122,7 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
   void updateByView(V newValue) => value = newValue;
 
   // also clear on updateByDataStatus
-  void commitUserChanges() => commitView();
+  // void commitUserChanges() => commitView();
 
   // Call to discard user changes
   void discardUserChanges() {
@@ -193,10 +193,9 @@ mixin class VarValue<V> {
   set view(V newValue) => _viewValue = newValue; // let codec handle clamping on [encode], view may be out of bounds
 
   /// separate clear pending.
-  /// call on Status response to restore serverData as source
   /// restore get [view] to reflect serverData, [viewOf(serverData)],
-  /// after calling, unaccepted [view] changes will be overwritten
   // No notification needed - view value doesn't change
+  // int   data    ;
   void commitView() {
     if (_viewValue case V val) {
       serverData = dataOf(val); // update in case of write only var, no server polling updates

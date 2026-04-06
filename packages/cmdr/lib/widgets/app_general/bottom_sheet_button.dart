@@ -20,8 +20,8 @@ class BottomSheetButton extends StatefulWidget {
   final Icon iconOpen;
   final Icon iconClose;
   final Icon? iconInactive;
-  final double heightScale;
-  final Widget? child; // initial bottom sheet
+  final double heightScale; // default
+  final Widget? child; // initial and default bottom sheet
   // final Color shadowClosed =  Colors.black;
   // final Color shadowOpen = Colors.black;
   // final double elevationOpen =  10;
@@ -35,7 +35,7 @@ class BottomSheetButton extends StatefulWidget {
 class BottomSheetButtonState extends State<BottomSheetButton> {
   late final BottomSheetThemeData theme = Theme.of(context).bottomSheetTheme;
   late final Color color = Theme.of(context).bottomAppBarTheme.color ?? Theme.of(context).colorScheme.surface;
-  late final double appBarHeight = Scaffold.of(context).appBarMaxHeight ?? 137;
+  late final double buttonBarHeight = Scaffold.of(context).appBarMaxHeight ?? 137;
   late final ShapeBorder? shape = widget.shape ?? theme.shape ?? const BeveledRectangleBorder();
   // late final Color shadowClosed = theme.shadowColor ?? Colors.black;
   // late final Color shadowOpen = theme.shadowColor ?? Colors.black;
@@ -49,6 +49,7 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
   // mutable
   PersistentBottomSheetController? bottomSheetController;
   late Widget? selectedBottomSheet = widget.child;
+  late double selectedHeight = MediaQuery.of(context).size.height * widget.heightScale;
   // Widget? fabActive  = fabOpen;
 
   Future<void> get closed async => await bottomSheetController?.closed;
@@ -56,10 +57,13 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
 
   // fab = fabClose;
   void expand([Widget? child, double? height]) {
-    late final sheetHeight = height ?? MediaQuery.of(context).size.height * widget.heightScale + appBarHeight; // repeat in case of screen size change
-    if (child != null) selectedBottomSheet = child;
+    late final sheetHeight = (height ?? (MediaQuery.of(context).size.height * widget.heightScale)) + buttonBarHeight; // repeat in case of screen size change
+    if (child != null) {
+      selectedBottomSheet = child;
+      selectedHeight = sheetHeight;
+    }
     if (selectedBottomSheet == null) return;
-    bottomSheetController = Scaffold.of(context).showBottomSheet(_bottomSheetBuilder, enableDrag: true, constraints: BoxConstraints.expand(height: sheetHeight));
+    bottomSheetController = Scaffold.of(context).showBottomSheet(_bottomSheetBuilder, enableDrag: true, constraints: BoxConstraints.expand(height: selectedHeight));
     bottomSheetController?.closed.whenComplete(_onClosed); // for drag close
     setState(() {});
     // setColor();
@@ -68,7 +72,7 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
   void collapse() => bottomSheetController?.close();
 
   /// call from global state
-  void show([Widget? child, double? height]) => WidgetsBinding.instance.addPostFrameCallback((_) => expand(child, height));
+  void show({Widget? child, double? height}) => WidgetsBinding.instance.addPostFrameCallback((_) => expand(child, height));
   void set(Widget child) => setState(() => selectedBottomSheet = child);
   void exit() => WidgetsBinding.instance.addPostFrameCallback((_) => _exit());
 
@@ -102,7 +106,7 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
   Widget build(BuildContext context) {
     return Container(
       alignment: Alignment.bottomCenter,
-      height: appBarHeight,
+      height: buttonBarHeight,
       decoration: BoxDecoration(
         image: DecorationImage(image: widget.backgroundImage, fit: BoxFit.fill),
       ),
