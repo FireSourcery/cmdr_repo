@@ -101,16 +101,14 @@ extension TypedStructReference<K extends Field<V>, V> on ({StructForm<K, V> type
 }
 
 typedef StructField<K extends Field<V>, V> = ({K key, V value});
-
-/// for shorthand return type def
-typedef StructFields<K extends Field<V>, V> = Iterable<({K key, V value})>;
+typedef StructFields<K extends Field<V>, V> = Iterable<StructField<K, V>>;
 
 /// [StructBase] — abstract base user subtype
 ///
 /// TypedStruct holds data and List keys TypeObject
 /// provide toMap()
-/// Handle User Subtype + [Serailizable] mixin
-/// mixin for convience, applies to further abstract classes
+/// Handle User Subtype + [Serializable] mixin
+/// mixin for convenience, applies to further abstract classes
 ///
 /// Unlike [StructData] (which wraps an _external_ object), subclasses of
 /// [StructBase] hold data directly in their own fields. [Field.getIn] /

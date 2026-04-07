@@ -51,5 +51,8 @@ export 'widgets/time_chart/time_chart.dart';
 
 // Variable notifier widgets
 export 'var_notifier/widgets/var_io_field.dart';
+export 'var_notifier/widgets/var_input_dialog.dart';
+export 'var_notifier/widgets/var_widget.dart';
+export 'var_notifier/widgets/var_widgets.dart';
 
 export 'widgets/layouts/layouts.dart';

@@ -60,7 +60,8 @@ class IOFieldConfig<T> {
     // this.useSliderBorder = false,
     this.useSwitchBorder = true,
     this.boolStyle = IOFieldBoolStyle.latchingSwitch,
-  }) : assert(!((T == num || T == int || T == double) && (valueNumLimits == null && valueEnumRange == null)));
+  }) : assert(!((T == num || T == int || T == double) && (valueNumLimits == null /*  && valueEnumRange == null */ ))),
+       assert(!((T == Enum) && (valueEnumRange != null)));
 
   final InputDecoration idDecoration; // using input decoration to hold label fields
   final bool isReadOnly;

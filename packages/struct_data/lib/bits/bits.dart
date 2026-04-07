@@ -166,15 +166,15 @@ base class MutableBits extends BitData {
 // although only MutableBits must wrap Bits, this way they both implement and derive the same interfaces
 @immutable
 base class ConstBits extends BitData {
-  const ConstBits(this._value);
+  const ConstBits._(this.bits);
+  const ConstBits(int bits) : this._(bits as Bits);
   const ConstBits.value(int value) : this(value as Bits);
 
-  final Bits _value;
-
   @override
-  Bits get bits => Bits(_value);
+  final Bits bits;
+
   @override
   set bits(Bits _) => throw UnsupportedError('Cannot modify unmodifiable');
   @override
-  int get width => _value.bitLength; // keyed view overwrite with width including leading zeros
+  int get width => bits.bitLength; // keyed view overwrite with width including leading zeros
 }

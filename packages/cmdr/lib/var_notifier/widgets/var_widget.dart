@@ -7,6 +7,34 @@ import '../var_context.dart';
 import '../var_notifier.dart';
 
 /// Widget tools
+/// End Widgets using VarNotifier
+///
+// Type-specific extensions — only visible with correct type
+extension VarValueNumExt on VarValue<num> {
+  ({num min, num max})? get numLimits {
+    if (codec is BinaryQuantityCodec) return (codec as BinaryQuantityCodec).numLimits ?? (codec as BinaryQuantityCodec).format.valueRange;
+    if (codec is NumFormat) return (codec as NumFormat).valueRange;
+    // return (min: 0, max: 0);
+  }
+
+  /// assert(V is num);
+  // bool get isOverLimit => (numView > codec.numLimits!.max);
+  // bool get isUnderLimit => (numView < codec.numLimits!.min);
+}
+
+// extension VarValueIntExt on VarValue<int> {
+//   ({int min, int max})? get intLimits => (codec as IntFormat?)?.binaryRange;
+// }
+
+// extension VarValueEnumExt<E extends Enum> on VarValue<E> {
+//   List<E> get enumRange => (codec as EnumFormat<dynamic, E>).values;
+//   Enum get valueAsEnum => codec.decode(data);
+// }
+
+extension VarValueBitsExt on VarValue<BitStruct> {
+  List<BitField> get fieldKeys => (codec as BitStructFormat).fields;
+  StructFields get valueAsBitFields => BitForm(fieldKeys)(codec.decode(data)).fields;
+}
 
 class VarKeyBuilder extends StatelessWidget {
   const VarKeyBuilder(this.varKey, this.builder, {this.varCache, super.key});

@@ -4,34 +4,6 @@ import 'package:flutter/material.dart';
 import '../var_notifier.dart';
 import 'var_widget.dart';
 
-/// End Widgets using VarNotifier
-///
-// Type-specific extensions — only visible with correct type
-extension VarValueNumExt on VarValue<num> {
-  ({num min, num max})? get numLimits {
-    if (codec is NumFormat) return (codec as NumFormat?)?.valueRange;
-    if (codec is BinaryQuantityCodec) return (codec as BinaryQuantityCodec).numLimits;
-  }
-
-  /// assert(V is num);
-  // bool get isOverLimit => (numView > codec.numLimits!.max);
-  // bool get isUnderLimit => (numView < codec.numLimits!.min);
-}
-
-// extension VarValueIntExt on VarValue<int> {
-//   ({int min, int max})? get intLimits => (codec as IntFormat?)?.binaryRange;
-// }
-
-// extension VarValueEnumExt<E extends Enum> on VarValue<E> {
-//   List<E> get enumRange => (codec as EnumFormat<dynamic, E>).values;
-//   Enum get valueAsEnum => codec.decode(data);
-// }
-
-// extension VarValueBitsExt on VarValue<BitStruct> {
-//   List<BitField> get bitsKeys => (codec as BitStructFormat).fields;
-//   BitStruct get valueAsBitFields => codec.decode(data);
-// }
-
 class VarSwitch extends StatelessWidget {
   const VarSwitch(this.varNotifier, {super.key});
 

@@ -26,9 +26,9 @@ abstract mixin class BitField implements Field<int> {
 
   // implements Bitmask maintains all masks as as list
   // int get shift => bitmask.shift; // index of the first bit
-  // int get width => bitmask.width; // number of bits in the field
+  int get width => bitmask.width; // number of bits in the field
 
-  // int get valueMax => (1 << width) - 1);
+  int get valueMax => (1 << width) - 1;
 
   // @override
   // int get defaultValue => 0; // default value for the type
