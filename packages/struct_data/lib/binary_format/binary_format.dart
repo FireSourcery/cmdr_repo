@@ -43,10 +43,11 @@ export '../src/type_markers.dart';
 sealed class BinaryFormat<S extends NativeType, V> with NativeTypeBase<S> implements BinaryCodec<V> {
   const BinaryFormat();
 
-  // NativeTypeFormat<S> get baseType => NativeTypeFormat<S>();
+  // NativeTypeBase<S> get baseType => NativeTypeBase<S>();
   TypeKey<V> get viewType => TypeKey<V>();
 
   ({int min, int max}) get binaryRange => range;
+  int binaryOf(int raw) => signExtension?.call(raw) ?? raw;
 
   int encode(V value);
   V decode(int raw);
@@ -73,7 +74,7 @@ mixin class NativeTypeBase<S extends NativeType> {
     _ => throw UnsupportedError('Unsupported type: $S'),
   };
 
-  int clampBase(int raw) => raw.clamp(range.min, range.max);
+  int clampBase(int value) => value.clamp(range.min, range.max);
 
   int get byteSize => switch (S) {
     const (Uint8) || const (Int8) => 1,
@@ -97,7 +98,9 @@ mixin class NativeTypeBase<S extends NativeType> {
 sealed class NumFormat<S extends NativeType, V extends num> extends BinaryFormat<S, V> {
   const NumFormat();
   ({num min, num max}) get valueRange => binaryRange;
-  // num clampValue(num value) => value.clamp(valueRange.min, valueRange.max);
+  num clampValue(num value) => value.clamp(valueRange.min, valueRange.max);
+  // V decode(int raw) => signedOf(raw) as V;
+  // int encode(V value) => value.clamp(binaryRange.min, binaryRange.max) as int;
 }
 
 class IntFormat<S extends NativeType> extends NumFormat<S, int> {
@@ -168,9 +171,11 @@ class EnumFormatByHandlers<V extends Enum> extends EnumFormat<Int, V> {
 abstract class FixedPoint<S extends NativeType> extends FractFormat<S> {
   const FixedPoint();
   // ergonomic const def
-  // FixedPoint<Int16>.n(15)
   const factory FixedPoint.n(int fractBits) = FixedPointN<S>;
-  const factory FixedPoint.base10(int decimal) = FixedPointBase10<S>;
+  // FixedPoint<Int16>.n(15)
+  const factory FixedPoint.d(int decimal) = FixedPointBase10<S>;
+  // FixedPoint<Int16>.d(2) scaling factor 100
+  // FixedPoint<Int16>.da(2) scaling factor 1/100
   num get scalingFactor; // num scale 1.0
 }
 
@@ -324,3 +329,22 @@ final class Int32Int extends IntFormat<Int32> {
 final class Uint32Int extends IntFormat<Uint32> {
   const Uint32Int();
 }
+
+// extension type BinaryValue<V>(int value) {
+//   /// UnionCodec
+//   // num get valueAsNum => numView;
+//   // int get valueAsInt => (numView).toInt();
+//   // double get valueAsDouble => (numView).toDouble();
+//   // bool get valueAsBool => (numView != 0);
+//   // String get valueAsString => String.fromCharCodes(valueAsBytes);
+//   // Uint8List get valueAsBytes => Uint8List(8)..buffer.asByteData().setUint64(0, numView as int, Endian.little);
+
+//   int asInt([IntFormat? format]) => format?.decode(value) ?? value;
+//   double asDouble([FractFormat? format]) => format?.decode(value) ?? value.toDouble();
+//   bool asBool() => (value != 0);
+//   // String get asString() => String.fromCharCodes(valueAsBytes);
+
+//   R as<R>(BinaryFormat<NativeType, R>? format) => format?.decode(value) as R;
+
+//   // R _asDefault<R>() {}
+// }

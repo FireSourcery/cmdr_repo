@@ -16,14 +16,14 @@ export 'word.dart';
 /// effectively,
 /// 8-byte [ByteData] backed by int, via
 /// [BitStruct] enforcing byte aligned fields
-/// immutable only istead of wrapping BitStruct
+/// immutable only, instead of wrapping BitStruct
 ///
 /// Implementation centric Map, up to 8 bytes
 /// serializable as a single [int]
-///
-/// subclass to passthrough constructors for convenience
-/// alternatively extension type WordStruct(BitsStruct _)
-/// caller wrap inner constructor for const. WordStruct(Word())
+//
+// subclass to passthrough constructors for convenience
+// alternatively extension type WordStruct(BitsStruct _)
+// caller wrap inner constructor for const. WordStruct(Word())
 extension type const WordStruct<K extends WordField>(Word word) implements Word, Bits, StructData<K, int> {
   // WordStruct.intiailizer(Map<WordField, int> map) : this(Bits.ofMap(map.map((key, value) => MapEntry(key.bitmask, value))) as Word);
   // int get byteLength => bits.byteLength;

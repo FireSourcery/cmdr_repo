@@ -19,7 +19,7 @@ export 'bits_map.dart';
 ///
 /// Wrap around [BitData] instead of Bits to pass mutable and immutable variants to BitData layer
 /// extending [BitData] would need to handle mutable and immutable variants,
-///
+//
 extension type const BitStruct<K extends BitField>(BitData bitData) implements BitData, StructData<K, int> {
   // unique in that the entire memory layout is known
   // can construct without keys
@@ -43,6 +43,7 @@ extension type const BitForm<K extends BitField>(List<K> _fields) implements Str
   // alternatively BitField implements Bitmask
   Bitmasks get bitmasks => _fields.map((e) => e.bitmask) as Bitmasks;
   int get totalWidth => bitmasks.totalWidth;
+  int get intMax => (1 << totalWidth) - 1;
 }
 
 ///
@@ -60,13 +61,14 @@ extension type const BitForm<K extends BitField>(List<K> _fields) implements Str
 /// [data] returns [BitStruct<K>(bitData)] — a zero-cost wrapper around [bitData]
 /// — so keyed access delegates through the same [Field]-based dispatch as [StructData].
 ///
-/// TypedBitStrucct
+/// TypedBitStruct
+// remove MapBase simplfies mixin
 abstract class BitStructBase<T extends BitStructBase<T, K>, K extends BitField> with MapBase<K, int>, StructBase<T, K, int> {
   /// caller compose for compile time const. const BitStructBase(ConstBits(11))
   // Directly extending BitData would give const constructors but would require handling mutable and immutable variants
   const BitStructBase(this.bitData);
   BitStructBase.from(int bits) : bitData = ConstBits(bits as Bits);
-  const BitStructBase.withData(BitStruct<K> data) : this(data); // base for copy, copys value
+  const BitStructBase.withData(BitStruct<K> this.bitData); // base for copy, copys value
 
   /// The underlying bit storage. enforced data implementation as direct field
   final BitData bitData;

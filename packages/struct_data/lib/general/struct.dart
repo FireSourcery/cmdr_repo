@@ -82,17 +82,17 @@ extension type const StructForm<K extends Field<V>, V>(List<K> fields) implement
 
   Map<K, V> mapWithData(StructData<K, V> struct) => _structMap(struct);
 
-  ({StructForm<K, V> type, StructData<K, V> data}) call(StructData<K, V> struct) => (type: this, data: struct);
+  ({StructForm<K, V> form, StructData<K, V> data}) call(StructData<K, V> struct) => (form: this, data: struct);
 }
 
 /// return context with both keys and data
 /// `StructForm(PersonField.values)(personA).toMap();`
 /// iterative operations
-extension TypedStructReference<K extends Field<V>, V> on ({StructForm<K, V> type, StructData<K, V> data}) {
-  Map<K, V> toMap() => type.mapWithData(data);
-  Iterable<V> get values => type.fields.map((k) => data[k]);
+extension TypedStructReference<K extends Field<V>, V> on ({StructForm<K, V> form, StructData<K, V> data}) {
+  Map<K, V> toMap() => form.mapWithData(data);
+  Iterable<V> get values => form.fields.map((k) => data[k]);
 
-  Iterable<StructField<K, V>> get fields => type.fields.map((k) => data.field(k));
+  Iterable<StructField<K, V>> get fields => form.fields.map((k) => data.field(k));
   set fields(Iterable<StructField<K, V>> newValues) {
     for (final element in newValues) {
       data[element.key] = element.value;
@@ -100,8 +100,11 @@ extension TypedStructReference<K extends Field<V>, V> on ({StructForm<K, V> type
   }
 }
 
+// FieldEntry, FieldValue, StructEntry
 typedef StructField<K extends Field<V>, V> = ({K key, V value});
 typedef StructFields<K extends Field<V>, V> = Iterable<StructField<K, V>>;
+
+// typedef FieldEntry<K extends Field<V>, V> = MapEntry<K, V>;
 
 /// [StructBase] — abstract base user subtype
 ///
@@ -129,7 +132,7 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   /// Typically returns `MyField.values` for an enum-based key type.
   @protected
   List<K> get keys; // Child class defines fixed keys
-
+  // List<K> get T;
   // StructForm<K, V> get schema => StructForm<K, V>(keys);
 
   /// Proxy to allow the same keys
@@ -143,7 +146,7 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   StructField<K, V> field(K key) => data.field(key);
   StructField<Field<R>, R> fieldAs<R>(Field<R> key) => data.fieldAs<R>(key);
 
-  // Iterable view requreing Fields list
+  // Iterable view requiring Fields list
   Iterable<V> get values => StructForm(keys)(data).values;
   Iterable<StructField<K, V>> get fields => StructForm(keys)(data).fields;
 

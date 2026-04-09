@@ -60,8 +60,9 @@ class IOFieldConfig<T> {
     // this.useSliderBorder = false,
     this.useSwitchBorder = true,
     this.boolStyle = IOFieldBoolStyle.latchingSwitch,
-  }) : assert(!((T == num || T == int || T == double) && (valueNumLimits == null /*  && valueEnumRange == null */ ))),
-       assert(!((T == Enum) && (valueEnumRange != null)));
+  });
+  //  : assert(!((T == num || T == int || T == double) && (valueNumLimits == null /*  && valueEnumRange == null */ ))),
+  //      assert(!((T == Enum) && (valueEnumRange == null)));
 
   final InputDecoration idDecoration; // using input decoration to hold label fields
   final bool isReadOnly;
@@ -137,7 +138,7 @@ abstract mixin class _IOFieldStringBox<T> implements IOField<T> {
 
   String _stringifyValue() {
     if (valueGetter() case T value) return _effectiveStringifier(value);
-    return 'null'; // or handle null
+    return ''; // or handle null
 
     // _effectiveNullableStringifier(valueGetter());
   }
