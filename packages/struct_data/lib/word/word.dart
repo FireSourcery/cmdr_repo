@@ -51,19 +51,23 @@ extension type const Word(int _value) implements Bits, int {
   int get byte5 => (this >> 40) & _mask8;
   int get byte6 => (this >> 48) & _mask8;
   int get byte7 => (this >> 56) & _mask8;
+  int byte(int index) => (this >> (index * 8)) & _mask8;
 
   ///
   /// Bytes Of Int
   /// cast [int] as [Word] for access
   ///
   /// TypedData Byte List operations
-  // converts singular register into bytes
+  // converts single register into bytes
 
   // fixed size buffer then trim view with length likely better performance than iterative build with flex size BytesBuilder
   // bytes.length always returns 8 from new buffer
   // ByteData.get[Word] must use same endian
   ByteData toByteData([Endian endian = Endian.little]) => ByteData(8)..setUint64(0, this, endian);
   Uint8List toBytes([Endian endian = Endian.little]) => Uint8List.sublistView(toByteData(endian));
+
+  // ByteData toByteData1(int lentgh, [Endian endian = Endian.little]) => ByteData(8)..setUint64(0, this, endian).trimWord(byteLength ?? this.byteLength, endian);
+  // Uint8List toBytes1(int lentgh, [Endian endian = Endian.little]) => Uint8List.sublistView(toByteData(endian));
 
   // ToBytesTrimmed
   ByteData toByteDataAs(Endian endian, [int? byteLength]) => toByteData(endian).trimWord(byteLength ?? this.byteLength, endian);
@@ -94,10 +98,6 @@ extension type const Word(int _value) implements Bits, int {
 ///
 ///
 ///
-extension TypedDataToInt on TypedData {
-  // valueAt max size is 8, when lengthInBytes >= 8, toInt64 avoids copying buffer
-  int toInt([Endian endian = Endian.little]) => ByteData.sublistView(this).toInt(endian);
-}
 
 extension SizedWord on ByteData {
   /// Word value for intervals not of pow2, e.g. 3 bytes, 5 bytes
@@ -125,6 +125,7 @@ extension SizedWord on ByteData {
   //   8 => getInt64(0, endian),
   // };
   // on ByteData as it is the designated type for int conversion
+  // valueAt max size is 8, when lengthInBytes >= 8, toInt64 avoids copying buffer
   int toInt([Endian endian = Endian.little]) => (lengthInBytes >= 8) ? getInt64(0, endian) : valueAt(0, lengthInBytes, endian);
 
   // big endian trim leading. little endian trim trailing
@@ -140,4 +141,8 @@ extension SizedWord on ByteData {
   ByteData trimLeading(int targetLength) => ByteData.sublistView(this, lengthInBytes - targetLength);
   // constructing trimAsLE back to Word preserves value
   ByteData trimTrailing(int targetLength) => ByteData.sublistView(this, 0, targetLength);
+}
+
+extension TypedDataToInt on TypedData {
+  int toInt([Endian endian = Endian.little]) => ByteData.sublistView(this).toInt(endian);
 }
