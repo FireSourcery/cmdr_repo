@@ -174,3 +174,7 @@ enum VersionFieldStandard with TypedField<Uint8>, WordField<Uint8> {
   @override
   final int offset;
 }
+
+extension WordAsVersion<K extends WordField> on Word {
+  Version<K> asVersion(List<K> keys, {String? name}) => Version.withType(keys, value: this, name: name);
+}

@@ -59,24 +59,9 @@ class EnumCodecSign<V extends Enum> with EnumCodecByOffset<V> {
   final int zeroIndex = 1; // default to offset of 1 for sign enums with -1, 0, 1 values
 }
 
-// optional or move to models
-///
-// abstract mixin class Sign<T extends Sign<T>> implements Enum {
-//   EnumCodecSign<T> get codec;
-//   // T of(int value) => codec.decode(value);
-
-//   int get value => codec.encode(this as T);
-// }
-
-// enum SignId with Sign<SignId> {
-//   minus, // -1
-//   none, //  0
-//   plus; //  1
-
-//   static const EnumCodecSign<SignId> factory = EnumCodecSign<SignId>(SignId.values);
-//   @override
-//   EnumCodecSign<SignId> get codec => factory;
-// }
+extension EnumCodecResolve<T extends Enum> on EnumCodec<T> {
+  T? resolve(int? data) => (data != null) ? decode(data) : null;
+}
 
 // class EnumUnionCodec<V extends Enum> implements EnumCodec<V> {
 //   const EnumUnionCodec(this.codecs);

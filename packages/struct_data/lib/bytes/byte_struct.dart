@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:collection/collection.dart';
 
 import '../general/struct.dart';
+import '../word/word.dart';
 import 'typed_array.dart';
 import 'typed_field.dart';
 
@@ -76,3 +77,7 @@ class _ByteField<V extends NativeType> with TypedField<V>, ByteField<V> {
   @override
   final int offset;
 }
+
+// extension ByteFieldExtension on ByteField {
+//   Word asWordOf(ByteStructBase struct) => Word(struct[this]);
+// }

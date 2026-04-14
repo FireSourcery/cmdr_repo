@@ -50,6 +50,7 @@ extension type const StructData<K extends Field<V>, V>(Object _data) implements 
 /// By defining accessors on the key rather than the struct, the struct itself can remain a plain object (or extension type wrapper).
 /// The key maintains the type scope of `V`.
 ///
+/// Object struct as StructData or StructBase
 abstract interface class Field<V> {
   /// Read this field's value from [struct].
   @protected
@@ -63,6 +64,10 @@ abstract interface class Field<V> {
   /// Defaults to `true` (fixed-schema). Override for optional/sparse fields.
   bool testAccess(covariant Object struct) => true;
 }
+
+// extension FieldExtension<K extends Field<V>, V> on K {
+//   V of(StructData<K, V> struct) => getIn(struct);
+// }
 
 /// [StructForm]
 /// StructData TypeClass

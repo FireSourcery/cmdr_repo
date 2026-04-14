@@ -16,9 +16,10 @@ class CsvFileCodec extends FileStringCodec<List<List<dynamic>>> {
 }
 
 class CsvFileMapCodec extends FileContentCodec<Map<String, List<dynamic>>, List<List<dynamic>>> {
-  CsvFileMapCodec({this.transposeToColumnMap = false}); // potential make const if needed
+  CsvFileMapCodec({this.transposeToColumnMap = false, this.skipEntries}); // potential make const if needed
 
   bool transposeToColumnMap;
+  List<String>? skipEntries;
 
   // @override
   // final FileStringCodec<List<List<dynamic>>> innerCodec = const CsvFileCodec();
@@ -53,19 +54,19 @@ class CsvFileMapCodec extends FileContentCodec<Map<String, List<dynamic>>, List<
   }
 
   /// Row per object
-  // Convert a CSV file to a List of Maps.
-  // Each map represents a row in the CSV file, with keys being the column names.
+  // Convert a CSV file to a Map of rows.
+  // Each row's first element is the key, remaining elements are the values.
   static Map<String, List<dynamic>> rowMapOf(List<List<dynamic>> csv) {
-    throw UnimplementedError();
-    // final fields = List<String>.from(csv.first);
-    // return csv.skip(1).map((row) => Map<String, dynamic>.fromIterables(fields, row));
+    return {for (final row in csv) row.first.toString(): row.skip(1).toList()};
   }
 
+  // Convert a Map of rows to a CSV file.
+  // Each map entry becomes a row: [key, ...values]
   static List<List<dynamic>> csvOfRowMap(Map<String, List<dynamic>> data) {
-    throw UnimplementedError();
-    // if (data.isEmpty) return [];
-    // final fields = data.keys.toList();
-    // return [fields, ...transpose(data.values)];
+    if (data.isEmpty) return [];
+    return [
+      for (final MapEntry(:key, :value) in data.entries) [key, ...value],
+    ];
   }
 }
 

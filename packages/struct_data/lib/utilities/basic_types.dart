@@ -28,18 +28,19 @@ mixin class TypeRestrictedKey<T extends S, S> {
 }
 
 // swap implementation
-// class StorageConverter<S, T> with Converter<S, T> {
-//   const StorageConverter(this._convert);
-//   final T Function(S input) _convert;
-//   @override
-//   T convert(S input) => _convert(input);
-// }
+// abstract mixin class SimpleCodec<S, T> implements Codec<S, T> {
+//   const SimpleCodec();
 
-// abstract mixin class StorageCodec<S, T> implements Codec<S, T> {
-//   const StorageCodec._();
-
-//   Converter<S, T> get encoder => StorageConverter(encode);
-//   Converter<T, S> get decoder => StorageConverter(decode);
 //   T encode(S input);
 //   S decode(T encoded);
+
+//   Converter<S, T> get encoder => _SimpleConverter(encode);
+//   Converter<T, S> get decoder => _SimpleConverter(decode);
+// Codec<S, R> fuse<R>(Codec<T, R> other) { ... }
+// }
+
+// class _SimpleConverter<S, T> extends Converter<S, T> {
+//   const _SimpleConverter(this._convert);
+//   final T Function(S input) _convert;
+//   T convert(S input) => _convert(input);
 // }
