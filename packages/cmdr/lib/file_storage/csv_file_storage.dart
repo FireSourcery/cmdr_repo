@@ -15,14 +15,12 @@ class CsvFileCodec extends FileStringCodec<List<List<dynamic>>> {
   List<List<dynamic>> decode(String encoded) => const CsvDecoder().convert(encoded);
 }
 
-class CsvFileMapCodec extends FileContentCodec<Map<String, List<dynamic>>, List<List<dynamic>>> {
+class CsvFileMapCodec extends FileCodec<Map<String, List<dynamic>>, List<List<dynamic>>> {
   CsvFileMapCodec({this.transposeToColumnMap = false, this.skipEntries}); // potential make const if needed
 
   bool transposeToColumnMap;
   List<String>? skipEntries;
 
-  // @override
-  // final FileStringCodec<List<List<dynamic>>> innerCodec = const CsvFileCodec();
   @override
   List<List> encode(Map<String, List> decoded) => transposeToColumnMap ? csvOfColumnMap(decoded) : csvOfRowMap(decoded);
   @override
@@ -72,12 +70,12 @@ class CsvFileMapCodec extends FileContentCodec<Map<String, List<dynamic>>, List<
 
 abstract class CsvFileStorage extends FileStorage<Map<String, List<dynamic>>> {
   CsvFileStorage({super.defaultName, super.extensions = const ['csv', 'txt'], bool transposeToColumnMap = true})
-    : _fileCodec = FileStorageCodec.fuse(CsvFileMapCodec(transposeToColumnMap: transposeToColumnMap), const CsvFileCodec());
+    : _stringCodec = CsvFileMapCodec(transposeToColumnMap: transposeToColumnMap).fuse(const CsvFileCodec());
 
-  final FileStorageCodec<Map<String, List<dynamic>>, String> _fileCodec;
+  final Codec<Map<String, List<dynamic>>, String> _stringCodec;
 
   @override
-  FileStorageCodec<Map<String, List<dynamic>>, String> get fileCodec => _fileCodec;
+  Codec<Map<String, List<dynamic>>, String> get stringCodec => _stringCodec;
 
   @override
   Object? fromContents(Map<String, List> contents);

@@ -59,7 +59,7 @@ abstract class FileLoadButton extends StatelessWidget {
                   },
                 ),
                 // file loading, then operation status
-                _StatusText(fileNotifier),
+                FileOperationText(fileNotifier),
               ],
             ),
             actions: <Widget>[
@@ -142,7 +142,7 @@ class FileConfirmationDialogButton extends StatelessWidget {
                             valueListenable: fileNotifier.progressNotifier,
                             builder: (context, value, child) => LinearProgressIndicator(value: value),
                           ),
-                          _StatusText(fileNotifier),
+                          FileOperationText(fileNotifier),
                         ],
                       ),
                     };
@@ -211,16 +211,12 @@ class FileConfirmationDialogButton extends StatelessWidget {
       );
     }
 
-    return ElevatedButton.icon(
-      onPressed: showDialogBegin,
-      icon: Icon(iconData),
-      label: Text(title),
-    );
+    return ElevatedButton.icon(onPressed: showDialogBegin, icon: Icon(iconData), label: Text(title));
   }
 }
 
-class _StatusText extends StatelessWidget {
-  const _StatusText(this.fileNotifier);
+class FileOperationText extends StatelessWidget {
+  const FileOperationText(this.fileNotifier, {super.key});
   final FileStorageNotifier fileNotifier;
 
   @override
@@ -248,12 +244,7 @@ extension FileStoragePickFile on FileStorage {
   /// File picker using settings
   Future<File?> pickFile({List<String>? allowedExtensions}) async {
     allowedExtensions ??= extensions;
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: allowedExtensions,
-      lockParentWindow: true,
-      allowMultiple: false,
-    );
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: allowedExtensions, lockParentWindow: true, allowMultiple: false);
     return (result != null) ? File(result.files.single.path!) : null;
   }
 
@@ -266,7 +257,7 @@ extension FileStoragePickFile on FileStorage {
         allowedExtensions: allowedExtensions,
         lockParentWindow: true,
         dialogTitle: 'Save As:',
-        fileName: defaultName,
+        fileName: '${defaultName ?? 'untitled'}.${allowedExtensions?.first ?? 'txt'}',
       );
       return (path != null) ? File(path) : null;
     } else {

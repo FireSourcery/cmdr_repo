@@ -6,13 +6,13 @@ typedef JsonMap = Map<String, Object?>;
 
 class JsonFileCodec extends FileStringCodec<JsonMap> {
   const JsonFileCodec();
-  static const JsonEncoder encoder = JsonEncoder.withIndent(' ');
-  static const JsonDecoder decoder = JsonDecoder();
+  static const JsonEncoder _encoder = JsonEncoder.withIndent(' ');
+  static const JsonDecoder _decoder = JsonDecoder();
 
   @override
-  JsonMap decode(String encoded) => decoder.convert(encoded);
+  JsonMap decode(String encoded) => _decoder.convert(encoded);
   @override
-  String encode(JsonMap input) => encoder.convert(input);
+  String encode(JsonMap input) => _encoder.convert(input);
 }
 
 abstract class JsonFileStorage extends FileStorage<JsonMap> {
@@ -21,7 +21,7 @@ abstract class JsonFileStorage extends FileStorage<JsonMap> {
   factory JsonFileStorage.handlers(Object? Function(JsonMap value) fromJson, JsonMap Function() toJson, {String? defaultName}) = _JsonFileStorageWithHandlers;
 
   @override
-  JsonFileCodec get fileCodec => const JsonFileCodec();
+  JsonFileCodec get stringCodec => const JsonFileCodec();
 
   @override
   Object? fromContents(JsonMap contents);

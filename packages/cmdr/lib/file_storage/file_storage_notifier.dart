@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:async/async.dart';
 import 'package:flutter/foundation.dart';
 
 import 'file_storage.dart';
@@ -16,7 +17,6 @@ abstract mixin class FileStorageNotifier<T> implements FileStorage<T> {
   File? get file => fileNotifier.value;
   String? get filePath => file?.path;
 
-  // // FileStorageStatus status = FileStorageStatus.ok;
   // final ValueNotifier<FileStorageStatus> statusNotifier = ValueNotifier(FileStorageStatus.ok);
   final ValueNotifier<String?> statusNotifier = ValueNotifier(null);
   String get status => statusNotifier.value ?? 'Ok';
@@ -39,6 +39,18 @@ abstract mixin class FileStorageNotifier<T> implements FileStorage<T> {
   Future<void> get userConfirmed => userConfirmation.future;
   void initUserConfirmation() => userConfirmation = Completer<void>();
   void confirm() => userConfirmation.complete();
+
+  // Future<Result<R>> processWithNotify1<R>(Future<R> Function() operation) async {
+  //   statusNotifier.value = null;
+  //   try {
+  //     return await operation().then(Result.value);
+  //   } on Exception catch (e) {
+  //     statusNotifier.value = e.toString();
+  //   } catch (e) {
+  //     statusNotifier.value = 'Unknown Error: $e';
+  //   } finally {}
+  //   return Result.error('Operation Failed');
+  // }
 
   // process with notify, async status,
   // error thrown will pass to widget
@@ -65,46 +77,18 @@ abstract mixin class FileStorageNotifier<T> implements FileStorage<T> {
   // await file resolve file set
   // dispatch fileNotifier update after parsing
   Future<T?> openWithNotify(Future<File?> value) async => processWithNotify<T?>(() async => await openAsync(pickedFile = value)).whenComplete(() async => file = await pickedFile);
-  Future<Object?> openParseWithNotify(Future<File?> value) async => processWithNotify<Object?>(() async => await openParseAsync(pickedFile = value)).whenComplete(() async => file = await pickedFile);
+  Future<Object?> openParseWithNotify(Future<File?> value) async => processWithNotify<Object?>(() async => await openContents(pickedFile = value)).whenComplete(() async => file = await pickedFile);
 
   Future<File?> saveWithNotify(Future<File?> value, T contents) async => processWithNotify<File?>(() async => await saveAsync(pickedFile = value, contents));
-  Future<File?> saveBuildWithNotify(Future<File?> value) async => processWithNotify<File?>(() async => await saveBuildAsync(pickedFile = value));
-
-  // remap status shared with exception
-  // Future<T?> tryReadFile(File file) async {
-  //   try {
-  //     return await read(file);
-  //   } on FormatException {
-  //     // throw const FormatException('Invalid File');
-  //     throw FileStorageStatus.invalidFile;
-  //   } on Exception {
-  //     // throw Exception('File Read Error');
-  //     throw FileStorageStatus.fileReadError;
-  //   } catch (e) {
-  //     throw FileStorageStatus.unknownError;
-  //   }
-  //   return null;
-  // }
-
-  // Future<File> tryWriteFile(File file, T contents) async {
-  //   try {
-  //     return await write(file, contents);
-  //   } on Exception {
-  //     // throw Exception('File Write Error');
-  //     throw FileStorageStatus.fileWriteError;
-  //   } catch (e) {
-  //     throw FileStorageStatus.unknownError;
-  //   }
-  //   return file;
-  // }
+  Future<File?> saveBuildWithNotify(Future<File?> value) async => processWithNotify<File?>(() async => await saveContents(pickedFile = value));
 }
 
 ///
 /// with View State
 ///
-// class FileStorageWithNotifier<T> extends FileStorage<T> with FileStorageNotifier<T> {
-//   // FileStorageWithNotifier(super.fileCodec);
-//   FileStorageWithNotifier.on(FileStorage<T> fileStorage)
+// class FileStorageController<T> extends FileStorage<T> with FileStorageNotifier<T> {
+//   // FileStorageController(super.fileCodec);
+//   FileStorageController.on(FileStorage<T> fileStorage)
 //       : _fromContents = fileStorage.fromContents,
 //         _toContents = fileStorage.toContents,
 //         super(extensions: fileStorage.extensions, defaultName: fileStorage.defaultName);
