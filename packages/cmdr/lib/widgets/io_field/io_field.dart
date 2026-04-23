@@ -198,7 +198,7 @@ class IOFieldReader<T> extends StatelessWidget with _IOFieldStringBox<T> impleme
   final Stringifier<T>? valueStringifier;
 
   Widget builder(BuildContext context, Widget? child) {
-    return IODecorator(decoration: decoration, isError: errorGetter?.call() ?? false, child: Text(_effectiveValueStringGetter(), maxLines: 1));
+    return IODecorator(decoration: decoration, isError: errorGetter?.call() ?? false, child: Text(_effectiveValueStringGetter()));
   }
 
   @override
