@@ -26,6 +26,9 @@ class MotConnection {
   static final Protocol _uninitialized = Protocol(const Link.uninitialized(), const MotPacketInterface());
   late final Protocol _serial = Protocol(serialLink, const MotPacketInterface());
 
+  // connection callbacks
+  final ValueNotifier<LinkStatus> status = ValueNotifier(const LinkDisconnected());
+
   Link get activeLink => activeProtocol.link;
 
   Protocol activeProtocol = _uninitialized;
@@ -34,7 +37,6 @@ class MotConnection {
   MotProtocolSocket varRead = MotProtocolSocket(_uninitialized);
   MotProtocolSocket varWrite = MotProtocolSocket(_uninitialized);
 
-  final ValueNotifier<LinkStatus> status = ValueNotifier(const LinkDisconnected());
   bool get isConnected => activeProtocol.link.isConnected;
 
   LinkStatus begin({Enum? linkType, String? name, int? baudRate}) {
