@@ -244,7 +244,7 @@ extension FileStoragePickFile on FileStorage {
   /// File picker using settings
   Future<File?> pickFile({List<String>? allowedExtensions}) async {
     allowedExtensions ??= extensions;
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: allowedExtensions, lockParentWindow: true, allowMultiple: false);
+    FilePickerResult? result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: allowedExtensions, lockParentWindow: true, allowMultiple: false);
     return (result != null) ? File(result.files.single.path!) : null;
   }
 
@@ -252,7 +252,7 @@ extension FileStoragePickFile on FileStorage {
     allowedExtensions ??= extensions;
     defaultName ??= defaultName;
     if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
-      String? path = await FilePicker.platform.saveFile(
+      String? path = await FilePicker.saveFile(
         type: FileType.custom,
         allowedExtensions: allowedExtensions,
         lockParentWindow: true,

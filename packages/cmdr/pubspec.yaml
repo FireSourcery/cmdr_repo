@@ -21,8 +21,8 @@ dependencies:
   collection: ^1.18.0
   quiver: ^3.2.2
 
-  csv: ^7.2.0
-  file_picker: ^10.3.10
+  csv: ^8.0.0
+  file_picker: ^11.0.2
   fl_chart: ^1.1.1
   intel_hex: ^1.2.1
   libserialport: ^0.3.0+1
