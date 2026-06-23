@@ -105,21 +105,21 @@ class VarStreamController extends VarCacheController {
 
   final List<int> _readBuffer = []; // reuse allocation, no new List each cycle
   final List<(int, int)> _writeBuffer = [];
-  final Set<PollingScope> _scopes = {};
+  final Set<VarPollingScope> _scopes = {};
 
   void dispose() {
     endPeriodic().whenComplete(() => cache.dispose());
   }
 
-  PollingScope createScope(Iterable<VarKey> keys) {
+  VarPollingScope createScope(Iterable<VarKey> keys) {
     // final scope = PollingScope._(this, keys);
     // _scopes.add(scope);
     // return scope;
 
-    return PollingScope._(this, keys.where((e) => !e.isWriteOnly))..chain(_scopes.add);
+    return VarPollingScope._(this, keys.where((e) => !e.isWriteOnly))..chain(_scopes.add);
   }
 
-  void _releaseScope(PollingScope scope) => _scopes.remove(scope);
+  void _releaseScope(VarPollingScope scope) => _scopes.remove(scope);
 
   // stream will call slices creating a new list, at the beginning of each multi-batch operation
   // while this iterator is accessed, view must not add or remove keys, either by lock or preallocate cache
@@ -247,8 +247,8 @@ class VarSingleController<V> {
   }
 }
 
-class PollingScope {
-  PollingScope._(this._controller, Iterable<VarKey> keys) : _keys = Set.unmodifiable(keys);
+class VarPollingScope {
+  VarPollingScope._(this._controller, Iterable<VarKey> keys) : _keys = Set.unmodifiable(keys);
   final VarStreamController _controller;
   Set<VarKey> _keys;
 

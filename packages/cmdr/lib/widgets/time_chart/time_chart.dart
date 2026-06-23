@@ -33,9 +33,9 @@ class TimeChart extends StatelessWidget {
       return LineChart(
         LineChartData(
           lineBarsData: [
-            for (var index = 0; index < chartController.chartDataLength; index++)
+            for (var index = 0; index < chartController.lineEntryCount; index++)
               LineChartBarData(
-                spots: chartController.flSpotsViewOf(index),
+                spots: chartController.flSpots(index),
                 gradient: gradients[index],
                 dotData: chartController.configDotData,
                 barWidth: 4,

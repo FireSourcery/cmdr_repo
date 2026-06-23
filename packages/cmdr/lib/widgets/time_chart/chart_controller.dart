@@ -85,7 +85,7 @@ class ChartController with TimerNotifier, ChangeNotifier {
     notifyListeners();
   }
 
-  int get chartDataLength => chartData.lineEntries.length;
+  int get lineEntryCount => chartData.lineEntries.length;
 
   //  final ValueNotifier<double> timerNotifier = ValueNotifier(0);
   /// data update with generators
@@ -114,17 +114,17 @@ class ChartController with TimerNotifier, ChangeNotifier {
 
   /// view config
   // todo view change
+  bool get useNormalizedY => true;
+
   double? _yMin;
-  // double? get yMin => _yMin;
-  double? get yMin => (useScalarView) ? -1.1 : _yMin;
+  double? get yMin => (useNormalizedY) ? -1.1 : _yMin;
   set yMin(double? value) {
     _yMin = value;
     // notifyListeners();
   }
 
   double? _yMax;
-  // double? get yMax => _yMax;
-  double? get yMax => (useScalarView) ? 1.1 : _yMax;
+  double? get yMax => (useNormalizedY) ? 1.1 : _yMax;
   set yMax(double? value) {
     _yMax = value;
     // notifyListeners();
@@ -136,14 +136,12 @@ class ChartController with TimerNotifier, ChangeNotifier {
   // double get tViewRange => ;
   // double get tSamplesRange => updateInterval.inSeconds * chartData.samplesMax * 1.0;
 
-  bool get useScalarView => true;
-
   List<FlSpot> _flSpotsViewOf(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y))];
-  List<FlSpot> _flSpotsViewOfAsScalar(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y / chartEntries[index].normalRef))];
+  List<FlSpot> flSpotsViewNormalized(int index) => [...chartData.lineDataPoints(index).map((e) => FlSpot(e.x, e.y / chartEntries[index].normalRef))];
 
-  List<FlSpot> flSpotsViewOf(int index) {
+  List<FlSpot> flSpots(int index) {
     if (index >= chartData.lineEntries.length) return [];
-    return (useScalarView) ? _flSpotsViewOfAsScalar(index) : _flSpotsViewOf(index);
+    return (useNormalizedY) ? flSpotsViewNormalized(index) : _flSpotsViewOf(index);
   }
 
   /// Visual options
