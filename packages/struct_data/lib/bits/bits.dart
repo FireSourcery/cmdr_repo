@@ -10,15 +10,11 @@ extension type const Bits(int _bits) implements int {
   /// general case
   Bits.ofPairs(Iterable<(Bitmask, int)> pairs) : _bits = const Bits.allZeros().withEach(pairs);
 
-  // Bits.ofIterables(Iterable<Bitmask> keys, Iterable<int> values)
-
   Bits.ofLists(List<Bitmask> keys, List<int> values) : this.ofPairs(Iterable.generate(keys.length, (index) => (keys.elementAt(index), values.elementAt(index))));
+  // Bits.ofIterables(Iterable<Bitmask> keys, Iterable<int> values)
   // Iterable.generate assert(keys.length == values.length),
   Bits.ofEntries(Iterable<MapEntry<Bitmask, int>> entries) : this.ofPairs(entries.map((e) => (e.key, e.value)));
   Bits.ofMap(Map<Bitmask, int> map) : this.ofEntries(map.entries);
-
-  // Bits.ofInitializer(Map<Bitmask, int> map) : this.ofEntries(map.entries);
-  // Bits.ofBitsMap(Map<BitsKey, int> map) : this.ofEntries(map.bitsEntries);
 
   // width value pairs
   // Indexed waith pairs
@@ -166,8 +162,7 @@ base class MutableBits extends BitData {
 // although only MutableBits must wrap Bits, this way they both implement and derive the same interfaces
 @immutable
 base class ConstBits extends BitData {
-  const ConstBits._(this.bits);
-  const ConstBits(int bits) : this._(bits as Bits);
+  const ConstBits(this.bits);
   const ConstBits.value(int value) : this(value as Bits);
 
   @override
