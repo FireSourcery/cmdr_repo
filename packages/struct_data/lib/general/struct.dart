@@ -38,7 +38,12 @@ extension type const StructData<K extends Field<V>, V>(Object _data) implements 
   Iterable<V> valuesAs(StructForm<K, V> type) => type(this).values;
   Iterable<StructField<K, V>> fieldsAs(StructForm<K, V> type) => type(this).fields;
   Map<K, V> toMapWith(StructForm<K, V> type) => type.mapWithData(this);
+
+  // Map<K, V> mapWithFields(StructForm<K, V> type) => IndexMap<K, V>.of(type, type.map((k) => this[k]));
 }
+
+// typedef BinaryStruct<K extends Field<int>> = StructData<K, int>;
+// typedef ObjectStruct<K extends Field<Object?>> = StructData<K, Object?>;
 
 /// [Field] — key to a value in a host struct, carrying accessor logic and type scope
 ///

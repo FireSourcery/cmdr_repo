@@ -38,6 +38,21 @@ extension type const EnumMapFactory<T extends Enum>(List<T> enums) implements Li
   // void fromMapByName(Map<String, V> map) => addEntries(map.entries.map((e) => MapEntry(keys.byName(e.key), e.value)));
 }
 
+// mixin EnumSchema implements Enum, Field<Object?> {
+//   // static composible constructor(List<Enum> values)
+//   // s
+// }
+
+mixin Enumeratable<K extends Enum, V> {
+  List<K> get keys;
+  V operator [](covariant K key);
+  // void operator []=(covariant K key, V value);
+  // void clear();
+  // V remove(covariant K key);
+
+  EnumMap<K, V> toMap() => IndexMap.of(keys, keys.map((e) => this[e])) as EnumMap<K, V>;
+}
+
 /// [EnumMap]
 /// A [Map] with the additional constraint that Keys are a `fixed set`, via [Enum].
 /// creation implements [FixedMap]/[IndexMap] constraints

@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
@@ -60,3 +61,44 @@ extension type const Num<V>(V value) {
 // class NumDouble extends Num<double> {
 //   const NumDouble();
 // }
+
+// let struct map memory, mixin maps enum field descriptors for name and toMap
+final class BinarizableTest extends Struct with StructBase<BinarizableTest, Field<Object?>, Object?> {
+  @Uint32()
+  external int device;
+  @Uint32()
+  external int flags;
+
+  // factory BinarizableTest.cast(TypedData typedData) => Struct.create<BinarizableTest>(typedData);
+
+  @override
+  StructData<Field<Object?>, dynamic> get data => throw UnimplementedError();
+
+  @override
+  List<Field<Object?>> get keys => SensorField.values;
+}
+
+enum SensorField implements Field<int> {
+  device,
+  flags,
+  ;
+
+  @override
+  int getIn(covariant BinarizableTest struct) {
+    return switch (this) {
+      SensorField.device => struct.device,
+      SensorField.flags => struct.flags,
+    };
+  }
+
+  @override
+  void setIn(covariant Object struct, int value) {
+    // TODO: implement setIn
+  }
+
+  @override
+  bool testAccess(covariant Object struct) {
+    // TODO: implement testAccess
+    throw UnimplementedError();
+  }
+}

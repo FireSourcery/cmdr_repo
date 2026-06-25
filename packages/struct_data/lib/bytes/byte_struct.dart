@@ -62,7 +62,7 @@ abstract mixin class ByteField<V extends NativeType> implements TypedField<V>, F
   @override
   void setIn(ByteStruct<ByteField<V>> byteData, int value) => byteData.setWordAt<V>(offset, value);
 
-  // not yet replaceable
+  // not yet replaceable, alternatively move this to packet only. remaining functionality can mixin on ffi.Struct
   @override
   bool testAccess(ByteStruct<ByteField<V>> byteData) => end <= byteData.lengthInBytes;
 
