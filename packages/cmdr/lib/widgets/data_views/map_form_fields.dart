@@ -152,47 +152,11 @@ class _MapFormFieldsState<K, V> extends State<MapFormFields<K, V>> {
   }
 }
 
-/// Read Only views
-/// possibly change to String,V
-class TextPairs extends StatelessWidget {
-  const TextPairs({required this.fields, this.title, this.direction = Axis.horizontal, super.key});
-  final Iterable<(String label, String contents)> fields;
-  final String? title;
-  final Axis direction;
-  // Widget Function(K)? keyBuilder;
-  // Widget Function(V)? valueBuilder;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (title != null) Text(title!, style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.left),
-        Flex(
-          direction: direction,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (final (label, contents) in fields)
-              IntrinsicWidth(
-                child: ListTile(
-                  // titleAlignment: ListTileTitleAlignment.bottom,
-                  subtitle: Text(label),
-                  title: Text(contents),
-                ),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
 /// A text 'word' that is also a 64-bit integer 'word'.
 /// Editable views
-// todo input as string literal
 class StringFormField extends StatelessWidget {
   const StringFormField({required this.word, this.label, super.key, this.isReadOnly = false, this.onSaved, this.maxLength = 8});
-  final Word word; // change this to use map interface?
+  final Word word;
   final String? label;
   final bool isReadOnly;
   final ValueSetter<Word>? onSaved;
@@ -225,8 +189,6 @@ class StringTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      // contentPadding: EdgeInsets.zero,
-      // dense: null,
       titleAlignment: ListTileTitleAlignment.bottom,
       title: Text(nameId.asString()),
       subtitle: (label != null) ? Text(label!) : null,

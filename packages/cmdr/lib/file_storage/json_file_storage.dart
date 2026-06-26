@@ -24,9 +24,9 @@ abstract class JsonFileStorage extends FileStorage<JsonMap> {
   JsonFileCodec get stringCodec => const JsonFileCodec();
 
   @override
-  Object? fromContents(JsonMap contents);
+  Object? parseContents(JsonMap contents);
   @override
-  JsonMap toContents();
+  JsonMap buildContents();
 }
 
 class _JsonFileStorageWithHandlers extends JsonFileStorage {
@@ -36,7 +36,7 @@ class _JsonFileStorageWithHandlers extends JsonFileStorage {
   final JsonMap Function() _toJson;
 
   @override
-  void fromContents(JsonMap json) => _fromJson(json);
+  void parseContents(JsonMap json) => _fromJson(json);
   @override
-  JsonMap toContents() => _toJson();
+  JsonMap buildContents() => _toJson();
 }

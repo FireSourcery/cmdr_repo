@@ -29,6 +29,7 @@ dependencies:
   recase: ^4.1.0
   shared_preferences: ^2.2.3
   synchronized: ^3.1.0+1
+  flutter_form_builder: ^10.3.0+2
 
 dev_dependencies:
   flutter_test:

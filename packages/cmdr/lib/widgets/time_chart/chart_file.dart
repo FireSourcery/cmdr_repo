@@ -9,10 +9,10 @@ class ChartFileStorage extends CsvFileStorage with FileStorageNotifier<Map<Strin
   final ChartController chartController;
 
   @override
-  void fromContents(Map<String, List<dynamic>> contents) => chartController.chartData = ChartData.fromMap(contents);
+  void parseContents(Map<String, List<dynamic>> contents) => chartController.chartData = ChartData.fromMap(contents);
 
   @override
-  Map<String, List<dynamic>> toContents() => chartController.chartData.toMap();
+  Map<String, List<dynamic>> buildContents() => chartController.chartData.toMap();
 }
 
 /// View

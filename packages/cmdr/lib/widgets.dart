@@ -31,6 +31,7 @@ export 'widgets/app_general/logo.dart';
 export 'widgets/data_views/selection_chips.dart';
 export 'widgets/data_views/flag_field_view.dart';
 export 'widgets/data_views/map_form_fields.dart';
+export 'widgets/data_views/map_form_builder_fields.dart';
 
 // Dialog widgets
 export 'widgets/dialog/dialog.dart';

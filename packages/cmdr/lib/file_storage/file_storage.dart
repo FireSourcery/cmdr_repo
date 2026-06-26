@@ -20,8 +20,8 @@ abstract class FileStorage<T> {
   Codec<T, String> get stringCodec;
 
   /// Abstract functions to handle file contents
-  Object? fromContents(T contents); //parseContents
-  T toContents(); //buildContents
+  Object? parseContents(T contents); //parseContents
+  T buildContents(); //buildContents
 
   Future<File> _write(File file, T input) async => file.writeAsString(stringCodec.encode(input));
   Future<T> _read(File file) async => file.readAsString().then(stringCodec.decode);
@@ -33,9 +33,9 @@ abstract class FileStorage<T> {
   Future<File?> saveAsync(Future<File?> file, T contents) async => file.then((value) => save(value, contents));
 
   // full sequence for future builder
-  Object? _fromNullable(T? contents) => (contents != null) ? fromContents(contents) : null;
+  Object? _fromNullable(T? contents) => (contents != null) ? parseContents(contents) : null;
   Future<Object?> openContents(Future<File?> file) async => openAsync(file).then(_fromNullable);
-  Future<File?> saveContents(Future<File?> file) async => saveAsync(file, toContents());
+  Future<File?> saveContents(Future<File?> file) async => saveAsync(file, buildContents());
 }
 
 typedef FileStringCodec<T> = FileCodec<T, String>;

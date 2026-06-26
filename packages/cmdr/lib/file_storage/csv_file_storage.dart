@@ -78,7 +78,7 @@ abstract class CsvFileStorage extends FileStorage<Map<String, List<dynamic>>> {
   Codec<Map<String, List<dynamic>>, String> get stringCodec => _stringCodec;
 
   @override
-  Object? fromContents(Map<String, List> contents);
+  Object? parseContents(Map<String, List> contents);
   @override
-  Map<String, List> toContents();
+  Map<String, List> buildContents();
 }
