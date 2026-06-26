@@ -34,6 +34,12 @@ abstract mixin class BitField implements Field<int> {
   // int get defaultValue => 0; // default value for the type
 }
 
+typedef BitFieldEntry<K extends BitField> = FieldEntry<K, int>;
+
+extension BitFieldsMethods on Iterable<BitField> {
+  Bitmasks get bitmasks => map((e) => e.bitmask) as Bitmasks;
+}
+
 /// BitIndexField /// Special case: single-bit field addressed by index.
 abstract mixin class BitIndexField implements BitField {
   int get index;
@@ -45,8 +51,6 @@ abstract mixin class BitIndexField implements BitField {
   @override
   bool testAccess(BitStruct<BitField> struct) => bitmask.shift + bitmask.width <= struct.width;
 }
-
-typedef BitFieldEntry<K extends BitField> = StructField<K, int>;
 
 extension BitIndexKeysMethods on Iterable<BitIndexField> {
   int get totalWidth => length;

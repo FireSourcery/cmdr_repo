@@ -33,7 +33,7 @@ extension VarValueNumExt on VarValue<num> {
 
 extension VarValueBitsExt on VarValue<BitStruct> {
   List<BitField> get fieldKeys => (codec as BitStructFormat).fields;
-  StructFields get valueAsBitFields => BitForm(fieldKeys)(codec.decode(data)).fields;
+  FieldEntries get valueAsBitFields => BitForm(fieldKeys)(codec.decode(data)).fields;
 }
 
 class VarKeyBuilder extends StatelessWidget {

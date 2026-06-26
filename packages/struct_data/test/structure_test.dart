@@ -2,6 +2,7 @@ import 'package:struct_data/struct_data.dart';
 import 'package:test/test.dart';
 
 /// Example 1
+/// StructForm(PersonField.values).mapWithData(person)
 class Person {
   const Person(this.id, this.name, this.age);
 
@@ -91,6 +92,7 @@ class SerializablePerson with Immutable<SerializablePerson>, Serializable<Serial
   SerializablePerson copyWithMap(covariant Map<SerializableField, Object?> data) => SerializablePerson.fromMap(data);
 }
 
+//
 enum SensorField<V extends NativeType> with WordField<V>, TypedField<V> {
   deviceId<Uint16>(0),
   sensorType<Uint8>(2),

@@ -89,6 +89,7 @@ class Bitmask {
 
 // for implements conveinience
 extension on Bitmask {
+  // int get valueMax => bitmask >> shift;
   int clear(int source) => source & ~bitmask; // clear bits
 
   // ignore: unused_element

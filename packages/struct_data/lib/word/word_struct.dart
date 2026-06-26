@@ -29,7 +29,7 @@ extension type const WordStruct<K extends WordField>(Word word) implements Word,
   // int get byteLength => bits.byteLength;
 
   WordStruct<K> withField(K key, int value) => word.withBits(key.bitmask, value) as WordStruct<K>;
-  WordStruct<K> withFields(Iterable<StructField<K, int>> fields) => word.withEach(fields.map((e) => (e.key.bitmask, e.value))) as WordStruct<K>;
+  WordStruct<K> withFields(Iterable<FieldEntry<K, int>> fields) => word.withEach(fields.map((e) => (e.key.bitmask, e.value))) as WordStruct<K>;
   WordStruct<K> withMap(Map<K, int> map) => word.withEach(map.entries.map((e) => (e.key.bitmask, e.value))) as WordStruct<K>;
 }
 
@@ -70,7 +70,7 @@ abstract class WordBase<T extends WordBase<T, K>, K extends WordField> with MapB
   T copyWithData(WordStruct<K> word);
 
   T withField(K key, int value) => copyWithData(word.withField(key, value));
-  T withFields(Iterable<StructField<K, int>> fields) => copyWithData(word.withFields(fields));
+  T withFields(Iterable<FieldEntry<K, int>> fields) => copyWithData(word.withFields(fields));
   T withMap(Map<K, int> map) => copyWithData(word.withMap(map));
 }
 

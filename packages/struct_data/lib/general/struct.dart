@@ -23,7 +23,7 @@ extension type const StructData<K extends Field<V>, V>(Object _data) implements 
   V operator [](K key) => key.getIn(this);
   void operator []=(K key, V value) => key.setIn(this, value);
 
-  StructField<K, V> field(K key) => (key: key, value: this[key]);
+  FieldEntry<K, V> field(K key) => (key: key, value: this[key]);
 
   V? fieldOrNull(K key) => key.testAccess(this) ? key.getIn(this) : null;
   bool trySetField(K key, V value) {
@@ -32,11 +32,11 @@ extension type const StructData<K extends Field<V>, V>(Object _data) implements 
     return true;
   }
 
-  StructField<Field<R>, R> fieldAs<R>(Field<R> key) => (key: key, value: this[key as K] as R); // handles user side casting
+  FieldEntry<Field<R>, R> fieldAs<R>(Field<R> key) => (key: key, value: this[key as K] as R); // handles user side casting
 
   // implementation handled by Form
   Iterable<V> valuesAs(StructForm<K, V> type) => type(this).values;
-  Iterable<StructField<K, V>> fieldsAs(StructForm<K, V> type) => type(this).fields;
+  Iterable<FieldEntry<K, V>> fieldsAs(StructForm<K, V> type) => type(this).fields;
   Map<K, V> toMapWith(StructForm<K, V> type) => type.mapWithData(this);
 
   // Map<K, V> mapWithFields(StructForm<K, V> type) => IndexMap<K, V>.of(type, type.map((k) => this[k]));
@@ -102,17 +102,17 @@ extension TypedStructReference<K extends Field<V>, V> on ({StructForm<K, V> form
   Map<K, V> toMap() => form.mapWithData(data);
   Iterable<V> get values => form.fields.map((k) => data[k]);
 
-  Iterable<StructField<K, V>> get fields => form.fields.map((k) => data.field(k));
-  set fields(Iterable<StructField<K, V>> newValues) {
+  Iterable<FieldEntry<K, V>> get fields => form.fields.map((k) => data.field(k));
+  set fields(Iterable<FieldEntry<K, V>> newValues) {
     for (final element in newValues) {
       data[element.key] = element.value;
     }
   }
 }
 
-// FieldEntry, FieldValue, StructEntry
-typedef StructField<K extends Field<V>, V> = ({K key, V value});
-typedef StructFields<K extends Field<V>, V> = Iterable<StructField<K, V>>;
+/// [FieldEntry] — a key-value pair for a field in a struct
+typedef FieldEntry<K extends Field<V>, V> = ({K key, V value});
+typedef FieldEntries<K extends Field<V>, V> = Iterable<FieldEntry<K, V>>;
 
 // typedef FieldEntry<K extends Field<V>, V> = MapEntry<K, V>;
 
@@ -153,12 +153,12 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   void operator []=(covariant K key, V value) => data[key] = value;
   V? fieldOrNull(K key) => data.fieldOrNull(key);
   bool trySetField(K key, V value) => data.trySetField(key, value);
-  StructField<K, V> field(K key) => data.field(key);
-  StructField<Field<R>, R> fieldAs<R>(Field<R> key) => data.fieldAs<R>(key);
+  FieldEntry<K, V> field(K key) => data.field(key);
+  FieldEntry<Field<R>, R> fieldAs<R>(Field<R> key) => data.fieldAs<R>(key);
 
   // Iterable view requiring Fields list
   Iterable<V> get values => StructForm(keys)(data).values;
-  Iterable<StructField<K, V>> get fields => StructForm(keys)(data).fields;
+  Iterable<FieldEntry<K, V>> get fields => StructForm(keys)(data).fields;
 
   // Conversion — bridge to Map (and therefore to serialization)
   /// Snapshot as an [IndexMap]. If `K extends Enum`, call `.toJson()` on the
@@ -188,7 +188,7 @@ class StructInitializer<T extends StructBase<T, K, V>, K extends Field<V>, V> im
   void operator []=(covariant K key, V value) => _init[key] = value;
 
   @override
-  StructField<K, V> field(K key) => (key: key, value: _init[key]!);
+  FieldEntry<K, V> field(K key) => (key: key, value: _init[key]!);
   @override
   V? fieldOrNull(K key) => _init[key];
   @override
@@ -200,13 +200,13 @@ class StructInitializer<T extends StructBase<T, K, V>, K extends Field<V>, V> im
   @override
   Iterable<V> get values => _init.values;
   @override
-  Iterable<StructField<K, V>> get fields => _init.entries.map((e) => (key: e.key, value: e.value));
+  Iterable<FieldEntry<K, V>> get fields => _init.entries.map((e) => (key: e.key, value: e.value));
 
   @override
   Map<K, V> toMap() => _init;
 
   @override
-  StructField<Field<R>, R> fieldAs<R>(Field<R> key) => (key: key, value: _init[key as K] as R);
+  FieldEntry<Field<R>, R> fieldAs<R>(Field<R> key) => (key: key, value: _init[key as K] as R);
 }
 
 // struct view

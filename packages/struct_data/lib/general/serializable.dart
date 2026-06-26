@@ -61,18 +61,22 @@ mixin Serializable<S extends Serializable<S>> on Object implements StructBase<S,
 
 typedef SerializableEntry<V> = ({SerializableField<V> key, V value});
 
+// mixin ImmutableSerializable<S,  K extends Field<Object?>> on Object implements StructBase<S, K, Object?>
+
 /// [SerializableField<V>]/[NamedField]
 /// a key to each field, an type parameter, with an generated string, use as json key;
 /// effectively describe the memory allocation requirements
 /// maps entirety of the struct
 abstract mixin class SerializableField<V> implements Enum, Field<V> {
   // a function using a known interface access the fields of the user's class, maps ids to getters
+  // V getIn(covariant Serializable struct);
   V getIn(covariant Object struct);
   void setIn(covariant Object struct, V value);
   bool testAccess(covariant Object struct);
 
-  bool isTypeOf(Object? value) => value is V;
+  // V? validateType(Serializable data) => data[this] is V ? data[this] as V : null;
 
+  bool isTypeOf(Object? value) => value is V;
   V? validateType(Object? value) => ((value is V) ? value : null);
 
   Type get type => V;
@@ -169,6 +173,6 @@ mixin Immutable<S extends Immutable<S>> {
   S withField(Field key, Object? value) => copyWithMap(_bufferCopy()..[key] = value);
 
   // tod copy non null only, let copyWithMap handle mapping only
-  S withFields(Iterable<StructField<Field, Object?>> newEntries) => copyWithMap(_bufferCopy()..addEntries(newEntries.map((e) => MapEntry(e.key, e.value))));
+  S withFields(Iterable<FieldEntry<Field, Object?>> newEntries) => copyWithMap(_bufferCopy()..addEntries(newEntries.map((e) => MapEntry(e.key, e.value))));
   S withMap(Map<Field, Object?> map) => copyWithMap(_bufferCopy()..addAll(map));
 }
