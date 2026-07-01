@@ -41,6 +41,15 @@ abstract base class Version<K extends WordField> extends WordBase<Version<K>, K>
   (String, String) get labelPair => (name ?? '', toStringAsVersion());
 
   /// msb first with dot separator `optional.major.minor.fix`
+  // factory Version.parse(String tag, {String? name}) {
+  //   final numbers = RegExp(r'\d+').allMatches(tag).map((m) => int.parse(m.group(0)!)).toList();
+  //   return Version(0, numbers[0], numbers[1], numbers[2], name: name);
+
+  //   // final lsb = numbers.reversed;
+  //   // return Version.lsb(lsb[0], lsb[1], lsb[2], lsb[3] ?? 0, name: name);
+  // }
+
+  /// msb first with dot separator `optional.major.minor.fix`
   String toStringAsVersion([String left = '', String right = '', String separator = '.']) {
     return (StringBuffer(left)
           ..writeAll(numbers, separator)

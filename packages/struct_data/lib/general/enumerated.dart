@@ -3,22 +3,24 @@ import 'struct.dart';
 export 'enum_map.dart';
 
 // may replace serialable
-mixin Enumerated<K extends Enum> on Object implements StructBase<Enumerated<K>, EnumeratedField, Object?> {
-  List<EnumeratedField<Object?>> get keys;
-  StructData<EnumeratedField, dynamic> get data => this as StructData<EnumeratedField, dynamic>; // data passed to Keys
+mixin Enumerated<K extends EnumeratedField<Object?>> on Object implements StructBase<Enumerated<K>, K, Object?> {
+  List<K> get keys;
+  StructData<K, dynamic> get data => this as StructData<K, dynamic>; // data passed to Keys
 
   // duplicate code until combine mixin is support
-  Object? operator [](covariant EnumeratedField key) => data[key];
-  void operator []=(covariant EnumeratedField key, Object? value) => data[key] = value;
-  Object? fieldOrNull(EnumeratedField key) => data.fieldOrNull(key);
-  bool trySetField(EnumeratedField key, Object? value) => data.trySetField(key, value);
-  EnumeratedEntry<Object?> field(covariant EnumeratedField key) => data.field(key);
-  EnumeratedEntry<R> fieldAs<R>(covariant EnumeratedField<R> key) => data.fieldAs<R>(key) as EnumeratedEntry<R>;
-  Iterable<Object?> get values => keys.map((k) => this[k]);
-  Iterable<EnumeratedEntry<Object?>> get fields => keys.map((k) => (key: k, value: this[k]));
-  StructForm<EnumeratedField, Object?> get _type => StructForm<EnumeratedField, Object?>(keys);
+  Object? operator [](covariant K key) => data[key];
+  void operator []=(covariant K key, Object? value) => data[key] = value;
+  Object? fieldOrNull(K key) => data.fieldOrNull(key);
+  bool trySetField(K key, Object? value) => data.trySetField(key, value);
 
-  Map<EnumeratedField, Object?> toMap() => _type.mapWithData(data);
+  field(covariant K key) => data.field(key);
+
+  fieldAs<R>(covariant EnumeratedField<R> key) => data.fieldAs<R>(key);
+  Iterable<Object?> get values => keys.map((k) => this[k]);
+  get fields => keys.map((k) => (key: k, value: this[k]));
+  StructForm<K, Object?> get _type => StructForm<K, Object?>(keys);
+
+  Map<K, Object?> toMap() => _type.mapWithData(data);
 
   // Value equality
   @override
@@ -50,6 +52,8 @@ abstract mixin class EnumeratedField<V> implements Enum, Field<V> {
   void setIn(covariant Enumerated struct, V value);
   bool testAccess(covariant Enumerated struct);
 
+  String get groupName => runtimeType.toString();
+
   // V? validateType(Enumerated data) => data[this] is V ? data[this] as V : null;
 
   // bool isTypeOf(Enumerated? value) => value is V;
@@ -58,4 +62,4 @@ abstract mixin class EnumeratedField<V> implements Enum, Field<V> {
   Type get type => V;
 }
 
-typedef EnumeratedEntry<V> = ({EnumeratedField<V> key, V value});
+// typedef EnumeratedEntry<V> = ({EnumeratedField<V> key, V value});
