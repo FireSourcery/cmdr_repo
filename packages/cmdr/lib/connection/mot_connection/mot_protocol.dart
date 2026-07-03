@@ -60,15 +60,24 @@ class MotProtocolSocket extends ProtocolSocket {
   /// DataMode
   ///
   Future<int?> initDataModeWrite(int address, int sizeBytes, int flags) async {
-    return requestResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE, (address, sizeBytes, flags), syncOptions: ProtocolSyncOptions.sendAndRecv, timeout: const Duration(milliseconds: 2000));
+    return requestResponse(
+      MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE,
+      (address: address, size: sizeBytes, flags: flags),
+      syncOptions: ProtocolSyncOptions.sendAndRecv,
+      timeout: const Duration(milliseconds: 2000),
+    );
   }
 
   Future<int?> initDataModeRead(int address, int sizeBytes, int flags) async {
     protocol.mapRequestResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_DATA, this); // map additional id
-    return requestResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_READ, (address, sizeBytes, flags), syncOptions: ProtocolSyncOptions.sendAndRecv);
+    return requestResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_READ, (address: address, size: sizeBytes, flags: flags), syncOptions: ProtocolSyncOptions.sendAndRecv);
   }
 
-  Future<int?> endDataModeWrite() async => recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
+  Future<int?> endDataModeWrite() async => recvResponse(
+    MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE,
+    timeout: const Duration(milliseconds: 2000),
+  )..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
+
   Future<int?> endDataModeRead() async => recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_READ)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
 
   Future<void> writeDataModeData(Uint8List data) async => sendRequest(MotPacketRequestId.MOT_PACKET_DATA_MODE_DATA, data);
@@ -79,8 +88,9 @@ class MotProtocolSocket extends ProtocolSocket {
     for (final slice in data.typedSlices(DataModeData.sizeMax)) {
       await writeDataModeData(slice);
       yield await recvSync().then((value) => (value == MotPacketSyncId.MOT_PACKET_SYNC_ACK) ? slice.length : 0);
-      await Future.delayed(ProtocolSocket.datagramDelay);
+      // await Future.delayed(ProtocolSocket.datagramDelay);
     }
+    // caller should call endDataModeWrite() to get final status
   }
 
   Stream<Uint8List?> readDataModeStream(int sizeBytes) async* {

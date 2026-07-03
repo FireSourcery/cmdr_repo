@@ -232,7 +232,10 @@ class ProtocolSocket implements Sink<Packet> {
   // call lock. buffers must lock, if sockets are shared, i.e not uniquely allocated per thread
   // alternatively lock out buffer only
   @protected
-  Future<PayloadMeta> sendRequest<V>(PacketIdRequest<V, dynamic> packetId, V requestArgs) async {
+  Future<PayloadMeta> sendRequest<V>(
+    PacketIdRequest<V, dynamic> packetId,
+    V requestArgs /*  {Duration timeout = reqRespTimeoutDefault} */,
+  ) async {
     protocol.mapRequestResponse(packetId, this); // request always paired with response, so map here
     packetBufferIn.clear();
 
