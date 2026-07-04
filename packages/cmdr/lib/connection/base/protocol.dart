@@ -137,9 +137,8 @@ class ProtocolSocket implements Sink<Packet> {
   PacketFormat get packetInterface => protocol.packetInterface;
 
   final Lock _lock = Lock();
-  // Completer<Packet> _recved = Completer.sync();
-  final StreamController<void> _recvedController = StreamController<void>.broadcast(sync: true);
-  Stream<void> get _recved => _recvedController.stream;
+
+  Completer<Packet> _recved = Completer.sync(); // sync completer: latches a received packet and calls parse as soon as complete() is called.
 
   int waitingOnLockCount = 0;
   // ProtocolException status = ProtocolException.ok; // use eventSink
@@ -195,9 +194,6 @@ class ProtocolSocket implements Sink<Packet> {
     // return null;
   }
 
-  // Future<R?> _requestResponse<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration timeout = reqRespTimeoutDefault, ProtocolSyncOptions? syncOptions}) async {
-  //    }
-
   /// requestResponse with options
   Future<R?> _requestResponseOptions<T, R>(
     PacketIdRequest<T, R> requestId,
@@ -232,15 +228,12 @@ class ProtocolSocket implements Sink<Packet> {
   // call lock. buffers must lock, if sockets are shared, i.e not uniquely allocated per thread
   // alternatively lock out buffer only
   @protected
-  Future<PayloadMeta> sendRequest<V>(
-    PacketIdRequest<V, dynamic> packetId,
-    V requestArgs /*  {Duration timeout = reqRespTimeoutDefault} */,
-  ) async {
+  Future<PayloadMeta> sendRequest<V>(PacketIdRequest<V, dynamic> packetId, V requestArgs) async {
     protocol.mapRequestResponse(packetId, this); // request always paired with response, so map here
     packetBufferIn.clear();
+    _recved = Completer<Packet>.sync(); // arm latch before send; also discards any stale post-completion packet
 
     final PayloadMeta requestMeta = packetBufferOut.buildRequest<V>(packetId, requestArgs);
-    timer.start();
     timer.reset();
     await protocol.trySend(packetBufferOut.viewAsPacket);
     return requestMeta;
@@ -296,11 +289,7 @@ class ProtocolSocket implements Sink<Packet> {
   @protected
   Future<R?> tryRecv<R>(R? Function() parse, [Duration timeout = rxTimeoutDefault]) async {
     try {
-      return await _recved.first.timeout(timeout).then((_) => parse());
-      //     if (_queue.isNotEmpty) return _queue.removeFirst();
-      //     _signal = Completer<void>();
-      //     await _signal!.future.timeout(timeout);
-      //     return _queue.removeFirst();
+      return await _recved.future.timeout(timeout).then((_) => parse());
     } on TimeoutException {
       debugLog("Socket Recv Response Timeout");
       rethrow;
@@ -313,7 +302,9 @@ class ProtocolSocket implements Sink<Packet> {
       debugLog(e);
       debugLog(packetBufferIn.viewAsBytes);
       // payload parser may throw if invalid packet passes header parser as valid
-    } finally {}
+    } finally {
+      _recved = Completer.sync(); // re-arm eagerly, before the gap to the next recv, so an incoming packet is latched
+    }
     return null;
   }
 
@@ -323,34 +314,17 @@ class ProtocolSocket implements Sink<Packet> {
     timer.stop();
     packetBufferIn.copy(event.bytes); // sets buffer length to packet length, [PacketTransformer] handles max buffer length
     // socket table does not unmap. might receive packets following completion
-    if (!_recvedController.isClosed) {
-      _recvedController.add(null);
+    if (!_recved.isCompleted) {
+      _recved.complete(packetBufferIn.viewAsPacket); // latch: caught even if the recv awaits after this
     } else {
       throw const ProtocolException('Unexpected Rx');
     }
-    //     _queue.add(Uint8List.fromList(bytes));
-    //     if (_signal case Completer<void> signal when !signal.isCompleted) {
-    //       signal.complete();
-    //     }
-    //     _signal = null;
   }
 
   @override
   void close() {
     debugLog('Socket Closed');
   }
-  //   final Queue<Uint8List> _queue = Queue<Uint8List>();
-  //   Completer<void>? _signal;
-
-  //   bool get hasPending => _queue.isNotEmpty;
-
-  //   void clear() {
-  //     _queue.clear();
-  //     if (_signal case Completer<void> signal when !signal.isCompleted) {
-  //       signal.completeError(const ProtocolException('Mailbox cleared'));
-  //     }
-  //     _signal = null;
-  //   }
 
   /// Must return as stream, so callback can run following each response. This way eliminates additional buffering.
   /// Reducing to Iterable would direct each element to the same packet buffer.
