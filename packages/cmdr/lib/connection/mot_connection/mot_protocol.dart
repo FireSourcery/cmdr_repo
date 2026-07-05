@@ -13,7 +13,11 @@ class MotProtocolSocket extends ProtocolSocket {
   /// Base wrappers
   ///
   @override
-  Future<PacketSyncId?> ping([MotPacketSyncId id = MotPacketSyncId.MOT_PACKET_PING, MotPacketSyncId? respId, Duration timeout = ProtocolSocket.timeoutDefault]) async => super.ping(id, respId);
+  Future<PacketSyncId?> ping(MotPacketSyncId id, {MotPacketSyncId? respId, Duration timeout = ProtocolSocket.timeoutDefault}) async => super.ping(id, respId: respId, timeout: timeout);
+
+  // Future<PacketSyncId?> pingDefault({MotPacketSyncId id = MotPacketSyncId.MOT_PACKET_PING, MotPacketSyncId? respId, Duration timeout = ProtocolSocket.timeoutDefault}) async =>
+  //     super.ping(id, respId: respId ?? id, timeout: timeout);
+  Future<PacketSyncId?> pingBoot() async => super.ping(MotPacketSyncId.MOT_PACKET_PING_BOOT, respId: MotPacketSyncId.MOT_PACKET_PING_BOOT, timeout: const Duration(milliseconds: 500));
 
   Future<int?> stopMotors() async => requestResponse(MotPacketRequestId.MOT_PACKET_STOP_ALL, null);
   Future<VersionResponseValues?> version() async => await requestResponse(MotPacketRequestId.MOT_PACKET_VERSION, null);
@@ -64,7 +68,7 @@ class MotProtocolSocket extends ProtocolSocket {
       MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE,
       (address: address, size: sizeBytes, flags: flags),
       syncOptions: ProtocolSyncOptions.sendAndRecv,
-      timeout: const Duration(milliseconds: 2000),
+      timeout: const Duration(milliseconds: 5000), // includes the flash erase time
     );
   }
 
@@ -73,10 +77,14 @@ class MotProtocolSocket extends ProtocolSocket {
     return requestResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_READ, (address: address, size: sizeBytes, flags: flags), syncOptions: ProtocolSyncOptions.sendAndRecv);
   }
 
-  Future<int?> endDataModeWrite() async => recvResponse(
-    MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE,
-    timeout: const Duration(milliseconds: 2000),
-  )..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
+  Future<int?> endDataModeWrite() async => recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
+
+  // Future<int?> endDataModeWrite() async {
+  //   final status = await recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE);
+  //   sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK);
+  //   return status;
+  //   // ..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
+  // }
 
   Future<int?> endDataModeRead() async => recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_READ)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
 
@@ -87,8 +95,9 @@ class MotProtocolSocket extends ProtocolSocket {
   Stream<int> writeDataModeStream(Uint8List data) async* {
     for (final slice in data.typedSlices(DataModeData.sizeMax)) {
       await writeDataModeData(slice);
+      // sync alreadyy mapped
       yield await recvSync().then((value) => (value == MotPacketSyncId.MOT_PACKET_SYNC_ACK) ? slice.length : 0);
-      // await Future.delayed(ProtocolSocket.datagramDelay);
+      await Future.delayed(ProtocolSocket.datagramDelay);
     }
     // caller should call endDataModeWrite() to get final status
   }

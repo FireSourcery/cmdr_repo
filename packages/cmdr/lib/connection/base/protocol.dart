@@ -26,8 +26,8 @@ class Protocol {
   /// limitations:
   ///     packet responseId matches to single most recent socket, unless it is implemented with socket id
   //      sync ids is passed to all sockets, alternatively 2 levels of keys
-  //  if sockets implements listen on the transformed stream,
-  //  although the observer pattern is still implemented, the check id routine must run for each socket. but a map would not be necessary.
+  //  if sockets implements listen on the transformed stream, although the observer pattern is still implemented,
+  //  the check id routine must run for each socket. but a map would not be necessary.
   void _demux(Packet packet) {
     debugLog("RX $packet");
     if (respSocketMap[packet.packetId] case ProtocolSocket socket) {
@@ -78,7 +78,7 @@ class Protocol {
   //   return await sendRequest(requestId, requestArgs).then((value) async => await recvResponse(requestId, reqStateMeta: value));
   // }
 
-  // Protocol level — the pending requests table
+  // directly map completer version
   // final Map<PacketId, Completer<Packet>> _pending = {};
 
   // Future<Packet> request(Packet outgoing, PacketId responseId) {
@@ -246,9 +246,11 @@ class ProtocolSocket implements Sink<Packet> {
   }
 
   ///
-  Future<PacketSyncId?> ping(covariant PacketSyncId id, [covariant PacketSyncId? respId, Duration timeout = timeoutDefault]) async {
+  Future<PacketSyncId?> ping(covariant PacketSyncId id, {covariant PacketSyncId? respId, Duration timeout = timeoutDefault}) async {
     protocol.mapResponse(respId ?? id, this);
-    return sendSync(id).then((_) async => await recvSync(timeout));
+    if (respId != null) _recved = Completer<Packet>.sync();
+
+    return sendSync(id).then((_) async => await recvSync(timeout)); // rethrow timeout unlike requestResponse case
   }
 
   /// respondSync
@@ -293,6 +295,7 @@ class ProtocolSocket implements Sink<Packet> {
     } on TimeoutException {
       debugLog("Socket Recv Response Timeout");
       rethrow;
+      //return null; alternatively
     } on ProtocolException catch (e) {
       //should be handled by protocol
       debugLog("Unhandled ProtocolException on Socket");
