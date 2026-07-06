@@ -76,7 +76,10 @@ class VarInputDialog extends StatelessWidget {
         children: [
           const Divider(),
           // Text(endEditMessage ?? ''),
-          if (varNotifier.varKey.dependents != null) ...[const Text('The following values have been updated:\n'), Text(dependentsString(varNotifier.varKey), textAlign: TextAlign.left)],
+          if (varNotifier.varKey.dependents != null) ...[
+            const Text('The following values have been updated:\n'),
+            Text(dependentsString(varNotifier.varKey), textAlign: TextAlign.left),
+          ],
         ],
       ),
       actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Ok'))],

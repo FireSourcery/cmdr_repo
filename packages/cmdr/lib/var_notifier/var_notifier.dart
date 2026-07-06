@@ -311,12 +311,12 @@ abstract mixin class VarStatusNotifier implements ChangeNotifier {
   bool get statusIsSuccess => statusCode == 0;
 }
 
-/////
+///
 // User submit
 //   associated with UI component, instead of VarNotifier value
 //   not triggered by value changes
 //   Listeners to the VarNotifier value on another UI component will not be notified of submit
-/////
+///
 class VarEventNotifier<V> extends ChangeNotifier {
   VarEventNotifier({required this.varNotifier, required this.onSubmit});
   final VarNotifier<V> varNotifier; // typed by Key. returning as dynamic.

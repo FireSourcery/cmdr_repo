@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 class DialogAnchor<T> extends StatefulWidget {
   const DialogAnchor({super.key, this.initialDialogBuilder, this.eventNotifier, this.eventGetter, this.eventDialogBuilder, /*  this.eventMatch, */ this.notificationMatch, required this.child});
 
-  final WidgetBuilder? initialDialogBuilder;
   // allow a more general interface, instead of ValueListenable<T?>? eventNotifier;
   final Listenable? eventNotifier; // controls opening of dialog
   final ValueGetter<T?>? eventGetter;
@@ -18,8 +17,10 @@ class DialogAnchor<T> extends StatefulWidget {
   // additional way to match event
   final Notification? notificationMatch;
 
+  final WidgetBuilder? initialDialogBuilder; // on first focus
+
   // user match widget built to the notification event
-  final ValueWidgetBuilder<T?>? eventDialogBuilder;
+  final ValueWidgetBuilder<T?>? eventDialogBuilder; // on event, e.g. submit, or other event
   final Widget child;
 
   @override
