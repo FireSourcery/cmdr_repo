@@ -11,14 +11,13 @@ abstract base class Version<K extends WordField> extends WordBase<Version<K>, K>
   // uses VersionFieldStandard keys when no keys is specified
   factory Version(int optional, int major, int minor, int fix, {String? name}) => VersionStandard(optional, major, minor, fix, name: name) as Version<K>;
   // prototype object that can be copied
-  // Version.prototype
   const factory Version.withType(List<K> keys, {int value, String? name}) = VersionPrototype<K>;
 
-  // for inherting classes
-  const Version.withData(super.word) : super();
   const Version.value(super.value) : super.value();
   const Version.char8(int optional, int major, int minor, int fix) : this.value(fix | (minor << 8) | (major << 16) | (optional << 24));
   const Version.char16(int optional, int major, int minor, int fix) : this.value(fix | (minor << 16) | (major << 32) | (optional << 48));
+  // for inherting classes
+  const Version.withData(super.word) : super();
 
   // stored with prototype object, copy with new data
   @override
@@ -41,13 +40,16 @@ abstract base class Version<K extends WordField> extends WordBase<Version<K>, K>
   (String, String) get labelPair => (name ?? '', toStringAsVersion());
 
   /// msb first with dot separator `optional.major.minor.fix`
-  // factory Version.parse(String tag, {String? name}) {
+  // factory Version.parse3(String tag, {String? name}) {
   //   final numbers = RegExp(r'\d+').allMatches(tag).map((m) => int.parse(m.group(0)!)).toList();
   //   return Version(0, numbers[0], numbers[1], numbers[2], name: name);
-
-  //   // final lsb = numbers.reversed;
-  //   // return Version.lsb(lsb[0], lsb[1], lsb[2], lsb[3] ?? 0, name: name);
   // }
+
+  /// msb first with dot separator `optional.major.minor.fix` or `major.minor.fix`
+  factory Version.parse(String version, {String? name}) {
+    final numbers = RegExp(r'\d+').allMatches(version).map((m) => int.parse(m.group(0)!)).toList().reversed;
+    return Version(numbers.elementAtOrNull(3) ?? 0, numbers.elementAt(2), numbers.elementAt(1), numbers.elementAt(0), name: name);
+  }
 
   /// msb first with dot separator `optional.major.minor.fix`
   String toStringAsVersion([String left = '', String right = '', String separator = '.']) {

@@ -60,18 +60,21 @@ extension type const Word(int _value) implements Bits, int {
   /// TypedData Byte List operations
   // converts single register into bytes
 
+  /// Converts the [Word] into a [ByteData] object.
+  /// handle get[Sized] operations
   // fixed size buffer then trim view with length likely better performance than iterative build with flex size BytesBuilder
   // bytes.length always returns 8 from new buffer
   // ByteData.get[Word] must use same endian
   ByteData toByteData([Endian endian = Endian.little]) => ByteData(8)..setUint64(0, this, endian);
   Uint8List toBytes([Endian endian = Endian.little]) => Uint8List.sublistView(toByteData(endian));
 
-  // ByteData toByteData1(int lentgh, [Endian endian = Endian.little]) => ByteData(8)..setUint64(0, this, endian).trimWord(byteLength ?? this.byteLength, endian);
-  // Uint8List toBytes1(int lentgh, [Endian endian = Endian.little]) => Uint8List.sublistView(toByteData(endian));
-
   // ToBytesTrimmed
   ByteData toByteDataAs(Endian endian, [int? byteLength]) => toByteData(endian).trimWord(byteLength ?? this.byteLength, endian);
   Uint8List toBytesAs(Endian endian, [int? byteLength]) => Uint8List.sublistView(toByteDataAs(endian, byteLength));
+
+  // combined handler
+  // ByteData toByteData1(int lentgh, [Endian endian = Endian.little]) => ByteData(8)..setUint64(0, this, endian).trimWord(byteLength ?? this.byteLength, endian);
+  // Uint8List toBytes1(int lentgh, [Endian endian = Endian.little]) => Uint8List.sublistView(toByteData(endian));
 
   // by offset
   // ByteData toByteDataAt(Endian endian, [int start = 0, int? end]) => ByteData.sublistView(toByteData(endian), start, end);

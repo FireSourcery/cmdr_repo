@@ -1,3 +1,6 @@
+/// enum data utilities
+/// codec using Enum.values
+
 extension EnumByIndex<T extends Enum> on List<T> {
   T byIndex(int index, [T? defaultValue]) => elementAt(index.clamp(0, length - 1));
 

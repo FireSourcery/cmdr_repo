@@ -18,7 +18,7 @@ export 'enum_map.dart';
 //   person.withField(.age, 31) instead of person.withField(PersonField.age, 31)
 // mixin Serializable<  K extends Field<Object?>> on Object implements StructBase<S, K, Object?>
 
-mixin Serializable<S extends Serializable<S>> on Object implements StructBase<S, SerializableField, Object?> {
+mixin Serializable<S extends Serializable<S>> implements StructBase<S, SerializableField, Object?> {
   List<SerializableField<Object?>> get keys;
   StructData<SerializableField, dynamic> get data => this as StructData<SerializableField, dynamic>; // data passed to Keys
 

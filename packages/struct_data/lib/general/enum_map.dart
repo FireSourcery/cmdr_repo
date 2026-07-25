@@ -2,42 +2,6 @@ import 'index_map.dart';
 
 export 'index_map.dart';
 
-/// construct a [Map<K extends Enum, V>] from [Map<String, V>]
-/// on creation ensure all fields are valid
-extension type const EnumMapFactory<T extends Enum>(List<T> enums) implements List<T> {
-  /// iterable values must be in order of each index
-  EnumMap<T, V> mapWithValues<V>(Iterable<V> values) => IndexMap.of(this, values) as EnumMap<T, V>;
-
-  EnumMap<T, V> mapByName<V>(Map<String, V> map) => mapWithValues(enums.map((e) => map[e.name] as V));
-
-  // complete map only. partial can use addMapByName
-  // map can contain excess keys.
-  Map<T, V> fromMapByName<V>(Map<String, V?> map) {
-    if (null is V) return {for (final e in enums) e: map[e.name] as V};
-    // handle case of Map<String, V?> while containing all values.
-    return {for (final e in enums) e: map[e.name] ?? (throw FormatException('$enums: $map contains null value for key ${e.name} which is not of type $V'))};
-
-    // Index map handling allocation List this way.
-    // if (null is V) return mapWithValues(enums.map((e) => map[e.name] as V));
-    // return mapWithValues(enums.map((e) => map[e.name] ?? (throw FormatException('$enums: $map contains null value for key ${e.name} which is not of type $V'))));
-  }
-
-  Map<T, V> fromJson<V>(Map<String, Object?> json) {
-    if (json case Map<String, V?> map) {
-      return fromMapByName<V>(map);
-    } else {
-      throw FormatException('$enums: $json is not of type Map<String, $V>');
-    }
-  }
-
-  // less iteration, by going through enum list
-  // without reverse by name lookup
-  // Iterable<(T, V)> unmapByName<V>(Map<String, V> values) => map((e) => (e, values[e.name]!));
-  // Iterable<(T, V?)> unmapByNameOrNull<V>(Map<String, V?> values) => map((e) => (e, values[e.name]));
-  // Iterable<MapEntry<T, V>> unmapEntriesByName<V>(Map<String, V> values) => map((e) => MapEntry(e, values[e.name]!));
-  // void fromMapByName(Map<String, V> map) => addEntries(map.entries.map((e) => MapEntry(keys.byName(e.key), e.value)));
-}
-
 /// [EnumMap]
 /// A [Map] with the additional constraint that Keys are a `fixed set`, via [Enum].
 /// creation implements [FixedMap]/[IndexMap] constraints
@@ -55,6 +19,47 @@ extension type EnumMap<K extends Enum, V>._(Map<K, V> map) implements Map<K, V> 
   factory EnumMap.from(List<K> keys, Iterable<V> values) {
     return EnumMapFactory<K>(keys).mapWithValues(values);
   }
+
+  // factory EnumMap.parse(List<K> keys, Map<String, V> map) {
+  // factory EnumMap.tryParse(List<K> keys, Map<String, V?> map) {
+}
+
+/// construct a [Map<K extends Enum, V>] from [Map<String, V>]
+/// on creation ensure all fields are valid
+extension type const EnumMapFactory<T extends Enum>(List<T> enums) implements List<T> {
+  /// iterable values must be in order of each index
+  EnumMap<T, V> mapWithValues<V>(Iterable<V> values) => IndexMap.of(this, values) as EnumMap<T, V>;
+
+  EnumMap<T, V> mapByName<V>(Map<String, V> input) => IndexMap.of(this, map((k) => input[k.name])) as EnumMap<T, V>;
+  // EnumMap<T, V> mapByName<V>(Map<String, V> input) => {for (final e in this) e: input[e.name]  } as EnumMap<T, V>;
+
+  // complete map only. partial can use addMapByName
+  // missing keys return either EnumMap<T, V?> or  EnumMap<T, V> with throw
+  // map can contain excess keys.
+  Map<T, V> fromMapByName<V>(Map<String, V?> map) {
+    if (null is V) return {for (final e in this) e: map[e.name] as V};
+    // handle case of Map<String, V?> while containing all values.
+    return {for (final e in this) e: map[e.name] ?? (throw FormatException('$this: $map contains null value for key ${e.name} which is not of type $V'))};
+
+    // IndexMap handling allocation V List this way. compare vs primitive map construct {}
+    // if (null is V) return mapWithValues(enums.map((e) => map[e.name] as V));
+    // return mapWithValues(enums.map((e) => map[e.name] ?? (throw FormatException('$enums: $map contains null value for key ${e.name} which is not of type $V'))));
+  }
+
+  Map<T, V> fromJson<V>(Map<String, Object?> json) {
+    if (json case Map<String, V?> map) {
+      return fromMapByName<V>(map);
+    } else {
+      throw FormatException('$this: $json is not of type Map<String, $V>');
+    }
+  }
+
+  // less iteration, by going through enum list
+  // without reverse by name lookup
+  // Iterable<(T, V)> unmapByName<V>(Map<String, V> values) => map((e) => (e, values[e.name]!));
+  // Iterable<(T, V?)> unmapByNameOrNull<V>(Map<String, V?> values) => map((e) => (e, values[e.name]));
+  // Iterable<MapEntry<T, V>> unmapEntriesByName<V>(Map<String, V> values) => map((e) => MapEntry(e, values[e.name]!));
+  // void fromMapByName(Map<String, V> map) => addEntries(map.entries.map((e) => MapEntry(keys.byName(e.key), e.value)));
 }
 
 /// Serialization of [Map<Enum, V>] interface

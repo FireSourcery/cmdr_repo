@@ -43,7 +43,7 @@ extension type const StructData<K extends Field<V>, V>(Object _data) implements 
 }
 
 // typedef BinaryStruct<K extends Field<int>> = StructData<K, int>;
-// typedef ObjectStruct<K extends Field<Object?>> = StructData<K, Object?>;
+// typedef CompositeStruct<K extends Field<Object?>> = StructData<K, Object?>;
 
 /// [Field] — key to a value in a host struct, carrying accessor logic and type scope
 ///
@@ -114,14 +114,14 @@ extension TypedStructReference<K extends Field<V>, V> on ({StructForm<K, V> form
 typedef FieldEntry<K extends Field<V>, V> = ({K key, V value});
 typedef FieldEntries<K extends Field<V>, V> = Iterable<FieldEntry<K, V>>;
 
-// typedef FieldEntry<K extends Field<V>, V> = MapEntry<K, V>;
-
 /// [StructBase] — abstract base user subtype
+/// TypedStruct holds data and
 ///
-/// TypedStruct holds data and List keys TypeObject
+/// include keys TypeObject
 /// provide toMap()
 /// Handle User Subtype + [Serializable] mixin
 /// mixin for convenience, applies to further abstract classes
+/// abstract keys property is not fully suported using extension type
 ///
 /// Unlike [StructData] (which wraps an _external_ object), subclasses of
 /// [StructBase] hold data directly in their own fields. [Field.getIn] /

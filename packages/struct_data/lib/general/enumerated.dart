@@ -3,7 +3,7 @@ import 'struct.dart';
 export 'enum_map.dart';
 
 // may replace serialable
-mixin Enumerated<K extends EnumeratedField<Object?>> on Object implements StructBase<Enumerated<K>, K, Object?> {
+mixin Enumerated<K extends EnumeratedField<Object?>> implements StructBase<Enumerated<K>, K, Object?> {
   List<K> get keys;
   StructData<K, dynamic> get data => this as StructData<K, dynamic>; // data passed to Keys
 
@@ -39,6 +39,8 @@ mixin Enumerated<K extends EnumeratedField<Object?>> on Object implements Struct
 
   @override
   String toString() => '(${keys.map((k) => '$k: ${this[k]}').join(', ')})';
+
+  // alternatively copy MapBase implement map interface
 }
 
 // mixin ImmutableEnumerated<S,  K extends Field<Object?>> on Object implements StructBase<S, K, Object?>
@@ -47,6 +49,7 @@ mixin Enumerated<K extends EnumeratedField<Object?>> on Object implements Struct
 //   // static composible constructor(List<Enum> values)
 //   // s
 // }
+
 abstract mixin class EnumeratedField<V> implements Enum, Field<V> {
   V getIn(covariant Enumerated struct);
   void setIn(covariant Enumerated struct, V value);
