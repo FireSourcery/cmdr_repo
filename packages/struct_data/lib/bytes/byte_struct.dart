@@ -51,6 +51,16 @@ abstract class ByteStructBase<S extends ByteStructBase<S, K>, K extends ByteFiel
 }
 
 /// [ByteField] - a Typed Offset into a ByteStruct and TypedData. Defines a field of a ByteStruct by its offset and type.
+/// mxin on `enum` defines a complete mapping using type marker and offset
+// enum ByteFieldTest<V extends NativeType> with ByteField<V>, TypedField<V> {
+//   field0<Uint16>(0),
+//   field1<Uint16>(2),
+//   ;
+
+//   const ByteFieldTest(this.offset);
+//   @override
+//   final int offset;
+// }
 abstract mixin class ByteField<V extends NativeType> implements TypedField<V>, Field<int> {
   const factory ByteField(int offset) = _ByteField<V>;
 
