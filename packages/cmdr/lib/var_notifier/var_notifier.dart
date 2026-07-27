@@ -12,7 +12,15 @@ export 'var_key.dart';
 
 ///
 /// each retrievable value as a View Model
-// only default status ids need to be overridden
+/// [VarValueNotifier<V>]
+/// A notifier combining a ValueNotifier with support for conversion between view types and data values.
+///   - Implements [ValueNotifier]
+///   - hold value allocation
+///   - Unit conversion between view and data values
+///   - all mutability contained in a single layer, to simplify syncing and state management
+///   - Sync local and remote values, with pending change tracking
+/// It be can further combined with a status notifier.
+/// // only default status ids need to be overridden
 class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarStatusNotifier implements ValueNotifier<V> {
   VarNotifier({required this.varKey, BinaryCodec<V>? codec}) {
     this.codec = codec ?? varKey.buildViewer();
@@ -77,9 +85,6 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
       updateByFile(viewValue);
 
       assert(dataKey == this.dataKey, 'VarKey mismatch: $dataKey != ${this.dataKey}'); // handled by caller
-      // viewValue bound should keep dataValue within format bounds after conversion
-      // assert((varKey.binaryFormat?.max != null) ? (dataValue <= varKey.binaryFormat!.max) : true);
-      // assert((varKey.binaryFormat?.min != null) ? (dataValue >= varKey.binaryFormat!.min) : true);
     }
   }
 
@@ -96,14 +101,7 @@ extension VarNotifiers on Iterable<VarNotifier> {
   }
 }
 
-/// [VarValueNotifier<V>]
-/// A notifier combining a ValueNotifier with support for conversion between view types and data values.
-///   - Implements [ValueNotifier]
-///   - hold value allocation
-///   - Unit conversion between view and data values
-///   - all mutability contained in a single layer, to simplify syncing and state management
-///   - Sync local and remote values, with pending change tracking
-/// It be can further combined with a status notifier.
+///
 abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V> {
   ///
   /// Typed view [value] as view side
@@ -124,6 +122,7 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
   // also clear on updateByDataStatus
   // void commitUserChanges() => commitView();
 
+  // refresh local side
   // Call to discard user changes
   void discardUserChanges() {
     if (_viewValue != null) {

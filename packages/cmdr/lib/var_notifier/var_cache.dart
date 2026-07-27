@@ -167,6 +167,19 @@ class VarCache {
   ///
   Iterable<VarNotifier> dependentsOf(VarKey key) => varsOf(key.dependents ?? []);
 
+  void updateDependentsOf(VarKey key) {
+    for (final varNotifier in dependentsOf(key)) {
+      varNotifier.discardUserChanges();
+    }
+  }
+
+  void reinitDependentsOf(VarKey key) {
+    for (final varNotifier in dependentsOf(key)) {
+      varNotifier.initReferences();
+      varNotifier.discardUserChanges();
+    }
+  }
+
   ///
   /// Json
   ///
