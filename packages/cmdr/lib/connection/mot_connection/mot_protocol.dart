@@ -32,6 +32,18 @@ class MotProtocolSocket extends ProtocolSocket {
   Future<VarWriteResponseValues?> writeVars(VarWriteRequestValues pairs) async => requestResponse(MotPacketRequestId.MOT_PACKET_VAR_WRITE, pairs);
 
   ///
+  /// Fixed-size Var (single id, 32-bit value)
+  ///
+  Future<FixedVarReadResponseValues?> readVarFixed(int id, [int flags = 0]) async => requestResponse(MotPacketRequestId.MOT_PACKET_FIXED_VAR_READ, (id: id, flags: flags));
+  Future<FixedVarWriteResponseValues?> writeVarFixed(int id, int value, [int flags = 0]) async => requestResponse(MotPacketRequestId.MOT_PACKET_FIXED_VAR_WRITE, (id: id, flags: flags, value: value));
+
+  ///
+  /// 32-Bit Vars by Key (batched fixed-size vars)
+  ///
+  Future<Var32ReadResponseValues?> readVars32(Var32ReadRequestValues idFlags) async => requestResponse(MotPacketRequestId.MOT_PACKET_VAR32_READ, idFlags);
+  Future<Var32WriteResponseValues?> writeVars32(Var32WriteRequestValues entries) async => requestResponse(MotPacketRequestId.MOT_PACKET_VAR32_WRITE, entries);
+
+  ///
   /// Mem
   /// 8 bytes overhead on write, potentially 4, moving size and config to header
   ///
@@ -79,13 +91,6 @@ class MotProtocolSocket extends ProtocolSocket {
 
   Future<int?> endDataModeWrite() async => recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
 
-  // Future<int?> endDataModeWrite() async {
-  //   final status = await recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE);
-  //   sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK);
-  //   return status;
-  //   // ..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
-  // }
-
   Future<int?> endDataModeRead() async => recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_READ)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
 
   Future<void> writeDataModeData(Uint8List data) async => sendRequest(MotPacketRequestId.MOT_PACKET_DATA_MODE_DATA, data);
@@ -108,9 +113,6 @@ class MotProtocolSocket extends ProtocolSocket {
     }
   }
 }
-
-// Future<int> requestReadVar(int id) => procRequestResponse(MotPacketPayloadId.MOT_PACKET_READ_VAR);
-// Future<int> requestWriteVar(int id, int value) => procRequestResponse(MotPacketPayloadId.MOT_PACKET_WRITE_VAR, {id: value});
 
 extension MemReadRequestMethods on MemReadRequestValues {
   // List should be relatively small, so a new list is likely more efficient than a generator
