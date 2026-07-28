@@ -9,14 +9,24 @@ import 'file_storage.dart';
 
 class OpenFileButton extends FileLoadButton {
   const OpenFileButton({required super.fileNotifier, super.title = 'Open File', super.iconData = Icons.file_open, super.key});
+  // final VoidCallback onLoaded;
 
+  // @override
+  // Future<void> beginAsync() async {
+  //   await super.beginAsync();
+  //   onLoaded();
+  // }
   @override
   Future<void> beginAsync() async => fileNotifier.openParseWithNotify(fileNotifier.pickFile());
 }
 
 class SaveFileButton extends FileLoadButton {
   const SaveFileButton({required super.fileNotifier, super.title = 'Save File', super.iconData = Icons.file_copy, super.key});
-
+  // @override
+  // Future<void> beginAsync() async {
+  //   onCommit();
+  //   return super.beginAsync();
+  // }
   @override
   Future<void> beginAsync() async => fileNotifier.saveBuildWithNotify(fileNotifier.pickSaveFile());
 }

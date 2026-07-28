@@ -4,7 +4,7 @@
 extension EnumByIndex<T extends Enum> on List<T> {
   T byIndex(int index, [T? defaultValue]) => elementAt(index.clamp(0, length - 1));
 
-  T? resolve(int? index) => (index != null) ? byIndex(index) : null;
+  T? resolve(int? index) => (index != null) ? elementAtOrNull(index) : null;
 
   EnumCodec<T> asCodec() => EnumCodecDefault(this);
 }
