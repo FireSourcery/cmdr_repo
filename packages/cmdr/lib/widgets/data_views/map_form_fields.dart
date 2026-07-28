@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:struct_data/word/word.dart';
 import 'package:struct_data/utilities/basic_ext.dart';
 
@@ -37,18 +36,25 @@ class MapFormFields<K, V> extends StatefulWidget {
                  _ => throw UnsupportedError('$V must be num type'),
                }
                as V? Function(String),
-       inputFormatters = [FilteringTextInputFormatter.digitsOnly];
+       inputFormatters = switch (V) {
+         const (int) => [FilteringTextInputFormatter.digitsOnly],
+         const (double) || const (num) => [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
+         _ => null,
+       };
 
   final Iterable<MapEntry<K, V>> entries; // MapEntry<K, V>
   final bool isReadOnly;
   final ValueSetter<Map<K, V>> onSaved; // returns a new Map that is a HashMap, user may cast to original type
 
   final String Function(K key)? keyStringifier;
-  final V? Function(String textValue) valueParser;
-
-  final List<TextInputFormatter>? inputFormatters;
-  final (num min, num max)? numLimits;
   final Widget? leading;
+
+  // handle internally
+  final V? Function(String textValue) valueParser;
+  final List<TextInputFormatter>? inputFormatters;
+
+  //
+  final (num min, num max)? numLimits;
 
   int? get maxDigits => numLimits?.$2.toString().length;
 
@@ -62,17 +68,6 @@ class _MapFormFieldsState<K, V> extends State<MapFormFields<K, V>> {
   late final Map<K, V> results = {for (final MapEntry(:key, :value) in widget.entries) key: value};
   late final Map<K, TextEditingController> _textEditingControllers;
   late final Map<K, FocusNode> _focusNodes;
-
-  String labelOf(K key) => widget.keyStringifier?.call(key) ?? key.toString();
-
-  void updateValue(K key, String value) {
-    if (value.isEmpty) return;
-    if (widget.valueParser(value) case V parsedValue) results[key] = parsedValue;
-  }
-
-  void updateOnFocusLoss(K key) {
-    if (!_focusNodes[key]!.hasFocus) updateValue(key, _textEditingControllers[key]!.text);
-  }
 
   @override
   void initState() {
@@ -92,27 +87,26 @@ class _MapFormFieldsState<K, V> extends State<MapFormFields<K, V>> {
     super.dispose();
   }
 
+  String labelOf(K key) => widget.keyStringifier?.call(key) ?? key.toString();
+
+  void updateValue(K key, String value) {
+    if (value.isEmpty) return;
+    if (widget.valueParser(value) case V parsedValue) results[key] = parsedValue;
+  }
+
+  void updateOnFocusLoss(K key) {
+    if (!_focusNodes[key]!.hasFocus) updateValue(key, _textEditingControllers[key]!.text);
+  }
+
   @override
   Widget build(BuildContext context) {
+    // validation on full Map
+    // applies the same num limits to all entries, if applicable
     return FormField<Map<K, V>>(
       autovalidateMode: AutovalidateMode.onUnfocus,
       initialValue: results,
       onSaved: (Map<K, V>? newValue) => widget.onSaved.call(newValue!),
-      validator: (Map<K, V>? value) {
-        if (value == null || value.isEmpty) return 'Empty value';
-        if (MapFormFields.isNumeric<V>()) {
-          if (widget.numLimits case (num min, num max)) {
-            for (final entry in value.entries) {
-              if ((entry.value as num).clamp(min, max) case num clamped when clamped != entry.value) {
-                _textEditingControllers[entry.key]!.text = clamped.toString();
-                results[entry.key] = clamped as V;
-                return '$min to $max allowed';
-              }
-            }
-          }
-        }
-        return null;
-      },
+      validator: _numericValidator,
       builder: (FormFieldState<Map<K, V>> field) {
         return Row(
           children: [
@@ -125,18 +119,6 @@ class _MapFormFieldsState<K, V> extends State<MapFormFields<K, V>> {
                   onEditingComplete: () => updateValue(key, _textEditingControllers[key]!.text),
                   focusNode: _focusNodes[key]!,
                   onSubmitted: (String value) => updateValue(key, value),
-                  // onChanged: (String value) {
-                  //   if (MapFormFields.isNumeric<V>()) {
-                  //     // if validate on change
-                  //     updateValue(key, value); // update cached value
-                  //     field.validate(); // display error
-                  //   }
-                  // },
-                  // onTapOutside: (event) {
-                  //   // updateValue(key, _textEditingControllers[key]!.text);
-                  //   field.didChange(field.value); //sets map object
-                  //   // print('onTapOutside'); //field.didChange(field.value),
-                  // },
                   inputFormatters: widget.inputFormatters,
                   readOnly: widget.isReadOnly,
                   maxLengthEnforcement: MaxLengthEnforcement.enforced,
@@ -150,6 +132,53 @@ class _MapFormFieldsState<K, V> extends State<MapFormFields<K, V>> {
         );
       },
     );
+  }
+
+  // Widget buildPerEntry(BuildContext context) {
+  //   return Flex(
+  //     direction: Axis.horizontal,
+  //     mainAxisSize: MainAxisSize.min,
+  //     children: [
+  //       for (final (index, MapEntry(:key, :value)) in widget.entries.indexed) ...[
+  //         Expanded(
+  //           child: TextFormField(
+  //             autovalidateMode: AutovalidateMode. onUnfocus,
+  //             initialValue: value.toString()  ,
+  //             onSaved: (String? newValue) => updateValue(key, newValue ?? ''),
+  //             // validator: (value) => widget.valueParser(value ?? '') == null ? 'Invalid value' : null,
+
+  //             decoration: InputDecoration(labelText: labelOf(key), isDense: true, counterText: ''),
+  //             controller: _textEditingControllers[key]!,
+  //             onEditingComplete: () => updateValue(key, _textEditingControllers[key]!.text),
+  //             focusNode: _focusNodes[key]!,
+  //             inputFormatters: widget.inputFormatters,
+  //             readOnly: widget.isReadOnly,
+  //             maxLengthEnforcement: MaxLengthEnforcement.enforced,
+  //             maxLines: 1,
+  //             maxLength: widget.maxDigits,
+  //           ),
+  //         ),
+  //         if (index != widget.entries.length - 1) const VerticalDivider(),
+  //       ],
+  //     ],
+  //   );
+  // }
+
+  String? _numericValidator(Map<K, V>? value) {
+    if (value == null || value.isEmpty) return 'Empty value';
+
+    if (MapFormFields.isNumeric<V>()) {
+      if (widget.numLimits case (num min, num max)) {
+        for (final entry in value.entries) {
+          if ((entry.value as num).clamp(min, max) case num clamped when clamped != entry.value) {
+            _textEditingControllers[entry.key]!.text = clamped.toString();
+            results[entry.key] = clamped as V;
+            return '$min to $max allowed';
+          }
+        }
+      }
+    }
+    return null;
   }
 }
 
