@@ -106,12 +106,12 @@ class VarCache {
   // Prevent sending results of fetch/poll, updateByData is blocked by isUpdatedByView,
   // handle case where value is polling response is received in between mark updateByView and send
   // relevant only when var is read/write; periodic polling AND calls updateByView
-  // if (varNotifier.lastUpdate != VarLastUpdate.byView) varNotifier.updateByData(value); // only update if not updatedByView pending
   void _updateByData(int id, int value) => _cache[id]?.updateByData(value);
+  // if (varNotifier.lastUpdate != VarLastUpdate.byView) varNotifier.updateByData(value); // only update if not updatedByView pending
 
   // returned values should be lists
   /* [bool overwriteUpdateByView = false] */
-  void updateByData(Iterable<int> ids, Iterable<int> valuesIn) {
+  void updateByData(Iterable<int> ids, Iterable<int> valuesIn, {bool overwriteUpdateByView = false}) {
     assert(valuesIn.length == ids.length); // caller checks packet length, data
 
     if (valuesIn case List<int> valuesList) {
@@ -131,7 +131,6 @@ class VarCache {
   /// Collective Data Write
   ///
   /// awaiting push
-  // Iterable<VarNotifier> get varsUpdatedByView => varEntries.where((e) => e.lastUpdate == VarLastUpdate.byView);
   Iterable<VarNotifier> get varsUpdatedByView => varEntries.where((e) => e.hasPendingChanges);
   Iterable<(int, int)> get dataPairsUpdatedByView => varsUpdatedByView.map((e) => e.dataPair);
 

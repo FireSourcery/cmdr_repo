@@ -39,6 +39,15 @@ class VarCacheController {
     return VarStatusDefault.success;
   }
 
+  /// overwrite user changes, e.g. on explicit fetch
+  Future<VarStatus?> readOverwrite([Iterable<VarKey>? keys]) async {
+    await readAll(keys);
+    for (final v in cache.varEntries) {
+      v.discardUserChanges(); // device data wins on explicit fetch
+    }
+    return VarStatusDefault.success;
+  }
+
   ///
   /// Collective Write Vars `Send/Update`
   ///

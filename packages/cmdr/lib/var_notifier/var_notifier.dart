@@ -136,9 +136,17 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
   ///
   int get dataValue => data;
 
-  void updateByData(int bytesValue) {
+  // periodic polling - don't overwrite user changes, only update if not updatedByView pending
+  void updateByData(int bytesValue, {bool overwriteUpdateByView = false}) {
     data = bytesValue; // Always update server value
     if (_viewValue == null) notifyListeners(); // Only notify if effective value changed
+  }
+
+  // user initiated - overwrite user changes, always update server value and view value
+  void updateByDataSync(int bytesValue) {
+    data = bytesValue;
+    _viewValue = null;
+    notifyListeners();
   }
 
   ///
@@ -165,22 +173,19 @@ mixin class VarValue<V> {
   ///   Base storage as server's native type.
   ///   convert on transmit only, get [data]. lazy update on updateByView
   ///   [serverData] is public for `Read Only Mode` vars setter access, may directly access serverData. [_viewValue] is not updated;
-  int serverData = 0; // Server data. Source of truth from server. in sync with server by receive and commit to transmit.
+  int serverData = 0; // Server data. in sync with server by receive and commit to transmit.
   V? _viewValue; // User view - BOTH cached UI changes + pending before commit. (null => synchronized). Cached storage as view + effectively LastUpdateFlag
 
   /// [data] to/from server. Always accept server data.
 
-  /// [get] on transmit to server. serverData unless pending _viewValue is set
+  /// [get] on transmit to server.
   /// value over view boundaries handle by [view]
+  /// always transmit the converted cached value when available. serverData is effectively no op
   int get data => (_viewValue == null) ? serverData : dataOf(_viewValue as V);
-  // int get data => _viewValue?.chain(dataOf) ?? serverData;
 
   /// [set] on receive from server. always store serverData even if pending
   /// does not update/overwrite [view] if it was set by the UI
   set data(int newValue) => serverData = newValue;
-  // // or remove and manually call commit
-  // // auto restore control to serverData for read/write-only cases
-  // if (_viewValue case V val when val == viewOf(newValue)) _viewValue = null; // clear pending, view as serverData again, only if user value matches server value,
 
   /// [view] value linked to UI
 
@@ -194,7 +199,6 @@ mixin class VarValue<V> {
   /// separate clear pending.
   /// restore get [view] to reflect serverData, [viewOf(serverData)],
   // No notification needed - view value doesn't change
-  // int   data    ;
   void commitView() {
     if (_viewValue case V val) {
       serverData = dataOf(val); // update in case of write only var, no server polling updates
@@ -255,7 +259,7 @@ mixin class VarValue<V> {
   Uint8List get valueAsBytes => Uint8List(8)..buffer.asByteData().setUint64(0, numView as int, Endian.little);
 }
 
-// simplified version without local view cache
+// simplified version without local view cache. Source of truth from server
 // polling vars may overwrite user changes before they are sent
 // UI-only change vs submit for push must be implemented separately
 // no cache for intermediate UI view initiated changes/animations (e.g. slider)
