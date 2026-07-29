@@ -10,6 +10,8 @@ extension EnumByIndex<T extends Enum> on List<T> {
 }
 
 abstract interface class EnumCodec<V extends Enum> /* implements Codec<V> */ {
+  const factory EnumCodec(List<V> values) = EnumCodecDefault;
+
   List<V> get values;
   V decode(int data);
   int encode(V view);

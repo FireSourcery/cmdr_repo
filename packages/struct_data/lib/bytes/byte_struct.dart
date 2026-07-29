@@ -32,6 +32,10 @@ extension type const ByteForm<K extends ByteField>(List<K> _fields) implements S
 }
 
 /// [ByteStructBase] — abstract base for user-defined byte struct subtypes.
+///
+/// ffi.Struct cannot mixin for Enumerated keyed access.
+/// boundary checking on access.
+///
 abstract class ByteStructBase<S extends ByteStructBase<S, K>, K extends ByteField> with StructBase<S, K, int> {
   const ByteStructBase(this.byteData);
 

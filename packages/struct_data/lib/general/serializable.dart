@@ -25,6 +25,8 @@ mixin Serializable<S extends Serializable<S>> implements StructBase<S, Serializa
   // duplicate code until combine mixin is support
   Object? operator [](covariant SerializableField key) => data[key];
   void operator []=(covariant SerializableField key, Object? value) => data[key] = value;
+  bool testAccess(SerializableField key) => data.testAccess(key);
+
   Object? fieldOrNull(SerializableField key) => data.fieldOrNull(key);
   bool trySetField(SerializableField key, Object? value) => data.trySetField(key, value);
   SerializableEntry<Object?> field(covariant SerializableField key) => data.field(key);
@@ -69,6 +71,7 @@ typedef SerializableEntry<V> = ({SerializableField<V> key, V value});
 /// maps entirety of the struct
 abstract mixin class SerializableField<V> implements Enum, Field<V> {
   // a function using a known interface access the fields of the user's class, maps ids to getters
+  // within scope of V, for auto type checking. otherwise data class map
   // V getIn(covariant Serializable struct);
   V getIn(covariant Object struct);
   void setIn(covariant Object struct, V value);

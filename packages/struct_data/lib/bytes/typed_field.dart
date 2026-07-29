@@ -21,6 +21,7 @@ abstract mixin class TypedField<T extends NativeType> /* implements Field<int> *
   int get size => _sizeOf<T>();
   int get end => offset + size; // index of the last byte + 1
 
+  int get valueMax => (1 << size * 8) - 1;
   int get defaultValue => 0;
 }
 

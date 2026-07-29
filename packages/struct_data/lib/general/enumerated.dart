@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'enum_map.dart';
 import 'struct.dart';
 export 'enum_map.dart';
@@ -8,16 +10,21 @@ mixin Enumerated<K extends EnumeratedField<Object?>> implements StructBase<Enume
   StructData<K, dynamic> get data => this as StructData<K, dynamic>; // data passed to Keys
 
   // duplicate code until combine mixin is support
+
+  // otherwise keep mapping overrid here, when type comparison is not needed
   Object? operator [](covariant K key) => data[key];
   void operator []=(covariant K key, Object? value) => data[key] = value;
+  bool testAccess(K key) => data.testAccess(key);
+
   Object? fieldOrNull(K key) => data.fieldOrNull(key);
   bool trySetField(K key, Object? value) => data.trySetField(key, value);
-
   field(covariant K key) => data.field(key);
-
   fieldAs<R>(covariant EnumeratedField<R> key) => data.fieldAs<R>(key);
+
+  // Iterable<V> get values => StructForm(keys)(data).values;
+  // Iterable<FieldEntry<K, V>> get fields => StructForm(keys)(data).fields;
   Iterable<Object?> get values => keys.map((k) => this[k]);
-  get fields => keys.map((k) => (key: k, value: this[k]));
+  Iterable<FieldEntry<K, Object?>> get fields => keys.map((k) => (key: k, value: this[k]));
   StructForm<K, Object?> get _type => StructForm<K, Object?>(keys);
 
   Map<K, Object?> toMap() => _type.mapWithData(data);
@@ -39,8 +46,6 @@ mixin Enumerated<K extends EnumeratedField<Object?>> implements StructBase<Enume
 
   @override
   String toString() => '(${keys.map((k) => '$k: ${this[k]}').join(', ')})';
-
-  // alternatively copy MapBase implement map interface
 }
 
 // mixin ImmutableEnumerated<S,  K extends Field<Object?>> on Object implements StructBase<S, K, Object?>

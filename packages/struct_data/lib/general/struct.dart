@@ -22,13 +22,14 @@ import '../binary_data.dart';
 extension type const StructData<K extends Field<V>, V>(Object _data) implements Object {
   V operator [](K key) => key.getIn(this);
   void operator []=(K key, V value) => key.setIn(this, value);
+  bool testAccess(K key) => key.testAccess(this);
 
   FieldEntry<K, V> field(K key) => (key: key, value: this[key]);
 
-  V? fieldOrNull(K key) => key.testAccess(this) ? key.getIn(this) : null;
+  V? fieldOrNull(K key) => testAccess(key) ? this[key] : null;
   bool trySetField(K key, V value) {
-    if (!key.testAccess(this)) return false;
-    key.setIn(this, value);
+    if (!testAccess(key)) return false;
+    this[key] = value;
     return true;
   }
 
@@ -88,7 +89,7 @@ extension type const StructForm<K extends Field<V>, V>(List<K> fields) implement
   // keys must be Enum or have index
   // index map handling all keys present
   IndexMap<K, V> _structMap(StructData<K, V> struct) => IndexMap<K, V>.of(fields, fields.map((k) => struct[k]));
-  // Map<K, V> _hashMap(StructData<K, V> struct) => {for (final key in fields) key: struct[key]};
+  Map<K, V> _hashMap(StructData<K, V> struct) => {for (final key in fields) key: struct[key]};
 
   Map<K, V> mapWithData(StructData<K, V> struct) => _structMap(struct);
 
@@ -115,7 +116,7 @@ typedef FieldEntry<K extends Field<V>, V> = ({K key, V value});
 typedef FieldEntries<K extends Field<V>, V> = Iterable<FieldEntry<K, V>>;
 
 /// [StructBase] — abstract base user subtype
-/// TypedStruct holds data and
+/// TypedStruct
 ///
 /// include keys TypeObject
 /// provide toMap()
@@ -142,7 +143,6 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   /// Typically returns `MyField.values` for an enum-based key type.
   @protected
   List<K> get keys; // Child class defines fixed keys
-  // List<K> get T;
   // StructForm<K, V> get schema => StructForm<K, V>(keys);
 
   /// Proxy to allow the same keys
@@ -151,6 +151,9 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
 
   V operator [](covariant K key) => data[key];
   void operator []=(covariant K key, V value) => data[key] = value;
+  bool testAccess(K key) => data.testAccess(key);
+
+  // alternatively call local function, flexible override this class instead of Field class
   V? fieldOrNull(K key) => data.fieldOrNull(key);
   bool trySetField(K key, V value) => data.trySetField(key, value);
   FieldEntry<K, V> field(K key) => data.field(key);
@@ -186,6 +189,8 @@ class StructInitializer<T extends StructBase<T, K, V>, K extends Field<V>, V> im
   V operator [](covariant K key) => _init[key]!;
   @override
   void operator []=(covariant K key, V value) => _init[key] = value;
+  @override
+  bool testAccess(K key) => true; // all keys present in map
 
   @override
   FieldEntry<K, V> field(K key) => (key: key, value: _init[key]!);
