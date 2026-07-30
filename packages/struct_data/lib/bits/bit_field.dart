@@ -14,6 +14,7 @@ export 'bits.dart';
 // A collection of `Bit-fields`, in a primitive type variable, e.g int,
 // should be known as Bit-Fields, or Bits Field, Bit Struct, Bit-Field Struct
 //
+// todo implements Bitmask keep Bits interface
 abstract mixin class BitField implements Field<int> {
   Bitmask get bitmask;
 

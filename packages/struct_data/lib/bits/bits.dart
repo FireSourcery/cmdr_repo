@@ -62,6 +62,14 @@ extension type const Bits(int _bits) implements int {
   bool isAligned(int align) => ((this & (align - 1)) == 0);
 
   String toStringAsBinary() => '0b${toRadixString(2)}';
+
+  //
+  Set<T> toSet<T extends Enum>(List<T> keys) => {
+    for (var e in keys)
+      if (boolAt(e.index)) e,
+  };
+
+  Map<int, int> toMap(List<Bitmask> keys) => {for (var e in keys) e.shift: bitsAt(e.shift, e.width)};
 }
 
 extension IntToBits on int {
@@ -74,21 +82,22 @@ extension IntToBits on int {
 class Bitmask {
   const Bitmask._(this.bitmask, this.shift, this.width);
   const Bitmask(this.shift, this.width) : bitmask = ((1 << width) - 1) << shift;
-  // int _bitmask(int shift, int width) => ((1 << width) - 1) << shift;
+  // static int _bitmask(int shift, int width) => ((1 << width) - 1) << shift;
 
-  const Bitmask.bits(int shift, int width) : this(shift, width);
+  const Bitmask.bits(int index, int width) : this(index, width);
   const Bitmask.bit(int index) : this(index, 1);
-  const Bitmask.bytes(int shift, int size) : this(shift * 8, size * 8);
+  const Bitmask.bytes(int index, int size) : this(index * 8, size * 8);
   const Bitmask.byte(int index) : this(index * 8, 8);
   const Bitmask.index(int index) : this._(1 << index, index, 1);
 
   final int bitmask; // store compile time derived value
   final int shift;
-  final int width; // (bitmask >>> shift).bitLength;
+  final int width;
 }
 
 // for implements conveinience
 extension on Bitmask {
+  // int get index => shift;
   // int get valueMax => bitmask >> shift;
   int clear(int source) => source & ~bitmask; // clear bits
 
