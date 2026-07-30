@@ -15,8 +15,9 @@ class MotProtocolSocket extends ProtocolSocket {
   @override
   Future<PacketSyncId?> ping(MotPacketSyncId id, {MotPacketSyncId? respId, Duration timeout = ProtocolSocket.timeoutDefault}) async => super.ping(id, respId: respId, timeout: timeout);
 
-  // Future<PacketSyncId?> pingDefault({MotPacketSyncId id = MotPacketSyncId.MOT_PACKET_PING, MotPacketSyncId? respId, Duration timeout = ProtocolSocket.timeoutDefault}) async =>
-  //     super.ping(id, respId: respId ?? id, timeout: timeout);
+  Future<PacketSyncId?> pingDefault({MotPacketSyncId id = MotPacketSyncId.MOT_PACKET_PING, MotPacketSyncId? respId, Duration timeout = ProtocolSocket.timeoutDefault}) async =>
+      super.ping(id, respId: respId ?? id, timeout: timeout);
+
   Future<PacketSyncId?> pingBoot() async => super.ping(MotPacketSyncId.MOT_PACKET_PING_BOOT, respId: MotPacketSyncId.MOT_PACKET_PING_BOOT, timeout: const Duration(milliseconds: 500));
 
   Future<int?> stopMotors() async => requestResponse(MotPacketRequestId.MOT_PACKET_STOP_ALL, null);

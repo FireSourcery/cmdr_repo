@@ -45,6 +45,7 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
   /// reinit on VarKey update
   void initReferences() {
     codec = varKey.buildViewer();
+    notifyListeners();
   }
 
   /// [VarStatus] type is the same for all vars in most cases.
