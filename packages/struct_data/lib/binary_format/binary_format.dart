@@ -98,8 +98,6 @@ sealed class NumFormat<S extends NativeType, V extends num> extends BinaryFormat
   const NumFormat();
   ({num min, num max}) get valueRange => binaryRange;
   num clampValue(num value) => value.clamp(valueRange.min, valueRange.max);
-  // V decode(int raw) => signedOf(raw) as V;
-  // int encode(V value) => value.clamp(binaryRange.min, binaryRange.max) as int;
 }
 
 class IntFormat<S extends NativeType> extends NumFormat<S, int> {
@@ -112,10 +110,6 @@ class IntFormat<S extends NativeType> extends NumFormat<S, int> {
 // expand to Double and Float as needed
 abstract class FractFormat<S extends NativeType> extends NumFormat<S, double> {
   const FractFormat();
-  num get scalingFactor;
-  get valueRange => (min: binaryRange.min / scalingFactor, max: binaryRange.max / scalingFactor);
-  double decode(int raw) => signedOf(raw) / scalingFactor;
-  int encode(double value) => (value * scalingFactor).round().clamp(binaryRange.min, binaryRange.max);
 }
 
 final class BoolFormat extends BinaryFormat<Bool, bool> {
@@ -166,16 +160,18 @@ class EnumFormatByHandlers<V extends Enum> extends EnumFormat<Int, V> {
   int encode(V view) => encoder(view);
 }
 
-// add as needed abstract class FloatingPoint<S extends NativeType> extends FractFormat<S> {
 abstract class FixedPoint<S extends NativeType> extends FractFormat<S> {
   const FixedPoint();
   // ergonomic const def
-  const factory FixedPoint.n(int fractBits) = FixedPointN<S>;
   // FixedPoint<Int16>.n(15)
-  const factory FixedPoint.d(int decimal) = FixedPointBase10<S>;
+  const factory FixedPoint.n(int fractBits) = FixedPointN<S>;
   // FixedPoint<Int16>.d(2) scaling factor 100
   // FixedPoint<Int16>.da(2) scaling factor 1/100
-  num get scalingFactor; // num scale 1.0
+  const factory FixedPoint.d(int decimal) = FixedPointBase10<S>;
+  num get scalingFactor;
+  get valueRange => (min: binaryRange.min / scalingFactor, max: binaryRange.max / scalingFactor);
+  double decode(int raw) => signedOf(raw) / scalingFactor;
+  int encode(double value) => (value * scalingFactor).round().clamp(binaryRange.min, binaryRange.max);
 }
 
 // define with parameter
@@ -190,11 +186,6 @@ final class FixedPointBase10<S extends NativeType> extends FixedPoint<S> {
   final int decimalDigits;
   num get scalingFactor => pow(10, decimalDigits);
 }
-
-// final class Float32 extends FractFormat<Float> {
-//   const Float32();
-//   num get scalingFactor => 1.0;
-// }
 
 // final class FloatingPoint  extends FractFormat<Float> {
 //   const FloatingPoint();
@@ -255,11 +246,13 @@ final class Uaccum16 extends FixedPoint<Uint16> {
   num get scalingFactor => (1 << 7);
 }
 
+// Sat16
 final class Percent16 extends FixedPoint<Uint16> {
   const Percent16();
   num get scalingFactor => (1 << 16);
 }
 
+// Wrap16
 final class _Angle16<S extends NativeType> extends FractFormat<S> {
   const _Angle16();
   double get fullScale => 1.0;

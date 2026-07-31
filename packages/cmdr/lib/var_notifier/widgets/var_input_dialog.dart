@@ -31,6 +31,8 @@ class VarInputDialog extends StatelessWidget {
   final ValueGetter<String?>? beginEditMessage; // shown on first focus when it resolves non-null
   final ValueGetter<String?>? endEditMessage; // shown on submit when it resolves non-null
 
+  // final ValueSetter<VarNotifier<V>> onSubmit;
+
   Widget _dialog(BuildContext context, String message) {
     return AlertDialog(
       title: Text(varNotifier.varKey.label),

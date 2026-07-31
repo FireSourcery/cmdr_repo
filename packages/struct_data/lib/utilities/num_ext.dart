@@ -1,7 +1,10 @@
+import 'dart:math' as math;
+
 /// Numeric limits, conversions, and extension methods.
 /// [NumLimits]
 typedef NumLimits = ({num min, num max});
 typedef NumericLimits<T extends num> = ({T min, T max});
+// typedef Interval<T extends num> = ({T min, T max});
 
 extension NumLimitsOperator on NumLimits {
   NumLimits operator *(num factor) => (min: min * factor, max: max * factor);
@@ -9,13 +12,14 @@ extension NumLimitsOperator on NumLimits {
   NumLimits operator +(num offset) => (min: min + offset, max: max + offset);
   NumLimits operator -(num offset) => (min: min - offset, max: max - offset);
 
+  NumLimits intersect(NumLimits other) => (min: math.max(min, other.min), max: math.min(max, other.max));
+  NumLimits union(NumLimits other) => (min: math.min(min, other.min), max: math.max(max, other.max));
+
   num clamp(num value) => value.clamp(min, max);
 
   ({double min, double max}) looseToDouble() => (min: min.floorToDouble(), max: max.ceilToDouble());
   ({double min, double max}) tightToDouble() => (min: min.ceilToDouble(), max: max.floorToDouble());
-
-  ({double min, double max}) floorCeilToDouble() => (min: min.floorToDouble(), max: max.ceilToDouble());
-  ({double min, double max}) scaleToDouble(num factor) => (this * factor).floorCeilToDouble();
+  ({double min, double max}) scaleToDouble(num factor) => (this * factor).looseToDouble();
 }
 
 extension NumTo on num {
