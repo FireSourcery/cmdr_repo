@@ -16,9 +16,9 @@ abstract mixin class PropertyFilter<T> {
 }
 
 extension WhereFilter<T> on Iterable<T> {
+  // invert the call order for   ergonomic chaining
   Iterable<T> havingProperty(PropertyFilter<T>? property) => property?.call(this) ?? this;
 
-  // Iterable<T> havingTyped<P extends PropertyFilter<T>>(Iterable<List<PropertyFilter<T>>> allProperties, P filter) {
   Iterable<T> havingTyped<P extends PropertyFilter<T>>(Iterable<List<PropertyFilter<T>>> allProperties) {
     return allProperties.whereType<List<P>>().whereType<P>().singleOrNull?.call(this) ?? this;
   }

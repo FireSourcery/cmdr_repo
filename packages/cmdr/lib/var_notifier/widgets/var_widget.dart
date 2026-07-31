@@ -22,20 +22,7 @@ extension VarValueNumExt on VarValue<num> {
   // bool get isUnderLimit => (numView < codec.numLimits!.min);
 }
 
-// extension VarValueIntExt on VarValue<int> {
-//   ({int min, int max})? get intLimits => (codec as IntFormat?)?.binaryRange;
-// }
-
-// extension VarValueEnumExt<E extends Enum> on VarValue<E> {
-//   List<E> get enumRange => (codec as EnumFormat<dynamic, E>).values;
-//   Enum get valueAsEnum => codec.decode(data);
-// }
-
-extension VarValueBitsExt on VarValue<BitStruct> {
-  List<BitField> get fieldKeys => (codec as BitStructFormat).fields;
-  FieldEntries get valueAsBitFields => BitForm(fieldKeys)(codec.decode(data)).fields;
-}
-
+//
 class VarKeyBuilder extends StatelessWidget {
   const VarKeyBuilder(this.varKey, this.builder, {this.varCache, super.key});
 
@@ -82,44 +69,6 @@ class VarKeyContextBuilderWithType extends StatelessWidget {
   }
 }
 
-// generialzed input dialog
-// rebuild on event match, if not included in the target widget
-// allocate Var Controller
-// class VarEventBuilder extends StatelessWidget {
-//   const VarEventBuilder({super.key, required this.eventNotifier, required this.builder, this.child, required this.eventMatch});
-
-//   // final VarNotifier varNotifier;
-//   // final VarCache varCache;
-//   // final VarEventNotifier? eventNotifier; // make this required
-//   // final ValueSetter<VarNotifier>? onSubmitted;
-
-//   // final VarKey varKey;
-//   final VarEventController eventNotifier;
-
-//   // final Widget Function<G>(VarNotifier, child) builder;
-//   final TransitionBuilder builder; // the wrapping widget, reactive to events, pass eventController to builder?
-//   final Widget? child; // the var widget
-//   final VarViewEvent eventMatch;
-
-//   Widget _eventBuilder(BuildContext context, VarViewEvent? event, Widget? initialBuild) {
-//     if (event == eventMatch) return builder(context, child); // also pass event back to builder?
-//     return initialBuild!;
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     // final varNotifier = cacheController.cache.allocate(varKey);
-//     // final eventNotifier = VarEventController(cacheController: cacheController, varNotifier: varNotifier); // this is allocated in build. dispose will be passed onto ListenableBuilder
-
-//     // return ListenableBuilder(listenable: eventNotifier.eventNotifier, builder: eventBuilder, child: child);
-//     return ValueListenableBuilder<VarViewEvent?>(
-//       valueListenable: eventNotifier,
-//       builder: _eventBuilder,
-//       child: builder(context, child), // initialBuild
-//     );
-//   }
-// }
-
 /// resolve if the builder is a generic builder
 class VarBaseBuilder extends StatelessWidget {
   const VarBaseBuilder(this.varNotifier, this.builder, {super.key});
@@ -139,46 +88,6 @@ class VarBaseBuilder extends StatelessWidget {
     }
   }
 }
-
-// class VarBaseBuilder extends StatelessWidget {
-//   VarBaseBuilder(this.varNotifier, this.builder, {super.key});
-
-//   final VarNotifier<dynamic> varNotifier;
-//   final Widget Function(VarNotifier) builder;
-//   @override
-//   Widget build(BuildContext context) => builder(varNotifier);
-// }
-
-// class VarBaseBuilderWithType extends StatelessWidget {
-//   const VarBaseBuilderWithType(this.varNotifier, this.builder, {super.key});
-
-//   final VarNotifier<dynamic> varNotifier;
-//   final Widget Function<G>(VarNotifier value) builder;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return varNotifier.varKey.viewType.callWithType(<G>() => builder<G>(varNotifier as VarNotifier<G>));
-//   }
-// }
-
-// combining logic by deferring until build
-// alternatively, use a interface Widget.
-// class VarSuperBuilder extends StatelessWidget {
-//   const VarSuperBuilder({super.key, required this.varNotifier, required this.builder}) : varKey = null;
-//   const VarSuperBuilder.byKey({super.key, required this.varKey, required this.builder}) : varNotifier = null;
-//   const VarSuperBuilder.resolve({super.key, required this.varKey, required this.builder}) : varNotifier = null;
-
-//   final VarKey? varKey;
-//   final VarNotifier<dynamic>? varNotifier;
-//   final Widget Function(VarNotifier) builder;
-// //   final VarEventController? eventController;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final effectiveVarNotifier = varNotifier ?? VarContext.ofKey(context, varKey!).cacheController.cache.allocate(varKey!);
-//     return VarBaseBuilder(effectiveVarNotifier, builder);
-//   }
-// }
 
 ///
 /// convenience interface for mapping widget callbacks

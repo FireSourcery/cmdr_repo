@@ -19,7 +19,6 @@ class VarCacheController {
   ///
 
   /// todo statuses
-  // change multi tto VarHandlerStatus?
   /// cache.updateByDataSlice
   VarStatus? _onReadSlice(ServiceGetSlice<int, int> slice) {
     if (slice.values == null) return null; // no response error
@@ -42,6 +41,7 @@ class VarCacheController {
   /// overwrite user changes, e.g. on explicit fetch
   Future<VarStatus?> readOverwrite([Iterable<VarKey>? keys]) async {
     await readAll(keys);
+    // todo unify
     for (final v in cache.varEntries) {
       v.discardUserChanges(); // device data wins on explicit fetch
     }
@@ -121,11 +121,9 @@ class VarStreamController extends VarCacheController {
   }
 
   VarPollingScope createScope(Iterable<VarKey> keys) {
-    // final scope = PollingScope._(this, keys);
-    // _scopes.add(scope);
-    // return scope;
-
-    return VarPollingScope._(this, keys.where((e) => !e.isWriteOnly))..chain(_scopes.add);
+    final scope = VarPollingScope._(this, keys.where((e) => !e.isWriteOnly));
+    _scopes.add(scope);
+    return scope;
   }
 
   void _releaseScope(VarPollingScope scope) => _scopes.remove(scope);
@@ -137,10 +135,6 @@ class VarStreamController extends VarCacheController {
 
   Iterable<VarKey> get _writeKeys => cache.varEntries.where((e) => e.varKey.isPushing || e.hasPendingChanges).map((e) => e.varKey);
   List<(int, int)> _writePairsGetter() => (_writeBuffer..clear())..addAll(cache.dataPairsOf(_writeKeys));
-
-  // optionally move to StreamHandler
-  // late final ServicePollStreamHandler<int, int, int> pollHandler = ServicePollStreamHandler(protocolService, _readKeysGetter, _onReadSlice);
-  // late final ServicePushStreamHandler<int, int, int> pushHandler = ServicePushStreamHandler(protocolService, _writePairsGetter, _onWriteSlice);
 
   Stream<ServiceGetSlice<int, int>> get _readStream => protocolService.pollFlex(_readKeysGetter);
   Stream<ServiceSetSlice<int, int, int>> get _writeStream => protocolService.push(_writePairsGetter);
@@ -195,35 +189,9 @@ class VarStreamController extends VarCacheController {
     while (pushSubscription?.isPaused == true) pushSubscription?.resume();
   }
 
-  // void forEach(void Function(StreamSubscription? subscription) action) {
-  //   action(pollSubscription);
-  //   action(pushSubscription);
-  // }
-
   bool get isStopped => (pollSubscription == null && pushSubscription == null);
 
   bool get isActive => (pollSubscription?.isPaused == false && pushSubscription?.isPaused == false);
-
-  // Future<void> get stopped async => endPeriodic()
-}
-
-///
-extension VarNotifierAwait on VarNotifier {
-  Future<void> pendingChanges() async {
-    while (hasPendingChanges) {
-      await Future.delayed(const Duration(milliseconds: 20)); // Polls every 20ms until condition is false
-    }
-  }
-
-  // todo await on status
-  // of a polling, read/write
-  // assuming no periodic writes
-  // needs to be set with listeners, add to polling
-  // Future<void> nextRead() async {
-  //   await pendingChanges();
-  //   view = viewOf(data); // set pending value to the same value and wait for it to clear
-  //   await pendingChanges();
-  // }
 }
 
 ///
@@ -236,7 +204,6 @@ class VarSingleController<V> {
 
   final ServiceIO<int, int, int> protocolService;
   final VarNotifier<V> varNotifier;
-  // final VarEventNotifier? varEventNotifier;
 
   // async send request id, then receiving value
   Future<V?> fetch() async {

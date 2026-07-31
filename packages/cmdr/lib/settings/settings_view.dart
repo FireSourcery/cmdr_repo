@@ -14,19 +14,21 @@ class SettingFieldTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(children: [
-      Text(setting.label, style: Theme.of(context).textTheme.bodyLarge),
-      const Spacer(),
-      LayoutBuilder(
-        builder: (context, constraints) {
-          return SizedBox(
-            // width: constraints.maxWidth / 2,
-            width: 150,
-            child: SettingTypedWidget(setting: setting, settingsController: settingsController),
-          );
-        },
-      ),
-    ]);
+    return Row(
+      children: [
+        Text(setting.label, style: Theme.of(context).textTheme.bodyLarge),
+        const Spacer(),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            return SizedBox(
+              // width: constraints.maxWidth / 2,
+              width: 150,
+              child: SettingTypedWidget(setting: setting, settingsController: settingsController),
+            );
+          },
+        ),
+      ],
+    );
     // return ListTile(
     //   title: Text(setting.label),
     //   // contentPadding: const EdgeInsets.all(5),

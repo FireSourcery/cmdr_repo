@@ -74,6 +74,7 @@ class IOFieldConfig<T> {
   final ValueSetter<T>? valueSetter;
   final ValueChanged<T>? valueChanged; // slider only for now
   final ValueGetter<bool>? errorGetter; // true on error
+  //todo seperate
   final ValueGetter<String>? valueStringGetter; // value string precedence: valueStringGetter > valueStringifier > valueGetter().toString()
   final Stringifier<T>? valueStringifier; // for enum and other range bound types
 
