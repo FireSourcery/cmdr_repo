@@ -38,7 +38,7 @@ class BinaryCodecIdentity implements BinaryCodec<int> {
   int encode(int view) => view;
 }
 
-extension BinaryCodecAsNum<V> on BinaryCodec<V> {
+extension BinaryCodecAsNum<V extends num> on BinaryCodec<V> {
   // all types can be represented as num by binary value, num codecs use the codec.
   num decodeAsNum(int data) {
     return switch (V) {

@@ -75,19 +75,21 @@ abstract class SettingTypedWidget extends StatelessWidget {
     // }
     // return setting.callWithType(<G>() => SettingTextField<G>(setting: setting as Setting<G>, settingsController: settingsController) as SettingTextField<T>);
 
-    _SettingTypedWidget<V> local<V>() {
-      final config = IOFieldConfig<V>(
+    // A Setting.value is nullable (V?), so type the field over V?.
+    // This keeps ValueGetter<T>/Stringifier<T> (non-null by contract) satisfied without a lossy cast.
+    _SettingTypedWidget<V?> local<V>() {
+      final config = IOFieldConfig<V?>(
         valueListenable: settingsController,
         valueGetter: () => setting.value as V?,
         valueNumLimits: setting.numLimits,
-        valueEnumRange: setting.valueRange as List<V>?,
-        valueSetter: (value) async => await settingsController.updateSetting<V>(setting as Setting<V>, value),
+        valueEnumRange: setting.valueRange as List<V?>?,
+        // SharedPrefSetting<V> implements Setting<V?>, so cast to the nullable form (Setting<V> would throw).
+        valueSetter: (value) async => await settingsController.updateSetting<V?>(setting as Setting<V?>, value),
         // label: setting.label,
-        // valueStringGetter: () => setting.valueString,
         valueStringifier: (setting is Setting<Enum>) ? (value) => (value as Enum).name.titleCase : (value) => value.toString(),
         tip: setting.tip ?? '',
       );
-      return _SettingTypedWidget<V>(config);
+      return _SettingTypedWidget<V?>(config);
     }
 
     return setting.callWithType(<G>() => local<G>() as SettingTypedWidget);

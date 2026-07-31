@@ -58,7 +58,32 @@ class StringGetter<T> {
 
   static String _stringifyDefault(Object? value) => value.toString();
 }
+// abstract mixin class _IOFieldStringBox<T> implements IOField<T> {
+//   ValueGetter<T?> get valueGetter;
+//   ValueGetter<String>? get valueStringGetter;
+//   Stringifier<T>? get valueStringifier;
 
+//   static String _stringifyDefault(Object? value) => value.toString(); // unhandled null value string
+//   // static String _stringifyEnum(Enum value) => value.name.titleCase;
+
+//   Stringifier<T> get _effectiveStringifier => valueStringifier ?? _stringifyDefault;
+
+//   Stringifier<T?> get _effectiveNullableStringifier {
+//     if (valueStringifier case Stringifier<T?> stringifier) stringifier;
+//     return _stringifyDefault;
+//   }
+
+//   String _stringifyValue() {
+//     if (valueGetter() case T value) return _effectiveStringifier(value);
+//     return ''; // or handle null
+
+//     // _effectiveNullableStringifier(valueGetter());
+//   }
+
+//   ValueGetter<String> get _effectiveValueStringGetter => valueStringGetter ?? _stringifyValue;
+
+//   // String? get fieldLabel => inputDecoration?.labelText;
+// }
 extension type const ValueStringGetter<T>._(ValueGetter<String> value) {
   factory ValueStringGetter.from(final ValueGetter<T> valueGetter, {final ValueGetter<String>? valueStringGetter, final Stringifier<T>? valueStringifier, final String nullString = ''}) {
     if (valueStringGetter != null) return ValueStringGetter._(valueStringGetter);

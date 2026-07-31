@@ -92,7 +92,8 @@ abstract mixin class SharedPrefSetting<T> implements Setting<T?> {
   }
 
   @override
-  Future<bool> update(covariant T value) async {
+  Future<bool> update(covariant T? value) async {
+    if (value == null) return false;
     // return SettingsService.main.update<T>(key, _boundValue(value));
     return switch (T) {
       const (int) || const (double) => SharedPrefService.main.setAsync<T>(key, _boundNum(value as num) as T),

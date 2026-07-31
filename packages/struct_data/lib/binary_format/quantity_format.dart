@@ -18,6 +18,10 @@ class BinaryQuantityCodec<V extends num> implements BinaryCodec<V> {
       },
       numLimits = numLimits ?? numLimitsOf(conversion, format);
 
+  // BinaryQuantityCodec.unit(this.format, num unitBase, {({num min, num max})? numLimits})
+  //   : numConversion = NumDataScale(unitBase/ format.scalingFactor).conversion ?? _disabled,
+  //     numLimits = numLimits ?? numLimitsOf(NumDataScale(unitBase).conversion, format);
+
   final NumFormat<dynamic, V> format;
   final NumDataConversion numConversion; // directly from binary, ignoring format.
   final ({num min, num max})? numLimits; // quantity limits.

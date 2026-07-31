@@ -2,6 +2,20 @@ import 'package:flutter/material.dart';
 
 import 'io_field.dart';
 
+/// Convert to a specific num subtype [R] (int/double/num). [IOFieldSlider] works in double and
+/// converts to its value type. [R] is non-nullable here ([IOFieldSlider] is `<T extends num>`),
+/// so the plain type switch is sufficient.
+extension IOFieldNumTo on num {
+  R to<R>() =>
+      switch (R) {
+            const (int) => toInt(),
+            const (double) => toDouble(),
+            const (num) => this,
+            _ => throw TypeError(),
+          }
+          as R;
+}
+
 /// connected widget using same config
 
 class IOFieldSlider<T extends num> extends StatelessWidget implements IOField<T> {

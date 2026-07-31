@@ -9,18 +9,6 @@ import '../var_notifier.dart';
 /// Widget tools
 /// End Widgets using VarNotifier
 ///
-// Type-specific extensions — only visible with correct type
-extension VarValueNumExt on VarValue<num> {
-  ({num min, num max})? get numLimits {
-    if (codec is BinaryQuantityCodec) return (codec as BinaryQuantityCodec).numLimits ?? (codec as BinaryQuantityCodec).format.valueRange;
-    if (codec is NumFormat) return (codec as NumFormat).valueRange;
-    // return (min: 0, max: 0);
-  }
-
-  /// assert(V is num);
-  // bool get isOverLimit => (numView > codec.numLimits!.max);
-  // bool get isUnderLimit => (numView < codec.numLimits!.min);
-}
 
 //
 class VarKeyBuilder extends StatelessWidget {

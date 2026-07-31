@@ -15,7 +15,7 @@ abstract interface class Setting<V> {
   Type get type;
   V? get value; //alternatively return default on no load
   set value(V? value);
-  Future<bool> update(V value);
+  Future<bool> update(V? value);
   Future<V?> load();
 
   R callWithType<R>(R Function<G>() callback);

@@ -203,8 +203,6 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   ValueGetter<V> get valueGetter => (() => varNotifier.value);
 
   @override
-  ValueGetter<String> get valueStringGetter => (() => varNotifier.valueString);
-  @override
   ValueSetter<V> get valueSetter => (eventNotifier != null) ? eventNotifier!.submitByView : varNotifier.updateByView;
   @override
   ValueGetter<bool> get errorGetter => (() => varNotifier.statusIsError);
@@ -248,10 +246,9 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
     InputDecoration? idDecoration,
     String? tip,
     Listenable? valueListenable,
-    ValueGetter<V?>? valueGetter,
+    ValueGetter<V>? valueGetter,
     ValueSetter<V>? valueSetter,
     ValueGetter<bool>? errorGetter,
-    ValueGetter<String>? valueStringGetter,
     Stringifier<V>? valueStringifier,
     List<V>? valueEnumRange,
     ValueChanged<V>? sliderChanged,

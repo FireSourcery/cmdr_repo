@@ -46,7 +46,6 @@ sealed class BinaryFormat<S extends NativeType, V> with NativeTypeBase<S> implem
   // NativeTypeBase<S> get baseType => NativeTypeBase<S>();
   TypeKey<V> get viewType => TypeKey<V>();
 
-  ({int min, int max}) get binaryRange => range;
   int binaryOf(int raw) => signExtension?.call(raw) ?? raw;
 
   int encode(V value);
@@ -62,7 +61,7 @@ sealed class BinaryFormat<S extends NativeType, V> with NativeTypeBase<S> implem
 mixin class NativeTypeBase<S extends NativeType> {
   const NativeTypeBase();
 
-  ({int min, int max}) get range => switch (S) {
+  ({int min, int max}) get binaryRange => switch (S) {
     const (Uint8) => (min: 0, max: 0xFF),
     const (Int8) => (min: -0x80, max: 0x7F),
     const (Uint16) => (min: 0, max: 0xFFFF),
@@ -74,7 +73,7 @@ mixin class NativeTypeBase<S extends NativeType> {
     _ => throw UnsupportedError('Unsupported type: $S'),
   };
 
-  int clampBase(int value) => value.clamp(range.min, range.max);
+  int clampBase(int value) => value.clamp(binaryRange.min, binaryRange.max);
 
   int get byteSize => switch (S) {
     const (Uint8) || const (Int8) => 1,
@@ -89,7 +88,7 @@ mixin class NativeTypeBase<S extends NativeType> {
   int _signExtend(int raw) => raw.toSigned(bitWidth);
   // int mask(int raw) => raw & ((1 << bitWidth) - 1);
 
-  bool get isSigned => range.min < 0;
+  bool get isSigned => binaryRange.min < 0;
   int Function(int)? get signExtension => isSigned ? _signExtend : null;
   int signedOf(int raw) => signExtension?.call(raw) ?? raw;
 }
@@ -197,6 +196,13 @@ final class FixedPointBase10<S extends NativeType> extends FixedPoint<S> {
 //   num get scalingFactor => 1.0;
 // }
 
+// final class FloatingPoint  extends FractFormat<Float> {
+//   const FloatingPoint();
+//   get valueRange => (min: double.negativeInfinity, max: double.infinity);
+//   double decode(int raw) =>
+//   int encode(double value) =>
+// }
+
 // base type is sufficient for iteration
 class BitStructFormat<K extends BitField> extends BinaryFormat<Int, BitStruct<K>> {
   const BitStructFormat(this.fields);
@@ -300,8 +306,8 @@ final class DecimalInv10<S extends NativeType> extends FixedPoint<S> {
 }
 
 /// Raw integer pass-through
-typedef Integer16 = IntFormat<Int16>;
-typedef Integer16U = IntFormat<Uint16>;
+// typedef Integer16 = IntFormat<Int16>;
+// typedef Integer16U = IntFormat<Uint16>;
 
 final class Int16Int extends IntFormat<Int16> {
   const Int16Int();
