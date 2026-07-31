@@ -201,7 +201,7 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   Listenable get valueListenable => varNotifier;
   @override
   ValueGetter<V> get valueGetter => (() => varNotifier.value);
-  // ValueGetter<V> get valueGetter => varNotifier.cast<V>().valueGetter as ValueGetter<V>;
+
   @override
   ValueGetter<String> get valueStringGetter => (() => varNotifier.valueString);
   @override
