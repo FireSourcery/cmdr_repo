@@ -13,7 +13,6 @@ abstract interface class VarIOField extends StatelessWidget {
   // assigns type, maps additional options to config
   factory VarIOField(
     VarNotifier<dynamic> varNotifier, {
-    VarEventNotifier? eventNotifier,
     VarSingleController? controller,
     bool? readOnly,
     bool showLabel = true,
@@ -26,7 +25,6 @@ abstract interface class VarIOField extends StatelessWidget {
     _VarIOField<V> local<V>() {
       final config = VarIOFieldConfig<V>(
         varNotifier as VarNotifier<V>,
-        eventNotifier: eventNotifier,
         controller: controller,
         readOnly: readOnly,
         showLabel: showLabel,
@@ -41,7 +39,6 @@ abstract interface class VarIOField extends StatelessWidget {
 
     // final config = VarIOFieldConfig(
     //   varNotifier,
-    //   eventNotifier: eventNotifier,
     //   controller: controller,
     //   readOnly: readOnly,
     //   showLabel: showLabel,
@@ -54,7 +51,6 @@ abstract interface class VarIOField extends StatelessWidget {
 
   factory VarIOField.compact(
     VarNotifier varNotifier, {
-    VarEventNotifier? eventNotifier,
     VarSingleController? controller,
     bool? readOnly,
     bool showLabel = false,
@@ -63,7 +59,7 @@ abstract interface class VarIOField extends StatelessWidget {
     bool isDense = false,
     Key? key,
   }) {
-    return VarIOField(varNotifier, eventNotifier: eventNotifier, readOnly: readOnly, showLabel: showLabel, isDense: isDense, showPrefix: showPrefix, showSuffix: showSuffix);
+    return VarIOField(varNotifier, readOnly: readOnly, showLabel: showLabel, isDense: isDense, showPrefix: showPrefix, showSuffix: showSuffix);
   }
 
   // const factory VarIOField.withConfig(IOFieldConfig config) = _VarIOField._;
@@ -89,7 +85,6 @@ class VarIOFieldWithMenu<T extends VarKey> extends StatelessWidget {
   const VarIOFieldWithMenu({
     this.initialVarKey,
     this.varCache,
-    this.eventNotifier,
     super.key,
     required this.menuSource,
     // IOFieldConfig ? config,
@@ -98,10 +93,9 @@ class VarIOFieldWithMenu<T extends VarKey> extends StatelessWidget {
   final FlyweightMenuSource<T> menuSource;
   final T? initialVarKey;
   final VarCache? varCache;
-  final VarEventNotifier? eventNotifier;
 
   Widget _varWidgetBuilder(VarNotifier varNotifier) {
-    return VarIOField(varNotifier, eventNotifier: eventNotifier, showLabel: true, isDense: false, showPrefix: true, showSuffix: true);
+    return VarIOField(varNotifier, showLabel: true, isDense: false, showPrefix: true, showSuffix: true);
   }
 
   Widget _menuAnchorBuilder(BuildContext context, FlyweightMenu<T> menu, Widget keyWidget) {
@@ -129,9 +123,7 @@ class VarIOFieldWithMenu<T extends VarKey> extends StatelessWidget {
 class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   const VarIOFieldConfig(
     this.varNotifier, {
-    this.eventNotifier,
     this.controller,
-    //disableConversion = false,
     this.labelAlignment = FloatingLabelAlignment.start,
     this.showLabel = true,
     this.showPrefix = true,
@@ -142,23 +134,13 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
 
   factory VarIOFieldConfig.of(VarNotifier varNotifier) {
     VarIOFieldConfig<G> local<G>() {
-      return VarIOFieldConfig<G>(
-        varNotifier as VarNotifier<G>,
-        // eventNotifier: eventNotifier,
-        // controller: controller,
-        // readOnly: readOnly,
-        // showLabel: showLabel,
-        // showPrefix: showPrefix,
-        // showSuffix: showSuffix,
-        // isDense: isDense,
-      );
+      return VarIOFieldConfig<G>(varNotifier as VarNotifier<G>);
     }
 
     return varNotifier.varKey.viewType.callWithType(local) as VarIOFieldConfig<V>;
   }
 
   final VarNotifier<V> varNotifier; //alternatively split valuenotifier/valueUnion
-  final VarEventNotifier? eventNotifier;
   final VarSingleController? controller; // unused for now
 
   // alternatively handle in constructor
@@ -201,17 +183,17 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   Listenable get valueListenable => varNotifier;
   @override
   ValueGetter<V> get valueGetter => (() => varNotifier.value);
-
   @override
-  ValueSetter<V> get valueSetter => (eventNotifier != null) ? eventNotifier!.submitByView : varNotifier.updateByView;
+  ValueSetter<V> get valueSetter => varNotifier.updateByView;
   @override
   ValueGetter<bool> get errorGetter => (() => varNotifier.statusIsError);
-
+  @override
+  Stringifier<V> get valueStringifier => varNotifier.varKey.stringify<V>;
   @override
   ValueChanged<V> get valueChanged => varNotifier.updateByView;
-
   @override
   String get tip => varNotifier.varKey.tip ?? '';
+
   @override
   ({num max, num min})? get valueNumLimits {
     if (varNotifier is VarNotifier<num>) {
@@ -230,12 +212,8 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   }
 
   @override
-  Stringifier<V>? get valueStringifier => varNotifier.varKey.stringify<V>;
-
-  @override
   IOFieldBoolStyle get boolStyle => IOFieldBoolStyle.latchingSwitch;
-  @override
-  bool get useSliderBorder => false;
+
   @override
   bool get useSwitchBorder => true;
 
@@ -258,7 +236,6 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
   }) {
     return VarIOFieldConfig<V>(
       varNotifier,
-      eventNotifier: eventNotifier,
       controller: controller,
       labelAlignment: labelAlignment,
       showLabel: showLabel,

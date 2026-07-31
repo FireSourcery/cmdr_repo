@@ -57,6 +57,9 @@ extension type const BitForm<K extends BitField>(List<K> _fields) implements Str
 /// [data] returns [BitStruct<K>(bitData)] — a zero-cost wrapper around [bitData]
 /// — so keyed access delegates through the same [Field]-based dispatch as [StructData].
 ///
+// typedef BitStructSubtype = BitStruct<BitStructSubtypeField>; is sufficient for parsing
+// inherit BitStructBase is useful for grouping additional invariants
+//
 // TypedBitStruct
 // remove MapBase simplfies mixin
 // Directly extending BitData would give const constructors but would require handling mutable and immutable variants, may unify StructBase, data => this

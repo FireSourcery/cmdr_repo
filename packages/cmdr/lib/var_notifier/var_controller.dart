@@ -194,6 +194,16 @@ class VarStreamController extends VarCacheController {
   bool get isActive => (pollSubscription?.isPaused == false && pushSubscription?.isPaused == false);
 }
 
+class VarPollingScope {
+  VarPollingScope._(this._controller, Iterable<VarKey> keys) : _keys = Set.unmodifiable(keys);
+  final VarStreamController _controller;
+  Set<VarKey> _keys;
+
+  void update(Iterable<VarKey> keys) => _keys = Set.unmodifiable(keys);
+
+  void dispose() => _controller._releaseScope(this);
+}
+
 ///
 /// if a single var update is required. Batch updates via VarCacheController handles most cases.
 /// call service immediately
@@ -221,14 +231,4 @@ class VarSingleController<V> {
     }
     return null;
   }
-}
-
-class VarPollingScope {
-  VarPollingScope._(this._controller, Iterable<VarKey> keys) : _keys = Set.unmodifiable(keys);
-  final VarStreamController _controller;
-  Set<VarKey> _keys;
-
-  void update(Iterable<VarKey> keys) => _keys = Set.unmodifiable(keys);
-
-  void dispose() => _controller._releaseScope(this);
 }

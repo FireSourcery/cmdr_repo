@@ -22,10 +22,9 @@ class VarSwitch extends StatelessWidget {
 }
 
 class VarSlider extends StatelessWidget {
-  const VarSlider(this.varNotifier, {super.key, this.eventNotifier});
+  const VarSlider(this.varNotifier, {super.key});
 
   final VarNotifier<num> varNotifier;
-  final VarEventNotifier? eventNotifier;
 
   Widget builder(BuildContext context, Widget? child) {
     // must be num defined if type is numeric

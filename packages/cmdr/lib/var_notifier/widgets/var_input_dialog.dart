@@ -3,84 +3,40 @@ import 'package:flutter/material.dart';
 import '../../widgets/dialog/dialog_anchor.dart';
 import '../var_notifier.dart';
 
-// dependents dialog
+/// [VarInputDialog] - Wraps [child] with dialogs shown on first focus and/or on submit.
+///
+/// The message parameters control whether each dialog appears:
+///  - [beginEditMessage] resolving non-null shows a dialog the first time [child] gains focus.
+///  - [endEditMessage] resolving non-null shows a dialog when [eventNotifier] fires (submit).
+///
+/// A getter that resolves to null opts that [VarNotifier] out of the corresponding dialog. When
+/// both resolve null, [child] is returned unwrapped. [DialogAnchor] supplies the focus/event plumbing.
+///
+/// [eventNotifier] is only needed for the submit ([endEditMessage]) dialog; the focus dialog is
+/// driven by [child]'s focus.
 class VarInputDialog extends StatelessWidget {
   const VarInputDialog({
     super.key,
     required this.child,
     required this.varNotifier,
-    required this.varCache,
-    required this.eventNotifier,
-    this.beginEditMessage = initialMessageDefault,
-    this.endEditMessage = finalMessageDefault,
-    this.onSubmitted,
-    // this.displayCondition,
+    this.eventNotifier,
+    this.beginEditMessage,
+    this.endEditMessage,
   });
 
   final VarNotifier varNotifier;
-  final VarCache varCache;
-  final VarEventNotifier eventNotifier;
-  final ValueSetter<VarNotifier>? onSubmitted;
-
+  final VarEventNotifier? eventNotifier; // notifies on submit; only needed for the submit dialog
   final Widget child; // caller may map child callbacks to the same event controller
 
-  final String? beginEditMessage;
-  final String? endEditMessage;
+  final ValueGetter<String?>? beginEditMessage; // shown on first focus when it resolves non-null
+  final ValueGetter<String?>? endEditMessage; // shown on submit when it resolves non-null
 
-  static const String initialMessageDefault = 'Are you sure you want to continue?';
-  static const String finalMessageDefault = 'You have completed editing this field.';
-
-  // ValueGetter<bool>? displayCondition;
-  // Widget? title,
-  // Widget? content,
-  // optionally include onpop
-
-  String dependentsString(VarKey varKey, [String prefix = '', String divider = ': ', String separator = '\n']) {
-    return (StringBuffer(prefix)
-          ..writeAll(varCache.dependentsOf(varNotifier.varKey).namedValues.map((e) => '${e.$1}$divider${e.$2}'), separator)
-          ..writeln(''))
-        .toString();
-  }
-
-  // on first time focus
-  Widget initialDialog(BuildContext context) {
-    // final theme = Theme.of(context);
+  Widget _dialog(BuildContext context, String message) {
     return AlertDialog(
-      // title: const Text('Edit'),
       title: Text(varNotifier.varKey.label),
       content: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          const Divider(),
-          // Text(beginEditMessage ?? ''),
-          if (varNotifier.varKey.dependents != null) ...[
-            const Text('The following values will be updated:\n'),
-            // Text(varCache.dependentsString(varNotifier.varKey), textAlign: TextAlign.left),
-            Text(dependentsString(varNotifier.varKey), textAlign: TextAlign.left),
-          ],
-        ],
-      ),
-      actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Ok'))],
-    );
-  }
-
-  // on submit
-  // if (value == VarViewEvent.submit) matching handled by DialogAnchor
-  Widget eventDialog(BuildContext context, void _, Widget? child) {
-    final theme = Theme.of(context);
-    return AlertDialog(
-      // title: const Text('Completed Editing'),
-      title: Text(varNotifier.varKey.label),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Divider(),
-          // Text(endEditMessage ?? ''),
-          if (varNotifier.varKey.dependents != null) ...[
-            const Text('The following values have been updated:\n'),
-            Text(dependentsString(varNotifier.varKey), textAlign: TextAlign.left),
-          ],
-        ],
+        children: [const Divider(), Text(message)],
       ),
       actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Ok'))],
     );
@@ -88,101 +44,41 @@ class VarInputDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final effectiveEventNotifier = eventNotifier ?? VarEventNotifier(onSubmitted: onSubmitted!, varNotifier: varNotifier); // DialogAnchor handles dispose / remove listener
+    final String? beginMessage = beginEditMessage?.call();
+    final String? endMessage = endEditMessage?.call();
+    if (beginMessage == null && endMessage == null) return child;
 
-    if (varNotifier.varKey.dependents != null) {
-      // change to conditional
-      return DialogAnchor<void>(
-        // displayCondition: displayCondition,
-        eventNotifier: eventNotifier,
-        initialDialogBuilder: initialDialog,
-        eventDialogBuilder: eventDialog,
-        // eventMatch: VarViewEvent.submit,
-        child: child,
-      );
-    }
-    return child;
+    // DialogAnchor handles focus tracking and listener dispose/removal.
+    return DialogAnchor<void>(
+      eventNotifier: eventNotifier,
+      initialDialogBuilder: beginMessage == null ? null : (context) => _dialog(context, beginMessage),
+      eventDialogBuilder: endMessage == null ? null : (context, _, _) => _dialog(context, endMessage),
+      child: child,
+    );
   }
 }
 
-class VarNoticeDialog extends StatelessWidget {
-  const VarNoticeDialog({
-    super.key,
-    required this.child,
-    required this.varNotifier,
-    required this.varCache,
-    required this.eventNotifier,
-    this.beginEditMessage,
-    this.endEditMessage,
-    this.onSubmitted,
-    // this.displayCondition,
-  });
+///
+/// [VarEventNotifier]
+/// Optional wrapper around a [VarNotifier] providing a separate notifier for UI submit events.
+///   - associated with a UI component, instead of the [VarNotifier] value
+///   - not triggered by value changes
+///   - listeners to the [VarNotifier] value on another UI component are not notified of submit
+/// Used by [VarInputDialog] to show a dialog on submit.
+class VarEventNotifier<V> extends ChangeNotifier {
+  VarEventNotifier({required this.varNotifier, required this.onSubmit});
+  final VarNotifier<V> varNotifier; // typed by Key. returning as dynamic.
+  final ValueSetter<VarNotifier<V>> onSubmit; // handle additional logic on submit
 
-  final VarNotifier varNotifier;
-  final VarCache varCache;
-  final VarEventNotifier eventNotifier; // notify on submit
-  final ValueSetter<VarNotifier>? onSubmitted;
-
-  final Widget child; // caller may map child callbacks to the same event controller
-
-  final ValueGetter<String?>? beginEditMessage;
-  final ValueGetter<String?>? endEditMessage;
-
-  static const String initialMessageDefault = 'Are you sure you want to continue?';
-  static const String finalMessageDefault = 'You have completed editing this field.';
-
-  // ValueGetter<bool>? displayCondition;
-  // Widget? title,
-  // Widget? content,
-  // optionally include onpop
-
-  // on first time focus
-  Widget initialDialog(BuildContext context) {
-    // final theme = Theme.of(context);
-    return AlertDialog(
-      // title: const Text('Edit'),
-      title: Text(varNotifier.varKey.label),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Divider(),
-          Text(beginEditMessage?.call() ?? initialMessageDefault),
-        ],
-      ),
-      actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Ok'))],
-    );
+  void submitByView(V varValue) {
+    varNotifier.updateByView(varValue);
+    onSubmit(varNotifier);
+    notifyListeners();
   }
 
-  // on submit
-  // if (value == VarViewEvent.submit) matching handled by DialogAnchor
-  Widget eventDialog(BuildContext context, void _, Widget? child) {
-    return AlertDialog(
-      // title: const Text('Completed Editing'),
-      title: Text(varNotifier.varKey.label),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Divider(),
-          Text(endEditMessage?.call() ?? finalMessageDefault),
-        ],
-      ),
-      actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Ok'))],
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (beginEditMessage == null && endEditMessage == null) return child;
-
-    // DialogAnchor handles dispose / remove listener
-    return DialogAnchor<void>(
-      // displayCondition: displayCondition,
-      eventNotifier: eventNotifier,
-      initialDialogBuilder: initialDialog,
-      eventDialogBuilder: eventDialog,
-      // eventMatch: VarViewEvent.submit,
-      child: child,
-    );
+  void call(Function(VarNotifier<V>) submitAction) {
+    submitAction(varNotifier);
+    notifyListeners();
   }
 }
 

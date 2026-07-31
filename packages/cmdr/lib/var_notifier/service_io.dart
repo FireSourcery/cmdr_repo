@@ -145,35 +145,4 @@ abstract class ServiceStreamHandler<T> {
   }
 
   Future<void> end() async => streamSubscription?.cancel().whenComplete(() => streamSubscription = null);
-
-  // StreamSubscription? begin() {
-  //   if (!isStopped) return null;
-  //   return streamSubscription = stream.listen(onDataSlice);
-  // }
-  // Future<void> restart() async => end().whenComplete(() => begin());
 }
-
-// class StreamSubscriptionWith<T> {
-//   StreamSubscriptionWith(this.stream, this.onDataSlice);
-
-//   final Stream<T> Function() streamFactory;
-//   final void Function(T data) onDataSlice;
-
-//   StreamSubscription<T>? subscription;
-
-//   void _restartOnError(Object error) {
-//     if (subscription == null) return; // intentional stop, do not restart
-//     final wasPaused = subscription?.isPaused ?? false;
-//     subscription = stream.listen(onDataSlice, onError: _restartOnError);
-//     if (wasPaused) subscription?.pause();
-//   }
-// }
-
-// extension StreamExtensions<T> on Stream<T> {
-//   StreamSubscriptionWith<T> listenWithRestart(void Function(T) onData, {Function? onError, void Function()? onDone, bool? cancelOnError}) {
-//     StreamSubscriptionWith<T> subscriptionWith = StreamSubscriptionWith(this, onData);
-
-//     subscriptionWith.subscription = listen(onData, onError: subscriptionWith._restartOnError, onDone: onDone, cancelOnError: cancelOnError);
-//     return subscriptionWith;
-//   }
-// }

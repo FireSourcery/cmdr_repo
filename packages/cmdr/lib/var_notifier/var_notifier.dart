@@ -278,19 +278,6 @@ mixin class VarValue<V> {
 //   set view(V newValue) => data = dataOf(newValue);
 // }
 
-// Type-specific extensions — only visible with correct type
-extension VarValueNumExt on VarValue<num> {
-  ({num min, num max})? get numLimits {
-    if (codec is BinaryQuantityCodec) return (codec as BinaryQuantityCodec).numLimits ?? (codec as BinaryQuantityCodec).format.valueRange;
-    if (codec is NumFormat) return (codec as NumFormat).valueRange;
-    // return (min: 0, max: 0);
-  }
-
-  /// assert(V is num);
-  // bool get isOverLimit => (numView > codec.numLimits!.max);
-  // bool get isUnderLimit => (numView < codec.numLimits!.min);
-}
-
 ///
 /// [VarStatusNotifier]
 /// implement as mixin
@@ -329,26 +316,15 @@ abstract mixin class VarStatusNotifier implements ChangeNotifier {
 }
 
 ///
-// User submit
-//   associated with UI component, instead of VarNotifier value
-//   not triggered by value changes
-//   Listeners to the VarNotifier value on another UI component will not be notified of submit
-//
-
-//todo move to notice dialog wrap
-class VarEventNotifier<V> extends ChangeNotifier {
-  VarEventNotifier({required this.varNotifier, required this.onSubmit});
-  final VarNotifier<V> varNotifier; // typed by Key. returning as dynamic.
-  final ValueSetter<VarNotifier<V>> onSubmit; // handle additional logic on submit
-
-  void submitByView(V varValue) {
-    varNotifier.updateByView(varValue);
-    onSubmit(varNotifier);
-    notifyListeners();
+/// Type-specific extensions — only visible with correct type
+extension VarValueNumExt on VarValue<num> {
+  ({num min, num max})? get numLimits {
+    if (codec is BinaryQuantityCodec) return (codec as BinaryQuantityCodec).numLimits ?? (codec as BinaryQuantityCodec).format.valueRange;
+    if (codec is NumFormat) return (codec as NumFormat).valueRange;
+    // return (min: 0, max: 0);
   }
 
-  void call(Function(VarNotifier<V>) submitAction) {
-    submitAction(varNotifier);
-    notifyListeners();
-  }
+  /// assert(V is num);
+  // bool get isOverLimit => (numView > codec.numLimits!.max);
+  // bool get isUnderLimit => (numView < codec.numLimits!.min);
 }
