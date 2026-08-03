@@ -41,7 +41,7 @@ mixin Enumerated<K extends EnumeratedField<Object?>> implements StructBase<Enume
     if (other is! Enumerated<K>) return false;
     // Keys lists for enum types are const singletons; identity means same schema.
     if (!identical(keys, other.keys)) return false;
-    return true;
+    return keys.every((key) => this[key] == other[key]);
   }
 
   @override
