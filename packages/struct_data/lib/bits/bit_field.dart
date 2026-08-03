@@ -20,6 +20,14 @@ abstract mixin class BitField implements Field<int> {
 
   @override
   int getIn(BitStruct<BitField> struct) => struct.getBits(bitmask);
+  // int getIn(Object struct) {
+  //   return switch (struct) {
+  //     BitStruct<BitField> s => s.getBits(bitmask),
+  //     BitStructBase s => s.bitData.getBits(bitmask),
+  //     _ => throw ArgumentError('Unsupported struct type: $struct'),
+  //   };
+  // }
+
   @override
   void setIn(BitStruct<BitField> struct, int value) => struct.setBits(bitmask, value);
   @override

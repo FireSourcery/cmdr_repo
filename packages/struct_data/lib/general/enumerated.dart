@@ -5,6 +5,11 @@ import 'struct.dart';
 export 'enum_map.dart';
 
 // may replace serialable
+
+// 1. Struct to handle transport only, simplfied mapping from Model , saves toBytes().. separately handle map
+// 2. extend ByteStruct (embedded around ByteData) free transport and data view map. seperately implement model view map
+// 3. extend Enumerated free model view map, with field accessors. separately handle transport
+
 mixin Enumerated<K extends EnumeratedField<Object?>> implements StructBase<Enumerated<K>, K, Object?> {
   List<K> get keys;
   StructData<K, dynamic> get data => this as StructData<K, dynamic>; // data passed to Keys
@@ -56,6 +61,8 @@ mixin Enumerated<K extends EnumeratedField<Object?>> implements StructBase<Enume
 // }
 
 abstract mixin class EnumeratedField<V> implements Enum, Field<V> {
+  // alternatively wrap a transport descriptor instead of implementing it
+  // Field<V> get transport;
   V getIn(covariant Enumerated struct);
   void setIn(covariant Enumerated struct, V value);
   bool testAccess(covariant Enumerated struct);
