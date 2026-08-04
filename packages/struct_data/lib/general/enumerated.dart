@@ -63,14 +63,10 @@ mixin Enumerated<K extends EnumeratedField<Object?>> implements StructBase<Enume
 //   // s
 // }
 
+// alternatively wrap a transport descriptor instead of implementing it
 abstract mixin class EnumeratedField<V> implements Enum, Field<V> {
-  // alternatively wrap a transport descriptor instead of implementing it
-
   // V call(covariant Enumerated struct);
-
   V getIn(covariant Enumerated struct);
-  // void setIn(covariant Enumerated struct, V value);
-  // bool testAccess(covariant Enumerated struct);
   // default implementation
   void setIn(covariant Enumerated struct, V value) => throw UnimplementedError();
   bool testAccess(covariant Enumerated struct) => true;
@@ -78,9 +74,7 @@ abstract mixin class EnumeratedField<V> implements Enum, Field<V> {
   String get groupName => runtimeType.toString();
 
   // V? validateType(Enumerated data) => data[this] is V ? data[this] as V : null;
-
   // bool isTypeOf(Enumerated? value) => value is V;
-  // V? validateType(Enumerated? value) => ((value is V) ? value : null);
 
   Type get type => V;
 }

@@ -12,7 +12,7 @@ export '../src/type_markers.dart';
 ///   [WordStruct] - backed by [Bits/int]
 ///
 /// mixin can be applied to enum
-abstract mixin class TypedField<T extends NativeType> /* implements Field<int> */ {
+abstract mixin class TypedField<T extends NativeType> {
   const TypedField._();
   // const factory TypedField(int offset) = TypedOffset<T>;
 
@@ -23,6 +23,13 @@ abstract mixin class TypedField<T extends NativeType> /* implements Field<int> *
 
   int get valueMax => (1 << size * 8) - 1;
   int get defaultValue => 0;
+
+  /// [ByteStruct] access. Width comes from [T] — dispatches per key without the caller naming a width.
+  int getWord(ByteData byteData, [Endian endian = Endian.little]) => byteData.wordAt<T>(offset, endian);
+  void setWord(ByteData byteData, int value, [Endian endian = Endian.little]) => byteData.setWordAt<T>(offset, value, endian);
+  bool testWordBoundsOf(ByteData byteData) => end <= byteData.lengthInBytes;
+  int? getWordOrNull(ByteData byteData, [Endian endian = Endian.little]) => byteData.wordOrNullAt<T>(offset, endian);
+  bool setWordOrNot(ByteData byteData, int value, [Endian endian = Endian.little]) => byteData.setWordOrNotAt<T>(offset, value, endian);
 }
 
 ///
@@ -78,16 +85,8 @@ extension ByteDataWordAccess on ByteData {
 }
 
 
-// without overriding Field
+// still to move onto TypedField, they need Bitmask/BitData in scope
 // extension TypedFieldMethods<T extends NativeType> on TypedField<T> {
-//   /// [ByteStruct]
-//   int getWord(ByteData byteData) => byteData.wordAt<T>(offset);
-//   void setWord(ByteData byteData, int value) => byteData.setWordAt<T>(offset, value);
-//   bool testWordBoundsOf(ByteData byteData) => end <= byteData.lengthInBytes;
-
-//   int? getWordOrNull(ByteData byteData) => byteData.wordOrNullAt<T>(offset);
-//   bool setWordOrNot(ByteData byteData, int value) => byteData.setWordOrNotAt<T>(offset, value);
-
 //   /// [WordStruct/BitStruct]
 //   Bitmask asBitmask() => Bitmask.bytes(offset, size);
 //   int getBits(BitData data) => bits.getInt(offset, size);

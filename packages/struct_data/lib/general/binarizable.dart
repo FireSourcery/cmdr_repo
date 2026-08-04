@@ -1,25 +1,36 @@
-import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:struct_data/binary_data.dart';
 import 'package:struct_data/general/enumerated.dart';
-
-/// [BinarizableData] stops at `dataMap` — it is the view/state layer and knows nothing about byte
-/// widths. Each blob serializes its own `dataMap`, since the word size and the reserved space are
-/// properties of that blob's segment, not of calibration data in general.
 
 /// [BinarizableField]
 ///
 /// Key carrying both descriptors: the view side value ([EnumeratedField], type [V]) and the data
 /// side slot ([TypedField], native type [B]). A field's two representations are independent — [V] is
 /// what the form edits, [B] is what the segment stores — so both are named.
+///
+/// Word access comes from [TypedField.getWord]/[TypedField.setWord], which resolve their width from
+/// [B] per key. Nothing here or in [BinarizableData] names a width, so a struct may mix them.
 abstract mixin class BinarizableField<V, B extends NativeType> implements EnumeratedField<V>, TypedField<B> {
-  // TypedField<B> get transport => this; optionally compose
-  @override
-  int getWord(ByteData byteData) => byteData.wordAt<B>(offset);
+  // TypedField<B> get transport; optionally compose
 
+  // optionally with format for exact type decoding
   // BinaryFormat<B, V> get format;
   // Map<BinarizableField, BinaryFormat> get mapSchema;
+}
+
+/// Read each field's word out of [data]. Inverse of [BinarizableData.toByteData].
+///
+/// Static counterpart to [BinarizableData] — deserialization runs in a constructor, before there is
+/// an instance to call, so the key list carries it.
+extension BinarizableFields<K extends BinarizableField> on List<K> {
+  int get lengthInBytes => fold<int>(0, (extent, key) => key.end > extent ? key.end : extent);
+
+  // mapWithData
+  Map<K, int> unpack(ByteData data) {
+    if (data.lengthInBytes < lengthInBytes) throw const FormatException('BinarizableData: short buffer');
+    return {for (final key in this) key: key.getWord(data)};
+  }
 }
 
 /// [BinarizableData]
@@ -33,14 +44,45 @@ abstract mixin class BinarizableField<V, B extends NativeType> implements Enumer
 ///
 /// Type specific parts are the hooks: the not-yet-loaded sentinel, the canonical to data side
 /// conversion, and which fields distinguish an erased segment from a written one.
-mixin BinarizableData<K extends BinarizableField, V> {
+///
+// alternatively split FlashData from Binarizable transport handling
+mixin BinarizableData<K extends BinarizableField<V, NativeType>, V> {
+  String get name; // view name
+
+  /// Typed views. [Enumerated.toMap] is `Map<K, Object?>`; these keep the numeric scope that the
+  /// form fields and the confirmation table need.
+  List<K> get keys;
+  Map<K, V> get valueMap;
+  Iterable<MapEntry<K, V>> get entries => valueMap.entries;
+
+  /// Device side values, derived from the canonical view values.
+  /// The single conversion point — serialization and [writtenMarkers] both read it.
+  Map<K, int> get dataMap;
+
+  /// Segment length. Defaults to the fields' extent; override where the segment reserves trailing
+  /// space no field covers.
+  int get lengthInBytes => keys.lengthInBytes;
+
+  /// Serialize [dataMap]. Each key places its own word, at its own width.
+  Uint8List toByteData() {
+    final bytes = Uint8List(lengthInBytes)..fillRange(0, lengthInBytes, unwrittenByte);
+    final buffer = ByteData.sublistView(bytes);
+    for (final MapEntry(:key, :value) in dataMap.entries) {
+      key.setWord(buffer, value);
+    }
+    return bytes;
+  }
+
+  //  NvmData
   static const int flashErasePattern = 0xFFFF; // const: [isWritten] depends on it
+  /// Value of a byte no field writes — reserved space, and the gaps of a sparse layout.
+  /// `0xFF` matches erased NOR flash, so an all-reserved segment round trips as still-erased.
+  int get unwrittenByte => 0xFF;
+  // todo merge flashErasePattern
 
   /// Not-yet-loaded sentinel. Distinct from [flashErasePattern] so [isLoaded] can tell
   /// "never read from the device" apart from "read, and the device segment is still erased".
   Object get initValue;
-
-  String get name; // view name
 
   /// Values compared against [flashErasePattern]. Defaults to the whole segment.
   /// Override where only part of the segment marks it as written.
@@ -52,24 +94,9 @@ mixin BinarizableData<K extends BinarizableField, V> {
 
   // for view
   bool get isWritable => isLoaded && !isWritten;
-
-  /// Device side values, derived from the canonical view values.
-  /// The single conversion point — serialization and [writtenMarkers] both read it.
-  Map<K, int> get dataMap;
-
-  /// Typed views. [Enumerated.toMap] is `Map<K, Object?>`; these keep the numeric scope that the
-  /// form fields and the confirmation table need.
-  List<K> get keys;
-  Map<K, V> get valueMap;
-  Iterable<MapEntry<K, V>> get entries => valueMap.entries;
-
-  // Map<K, int> mapFromByteData(TypedData data);
-  TypedData toByteData();
 }
 
-// // extension type const BinaryForm(List<)
-// extension B<K extends BinaryField> on ByteForm<K> {
-//   ({StructForm<K, int> type, StructData<K, int> data}) _create() => this(create());
+// mixin NvmData<K,V> on BinarizableData<K,V>
+// {
 
-//   Map<ByteField, Object?> fromBinary(ByteStruct binary) => {for (final key in fields) key: key.format.decode(binary[key])};
 // }
