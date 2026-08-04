@@ -10,6 +10,8 @@ export 'enum_map.dart';
 // 2. extend ByteStruct (embedded around ByteData) free transport and data view map. seperately implement model view map
 // 3. extend Enumerated free model view map, with field accessors. separately handle transport
 
+// `StructForm<EnumeratedField>(.values)(enumeratedData).toMap();`
+
 mixin Enumerated<K extends EnumeratedField<Object?>> implements StructBase<Enumerated<K>, K, Object?> {
   List<K> get keys;
   StructData<K, dynamic> get data => this as StructData<K, dynamic>; // data passed to Keys
@@ -30,9 +32,10 @@ mixin Enumerated<K extends EnumeratedField<Object?>> implements StructBase<Enume
   // Iterable<FieldEntry<K, V>> get fields => StructForm(keys)(data).fields;
   Iterable<Object?> get values => keys.map((k) => this[k]);
   Iterable<FieldEntry<K, Object?>> get fields => keys.map((k) => (key: k, value: this[k]));
-  StructForm<K, Object?> get _type => StructForm<K, Object?>(keys);
 
+  StructForm<K, Object?> get _type => StructForm<K, Object?>(keys);
   Map<K, Object?> toMap() => _type.mapWithData(data);
+  // Map<K, Object?> toMap() => StructForm(keys)(data).toMap();
 
   // Value equality
   @override
@@ -62,10 +65,15 @@ mixin Enumerated<K extends EnumeratedField<Object?>> implements StructBase<Enume
 
 abstract mixin class EnumeratedField<V> implements Enum, Field<V> {
   // alternatively wrap a transport descriptor instead of implementing it
-  // Field<V> get transport;
+
+  // V call(covariant Enumerated struct);
+
   V getIn(covariant Enumerated struct);
-  void setIn(covariant Enumerated struct, V value);
-  bool testAccess(covariant Enumerated struct);
+  // void setIn(covariant Enumerated struct, V value);
+  // bool testAccess(covariant Enumerated struct);
+  // default implementation
+  void setIn(covariant Enumerated struct, V value) => throw UnimplementedError();
+  bool testAccess(covariant Enumerated struct) => true;
 
   String get groupName => runtimeType.toString();
 

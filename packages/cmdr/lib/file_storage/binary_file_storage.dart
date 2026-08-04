@@ -6,6 +6,7 @@ import 'package:intel_hex/intel_hex.dart';
 import 'file_storage.dart';
 
 /// general type as interface/dependency
+/// [Address->Segment] map
 abstract mixin class FirmwareFileStorage implements FileStorage<Map<int, Uint8List>> {
   // extension(file!.path)
   factory FirmwareFileStorage.type(String fileExtension) {
@@ -48,7 +49,6 @@ class HexFileMapCodec extends FileCodec<Map<int, Uint8List>, List<MemorySegment>
   List<MemorySegment> encode(Map<int, Uint8List> decoded) => decoded.entries.map((e) => MemorySegment.fromBytes(address: e.key, data: e.value)).toList();
 }
 
-///
 class HexFileStorage extends FileStorage<Map<int, Uint8List>> with FirmwareFileStorage {
   HexFileStorage({super.defaultName, super.extensions = const ['hex']});
 

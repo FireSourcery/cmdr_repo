@@ -76,6 +76,10 @@ class MotProtocolSocket extends ProtocolSocket {
   ///
   /// DataMode
   ///
+  Future<int?> eraseMemRegion(int address, int sizeBytes, int flags) async {
+    return requestResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_ERASE, (address: address, size: sizeBytes, flags: flags), timeout: const Duration(milliseconds: 5000));
+  }
+
   Future<int?> initDataModeWrite(int address, int sizeBytes, int flags) async {
     return requestResponse(
       MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE,

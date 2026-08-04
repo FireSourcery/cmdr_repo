@@ -24,7 +24,7 @@ abstract interface class PacketId implements Enum {
 
 abstract interface class PacketSyncId implements PacketId {}
 
-// // Id hold a constructor to create a handler instance to process as packet
+// Id hold a constructor to create a handler instance to process as packet
 abstract interface class PacketPayloadId<V> implements PacketId {
   PayloadCaster<V> get payloadCaster;
 }
@@ -34,8 +34,8 @@ abstract interface class PacketPayloadId<V> implements PacketId {
 // }
 
 // abstract interface class PacketVariableId<V> implements PacketPayloadId<V> {
-//   // int get lengthMax;
-//   // int lengthOf(V values);
+// int get lengthMax;
+// int lengthOf(V values);
 // }
 
 /// Id as payload factory
@@ -47,6 +47,9 @@ abstract interface class PacketIdRequest<T, R> implements PacketId {
   PacketId? get responseId; // null for 1-way or matching response, override for non matching
   PayloadCaster<T>? get requestCaster;
   PayloadCaster<R>? get responseCaster;
+
+  // PacketPayloadId get request  ;
+  // PacketPayloadId get response ;
 }
 
 extension PacketIdMethods on PacketId {
@@ -71,6 +74,7 @@ extension PacketIdMethods on PacketId {
 // Uint8List encodePayload(T input);
 // T decodePayload(Uint8List input);
 
+// [Packet header] is full view of Packet
 abstract interface class Payload<V> {
   @pragma('vm:prefer-inline')
   PayloadMeta build(V values, covariant Packet header);

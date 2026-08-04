@@ -8,6 +8,7 @@ export 'utilities/num_ext.dart';
 export 'utilities/slice.dart';
 
 export 'general/serializable.dart';
+export 'general/binarizable.dart';
 export 'general/enum_map.dart';
 export 'general/enum_types.dart';
 export 'general/index_map.dart';

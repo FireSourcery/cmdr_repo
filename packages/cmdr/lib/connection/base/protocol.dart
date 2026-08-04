@@ -114,8 +114,6 @@ class Protocol {
       case Exception():
         debugLog("Protocol Unnamed Exception");
         debugLog(error);
-      // case LinkException():
-      //   debugLog(error.message);
       default:
         debugLog(error);
     }
@@ -191,7 +189,6 @@ class ProtocolSocket implements Sink<Packet> {
       debugLog('--- End Request');
       waitingOnLockCount--;
     }
-    // return null;
   }
 
   /// requestResponse with options
@@ -246,6 +243,10 @@ class ProtocolSocket implements Sink<Packet> {
   }
 
   ///
+  /// [Sync]
+  ///
+
+  ///
   Future<PacketSyncId?> ping(covariant PacketSyncId id, {covariant PacketSyncId? respId, Duration timeout = timeoutDefault}) async {
     protocol.mapResponse(respId ?? id, this);
     if (respId != null) _recved = Completer<Packet>.sync();
@@ -294,21 +295,21 @@ class ProtocolSocket implements Sink<Packet> {
       return await _recved.future.timeout(timeout).then((_) => parse());
     } on TimeoutException {
       debugLog("Socket Recv Response Timeout");
-      rethrow;
-      //return null; alternatively
+      return null;
     } on ProtocolException catch (e) {
       //should be handled by protocol
       debugLog("Unhandled ProtocolException on Socket");
       debugLog(e.message);
+      return null;
     } catch (e) {
       debugLog("ProtocolSocket Exception");
       debugLog(e);
       debugLog(packetBufferIn.viewAsBytes);
       // payload parser may throw if invalid packet passes header parser as valid
+      return null;
     } finally {
       _recved = Completer.sync(); // re-arm eagerly, before the gap to the next recv, so an incoming packet is latched
     }
-    return null;
   }
 
   // pass Packet pointer, ephemeral, full packet view of shared buffer.

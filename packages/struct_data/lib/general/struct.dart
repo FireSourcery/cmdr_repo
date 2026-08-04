@@ -101,6 +101,7 @@ extension type const StructForm<K extends Field<V>, V>(List<K> fields) implement
 /// iterative operations
 extension TypedStructReference<K extends Field<V>, V> on ({StructForm<K, V> form, StructData<K, V> data}) {
   Map<K, V> toMap() => form.mapWithData(data);
+
   Iterable<V> get values => form.fields.map((k) => data[k]);
 
   Iterable<FieldEntry<K, V>> get fields => form.fields.map((k) => data.field(k));
@@ -153,7 +154,7 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   void operator []=(covariant K key, V value) => data[key] = value;
   bool testAccess(K key) => data.testAccess(key);
 
-  // alternatively call local function, flexible override this class instead of Field class
+  // todo call local function, flexible override this class instead of Field class
   V? fieldOrNull(K key) => data.fieldOrNull(key);
   bool trySetField(K key, V value) => data.trySetField(key, value);
   FieldEntry<K, V> field(K key) => data.field(key);

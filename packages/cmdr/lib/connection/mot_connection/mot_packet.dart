@@ -166,6 +166,7 @@ enum MotPacketRequestId<T, R> implements PacketIdRequest<T, R>, MotPacketId {
   /* Stateful Read/Write */
   MOT_PACKET_DATA_MODE_READ(0xDA, requestCaster: DataModeInitRequest.cast, responseCaster: DataModeInitResponse.cast),
   MOT_PACKET_DATA_MODE_WRITE(0xDB, requestCaster: DataModeInitRequest.cast, responseCaster: DataModeInitResponse.cast),
+  MOT_PACKET_DATA_MODE_ERASE(0xDC, requestCaster: DataModeInitRequest.cast, responseCaster: DataModeInitResponse.cast),
   MOT_PACKET_DATA_MODE_DATA(0xDD, requestCaster: DataModeData.cast, responseCaster: DataModeData.cast),
 
   MOT_PACKET_ID_RESERVED_255(0xFF);
