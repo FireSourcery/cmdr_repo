@@ -19,33 +19,22 @@ abstract mixin class BinarizableField<V, B extends NativeType> implements Enumer
   // Map<BinarizableField, BinaryFormat> get mapSchema;
 }
 
-/// Read each field's word out of [data]. Inverse of [BinarizableData.toByteData].
-///
-/// Static counterpart to [BinarizableData] — deserialization runs in a constructor, before there is
-/// an instance to call, so the key list carries it.
-extension BinarizableFields<K extends BinarizableField> on List<K> {
-  int get lengthInBytes => fold<int>(0, (extent, key) => key.end > extent ? key.end : extent);
-
-  // mapWithData
-  Map<K, int> unpack(ByteData data) {
-    if (data.lengthInBytes < lengthInBytes) throw const FormatException('BinarizableData: short buffer');
-    return {for (final key in this) key: key.getWord(data)};
-  }
-}
+/// The codec itself is on [TypedField] — [TypedFieldLayout.unpack] / [TypedFieldWords.pack].
+/// It needs only offsets and widths, never the view side, so a composite whose view is not a keyed
+/// map (mixed value types, nested structs) shares the same serializer without adopting
+/// [BinarizableData]. Deserialization in particular runs in a constructor, before there is an
+/// instance to call, so the key list carries it rather than the mixin.
 
 /// [BinarizableData]
 ///
-/// Common state for a calibration blob.
-/// [isLoaded] — has this app side copy been read from the device.
-/// [isWritten] — does the device segment hold a value, or is it still erased.
+/// A struct whose canonical copy is the view side values, with the segment image derived on demand.
 ///
 /// [K] keys the view fields, [V] is their view side type — `int` where the view value is already a
-/// device word, `num` where the view holds a converted (fractional) quantity.
+/// device word, `num` where the view holds a converted (fractional) quantity. The two are related
+/// only through [dataMap]; that is the single conversion point.
 ///
-/// Type specific parts are the hooks: the not-yet-loaded sentinel, the canonical to data side
-/// conversion, and which fields distinguish an erased segment from a written one.
-///
-// alternatively split FlashData from Binarizable transport handling
+/// Applies to any keyed struct that serializes. Storage lifecycle — has it been read, is the
+/// segment still erased — is [NvmData].
 mixin BinarizableData<K extends BinarizableField<V, NativeType>, V> {
   String get name; // view name
 
@@ -56,47 +45,47 @@ mixin BinarizableData<K extends BinarizableField<V, NativeType>, V> {
   Iterable<MapEntry<K, V>> get entries => valueMap.entries;
 
   /// Device side values, derived from the canonical view values.
-  /// The single conversion point — serialization and [writtenMarkers] both read it.
   Map<K, int> get dataMap;
 
   /// Segment length. Defaults to the fields' extent; override where the segment reserves trailing
   /// space no field covers.
   int get lengthInBytes => keys.lengthInBytes;
 
-  /// Serialize [dataMap]. Each key places its own word, at its own width.
-  Uint8List toByteData() {
-    final bytes = Uint8List(lengthInBytes)..fillRange(0, lengthInBytes, unwrittenByte);
-    final buffer = ByteData.sublistView(bytes);
-    for (final MapEntry(:key, :value) in dataMap.entries) {
-      key.setWord(buffer, value);
-    }
-    return bytes;
-  }
-
-  //  NvmData
-  static const int flashErasePattern = 0xFFFF; // const: [isWritten] depends on it
   /// Value of a byte no field writes — reserved space, and the gaps of a sparse layout.
-  /// `0xFF` matches erased NOR flash, so an all-reserved segment round trips as still-erased.
-  int get unwrittenByte => 0xFF;
-  // todo merge flashErasePattern
+  /// Zero fill by default; [NvmData] raises it to the erase pattern.
+  int get unwrittenByte => 0x00;
 
-  /// Not-yet-loaded sentinel. Distinct from [flashErasePattern] so [isLoaded] can tell
+  /// Serialize [dataMap]. Each key places its own word, at its own width.
+  Uint8List toByteData() => dataMap.pack(lengthInBytes, unwrittenByte);
+}
+
+/// [NvmData]
+///
+/// A [BinarizableData] mirrored from an erasable non-volatile segment, which adds two states that
+/// a plain struct does not have:
+/// [isLoaded] — has this app side copy been read from the device.
+/// [isWritten] — does the device segment hold a value, or is it still erased.
+mixin NvmData<K extends BinarizableField<V, NativeType>, V> on BinarizableData<K, V> {
+  /// Erased cells read as all ones.
+  @override
+  int get unwrittenByte => 0xFF;
+
+  /// The word a fully erased slot reads back as — [unwrittenByte] across the slot's own width.
+  /// Follows [K]'s width per key, so a `Uint32` field is not compared against a 16 bit pattern.
+  int erasedWord(K key) => List.filled(key.size, unwrittenByte).fold(0, (word, byte) => (word << 8) | byte);
+
+  /// Not-yet-loaded sentinel. Distinct from the erase pattern so [isLoaded] can tell
   /// "never read from the device" apart from "read, and the device segment is still erased".
   Object get initValue;
 
-  /// Values compared against [flashErasePattern]. Defaults to the whole segment.
-  /// Override where only part of the segment marks it as written.
-  Iterable<int> get writtenMarkers => dataMap.values;
-
   bool get isLoaded => (this != initValue);
 
-  bool get isWritten => writtenMarkers.any((value) => value != flashErasePattern);
+  /// Keys whose slots mark the segment as written. Defaults to every field.
+  /// Override where a field may legitimately hold the erase pattern as a real value.
+  Iterable<K> get writtenMarkers => keys;
+
+  bool get isWritten => writtenMarkers.any((key) => dataMap[key] != erasedWord(key));
 
   // for view
   bool get isWritable => isLoaded && !isWritten;
 }
-
-// mixin NvmData<K,V> on BinarizableData<K,V>
-// {
-
-// }
