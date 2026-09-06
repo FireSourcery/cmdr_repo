@@ -42,7 +42,7 @@ mixin BinarizableData<K extends BinarizableField<V, NativeType>, V> {
   /// form fields and the confirmation table need.
   List<K> get keys;
   Map<K, V> get valueMap;
-  Iterable<MapEntry<K, V>> get entries => valueMap.entries;
+  // Iterable<MapEntry<K, V>> get entries => valueMap.entries;
 
   /// Device side values, derived from the canonical view values.
   Map<K, int> get dataMap;

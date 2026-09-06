@@ -23,6 +23,7 @@ export 'bits_map.dart';
 extension type const BitStruct<K extends BitField>(BitData bitData) implements BitData, StructData<K, int> {
   // unique in that the entire memory layout is known
   // can construct without keys
+  BitStruct.value(int bits) : this(ConstBits(bits as Bits));
   BitStruct.from(int value) : this(ConstBits(value as Bits));
   BitStruct.fromMap(Map<K, int> map) : this(ConstBits(Bits.ofMap(map.map((key, value) => MapEntry(key.bitmask, value)))));
 

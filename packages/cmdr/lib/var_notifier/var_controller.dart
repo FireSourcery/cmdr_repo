@@ -189,6 +189,21 @@ class VarStreamController extends VarCacheController {
     while (pushSubscription?.isPaused == true) pushSubscription?.resume();
   }
 
+  /// Holds the stream for the duration of [action].
+  ///
+  /// A long link operation — a full config write, a flash save — otherwise interleaves with the
+  /// periodic reads. Restores the stream to the state it was found in, so a page that does not
+  /// stream is not left streaming.
+  Future<T> hold<T>(Future<T> Function() action) async {
+    final wasActive = isActive;
+    pause();
+    try {
+      return await action();
+    } finally {
+      if (wasActive) resume();
+    }
+  }
+
   bool get isStopped => (pollSubscription == null && pushSubscription == null);
 
   bool get isActive => (pollSubscription?.isPaused == false && pushSubscription?.isPaused == false);

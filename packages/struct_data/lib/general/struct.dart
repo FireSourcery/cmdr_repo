@@ -155,6 +155,7 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   bool testAccess(K key) => data.testAccess(key);
 
   // todo call local function, flexible override this class instead of Field class
+  // V? fieldOrNull(K key) => testAccess(key) ? this[key] : null;
   V? fieldOrNull(K key) => data.fieldOrNull(key);
   bool trySetField(K key, V value) => data.trySetField(key, value);
   FieldEntry<K, V> field(K key) => data.field(key);
@@ -170,6 +171,24 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   Map<K, V> toMap() => IndexMap.of(keys, values);
 }
 
+// inherit without mixin
+// extension StructBaseMethods<S extends StructBase<S, K, V>, K extends Field<V>, V> on StructBase<S, K, V> {
+//   V? fieldOrNull(K key) => data.fieldOrNull(key);
+//   bool trySetField(K key, V value) => data.trySetField(key, value);
+//   FieldEntry<K, V> field(K key) => data.field(key);
+//   FieldEntry<Field<R>, R> fieldAs<R>(Field<R> key) => data.fieldAs<R>(key);
+
+//   // Iterable view requiring Fields list
+//   Iterable<V> get values => StructForm(keys)(data).values;
+//   Iterable<FieldEntry<K, V>> get fields => StructForm(keys)(data).fields;
+
+//   // Conversion — bridge to Map (and therefore to serialization)
+//   /// Snapshot as an [IndexMap]. If `K extends Enum`, call `.toJson()` on the
+//   /// result to serialise via [EnumMapByName].
+//   Map<K, V> toMap() => IndexMap.of(keys, values);
+// }
+
+// seperate paramter S
 // mixin StructBase< K, V>, K extends Field<V>, V> {
 // mixin ImmutableStructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
 

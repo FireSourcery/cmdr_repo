@@ -120,18 +120,6 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
   // by user for output
   void updateByView(V newValue) => value = newValue;
 
-  // also clear on updateByDataStatus
-  // void commitUserChanges() => commitView();
-
-  // refresh local side
-  // Call to discard user changes
-  void discardUserChanges() {
-    if (_viewValue != null) {
-      _viewValue = null; // Value reverts to last update by server value
-      notifyListeners();
-    }
-  }
-
   ///
   /// [dataValue] Inbound data from server/packets
   ///
@@ -143,12 +131,25 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
     if (_viewValue == null) notifyListeners(); // Only notify if effective value changed
   }
 
-  // user initiated - overwrite user changes, always update server value and view value
-  void updateByDataSync(int bytesValue) {
-    data = bytesValue;
-    _viewValue = null;
-    notifyListeners();
+  // also clear on updateByDataStatus
+  // void commitUserChanges() => commitView();
+
+  // refresh local side
+  // Call to discard user changes
+  void discardUserChanges() {
+    if (_viewValue != null) {
+      _viewValue = null; // Value reverts to last update by server value
+      notifyListeners();
+    }
   }
+  // void updateByView(V? newValue) => value = newValue;
+
+  // user initiated - overwrite user changes, always update server value and view value
+  // void updateByDataSync(int bytesValue) {
+  //   data = bytesValue;
+  //   _viewValue = null;
+  //   notifyListeners();
+  // }
 
   ///
   /// runtime variables
