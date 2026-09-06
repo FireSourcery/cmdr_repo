@@ -218,7 +218,7 @@ class ProtocolSocket implements Sink<Packet> {
 
   /// without options
   Future<R?> _requestResponseShort<T, R>(PacketIdRequest<T, R> requestId, T requestArgs, {Duration timeout = reqRespTimeoutDefault}) async {
-    return await sendRequest(requestId, requestArgs).then((value) async => await recvResponse(requestId, reqStateMeta: value));
+    return await sendRequest(requestId, requestArgs).then((value) async => await recvResponse(requestId, reqStateMeta: value, timeout: timeout));
   }
 
   /// handle build and send using request side of packet
