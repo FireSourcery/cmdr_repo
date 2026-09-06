@@ -77,7 +77,11 @@ class MotProtocolSocket extends ProtocolSocket {
   /// DataMode
   ///
   Future<int?> eraseMemRegion(int address, int sizeBytes, int flags) async {
-    return requestResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_ERASE, (address: address, size: sizeBytes, flags: flags), timeout: const Duration(milliseconds: 5000));
+    return requestResponse(
+      MotPacketRequestId.MOT_PACKET_DATA_MODE_ERASE,
+      (address: address, size: sizeBytes, flags: flags),
+      timeout: const Duration(milliseconds: 5000),
+    );
   }
 
   Future<int?> initDataModeWrite(int address, int sizeBytes, int flags) async {
@@ -85,13 +89,17 @@ class MotProtocolSocket extends ProtocolSocket {
       MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE,
       (address: address, size: sizeBytes, flags: flags),
       syncOptions: ProtocolSyncOptions.sendAndRecv,
-      timeout: const Duration(milliseconds: 5000), // includes the flash erase time
+      // timeout: const Duration(milliseconds: 5000), // includes the flash erase time
     );
   }
 
   Future<int?> initDataModeRead(int address, int sizeBytes, int flags) async {
     protocol.mapRequestResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_DATA, this); // map additional id
-    return requestResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_READ, (address: address, size: sizeBytes, flags: flags), syncOptions: ProtocolSyncOptions.sendAndRecv);
+    return requestResponse(
+      MotPacketRequestId.MOT_PACKET_DATA_MODE_READ,
+      (address: address, size: sizeBytes, flags: flags),
+      syncOptions: ProtocolSyncOptions.sendAndRecv,
+    );
   }
 
   Future<int?> endDataModeWrite() async => recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
