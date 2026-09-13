@@ -72,7 +72,7 @@ class VarCacheController {
   Future<VarStatus?> writeAll([Iterable<VarKey>? keys]) async => _write(_pairs(keys));
 
   // separate method, as updated involves varNotifier state
-  Future<VarStatus?> writeUpdated([Iterable<VarKey>? keys]) async {
+  Future<VarStatus?> writeUpdated() async {
     return _write(cache.dataPairsUpdatedByView);
   }
 

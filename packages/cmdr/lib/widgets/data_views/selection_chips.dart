@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:recase/recase.dart';
 
 // typedef MultiWidgetBuilder = Widget Function(BuildContext context, List<Widget> children);
-// typedef MultiWidgetBuilder = Widget Function({List<Widget> children});
-
 typedef ChipWrapperBuilder = Widget Function(BuildContext context, List<Widget> children);
 
 /// ChipSelection - let user select from a `selection/collection` of chips

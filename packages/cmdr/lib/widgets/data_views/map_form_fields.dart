@@ -50,7 +50,7 @@ class MapFormFields<K, V> extends StatefulWidget {
          _ => null,
        };
 
-  final Iterable<MapEntry<K, V>> entries; // MapEntry<K, V>
+  final Iterable<MapEntry<K, V>> entries; // Map <K, V>
   final bool isReadOnly;
   final ValueSetter<Map<K, V>> onSaved; // returns a new Map that is a HashMap, user may cast to original type
 
