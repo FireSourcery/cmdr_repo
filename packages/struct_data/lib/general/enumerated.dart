@@ -60,7 +60,6 @@ mixin Enumerated<K extends EnumeratedField<Object?>> implements StructBase<Enume
 
 // mixin EnumSchema implements Enum, Field<Object?> {
 //   // static composible constructor(List<Enum> values)
-//   // s
 // }
 
 // alternatively wrap a transport descriptor instead of implementing it

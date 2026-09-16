@@ -9,7 +9,7 @@ extension EnumByIndex<T extends Enum> on List<T> {
   EnumCodec<T> asCodec() => EnumCodecDefault(this);
 }
 
-abstract interface class EnumCodec<V extends Enum> /* implements Codec<V> */ {
+abstract interface class EnumCodec<V extends Enum> {
   const factory EnumCodec(List<V> values) = EnumCodecDefault;
 
   List<V> get values;

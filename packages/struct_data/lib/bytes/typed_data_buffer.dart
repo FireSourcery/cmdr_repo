@@ -5,21 +5,23 @@ import 'package:meta/meta.dart';
 /// [TypedDataBuffer] - `BytesBuilderBuffer`
 /// effectively, a fixed size [BytesBuilder] - allocated with a persistent buffer
 class TypedDataBuffer implements BytesBuilder {
-  TypedDataBuffer.origin(ByteBuffer byteBuffer) : bufferAsBytes = byteBuffer.asUint8List(0);
+  TypedDataBuffer.origin(this.byteBuffer) : bufferAsBytes = byteBuffer.asUint8List(0);
 
-  TypedDataBuffer.of(this.bufferAsBytes);
+  TypedDataBuffer.of(this.bufferAsBytes) : byteBuffer = bufferAsBytes.buffer;
 
   TypedDataBuffer(int size) : this.of(Uint8List(size));
+
+  final ByteBuffer byteBuffer;
 
   @protected
   final Uint8List bufferAsBytes; // full bytes view for bytes copy
 
+  @protected
+  int viewLength = 0; // the `extension` to TypeData that would allow shifting the view length in place. maintaing the state between operations.
+
   int get lengthMax => bufferAsBytes.lengthInBytes;
 
   Uint8List get viewAsBytes => bufferAsBytes.buffer.asUint8List(0, viewLength); // holds truncated view, mutable length.
-
-  @protected
-  int viewLength = 0;
 
   @override
   int get length => viewLength;

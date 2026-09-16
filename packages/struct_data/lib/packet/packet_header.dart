@@ -68,13 +68,14 @@ typedef PacketHeaderCaster = PacketHeader Function(TypedData typedData);
 
 // fields over ffi.struct
 
-/// Minimal header
-/// ControlChar
+/// Minimal header to resolve length
 abstract interface class PacketIdHeader {
   int get startField;
   int get idField;
   set startField(int value);
   set idField(int value);
+
+  // int length();
 }
 
 abstract interface class PacketHeader implements PacketIdHeader {
@@ -91,16 +92,6 @@ abstract interface class PacketHeader implements PacketIdHeader {
   // void build(PacketId packetId, Packet? packet); // can be overridden for additional types
 }
 
-abstract interface class PacketFixedHeader implements PacketIdHeader {
-  int get startField;
-  int get idField;
-  int get checksumField;
-
-  set startField(int value);
-  set idField(int value);
-  set checksumField(int value);
-}
-
 // meta char
 abstract interface class PacketSyncHeader implements PacketIdHeader {
   int get startField;
@@ -108,5 +99,3 @@ abstract interface class PacketSyncHeader implements PacketIdHeader {
   set startField(int value);
   set idField(int value);
 }
-
-// extension PacketHeaderMethods on PacketHeader {}

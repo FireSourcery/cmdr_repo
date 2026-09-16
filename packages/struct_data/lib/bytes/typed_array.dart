@@ -26,22 +26,7 @@ extension TypedDataCast on TypedData {
         as T Function([int offsetInBytes, int? length]);
   }
 
-  // T asTypedIntList<T extends TypedDataList<int>>([int offsetInBytes = 0, int? length]) => _asTypedIntListFn<T>().call(this.offsetInBytes + offsetInBytes, length);
-  T asTypedIntList<T extends TypedDataList<int>>([int offsetInBytes = 0, int? length]) {
-    return switch (T) {
-          const (Uint8List) => buffer.asUint8List(this.offsetInBytes + offsetInBytes, length),
-          const (Uint8ClampedList) => buffer.asUint8ClampedList(this.offsetInBytes + offsetInBytes, length),
-          const (Uint16List) => buffer.asUint16List(this.offsetInBytes + offsetInBytes, length),
-          const (Uint32List) => buffer.asUint32List(this.offsetInBytes + offsetInBytes, length),
-          const (Uint64List) => buffer.asUint64List(this.offsetInBytes + offsetInBytes, length),
-          const (Int8List) => buffer.asInt8List(this.offsetInBytes + offsetInBytes, length),
-          const (Int16List) => buffer.asInt16List(this.offsetInBytes + offsetInBytes, length),
-          const (Int32List) => buffer.asInt32List(this.offsetInBytes + offsetInBytes, length),
-          const (Int64List) => buffer.asInt64List(this.offsetInBytes + offsetInBytes, length),
-          _ => throw UnimplementedError(),
-        }
-        as T;
-  }
+  T asTypedIntList<T extends TypedDataList<int>>([int offsetInBytes = 0, int? length]) => _asTypedIntListFn<T>().call(this.offsetInBytes + offsetInBytes, length);
 
   ByteData asByteData([int offsetInBytes = 0, int? length]) => buffer.asByteData(this.offsetInBytes + offsetInBytes, length);
 }

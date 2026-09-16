@@ -127,6 +127,15 @@ abstract class BitStructBase<T extends BitStructBase<T, K>, K extends BitField> 
   int get hashCode => keys.hashCode ^ bits.hashCode;
 }
 
+// abstract mixin class BitStructImmutable<T extends BitStructBase<T, K>, K extends BitField> implements BitStructBase<T, K> {
+//    /// Returns an `immutable` instance with [value] as bits. Override to return subtype.
+//   T copyWithData(covariant BitStruct<K> data);
+
+//   T withField(K key, int value) => copyWithData(data.withField(key, value));
+//   T withFields(Iterable<BitFieldEntry<K>> entries) => copyWithData(data.withFields(entries));
+//   T withMap(Map<K, int> map) => copyWithData(data.withMap(map));
+// }
+
 /// Concrete pair: keys passed in, immutable (uses [ConstBits]).
 @immutable
 class _BitStruct<K extends BitField> extends BitStructBase<_BitStruct<K>, K> {

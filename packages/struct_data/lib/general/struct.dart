@@ -24,8 +24,8 @@ extension type const StructData<K extends Field<V>, V>(Object _data) implements 
   void operator []=(K key, V value) => key.setIn(this, value);
   bool testAccess(K key) => key.testAccess(this);
 
+  //
   FieldEntry<K, V> field(K key) => (key: key, value: this[key]);
-
   V? fieldOrNull(K key) => testAccess(key) ? this[key] : null;
   bool trySetField(K key, V value) {
     if (!testAccess(key)) return false;
@@ -39,7 +39,6 @@ extension type const StructData<K extends Field<V>, V>(Object _data) implements 
   Iterable<V> valuesAs(StructForm<K, V> type) => type(this).values;
   Iterable<FieldEntry<K, V>> fieldsAs(StructForm<K, V> type) => type(this).fields;
   Map<K, V> toMapWith(StructForm<K, V> type) => type.mapWithData(this);
-
   // Map<K, V> mapWithFields(StructForm<K, V> type) => IndexMap<K, V>.of(type, type.map((k) => this[k]));
 }
 
@@ -71,9 +70,10 @@ abstract interface class Field<V> {
   bool testAccess(covariant Object struct) => true;
 }
 
-// extension FieldExtension<K extends Field<V>, V> on K {
-//   V of(StructData<K, V> struct) => getIn(struct);
-// }
+extension FieldExtension<K extends Field<V>, V> on K {
+  V of(StructData<K, V> struct) => getIn(struct);
+  V? validateType(StructData<K, dynamic> data) => data[this] is V ? data[this] as V : null;
+}
 
 /// [StructForm]
 /// StructData TypeClass
@@ -148,6 +148,7 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
 
   /// Proxy to allow the same keys
   /// [Object] as [StructData<K, V>] data passed to Keys
+  /// Implementor select `this` or nested data.
   StructData<K, V> get data;
 
   V operator [](covariant K key) => data[key];
@@ -156,9 +157,9 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
 
   // todo call local function, flexible override this class instead of Field class
   // V? fieldOrNull(K key) => testAccess(key) ? this[key] : null;
+  FieldEntry<K, V> field(K key) => data.field(key);
   V? fieldOrNull(K key) => data.fieldOrNull(key);
   bool trySetField(K key, V value) => data.trySetField(key, value);
-  FieldEntry<K, V> field(K key) => data.field(key);
   FieldEntry<Field<R>, R> fieldAs<R>(Field<R> key) => data.fieldAs<R>(key);
 
   // Iterable view requiring Fields list
