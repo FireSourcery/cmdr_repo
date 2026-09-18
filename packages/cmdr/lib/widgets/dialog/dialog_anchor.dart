@@ -5,22 +5,29 @@ import 'package:flutter/material.dart';
 ///
 /// e.g. warning dialog before editing a field, and a dialog after submitting a field
 ///
+/// [T] is the type of the event value that triggers the event dialog.
 class DialogAnchor<T> extends StatefulWidget {
-  const DialogAnchor({super.key, this.initialDialogBuilder, this.eventNotifier, this.eventGetter, this.eventDialogBuilder, /*  this.eventMatch, */ this.notificationMatch, required this.child});
+  const DialogAnchor({
+    super.key,
+    this.initialDialogBuilder,
+    this.eventNotifier,
+    this.eventGetter,
+    this.eventDialogBuilder,
+    this.eventMatch,
+    this.notificationMatch,
+    required this.child,
+  });
 
   // allow a more general interface, instead of ValueListenable<T?>? eventNotifier;
   final Listenable? eventNotifier; // controls opening of dialog
   final ValueGetter<T?>? eventGetter;
-  // returns on notification match
-  // final T? eventMatch;
+  final T? eventMatch; // when set, open only on the transition into [eventGetter] == [eventMatch]
 
-  // additional way to match event
-  final Notification? notificationMatch;
+  final Notification? notificationMatch; // additional way to match event
 
   final WidgetBuilder? initialDialogBuilder; // on first focus
 
-  // user match widget built to the notification event
-  final ValueWidgetBuilder<T?>? eventDialogBuilder; // on event, e.g. submit, or other event
+  final ValueWidgetBuilder<T?>? eventDialogBuilder; // on event, e.g. submit, or other event. user match widget built to the notification event
   final Widget child;
 
   @override
@@ -30,12 +37,14 @@ class DialogAnchor<T> extends StatefulWidget {
 class _DialogAnchorState<T> extends State<DialogAnchor<T>> {
   final FocusNode _focusNode = FocusNode();
   bool _focusedOnce = false;
+  T? _lastEvent; // previous [eventGetter] value, for [eventMatch] edge detection
 
   @override
   void initState() {
     super.initState();
     _focusNode.addListener(_handleFocusChange);
     if (widget.eventNotifier != null && widget.eventDialogBuilder != null) {
+      _lastEvent = widget.eventGetter?.call(); // baseline, so mounting mid-event does not open the dialog
       widget.eventNotifier!.addListener(_showEventDialogAsListener);
     }
   }
@@ -67,8 +76,15 @@ class _DialogAnchorState<T> extends State<DialogAnchor<T>> {
     showDialog(context: context, builder: (context) => widget.eventDialogBuilder!(context, widget.eventGetter?.call(), null));
   }
 
+  /// [eventNotifier] may fire for reasons unrelated to the event, e.g. a [ChangeNotifier] shared with
+  /// the value it reports on. [eventMatch] narrows this to the transition into a matching
+  /// [eventGetter]; notifications while the event remains active do not reopen the dialog.
   void _showEventDialogAsListener() {
-    // if (widget.eventGetter == null || widget.eventGetter?.call() == widget.eventMatch)
+    if (widget.eventMatch case T match) {
+      final T? previous = _lastEvent;
+      _lastEvent = widget.eventGetter?.call();
+      if (_lastEvent != match || previous == match) return;
+    }
     _showEventDialog();
   }
 

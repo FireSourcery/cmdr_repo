@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import 'var_notifier.dart';
 import 'service_io.dart';
 import 'var_cache.dart';
