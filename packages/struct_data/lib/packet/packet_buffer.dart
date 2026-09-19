@@ -32,7 +32,7 @@ base class PacketBuffer extends TypedDataBuffer with Packet {
   /// reads as out of range rather than as stale bytes from the frame before. Building does
   /// not go through here — see [bufferAsByteData].
   @override
-  ByteData get byteData => ByteData.sublistView(viewAsBytes);
+  ByteData get byteData => ByteData.sublistView(viewLengthBytes);
 
   @override
   int get lengthInBytes => viewLength;
@@ -43,59 +43,55 @@ base class PacketBuffer extends TypedDataBuffer with Packet {
   /// `ffi.Struct` payload must be cast over its full extent whatever the frame's length. Both
   /// want the allocation rather than the view.
   @override
-  ByteData get storage => ByteData.sublistView(bufferAsBytes);
+  ByteData get storage => ByteData.sublistView(fullLengthBytes);
 
   /// A detached view of what is valid now.
   ///
   /// Handed out instead of `this` so a listener receives a frame rather than the buffer that
   /// assembled it, and cannot drive it.
-  Packet get view => PacketView.of(codec, viewAsBytes);
+  Packet get view => PacketView.of(codec, viewLengthBytes);
 
   /// Payload bytes currently valid. Setting it moves the end.
-  set payloadLength(int value) => viewLength = codec.headerLength + value;
+  set payloadLength(int value) => viewLength = codec.dataFormat.headerLength + value;
 
   ///
   /// [Build]
   ///
-  /// Writes through [bufferAsByteData] and moves the end only once the frame is whole, so
-  /// there is no window in which the view describes a half-built frame. The previous version
-  /// opened the view to `lengthMax` for the duration of the build and had to restore it on
-  /// every exit.
+  /// Writing goes through [storage], so nothing here opens the view. The end moves in
+  /// [buildHeader] — a frame's extent is not known until its header is written, and that is
+  /// where it becomes known.
   ///
 
-  /// Build, then bring the end in to the frame.
-  ///
-  /// No view to open: building goes through [storage], so the end only ever moves once, to
-  /// the finished frame.
+  /// Also brings the end in to the frame the header describes.
   @override
-  PayloadMeta buildPayload<V>(PacketPayloadId<V> id, V values) {
+  void buildHeader(PacketId id, [PayloadMeta meta = PayloadMeta.empty]) {
+    // An `assert`, not a throw: a payload's size comes from its own struct, so this is a table
+    // error rather than anything the link can produce. A payload that actually overruns is
+    // stopped by the bounds check on its own write into the span it was handed — this catches
+    // only one *declaring* a length it did not write.
+    assert(meta.length <= codec.payloadLengthMax, 'declared payload exceeds the frame');
+
+    super.buildHeader(id, meta);
+    viewLength = codec.formatOf(id).frameLengthOf(meta.length);
+  }
+
+  /// Stages nothing if the payload throws.
+  ///
+  /// The end has not moved, so the buffer still claims the frame staged before — but that
+  /// frame's body may have just been written over by the payload that threw, leaving a
+  /// valid-looking header on contents that no longer match it.
+  @override
+  PayloadMeta buildRequest<T, R>(PacketRequestId<T, R> id, T values) {
     try {
-      final PayloadMeta meta = super.buildPayload(id, values);
-
-      // An `assert`, not a throw: a payload's size comes from its own struct, so this is a
-      // table error rather than anything the link can produce. A payload that actually
-      // overruns is stopped by the bounds check on its own write into the span it was handed
-      // — this catches only one *declaring* a length it did not write.
-      assert(meta.length <= codec.payloadLengthMax, 'declared payload exceeds the frame');
-
-      viewLength = codec.formatOf(id).frameLengthOf(meta.length);
-      return meta;
+      return super.buildRequest(id, values);
     } on Object {
-      // The end has not moved, so the buffer still claims the frame staged before — but that
-      // frame's body may have just been written over by the payload that threw, leaving a
-      // valid-looking header on contents that no longer match it. Clearing is what keeps that
-      // visible: nothing is staged, rather than something that still looks like a frame.
       clear();
       rethrow;
     }
   }
 
-  /// Build a bare control frame and bring the end in to it.
-  void buildSync(PacketId id) {
-    final PacketFrameFormat format = codec.formatOf(id);
-    format.buildHeader(storage, id);
-    viewLength = format.length;
-  }
+  /// A bare control frame.
+  void buildControl(PacketId id) => buildHeader(id);
 
   @override
   String toString() => toDebugString();

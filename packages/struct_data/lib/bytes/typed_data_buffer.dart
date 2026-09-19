@@ -5,23 +5,23 @@ import 'package:meta/meta.dart';
 /// [TypedDataBuffer] - `BytesBuilderBuffer`
 /// effectively, a fixed size [BytesBuilder] - allocated with a persistent buffer
 class TypedDataBuffer implements BytesBuilder {
-  TypedDataBuffer.origin(this.byteBuffer) : bufferAsBytes = byteBuffer.asUint8List(0);
+  TypedDataBuffer.origin(this.byteBuffer) : fullLengthBytes = byteBuffer.asUint8List(0);
 
-  TypedDataBuffer.of(this.bufferAsBytes) : byteBuffer = bufferAsBytes.buffer;
+  TypedDataBuffer.of(this.fullLengthBytes) : byteBuffer = fullLengthBytes.buffer;
 
   TypedDataBuffer(int size) : this.of(Uint8List(size));
 
   final ByteBuffer byteBuffer;
 
   @protected
-  final Uint8List bufferAsBytes; // full bytes view for bytes copy
+  final Uint8List fullLengthBytes; // full bytes view for bytes copy.
 
   @protected
   int viewLength = 0; // the `extension` to TypeData that would allow shifting the view length in place. maintaing the state between operations.
 
-  int get lengthMax => bufferAsBytes.lengthInBytes;
+  Uint8List get viewLengthBytes => fullLengthBytes.buffer.asUint8List(0, viewLength); // holds truncated view, mutable length.
 
-  Uint8List get viewAsBytes => bufferAsBytes.buffer.asUint8List(0, viewLength); // holds truncated view, mutable length.
+  int get lengthMax => fullLengthBytes.lengthInBytes;
 
   @override
   int get length => viewLength;
@@ -38,28 +38,28 @@ class TypedDataBuffer implements BytesBuilder {
   // a buffer backing larger than all potential calls is expected to be allocated at initialization
   // does not need length checking of Uint8List.copy
   void copy(Uint8List bytes, [int offset = 0]) {
-    bufferAsBytes.setAll(offset, bytes);
+    fullLengthBytes.setAll(offset, bytes);
     viewLength = bytes.length + offset;
   }
 
   /// start at current length
   @override
   void add(covariant Uint8List bytes) {
-    bufferAsBytes.setAll(viewLength, bytes);
+    fullLengthBytes.setAll(viewLength, bytes);
     viewLength += bytes.length;
   }
 
   @override
-  void addByte(int byte) => bufferAsBytes[viewLength++] = byte;
+  void addByte(int byte) => fullLengthBytes[viewLength++] = byte;
 
   /// return must be processed before next add
   @override
   Uint8List takeBytes() {
-    final result = bufferAsBytes.buffer.asUint8List(0, viewLength);
+    final result = fullLengthBytes.buffer.asUint8List(0, viewLength);
     clear();
     return result;
   }
 
   @override
-  Uint8List toBytes() => bufferAsBytes.sublist(0);
+  Uint8List toBytes() => fullLengthBytes.sublist(0);
 }

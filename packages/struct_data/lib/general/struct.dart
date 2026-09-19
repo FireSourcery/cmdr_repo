@@ -77,7 +77,7 @@ abstract interface class Field<V> {
 }
 
 extension FieldExtension<K extends Field<V>, V> on K {
-  //  FieldEntry<K, V> call(StructData<K, V> struct) => (key: this, value: of(struct));
+  FieldEntry<K, V> call(StructData<K, V> struct) => (key: this, value: of(struct));
   V of(StructData<K, V> struct) => getIn(struct);
   V? validateType(StructData<K, dynamic> data) => data[this] is V ? data[this] as V : null;
 }
@@ -103,7 +103,11 @@ extension type const StructForm<K extends Field<V>, V>(List<K> fields) implement
   ({StructForm<K, V> form, StructData<K, V> data}) call(StructData<K, V> struct) => (form: this, data: struct);
 }
 
-// typedef StructReference<K extends Field<V>, V>  = ({StructForm<K, V> form, StructData<K, V> data});
+// extension StructFormExtension<K extends Field<V>, V> on StructForm<K, V> {
+//   Map<K, Type> get typeMap => {for (final key in fields) key: key.runtimeType};
+// }
+
+// typedef StructReference<K extends Field<V>, V> = ({StructForm<K, V> form, StructData<K, V> data});
 
 /// return context with both keys and data
 /// `StructForm(PersonField.values)(personA).toMap();`
@@ -154,7 +158,9 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   /// Proxy to allow the same keys
   /// [Object] as [StructData<K, V>] data passed to Keys
   /// Implementor select `this` or nested data.
-  StructData<K, V> get data;
+  // StructData<K, V> get data;
+  // point to this by default. BitStruct can override. This way other subtpes become simpel typedefs.
+  StructData<K, V> get data => this as StructData<K, V>;
 
   // accessors bound to the key. These functions can be overridden when V the subclass handles V validation
   V operator [](covariant K key) => data[key];
@@ -189,6 +195,15 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   //       this[key] = map[key] ?? this[key];
   //   }
   // }
+
+  //   @override
+  // bool operator ==(Object other) {
+  //   if (identical(this, other)) return true;
+  //   // if (other is! StructBase<T, K, V>) return false;
+  //   // Keys lists for enum types are const singletons; identity means same schema.
+  //   if (!identical(keys, other.keys)) return false;
+  //   return keys.every((key) => this[key] == other[key]);
+  // }
 }
 
 // inherit without mixin
@@ -209,8 +224,13 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
 // }
 
 // seperate paramter S
-// mixin StructBase< K, V>, K extends Field<V>, V> {
-// mixin ImmutableStructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
+mixin StructBase1<K extends Field<V>, V> {}
+mixin ImmutableStructBase1<S extends StructBase1<K, V>, K extends Field<V>, V> implements StructBase1<K, V> {
+  void fillFromMap(Map<K, V> map) => throw TypeError();
+  S copyWithMap(Map<K, V> data); // or StructFormBase holds constructor  S create( );
+
+  S get self => this as S;
+}
 
 // Utility
 /// proxy over a map

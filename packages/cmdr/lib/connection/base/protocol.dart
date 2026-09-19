@@ -207,7 +207,7 @@ class ProtocolSocket implements Sink<Packet> {
     if (syncOptions.recvSync) {
       if (await recvSync(timeout) != codec.ack) return null;
       // todo handle case of rx nack
-      // if (await recvSync() case PacketSyncId? id when id != codec.ack)  return Future.error(id ?? TimeoutException());
+      // if (await recvSync() case PacketControlId? id when id != codec.ack)  return Future.error(id ?? TimeoutException());
     }
 
     final R? response = await recvResponse(requestId, timeout: timeout);
@@ -249,7 +249,7 @@ class ProtocolSocket implements Sink<Packet> {
   ///
 
   ///
-  Future<PacketSyncId?> ping(covariant PacketSyncId id, {covariant PacketSyncId? respId, Duration timeout = timeoutDefault}) async {
+  Future<PacketControlId?> ping(covariant PacketControlId id, {covariant PacketControlId? respId, Duration timeout = timeoutDefault}) async {
     protocol.mapResponse(respId ?? id, this);
     if (respId != null) _recved = Completer<Packet>.sync();
 
@@ -258,14 +258,14 @@ class ProtocolSocket implements Sink<Packet> {
 
   /// respondSync
   @protected
-  Future<void> sendSync(PacketSyncId syncId) {
-    packetBufferOut.buildSync(syncId);
+  Future<void> sendSync(PacketControlId controlId) {
+    packetBufferOut.buildControl(controlId);
     return protocol.trySend(packetBufferOut.view);
   }
 
   @protected
-  Future<PacketSyncId?> recvSync([Duration timeout = rxTimeoutDefault]) {
-    return tryRecv<PacketSyncId>(() => packetBufferIn.syncId, timeout);
+  Future<PacketControlId?> recvSync([Duration timeout = rxTimeoutDefault]) {
+    return tryRecv<PacketControlId>(() => packetBufferIn.controlId, timeout);
   }
 
   // Future<void> sendBytes(Uint8List bytes, {PacketId? id, Duration timeout = timeoutDefault}) async {
@@ -285,7 +285,7 @@ class ProtocolSocket implements Sink<Packet> {
   //   return await completer.timeout(timeout).then((_) => packetBufferIn.parseResponse<V>(packetId, reqStateMeta));
   // }
 
-  // Future<PacketSyncId?> expectSync([Duration timeout = timeoutDefault]) {
+  // Future<PacketControlId?> expectSync([Duration timeout = timeoutDefault]) {
   //   protocol.mapSync(this);
   //   return recvSync(timeout);
   // }
@@ -306,7 +306,7 @@ class ProtocolSocket implements Sink<Packet> {
     } catch (e) {
       debugLog("ProtocolSocket Exception");
       debugLog(e);
-      debugLog(packetBufferIn.viewAsBytes);
+      debugLog(packetBufferIn.viewLengthBytes);
       // payload parser may throw if invalid packet passes header parser as valid
       return null;
     } finally {

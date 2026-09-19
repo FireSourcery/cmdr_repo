@@ -16,8 +16,10 @@ abstract mixin class BinarizableField<V, B extends NativeType> implements Enumer
 
   // optionally with format for exact type decoding
   // BinaryFormat<B, V> get format;
-  // Map<BinarizableField, BinaryFormat> get mapSchema;
 }
+// extension BinarizableFieldExtension on StructForm<> {
+//     // Map<BinarizableField, BinaryFormat> get mapSchema;
+// }
 
 /// The codec itself is on [TypedField] — [TypedFieldLayout.unpack] / [TypedFieldWords.pack].
 /// It needs only offsets and widths, never the view side, so a composite whose view is not a keyed
@@ -41,6 +43,7 @@ mixin BinarizableData<K extends BinarizableField<V, NativeType>, V> {
   /// Typed views. [Enumerated.toMap] is `Map<K, Object?>`; these keep the numeric scope that the
   /// form fields and the confirmation table need.
   List<K> get keys;
+
   Map<K, V> get valueMap;
   // Iterable<MapEntry<K, V>> get entries => valueMap.entries;
 

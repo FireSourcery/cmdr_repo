@@ -12,6 +12,8 @@ export 'enum_map.dart';
 
 // `StructForm<EnumeratedField>(.values)(enumeratedData).toMap();`
 
+// typedef Enumerated<K extends EnumeratedField<Object?>> = StructBase<K, Object?>;
+
 mixin Enumerated<K extends EnumeratedField<Object?>> implements StructBase<Enumerated<K>, K, Object?> {
   List<K> get keys;
   StructData<K, dynamic> get data => this as StructData<K, dynamic>; // data passed to Keys

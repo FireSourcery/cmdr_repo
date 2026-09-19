@@ -5,7 +5,7 @@ import 'dart:collection';
 ///   optimized for small fixed set of keys
 ///   guarantees all keys are present
 ///   can guarantee non null return - if V is defined as non nullable
-abstract mixin class FixedMap<K, V> implements Map<K, V> {
+abstract interface class FixedMap<K, V> implements Map<K, V> {
   const FixedMap();
 
   @override
@@ -29,7 +29,7 @@ abstract mixin class FixedMap<K, V> implements Map<K, V> {
 /// buffer a struct list of values
 ///
 /// K must have .index property
-class IndexMap<K extends dynamic, V> with MapBase<K, V>, FixedMap<K, V> {
+class IndexMap<K extends dynamic, V> with MapBase<K, V> implements FixedMap<K, V> {
   // default by assignment, initialize const using list literal
   const IndexMap._(this._keysReference, this._valuesBuffer) : assert(_keysReference.length == _valuesBuffer.length);
 

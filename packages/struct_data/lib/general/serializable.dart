@@ -137,11 +137,7 @@ extension SerializableValueObjects<K extends SerializableField<Object>> on Struc
       for (final e in fields)
         // null as type error
         if (e.validateType(json[e.name]) case Object? value)
-          e:
-              value ??
-              (throw FormatException(
-                'Invalid JSON map for $runtimeType: $json - value for key "${e.name}" is <${json[e.name].runtimeType}>${json[e.name]} but expected type is non-nullable ${e.type}',
-              )),
+          e: value ?? (throw FormatException('Invalid JSON $json - value for key "${e.name}" is <${value.runtimeType}>$value but expected type is non-nullable ${e.type}')),
     };
   }
 }

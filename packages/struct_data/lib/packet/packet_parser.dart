@@ -25,11 +25,13 @@ export 'packet_buffer.dart';
 /// start offset through every field read, and the buffer is a few hundred bytes.
 final class HeaderParser extends PacketBuffer {
   HeaderParser(PacketCodec codec, [int? size]) : super(codec, size ?? codec.lengthMax * 4) {
-    assert(codec.hasConsistentIdPrefix, 'every shape must place start and id identically — the parser reads them to choose a shape');
+    // Every shape must be at least as long as what it takes to size one, or a whole frame of
+    // that shape could arrive and still not be readable.
+    assert(codec.prefixLength <= codec.controlFormat.headerLength && codec.prefixLength <= codec.dataFormat.headerLength);
   }
 
   /// Bytes past the end of the frame just completed — the next frame, in whole or in part.
-  late Uint8List trailing = Uint8List.sublistView(viewAsBytes);
+  late Uint8List trailing = Uint8List.sublistView(viewLengthBytes);
 
   ///
   /// [Header] — what has arrived
@@ -38,18 +40,11 @@ final class HeaderParser extends PacketBuffer {
   /// field that has not arrived reads as null rather than as stale bytes.
   ///
 
-  int? _fieldOrNull(ByteField? key) => key?.getWordOrNull(byteData, codec.endian);
-
-  /// The shape being assembled, once the id says which. Null before that.
-  PacketFrameFormat? get formatOrNull => switch (idOrNull) {
-    final PacketId id => codec.formatOf(id),
-    null => null,
-  };
-
-  int? get startFieldOrNull => _fieldOrNull(codec.startField);
-  int? get idFieldOrNull => _fieldOrNull(codec.idField);
-  int? get lengthFieldOrNull => _fieldOrNull(formatOrNull?.lengthField);
-  int? get checksumFieldOrNull => _fieldOrNull(formatOrNull?.checksumField);
+  /// The delimiter, id and frame length, once enough has arrived to read them.
+  ///
+  /// One view, from the codec — the parser reads an id here in order to *choose* a shape, so
+  /// it cannot reach through a shape to find one.
+  PacketHeaderPrefix? get prefixOrNull => (length >= codec.prefixLength) ? codec.prefixOf(byteData) : null;
 
   /// The id in the buffer. Null if it has not arrived, or is not in the table.
   PacketId? get idOrNull => switch (idFieldOrNull) {
@@ -57,11 +52,26 @@ final class HeaderParser extends PacketBuffer {
     null => null,
   };
 
-  /// Total length of the frame being assembled — from the shape where it fixes its own
-  /// length, from the length field otherwise. Null until enough has arrived to say.
-  int? get frameLengthOrNull => switch (formatOrNull) {
-    final PacketFrameFormat shape when !shape.hasLength => shape.length,
-    final PacketFrameFormat _ => lengthFieldOrNull,
+  /// The shape being assembled, once the id says which. Null before that.
+  PacketFrameFormat? get formatOrNull => switch (idOrNull) {
+    // final PacketControlId id => codec.controlFormat,
+    // final PacketPayloadId id => codec.dataFormat,
+    final PacketId id => codec.formatOf(id),
+    null => null,
+  };
+
+  /// Total length of the frame being assembled.
+  ///
+  /// The prefix answers for a shape that fixes its own length; null from it means variable,
+  /// and then the shape's length field is what says.
+  int? get frameLengthOrNull => prefixOrNull?.frameLength() ?? lengthFieldOrNull;
+
+  /// The frame length the prefix declares, against what the codec can hold.
+  ///
+  /// Asked of [frameLengthOrNull] rather than of a length field, so it answers for a control
+  /// shape — which declares its length by being one — as well as for a data frame.
+  bool? get isFrameLengthValid => switch (frameLengthOrNull) {
+    final int frameLength => frameLength >= codec.prefixLength && frameLength <= codec.lengthMax,
     null => null,
   };
 
@@ -77,6 +87,22 @@ final class HeaderParser extends PacketBuffer {
   /// `null` not yet arrived, `false` arrived and wrong, `true` arrived and right.
   ///
 
+  int? get startFieldOrNull => prefixOrNull?.startField;
+  int? get idFieldOrNull => prefixOrNull?.idField;
+
+  /// The length field of the shape being assembled. Resolves only once the id has named a
+  /// shape, so a control frame is measured against its own format and never the data one.
+  int? get lengthFieldOrNull => switch (formatOrNull) {
+    final PacketFrameFormat shape => shape.lengthField?.getWordOrNull(byteData, shape.endian),
+    null => null,
+  };
+
+  /// The integrity field the assembling shape declares, if it has arrived.
+  int? get checksumFieldOrNull => switch (formatOrNull) {
+    final PacketFrameFormat shape => shape.checksumField?.getWordOrNull(byteData, shape.endian),
+    null => null,
+  };
+
   bool? get isStartFieldValid => switch (startFieldOrNull) {
     final int value => value == codec.startId,
     null => null,
@@ -87,20 +113,33 @@ final class HeaderParser extends PacketBuffer {
     null => null,
   };
 
-  /// Against the total frame length the codec admits.
   bool? get isLengthFieldValid => switch (lengthFieldOrNull) {
-    final int value => value >= codec.headerLength && value <= codec.lengthMax,
+    final int value => value >= codec.prefixLength && value <= codec.lengthMax,
     null => null,
   };
 
   /// Meaningful only after [completePacket] — the checksum covers exactly the frame, so the
   /// view has to end where the frame does. Null on a shape that declares no checksum, which
-  /// is now asked of the frame's own shape: a control frame is checked against its own check
-  /// byte instead of being waved through because the data shape's field lay past its end.
-  bool? get isChecksumFieldValid => switch (checksumFieldOrNull) {
-    final int value => value == formatOrNull!.checksumOf(byteData, length),
-    null => null,
+  /// is asked of the frame's own shape: a control frame is checked against its own check byte
+  /// instead of being waved through because the data shape's field lay past its end.
+  bool? get isChecksumFieldValid => switch ((formatOrNull, checksumFieldOrNull)) {
+    (final PacketFrameFormat shape, final int carried) => carried == shape.checksumOf(byteData, length),
+    _ => null,
   };
+
+  /// for valueOrNull from header status
+  // bool isValidStart(int value) => (value == format.startId);
+  // bool isValidId(int value) => (format.idOf(value) != null);
+  // bool isValidLength(int value) => (value == value.clamp(format.headerLength, format.lengthMax)); // where length is total length
+  // bool isValidChecksum(int value) => (value == checksum());
+  // int? get startFieldOrNull => format.startFieldDef.getInOrNull(packetData);
+  // int? get idFieldOrNull => format.idFieldDef.getInOrNull(packetData);
+  // int? get lengthFieldOrNull => format.lengthFieldDef.getInOrNull(packetData);
+  // int? get checksumFieldOrNull => format.checksumFieldDef.getInOrNull(packetData);
+  // bool? get isStartFieldValid => startFieldOrNull.ifNonNull(isValidStart);
+  // bool? get isIdFieldValid => idFieldOrNull.ifNonNull(isValidId);
+  // bool? get isLengthFieldValid => lengthFieldOrNull.ifNonNull(isValidLength);
+  // bool? get isChecksumFieldValid => checksumFieldOrNull.ifNonNull(isValidChecksum); // assert(length == lengthFieldOrNull), isPacketComplete == true
 
   /// Take [bytes] from the link. Seeks the delimiter only when starting fresh; mid-frame,
   /// a delimiter byte is payload.
@@ -114,7 +153,7 @@ final class HeaderParser extends PacketBuffer {
 
   /// Drop everything before the next delimiter, or all of it if there is none.
   void seekStart() {
-    if (viewAsBytes.seekChar(codec.startId) case final Uint8List found) {
+    if (viewLengthBytes.seekChar(codec.startId) case final Uint8List found) {
       copy(found);
     } else {
       clear();
@@ -130,7 +169,7 @@ final class HeaderParser extends PacketBuffer {
   /// view has to end where the frame does and not where the last read from the link did.
   void completePacket() {
     final int frameLength = frameLengthOrNull!;
-    trailing = Uint8List.sublistView(viewAsBytes, frameLength);
+    trailing = Uint8List.sublistView(viewLengthBytes, frameLength);
     viewLength = frameLength;
   }
 }
@@ -187,12 +226,12 @@ class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> impleme
 
           // A length field naming a frame the codec cannot hold. Checked after completeness
           // so that back-to-back control frames, which carry no length, are not measured.
-          case HeaderParser(isLengthFieldValid: false):
+          case HeaderParser(isFrameLengthValid: false):
             throw PacketStatusException.meta;
 
           // Recognised and still arriving.
           case HeaderParser(isComplete: false):
-            assert(parser.length < parser.codec.lengthMax, 'a frame over lengthMax should have failed isLengthFieldValid');
+            assert(parser.length < parser.codec.lengthMax, 'a frame over lengthMax should have failed isFrameLengthValid');
             return;
         }
       } on PacketStatusException catch (e) {

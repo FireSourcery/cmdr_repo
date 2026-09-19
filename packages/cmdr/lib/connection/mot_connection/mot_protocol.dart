@@ -13,12 +13,17 @@ class MotProtocolSocket extends ProtocolSocket {
   /// Base wrappers
   ///
   @override
-  Future<PacketSyncId?> ping(MotPacketSyncId id, {MotPacketSyncId? respId, Duration timeout = ProtocolSocket.timeoutDefault}) async => super.ping(id, respId: respId, timeout: timeout);
+  Future<PacketControlId?> ping(MotPacketControlId id, {MotPacketControlId? respId, Duration timeout = ProtocolSocket.timeoutDefault}) async =>
+      super.ping(id, respId: respId, timeout: timeout);
 
-  Future<PacketSyncId?> pingDefault({MotPacketSyncId id = MotPacketSyncId.MOT_PACKET_PING, MotPacketSyncId? respId, Duration timeout = ProtocolSocket.timeoutDefault}) async =>
-      super.ping(id, respId: respId ?? id, timeout: timeout);
+  Future<PacketControlId?> pingDefault({
+    MotPacketControlId id = MotPacketControlId.MOT_PACKET_PING,
+    MotPacketControlId? respId,
+    Duration timeout = ProtocolSocket.timeoutDefault,
+  }) async => super.ping(id, respId: respId ?? id, timeout: timeout);
 
-  Future<PacketSyncId?> pingBoot() async => super.ping(MotPacketSyncId.MOT_PACKET_PING_BOOT, respId: MotPacketSyncId.MOT_PACKET_PING_BOOT, timeout: const Duration(milliseconds: 500));
+  Future<PacketControlId?> pingBoot() async =>
+      super.ping(MotPacketControlId.MOT_PACKET_PING_BOOT, respId: MotPacketControlId.MOT_PACKET_PING_BOOT, timeout: const Duration(milliseconds: 500));
 
   Future<int?> stopMotors() async => requestResponse(MotPacketRequestId.MOT_PACKET_STOP_ALL, null);
   Future<VersionResponseValues?> version() async => await requestResponse(MotPacketRequestId.MOT_PACKET_VERSION, null);
@@ -36,7 +41,8 @@ class MotProtocolSocket extends ProtocolSocket {
   /// Fixed-size Var (single id, 32-bit value)
   ///
   Future<FixedVarReadResponseValues?> readVarFixed(int id, [int flags = 0]) async => requestResponse(MotPacketRequestId.MOT_PACKET_FIXED_VAR_READ, (id: id, flags: flags));
-  Future<FixedVarWriteResponseValues?> writeVarFixed(int id, int value, [int flags = 0]) async => requestResponse(MotPacketRequestId.MOT_PACKET_FIXED_VAR_WRITE, (id: id, flags: flags, value: value));
+  Future<FixedVarWriteResponseValues?> writeVarFixed(int id, int value, [int flags = 0]) async =>
+      requestResponse(MotPacketRequestId.MOT_PACKET_FIXED_VAR_WRITE, (id: id, flags: flags, value: value));
 
   ///
   /// 32-Bit Vars by Key (batched fixed-size vars)
@@ -102,9 +108,9 @@ class MotProtocolSocket extends ProtocolSocket {
     );
   }
 
-  Future<int?> endDataModeWrite() async => recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
+  Future<int?> endDataModeWrite() async => recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_WRITE)..then((_) => sendSync(MotPacketControlId.MOT_PACKET_SYNC_ACK));
 
-  Future<int?> endDataModeRead() async => recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_READ)..then((_) => sendSync(MotPacketSyncId.MOT_PACKET_SYNC_ACK));
+  Future<int?> endDataModeRead() async => recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_READ)..then((_) => sendSync(MotPacketControlId.MOT_PACKET_SYNC_ACK));
 
   Future<void> writeDataModeData(Uint8List data) async => sendRequest(MotPacketRequestId.MOT_PACKET_DATA_MODE_DATA, data);
   Future<Uint8List?> readDataModeData() async => recvResponse(MotPacketRequestId.MOT_PACKET_DATA_MODE_DATA);
@@ -114,7 +120,7 @@ class MotProtocolSocket extends ProtocolSocket {
     for (final slice in data.typedSlices(DataModeData.sizeMax)) {
       await writeDataModeData(slice);
       // sync alreadyy mapped
-      yield await recvSync().then((value) => (value == MotPacketSyncId.MOT_PACKET_SYNC_ACK) ? slice.length : 0);
+      yield await recvSync().then((value) => (value == MotPacketControlId.MOT_PACKET_SYNC_ACK) ? slice.length : 0);
       await Future.delayed(ProtocolSocket.datagramDelay);
     }
     // caller should call endDataModeWrite() to get final status
@@ -122,7 +128,7 @@ class MotProtocolSocket extends ProtocolSocket {
 
   Stream<Uint8List?> readDataModeStream(int sizeBytes) async* {
     for (var index = 0; index < sizeBytes; index += DataModeData.sizeMax) {
-      yield await (readDataModeData()..then<void>((data) => sendSync(data != null ? MotPacketSyncId.MOT_PACKET_SYNC_ACK : MotPacketSyncId.MOT_PACKET_SYNC_NACK)));
+      yield await (readDataModeData()..then<void>((data) => sendSync(data != null ? MotPacketControlId.MOT_PACKET_SYNC_ACK : MotPacketControlId.MOT_PACKET_SYNC_NACK)));
     }
   }
 }

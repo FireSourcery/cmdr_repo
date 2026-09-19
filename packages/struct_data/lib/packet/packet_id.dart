@@ -8,9 +8,8 @@ part of 'packet.dart';
 ///
 /// Kept as `interface` rather than `sealed` deliberately. A `sealed` supertype cannot be
 /// implemented outside its own library, and every protocol declares its ids in its own
-/// library, so sealing here would make the package unusable. Exhaustiveness is recovered a
-/// different way — see [PacketCodec.isSyncShape], which asks the one question framing
-/// actually depends on instead of switching over subtypes.
+/// library, so sealing here would make the package unusable. Framing does not need
+/// exhaustiveness anyway: it asks one question, and [PacketControlId] answers it by type.
 ///
 /// `implements Enum` because an id is a named constant: it gives `name` for diagnostics and
 /// makes an id table a plain `enum` declaration. Note that this is load-bearing — an enum
@@ -22,10 +21,13 @@ abstract interface class PacketId implements Enum {
 
 /// An id carried by the short control frame: no length field, no payload.
 ///
-/// Ack, nack and abort are the universal members. A protocol may put more here — MotProtocol
-/// frames its several PING ids this way — so membership is about the *frame shape*, not about
-/// whether the id means "control".
-abstract interface class PacketSyncId implements PacketId {}
+/// Ack, nack and abort are the universal members, and a protocol may add more — MotProtocol
+/// frames its several PING ids this way. Membership is by *frame shape*, which is what the
+/// framing acts on. That it coincides with the control plane is why the name fits: a liveness
+/// probe and a termination are control traffic just as an acknowledgment is, which is also why
+/// this is not called `PacketSyncId` — only two of the four synchronise anything, and `sync`
+/// already means synchronous execution in Dart and the start delimiter in framing.
+abstract interface class PacketControlId implements PacketId {}
 
 /// An id that carries a payload, together with the codec for it.
 ///
@@ -91,6 +93,9 @@ final class PacketIdMap {
   Iterable<PacketId> get ids => _byIntId.values;
 }
 
+/// [Payload] constructor, over a view of the payload region.
+typedef PayloadCaster<V> = Payload<V> Function(TypedData payload);
+
 /// [Payload] — a view over the payload bytes of a packet that can convert to and from `V`.
 ///
 /// Built in place on the packet's own buffer, so neither direction allocates a second copy.
@@ -154,6 +159,9 @@ abstract interface class Payload<V> {
 
   /// Read this payload as `V`, against the header of the frame carrying it.
   ///
+  /// A full [PacketHeader], not a [PacketHeaderPrefix]: a payload is only ever handed a whole
+  /// frame, and only a whole header answers [PacketHeaderPrefix.payloadLength] without a null.
+  ///
   /// Most implementations ignore it: the payload region a [PayloadCaster] is handed is bounded
   /// exactly, so a variable-length body already knows its own extent without asking. It is
   /// there for a body governed by its own header — an id distinguishing which of several
@@ -162,17 +170,17 @@ abstract interface class Payload<V> {
   V parse(covariant PacketHeader header);
 }
 
-/// What a payload decided, for the framing to write.
+/// What a payload told the framing: how long its body is.
 ///
-/// Normalized, the counterpart of [PacketHeader]'s mapped fields: [length] is payload bytes,
-/// so a payload states its size without knowing how long a header is or whether the wire
-/// counts one. [PacketFrameFormat.buildHeader] performs that conversion, in one place.
+/// A value, not a view — the build side's counterpart to [PacketHeaderPrefix], deliberately
+/// *not* the same type. The two directions do not carry the same information (see
+/// [Payload.build]), so a shared interface would have to be the intersection of what a payload
+/// knows and what a read header knows, which is this one number wearing a name that claims
+/// more.
 ///
-/// A one-field carrier today. It stays a named type because it is the channel by which a
-/// payload tells the framing anything at all — a flags word or a sequence would arrive the
-/// same way, and arriving here rather than through a live header is what keeps the ordering
-/// sound.
-final class PayloadMeta {
+/// A field rather than a method, for the same reason the prefix's is a method: this one is
+/// stored, that one is computed.
+class PayloadMeta {
   const PayloadMeta(this.length);
 
   /// Payload bytes. Excludes the header.
@@ -183,6 +191,3 @@ final class PayloadMeta {
   @override
   String toString() => 'PayloadMeta(length: $length)';
 }
-
-/// [Payload] constructor, over a view of the payload region.
-typedef PayloadCaster<V> = Payload<V> Function(TypedData payload);

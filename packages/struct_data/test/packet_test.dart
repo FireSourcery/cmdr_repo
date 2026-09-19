@@ -19,51 +19,71 @@ final class TestCodec extends PacketCodec {
 
   @override
   int get lengthMax => 40;
-
-  /// `[Start, Id, Length, Sequence, Checksum:2, Flex:2]` then payload.
   @override
-  PacketFrameFormat get dataFormat => const PacketFrameFormat(
-    length: 8,
-    startId: 0xA5,
-    startField: ByteField<Uint8>(0),
-    idField: ByteField<Uint8>(1),
-    lengthField: ByteField<Uint8>(2),
-    checksumField: ByteField<Uint16>(4),
-  );
-
-  /// `[Start, Id, Option, _]` — no checksum, so the parser waves it through.
-  @override
-  PacketFrameFormat get syncFormat => const PacketFrameFormat(
-    length: 4,
-    startId: 0xA5,
-    startField: ByteField<Uint8>(0),
-    idField: ByteField<Uint8>(1),
-  );
+  int get startId => 0xA5;
 
   @override
-  PacketFrameFormat formatOf(PacketId id) => (id is PacketSyncId) ? syncFormat : dataFormat;
+  PacketFrameFormat get dataFormat => const TestDataFormat();
 
   @override
-  PacketSyncId get ack => TestSyncId.ack;
+  PacketFrameFormat get controlFormat => const TestControlFormat();
+
   @override
-  PacketSyncId get nack => TestSyncId.nack;
+  PacketFrameFormat formatOf(PacketId id) => (id is PacketControlId) ? controlFormat : dataFormat;
+
   @override
-  PacketSyncId get abort => TestSyncId.abort;
+  PacketControlId get ack => TestControlId.ack;
+  @override
+  PacketControlId get nack => TestControlId.nack;
+  @override
+  PacketControlId get abort => TestControlId.abort;
 
   @override
   PacketId? idOf(int intId) => _ids(intId);
 
-  // Requests and sync only: `TestRespId.echo` shares 0x10 with the request it answers, and
+  // Requests and control ids only: `TestRespId.echo` shares 0x10 with the request it answers, and
   // what `idOf` has to answer is what an arriving byte means. Response codecs are reached
   // through `PacketRequestId.responseId`, never through this table.
-  static final PacketIdMap _ids = PacketIdMap([TestSyncId.values, TestReqId.values, TestCommandId.values]);
+  static final PacketIdMap _ids = PacketIdMap([TestControlId.values, TestReqId.values, TestCommandId.values]);
 }
 
 /// MotProtocol's real control frame: `{Start, SyncId, Option, Checksum}` with
 /// `Checksum = Start ^ SyncId ^ Option` (MotPacket.c:50). A shape whose integrity is not a
 /// byte sum, and whose field sits where the data shape's payload would be.
-final class XorControlFormat extends PacketFrameFormat {
-  const XorControlFormat() : super(length: 4, startId: 0xA5, startField: const ByteField<Uint8>(0), idField: const ByteField<Uint8>(1), checksumField: const ByteField<Uint8>(3));
+/// `[Start, Id, Length, Sequence, Checksum:2, Flex:2]` then payload.
+final class TestDataFormat with PacketFrameFormat {
+  const TestDataFormat();
+
+  @override
+  int get headerLength => 8;
+  @override
+  ByteField get startField => const ByteField<Uint8>(0);
+  @override
+  ByteField get idField => const ByteField<Uint8>(1);
+  @override
+  ByteField? get lengthField => const ByteField<Uint8>(2);
+  @override
+  ByteField? get checksumField => const ByteField<Uint16>(4);
+}
+
+/// `[Start, Id, Option, _]` — names neither a length nor a checksum, so it inherits both as
+/// absent and the parser waves the frame through.
+final class TestControlFormat with PacketFrameFormat {
+  const TestControlFormat();
+
+  @override
+  int get headerLength => 4;
+  @override
+  ByteField get startField => const ByteField<Uint8>(0);
+  @override
+  ByteField get idField => const ByteField<Uint8>(1);
+}
+
+final class XorControlFormat extends TestControlFormat {
+  const XorControlFormat();
+
+  @override
+  ByteField? get checksumField => const ByteField<Uint8>(3);
 
   @override
   int checksumOf(ByteData frame, int lengthInBytes) {
@@ -110,39 +130,43 @@ final class ManualHeader implements PacketHeader {
   set checksumField(int value) => frame.setUint16(4, value, Endian.little);
 
   @override
-  int get payloadLength => lengthField - 8;
+  int frameLength() => lengthField;
+
+  @override
+  int payloadLength() => lengthField - 8;
 }
 
 final class ManualCodec extends TestCodec {
   const ManualCodec();
 
   @override
-  PacketFrameFormat get dataFormat => const PacketFrameFormat(
-    length: 8,
-    startId: 0xA5,
-    startField: ByteField<Uint8>(0),
-    idField: ByteField<Uint8>(1),
-    lengthField: ByteField<Uint8>(2),
-    checksumField: ByteField<Uint16>(4),
-    headerCaster: ManualHeader.new,
-  );
+  PacketFrameFormat get dataFormat => const ManualDataFormat();
 }
 
-final class XorSyncCodec extends TestCodec {
-  const XorSyncCodec();
+/// The same layout, read and written through [ManualHeader] instead of the descriptors —
+/// a virtual [PacketFrameFormat.headerOf] where this used to be a `headerCaster` field.
+final class ManualDataFormat extends TestDataFormat {
+  const ManualDataFormat();
 
   @override
-  PacketFrameFormat get syncFormat => const XorControlFormat();
+  PacketHeader headerOf(ByteData frame) => ManualHeader(frame);
 }
 
-enum TestSyncId implements PacketSyncId {
+final class XorControlCodec extends TestCodec {
+  const XorControlCodec();
+
+  @override
+  PacketFrameFormat get controlFormat => const XorControlFormat();
+}
+
+enum TestControlId implements PacketControlId {
   ping(0xA0),
   ack(0xA2),
   nack(0xA3),
   abort(0xA4)
   ;
 
-  const TestSyncId(this.intId);
+  const TestControlId(this.intId);
   @override
   final int intId;
 }
@@ -206,7 +230,7 @@ final class IdTaggedPayload implements Payload<(int id, Uint8List body)> {
   }
 
   @override
-  (int, Uint8List) parse(PacketHeader header) => (header.idField, Uint8List.sublistView(region, 0, header.payloadLength));
+  (int, Uint8List) parse(PacketHeader header) => (header.idField, Uint8List.sublistView(region, 0, header.payloadLength()));
 }
 
 /// A fixed-size `ffi.Struct` payload, the case the over-long span exists for.
@@ -236,7 +260,7 @@ base class FixedArrayPayload extends Struct implements Payload<Uint16List> {
   @override
   Uint16List parse(PacketHeader header) {
     final TypedData elements = values.elements as TypedData;
-    return elements.buffer.asUint16List(elements.offsetInBytes, header.payloadLength ~/ Uint16List.bytesPerElement);
+    return elements.buffer.asUint16List(elements.offsetInBytes, header.payloadLength() ~/ Uint16List.bytesPerElement);
   }
 }
 
@@ -257,15 +281,15 @@ final class BytesPayload implements Payload<Uint8List> {
   /// [region] is the whole span available, not this frame's payload, so the declared count
   /// is what bounds it.
   @override
-  Uint8List parse(PacketHeader header) => Uint8List.sublistView(region, 0, header.payloadLength);
+  Uint8List parse(PacketHeader header) => Uint8List.sublistView(region, 0, header.payloadLength());
 }
 
 void main() {
   const TestCodec codec = TestCodec();
 
-  Uint8List requestBytes(PacketPayloadId<Uint8List> id, List<int> payload) {
+  Uint8List requestBytes(PacketRequestId<Uint8List, dynamic> id, List<int> payload) {
     final PacketBuffer out = PacketBuffer(codec);
-    out.buildPayload<Uint8List>(id, Uint8List.fromList(payload));
+    out.buildRequest(id, Uint8List.fromList(payload));
     return Uint8List.fromList(out.bytes); // copy: the buffer is reused
   }
 
@@ -289,15 +313,15 @@ void main() {
   group('build', () {
     test('data header describes the payload it was given', () {
       final PacketBuffer out = PacketBuffer(codec);
-      final PayloadMeta built = out.buildPayload<Uint8List>(TestReqId.echo, Uint8List.fromList([1, 2, 3]));
+      final PayloadMeta built = out.buildRequest(TestReqId.echo, Uint8List.fromList([1, 2, 3]));
 
       expect(built.length, 3);
-      expect(out.length, codec.headerLength + 3, reason: 'view sized to header + payload');
+      expect(out.length, codec.dataFormat.headerLength + 3, reason: 'view sized to header + payload');
 
       final Packet p = out;
       expect(p.startField, 0xA5);
       expect(p.packetId, TestReqId.echo);
-      expect(p.lengthField, codec.headerLength + 3, reason: 'length field is the TOTAL frame length');
+      expect(p.lengthField, codec.dataFormat.headerLength + 3, reason: 'length field is the TOTAL frame length');
       expect(p.frameLength, p.lengthInBytes);
       expect(p.payloadLength, 3);
       expect(p.isChecksumValid, isTrue);
@@ -305,12 +329,12 @@ void main() {
 
     test('an oversized payload throws, and stages nothing', () {
       final PacketBuffer out = PacketBuffer(codec);
-      out.buildPayload<Uint8List>(TestReqId.echo, Uint8List.fromList([1, 2, 3]));
+      out.buildRequest(TestReqId.echo, Uint8List.fromList([1, 2, 3]));
 
       // The region a payload is handed is bounded by the frame, so one that overruns is
       // stopped by its own write. The buffer asserts only against a payload that *declares* a
       // length it did not write.
-      expect(() => out.buildPayload<Uint8List>(TestReqId.echo, Uint8List(codec.payloadLengthMax + 1)), throwsRangeError);
+      expect(() => out.buildRequest(TestReqId.echo, Uint8List(codec.payloadLengthMax + 1)), throwsRangeError);
 
       // Not "the previous frame survives": the header is opened before the payload runs, so
       // by the time one throws the buffer is already dirty. What is guaranteed is that it
@@ -321,7 +345,7 @@ void main() {
     test('a format may be read and written through a header caster', () {
       const ManualCodec manual = ManualCodec();
       final PacketBuffer out = PacketBuffer(manual);
-      out.buildPayload<Uint8List>(TestReqId.echo, Uint8List.fromList([4, 5]));
+      out.buildRequest(TestReqId.echo, Uint8List.fromList([4, 5]));
 
       expect(out.bytes[3], 0xAB, reason: 'the caster reaches bytes the descriptors do not name');
       expect(out.isChecksumValid, isTrue, reason: 'and agrees with them on the ones they do');
@@ -332,29 +356,48 @@ void main() {
       expect(Packet.of(manual, packets.single).payloadAsList<Uint8List>(), [4, 5]);
     });
 
-    test('control frame is exactly syncHeaderLength and carries no stale bytes', () {
+    test('control frame is exactly controlHeaderLength and carries no stale bytes', () {
       final PacketBuffer out = PacketBuffer(codec);
       out.copy(Uint8List.fromList([0xDE, 0xAD, 0xBE, 0xEF])); // dirty the buffer
-      out.buildSync(TestSyncId.ack);
+      out.buildControl(TestControlId.ack);
 
-      expect(out.lengthInBytes, codec.syncHeaderLength);
+      expect(out.lengthInBytes, codec.controlFormat.headerLength);
       expect(out.bytes, [0xA5, 0xA2, 0x00, 0x00]);
-      expect(out.syncId, TestSyncId.ack);
+      expect(out.controlId, TestControlId.ack);
     });
 
     test('the data header clears reserved bytes it does not write', () {
       final PacketBuffer out = PacketBuffer(codec);
       out.copy(Uint8List.fromList(List<int>.filled(20, 0xFF))); // dirty the header region
 
-      out.buildPayload<Uint8List>(TestReqId.echo, Uint8List.fromList([1]));
+      out.buildRequest(TestReqId.echo, Uint8List.fromList([1]));
 
       expect(out.bytes[3], 0, reason: 'sequence');
       expect(out.bytes.sublist(6, 8), [0, 0], reason: 'flex');
     });
 
+    test('on a buffer, the end moves with the header and not with the payload', () {
+      final PacketBuffer out = PacketBuffer(codec);
+
+      // A payload alone is not a frame: nothing describes it yet, so the end stays put.
+      expect(out.buildPayload<Uint8List>(TestReqId.echo, Uint8List.fromList([1, 2])).length, 2);
+      expect(out.isEmpty, isTrue);
+
+      out.buildHeader(TestReqId.echo, const PayloadMeta(2));
+      expect(out.lengthInBytes, codec.dataFormat.headerLength + 2);
+
+      // And the two together, which is what a socket calls.
+      expect(out.buildRequest(TestReqId.echo, Uint8List.fromList([1, 2, 3, 4])).length, 4);
+      expect(out.lengthInBytes, codec.dataFormat.headerLength + 4);
+
+      // What it hands the link: exactly the frame, nothing of the allocation behind it.
+      expect(out.view.bytes.length, codec.dataFormat.headerLength + 4);
+      expect(out.storage.lengthInBytes, codec.lengthMax);
+    });
+
     test('a PacketBuffer is itself a Packet', () {
       final PacketBuffer out = PacketBuffer(codec);
-      out.buildPayload<Uint8List>(TestReqId.echo, Uint8List.fromList([7, 7]));
+      out.buildRequest(TestReqId.echo, Uint8List.fromList([7, 7]));
 
       expect(out, isA<Packet>());
       expect(out.payloadAsList<Uint8List>(), [7, 7], reason: 'no intermediate view needed');
@@ -363,9 +406,9 @@ void main() {
     });
 
     test('a codec may own its control-frame check byte', () {
-      const XorSyncCodec xor = XorSyncCodec();
+      const XorControlCodec xor = XorControlCodec();
       final PacketBuffer out = PacketBuffer(xor);
-      out.buildSync(TestSyncId.ack);
+      out.buildControl(TestControlId.ack);
 
       expect(out.bytes, [0xA5, 0xA2, 0x00, 0xA5 ^ 0xA2]);
       expect(out.isChecksumValid, isTrue, reason: 'checked against its own shape, not the data shape');
@@ -383,7 +426,7 @@ void main() {
 
     test('a payload may be governed by its own frame header', () {
       final PacketBuffer out = PacketBuffer(codec);
-      out.buildPayload<Uint8List>(TestReqId.tagged, Uint8List.fromList([9, 9]));
+      out.buildRequest(TestReqId.tagged, Uint8List.fromList([9, 9]));
 
       final PacketBuffer incoming = PacketBuffer(codec)..copy(Uint8List.fromList(out.bytes));
       final (int id, Uint8List body) = incoming.parseResponse(TestReqId.tagged);
@@ -397,7 +440,7 @@ void main() {
       final PayloadMeta built = out.buildRequest(TestReqId.fixed, Uint16List.fromList([0x1111, 0x2222]));
 
       expect(built.length, 4, reason: 'two words on the wire');
-      expect(out.lengthInBytes, codec.headerLength + 4, reason: 'the frame is short, the struct is not');
+      expect(out.lengthInBytes, codec.dataFormat.headerLength + 4, reason: 'the frame is short, the struct is not');
 
       // Round-trip through a buffer, as the socket does. The payload region here is 4 bytes;
       // `Struct.create` needs 32, so a caster handed the frame's own payload would throw.
@@ -416,7 +459,7 @@ void main() {
       expect(parsed, [0x1111, 0x2222]);
 
       // `Array.elements` aliases the struct's own bytes, so the view tracks the buffer.
-      out.storage.setUint16(codec.headerLength, 0x9999, Endian.little);
+      out.storage.setUint16(codec.dataFormat.headerLength, 0x9999, Endian.little);
       expect(parsed[0], 0x9999, reason: 'a view of the frame, not a snapshot of it');
     });
 
@@ -486,7 +529,7 @@ void main() {
 
     test('a corrupted payload is reported and the next frame still arrives', () {
       final bad = requestBytes(TestReqId.echo, [1, 2, 3]);
-      bad[codec.headerLength] ^= 0xFF; // flip a payload byte, checksum now wrong
+      bad[codec.dataFormat.headerLength] ^= 0xFF; // flip a payload byte, checksum now wrong
       final good = requestBytes(TestReqId.echo, [4, 5, 6]);
 
       final (packets, errors) = run([
@@ -500,26 +543,50 @@ void main() {
 
     test('a control frame parses on its own shape, with no length field', () {
       final PacketBuffer out = PacketBuffer(codec);
-      out.buildSync(TestSyncId.ping);
+      out.buildControl(TestControlId.ping);
 
       final (packets, errors) = run([Uint8List.fromList(out.bytes)]);
 
       expect(errors, isEmpty);
       expect(packets, hasLength(1));
       final Packet p = Packet.of(codec, packets.single);
-      expect(p.syncId, TestSyncId.ping);
-      expect(p.isSyncShape, isTrue);
-      expect(p.frameLength, codec.syncHeaderLength);
+      expect(p.controlId, TestControlId.ping);
+      expect(p.isControlShape, isTrue);
+      expect(p.frameLength, codec.controlFormat.headerLength);
       // This codec's control shape declares no checksum: the header reports its neutral value
       // rather than throwing, so a control frame answers the same questions a data frame does.
       expect(p.checksumField, 0);
       expect(p.isChecksumValid, isTrue, reason: 'nothing to contradict');
     });
 
+    test('a control frame sizes from its shape, a data frame from its length field', () {
+      final PacketBuffer control = PacketBuffer(codec)..buildControl(TestControlId.ack);
+      final HeaderParser onControl = HeaderParser(codec)..receive(Uint8List.fromList(control.bytes));
+
+      expect(onControl.lengthFieldOrNull, isNull, reason: 'the control shape declares none');
+      expect(onControl.frameLengthOrNull, codec.controlFormat.headerLength, reason: 'so the prefix fixes it');
+
+      final HeaderParser onData = HeaderParser(codec)..receive(requestBytes(TestReqId.echo, [1, 2, 3]));
+
+      expect(onData.lengthFieldOrNull, codec.dataFormat.headerLength + 3, reason: 'read through the shape the id named');
+      expect(onData.frameLengthOrNull, onData.lengthFieldOrNull, reason: 'the prefix defers to it');
+    });
+
+    test('the prefix sizes a control frame without reading a data length field', () {
+      final PacketBuffer out = PacketBuffer(codec)..buildControl(TestControlId.ack);
+      final HeaderParser parser = HeaderParser(codec)..receive(Uint8List.fromList(out.bytes));
+
+      // Byte 2 is the data shape's length field and the control shape's option byte. A prefix
+      // that only knew the data shape would read a frame length of 0 here, call the frame
+      // complete at once, and split off nothing — which is an endless loop, not an error.
+      expect(parser.frameLengthOrNull, codec.controlFormat.headerLength);
+      expect(parser.isComplete, isTrue);
+    });
+
     test('a control frame is checked against its own shape', () {
-      const XorSyncCodec xor = XorSyncCodec();
+      const XorControlCodec xor = XorControlCodec();
       final PacketBuffer out = PacketBuffer(xor);
-      out.buildSync(TestSyncId.ack);
+      out.buildControl(TestControlId.ack);
       final Uint8List good = Uint8List.fromList(out.bytes);
       final Uint8List bad = Uint8List.fromList(good)..[3] ^= 0xFF;
 
@@ -531,16 +598,16 @@ void main() {
 
     test('a control frame followed by a data frame', () {
       final PacketBuffer out = PacketBuffer(codec);
-      out.buildSync(TestSyncId.ack);
-      final sync = Uint8List.fromList(out.bytes);
+      out.buildControl(TestControlId.ack);
+      final control = Uint8List.fromList(out.bytes);
       final data = requestBytes(TestReqId.echo, [7]);
 
       final (packets, errors) = run([
-        Uint8List.fromList([...sync, ...data]),
+        Uint8List.fromList([...control, ...data]),
       ]);
 
       expect(errors, isEmpty);
-      expect(packets.map((p) => Packet.of(codec, p).packetId), [TestSyncId.ack, TestReqId.echo]);
+      expect(packets.map((p) => Packet.of(codec, p).packetId), [TestControlId.ack, TestReqId.echo]);
     });
   });
 
@@ -566,7 +633,7 @@ void main() {
       out.buildRequest(TestReqId.fixed, Uint16List.fromList([0x1111, 0x2222, 0x3333]));
       final Uint8List wire = Uint8List.fromList(out.bytes);
 
-      expect(wire.length, codec.headerLength + 6);
+      expect(wire.length, codec.dataFormat.headerLength + 6);
 
       // delivered split, to make the parser do real work
       final (packets, errors) = run([Uint8List.sublistView(wire, 0, 5), Uint8List.sublistView(wire, 5)]);
@@ -579,7 +646,7 @@ void main() {
 
       expect(incoming.lengthInBytes, wire.length, reason: 'copy sizes the view to the frame');
       expect(incoming.payloadLength, 6, reason: 'bytes present');
-      expect(incoming.header.payloadLength, 6, reason: 'bytes declared — they agree on a whole frame');
+      expect(incoming.header.payloadLength(), 6, reason: 'bytes declared — they agree on a whole frame');
       expect(incoming.storage.lengthInBytes, codec.lengthMax, reason: 'the span stays the allocation, for the cast');
 
       expect(incoming.parseResponse(TestReqId.fixed), [0x1111, 0x2222, 0x3333]);

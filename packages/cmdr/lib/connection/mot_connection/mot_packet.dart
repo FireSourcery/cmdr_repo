@@ -18,34 +18,52 @@ final class MotPacketCodec extends PacketCodec {
 
   @override
   int get lengthMax => 40;
+  @override
+  int get startId => 0xA5;
 
-  /// `[Start, Id, Length, Sequence, Checksum:2, Flex:2]`, then payload.
+  /// Four bytes: the size of [MotPacketHeaderPrefix], which is the device's `LENGTH_MIN`.
   @override
-  PacketFrameFormat get dataFormat => const PacketFrameFormat(
-    length: 8,
-    startId: 0xA5,
-    startField: ByteField<Uint8>(0),
-    idField: ByteField<Uint8>(1),
-    lengthField: ByteField<Uint8>(2),
-    checksumField: ByteField<Uint16>(4),
-    headerCaster: MotPacketHeader.cast,
-  );
+  int get prefixLength => 4;
+  @override
+  PacketFrameFormat get dataFormat => const MotDataFormat();
+  @override
+  PacketFrameFormat get controlFormat => const MotControlFormat();
 
+  /// The struct the device reads a frame's length through, rather than the descriptor-driven
+  /// default — which is also why [prefixLength] is stated: `Struct.create` throws below it.
   @override
-  PacketFrameFormat get syncFormat => const MotControlFormat();
-
-  @override
-  PacketSyncId get ack => MotPacketSyncId.MOT_PACKET_SYNC_ACK;
-  @override
-  PacketSyncId get nack => MotPacketSyncId.MOT_PACKET_SYNC_NACK;
-  @override
-  PacketSyncId get abort => MotPacketSyncId.MOT_PACKET_SYNC_ABORT;
-
+  PacketHeaderPrefix prefixOf(ByteData frame) => MotPacketHeaderPrefix.cast(frame);
   @override
   PacketId? idOf(int intId) => MotPacketId.of(intId);
+  @override
+  PacketFrameFormat formatOf(PacketId id) => (id is PacketControlId) ? controlFormat : dataFormat;
 
   @override
-  PacketFrameFormat formatOf(PacketId id) => (id is PacketSyncId) ? syncFormat : dataFormat;
+  PacketControlId get ack => MotPacketControlId.MOT_PACKET_SYNC_ACK;
+  @override
+  PacketControlId get nack => MotPacketControlId.MOT_PACKET_SYNC_NACK;
+  @override
+  PacketControlId get abort => MotPacketControlId.MOT_PACKET_SYNC_ABORT;
+}
+
+/// `[Start, Id, Length, Sequence, Checksum:2, Flex:2]`, then payload.
+final class MotDataFormat with PacketFrameFormat {
+  const MotDataFormat();
+
+  @override
+  int get headerLength => 8;
+  @override
+  ByteField get startField => const ByteField<Uint8>(0);
+  @override
+  ByteField get idField => const ByteField<Uint8>(1);
+  @override
+  ByteField? get lengthField => const ByteField<Uint8>(2);
+  @override
+  ByteField? get checksumField => const ByteField<Uint16>(4);
+
+  /// Read and written as a struct with named fields, rather than through the descriptors.
+  @override
+  PacketHeader headerOf(ByteData frame) => MotPacketDataHeader.cast(frame);
 }
 
 /// The control shape: `[Start, SyncId, Option, Checksum]`, checked by
@@ -55,16 +73,20 @@ final class MotPacketCodec extends PacketCodec {
 /// this check byte went out as whatever the last frame had there. The device does not verify
 /// it today (`MotPacket_IsValid`'s control branch is commented out at MotPacket.c:150), which
 /// is why that was latent rather than broken.
-final class MotControlFormat extends PacketFrameFormat {
-  const MotControlFormat()
-    : super(
-        length: 4,
-        startId: 0xA5,
-        startField: const ByteField<Uint8>(0),
-        idField: const ByteField<Uint8>(1),
-        checksumField: const ByteField<Uint8>(3),
-        headerCaster: MotPacketHeaderSync.cast,
-      );
+final class MotControlFormat with PacketFrameFormat {
+  const MotControlFormat();
+
+  @override
+  int get headerLength => 4;
+  @override
+  ByteField get startField => const ByteField<Uint8>(0);
+  @override
+  ByteField get idField => const ByteField<Uint8>(1);
+  @override
+  ByteField? get checksumField => const ByteField<Uint8>(3);
+
+  @override
+  PacketHeader headerOf(ByteData frame) => MotPacketControlHeader.cast(frame);
 
   @override
   int checksumOf(ByteData frame, int lengthInBytes) => frame.getUint8(0) ^ frame.getUint8(1) ^ frame.getUint8(2);
@@ -77,8 +99,8 @@ final class MotControlFormat extends PacketFrameFormat {
 
 /// `[Start, Id, Length, Sequence, Checksum[2], Flex[2]]`
 @Packed(1)
-base class MotPacketHeader extends Struct implements PacketHeader {
-  factory MotPacketHeader.cast(ByteData frame) => Struct.create<MotPacketHeader>(frame);
+base class MotPacketDataHeader extends Struct implements PacketHeader {
+  factory MotPacketDataHeader.cast(ByteData frame) => Struct.create<MotPacketDataHeader>(frame);
 
   @Uint8()
   external int startField;
@@ -96,16 +118,18 @@ base class MotPacketHeader extends Struct implements PacketHeader {
   int get flexLower8Field => (flexField & 0xFF);
   int get flexUpper8Field => (flexField >> 8);
 
-  /// Derived: the wire's total less this header. Read-only, because writing it is the
-  /// framing's job.
+  /// Computed, not mapped — hence the method syntax.
   @override
-  int get payloadLength => lengthField - 8;
+  int frameLength() => lengthField;
+
+  @override
+  int payloadLength() => lengthField - 8;
 }
 
 /// `[Start, SyncId, Option, Checksum]`
 @Packed(1)
-base class MotPacketHeaderSync extends Struct implements PacketHeader {
-  factory MotPacketHeaderSync.cast(ByteData frame) => Struct.create<MotPacketHeaderSync>(frame);
+base class MotPacketControlHeader extends Struct implements PacketHeader {
+  factory MotPacketControlHeader.cast(ByteData frame) => Struct.create<MotPacketControlHeader>(frame);
 
   @Uint8()
   external int startField;
@@ -123,7 +147,41 @@ base class MotPacketHeaderSync extends Struct implements PacketHeader {
   set lengthField(int value) {}
 
   @override
-  int get payloadLength => 0;
+  int frameLength() => 4;
+
+  @override
+  int payloadLength() => 0;
+}
+
+/// `[Start, SyncId, Imm0, Imm1]`
+@Packed(1)
+base class MotPacketHeaderPrefix extends Struct implements PacketHeaderPrefix {
+  factory MotPacketHeaderPrefix.cast(ByteData frame) => Struct.create<MotPacketHeaderPrefix>(frame);
+
+  @Uint8()
+  external int startField;
+  @Uint8()
+  external int idField;
+
+  /// Bytes 2 and 3, whichever shape this turns out to be: `Length, Sequence` on a data
+  /// frame, `Option, Checksum` on a control one.
+  @Uint8()
+  external int imm0Field;
+  @Uint8()
+  external int imm1Field;
+
+  /// Whether the id names a control frame, which is what decides how byte 2 reads.
+  bool get isControlShape => MotPacketId.of(idField) is PacketControlId;
+
+  /// `MotPacket_ParseLength`'s first half: a control id fixes the frame at the control length.
+  /// Anything else is variable, and null sends the caller to that shape's length field — which
+  /// for a data frame is this same byte 2, read through [MotDataFormat] rather than assumed
+  /// here.
+  @override
+  int? frameLength() => isControlShape ? 4 : null;
+
+  @override
+  int? payloadLength() => isControlShape ? 0 : null;
 }
 
 ///
@@ -136,13 +194,13 @@ sealed class MotPacketId implements PacketId {
   /// What an *arriving* byte means. Response ids share their request's byte, so they are not
   /// listed — [MotPacketRequestId.responseId] reaches a response codec directly.
   static final Map<int, MotPacketId> _lookUpMap = Map<int, MotPacketId>.unmodifiable({
-    for (final id in MotPacketSyncId.values) id.intId: id,
+    for (final id in MotPacketControlId.values) id.intId: id,
     for (final id in MotPacketRequestId.values) id.intId: id,
     for (final id in MotPacketReservedId.values) id.intId: id,
   });
 }
 
-enum MotPacketSyncId implements PacketSyncId, MotPacketId {
+enum MotPacketControlId implements PacketControlId, MotPacketId {
   MOT_PACKET_PING(0xA0),
   // MOT_PACKET_PING_RESP(0xA1),
   MOT_PACKET_SYNC_ACK(0xA2),
@@ -152,7 +210,7 @@ enum MotPacketSyncId implements PacketSyncId, MotPacketId {
   MOT_PACKET_PING_ALT(0xAA),
   MOT_PACKET_PING_BOOT(0xAB);
 
-  const MotPacketSyncId(this.intId);
+  const MotPacketControlId(this.intId);
 
   @override
   final int intId;
@@ -267,7 +325,7 @@ final class Var16ReadResponse extends Struct implements Payload<VarReadResponseV
   /// `Array.elements` aliases the struct's own bytes, so this is a view of the frame, not a
   /// copy of it. This is the workaround the previous version described here and never applied.
   @override
-  VarReadResponseValues parse(PacketHeader header) => Uint16List.sublistView(values.elements, 0, header.payloadLength ~/ 2);
+  VarReadResponseValues parse(PacketHeader header) => Uint16List.sublistView(values.elements, 0, header.payloadLength() ~/ 2);
 
   @override
   PayloadMeta build(VarReadResponseValues args) => throw UnimplementedError();
@@ -313,7 +371,7 @@ base class Var16WriteResponse extends Struct implements Payload<VarWriteResponse
 
   @override
   VarWriteResponseValues parse(PacketHeader header) {
-    return Uint8List.sublistView(statuses.elements, 0, header.payloadLength);
+    return Uint8List.sublistView(statuses.elements, 0, header.payloadLength());
   }
 
   @override
@@ -457,7 +515,7 @@ base class Var32ReadResponse extends Struct implements Payload<Var32ReadResponse
   @override
   Var32ReadResponseValues parse(PacketHeader header) {
     // under length packet will be reject at parser
-    return Uint32List.sublistView(values.elements, 0, header.payloadLength ~/ 4);
+    return Uint32List.sublistView(values.elements, 0, header.payloadLength() ~/ 4);
   }
 
   @override
@@ -504,7 +562,7 @@ base class Var32WriteResponse extends Struct implements Payload<Var32WriteRespon
 
   @override
   Var32WriteResponseValues parse(PacketHeader header) {
-    return Uint8List.sublistView(statuses.elements, 0, header.payloadLength);
+    return Uint8List.sublistView(statuses.elements, 0, header.payloadLength());
   }
 
   @override
@@ -673,7 +731,7 @@ base class MemReadResponse extends Struct implements Payload<MemReadResponseValu
   @override
   MemReadResponseValues parse(PacketHeader header) {
     // return (header.packetHeader.flexUpper16FieldValue, header.payload);
-    return (status: 0, data: Uint8List.sublistView(data.elements, 0, header.payloadLength));
+    return (status: 0, data: Uint8List.sublistView(data.elements, 0, header.payloadLength()));
   }
 
   @override
@@ -797,5 +855,5 @@ base class DataModeData extends Struct implements Payload<Uint8List> {
   }
 
   @override
-  Uint8List parse(PacketHeader header) => Uint8List.sublistView(data.elements, 0, header.payloadLength);
+  Uint8List parse(PacketHeader header) => Uint8List.sublistView(data.elements, 0, header.payloadLength());
 }

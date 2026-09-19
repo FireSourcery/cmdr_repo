@@ -8,7 +8,7 @@ part of 'packet.dart';
 /// `headerOf` and `syncHeaderOf` so that generic code could manufacture a protocol's own
 /// `Packet` subclass. [Packet] is now a mixin over `(codec, byteData)`, so a protocol
 /// contributes data and nothing else — no subclass, no casters. `MotPacketInterface` +
-/// `MotPacket` + `MotPacketHeader` + `MotPacketHeaderSync` collapse into one `const`
+/// `MotPacket` + `MotPacketHeader` + `MotPacketHeaderControl` collapse into one `const`
 /// subclass of this and two [PacketFrameFormat]s.
 ///
 /// **One description of each layout.** `PacketFormat` described the header twice — once as
@@ -28,15 +28,19 @@ abstract base class PacketCodec {
   /// A complete frame is never longer than this. Sizes every buffer.
   int get lengthMax;
 
-  /// The frame shapes. [dataFormat] carries a payload; [syncFormat] is the bare control
+  /// Frame delimiter. Protocol-wide rather than a shape's: the parser seeks it knowing
+  /// nothing else about the frame.
+  int get startId;
+
+  /// The frame shapes. [dataFormat] carries a payload; [controlFormat] is the bare control
   /// frame. A protocol with more shapes adds them and overrides [formatOf].
   PacketFrameFormat get dataFormat;
-  PacketFrameFormat get syncFormat;
+  PacketFrameFormat get controlFormat;
 
-  /// Control ids. Framed with [syncFormat].
-  PacketSyncId get ack;
-  PacketSyncId get nack;
-  PacketSyncId get abort;
+  /// Control ids. Framed with [controlFormat].
+  PacketControlId get ack;
+  PacketControlId get nack;
+  PacketControlId get abort;
 
   /// The id table. Null for a byte this protocol does not define.
   PacketId? idOf(int intId);
@@ -46,179 +50,125 @@ abstract base class PacketCodec {
 
   // Packet cast(TypedData data); //   Packet constructor for user Packet subtype overrides.
 
-  /// Whether [id] is framed with the control shape.
+  /// Bytes that must have arrived before [prefixOf] can be read — the device's `LENGTH_MIN`.
   ///
-  /// This replaces switching over the [PacketId] subtype hierarchy, which could not be
-  /// exhaustive — ids are declared in each protocol's own library, so the root cannot be
-  /// `sealed`. Framing has exactly two answers and this asks for one of them.
-  bool isSyncShape(PacketId id) => identical(formatOf(id), syncFormat);
+  /// The default spans as far as the data shape's length field, which is what the default
+  /// [prefixOf] reads. A protocol whose prefix is a struct states that struct's size.
+  int get prefixLength => dataFormat.lengthField?.end ?? dataFormat.idField.end;
 
+  /// A frame's delimiter, id and total length, read before it is known which shape the frame
+  /// is.
   ///
-  /// [Shape-independent] — what the parser can use before the shape is known
+  /// This is the codec's, not a shape's, because it is what *chooses* a shape: the parser
+  /// reads an id here and only then knows which [PacketFrameFormat] the rest of the frame
+  /// follows. Having one view for the whole protocol is also what retires the old invariant
+  /// that every shape place its delimiter and id identically — there is now one place they
+  /// are read, so there is nothing to keep in step.
   ///
-
-  int get startId => dataFormat.startId;
-  Endian get endian => dataFormat.endian;
-  ByteField get startField => dataFormat.startField;
-  ByteField get idField => dataFormat.idField;
-
-  /// The parser reads the delimiter and the id to *choose* a format, so it cannot use a
-  /// format to find them. Every shape must therefore agree on all four. Asserted where a
-  /// parser is built rather than enforced here, because the formats are `const` and this is
-  /// a property of the pair.
-  bool get hasConsistentIdPrefix =>
-      dataFormat.startId == syncFormat.startId &&
-      dataFormat.endian == syncFormat.endian &&
-      dataFormat.startField.offset == syncFormat.startField.offset &&
-      dataFormat.startField.size == syncFormat.startField.size &&
-      dataFormat.idField.offset == syncFormat.idField.offset &&
-      dataFormat.idField.size == syncFormat.idField.size;
-
+  /// Only valid once [prefixLength] bytes are present.
   ///
-  /// [Derived]
+  /// The default resolves the shape from the id and then reads that shape's descriptors,
+  /// which tolerate a partial buffer. It has to resolve the shape: a control frame declares
+  /// its length by *being* one, so a prefix that only knew the data shape would read its
+  /// length out of whatever byte the data shape puts there.
   ///
+  /// **A protocol whose [PacketFrameFormat.headerOf] is a struct should override this** with a
+  /// struct sized to [prefixLength] — `Struct.create` throws below its own length, and this is
+  /// read while the buffer is still filling.
+  PacketHeaderPrefix prefixOf(ByteData frame) => _CodecPrefix(this, frame);
 
-  int get headerLength => dataFormat.length;
-  int get syncHeaderLength => syncFormat.length;
-
-  /// Largest payload a data frame can carry.
-  int get payloadLengthMax => lengthMax - headerLength;
+  /// Largest payload a data frame can carry. A budget, not a layout: the buffer's capacity
+  /// less the data shape's header, which is the codec's arithmetic and not a shape's.
+  int get payloadLengthMax => lengthMax - dataFormat.headerLength;
 }
 
-/// [PacketFrameFormat] — one frame shape: where its header fields lie, how long the header
-/// is, and how its integrity is computed.
+/// [PacketFrameFormat] — one frame shape: where its header fields lie, how long the header is,
+/// how its integrity is computed, and how it is read as named fields.
 ///
-/// A protocol has more than one shape. MotProtocol has two, and they disagree about more
-/// than length: the data header is 8 bytes with a 16-bit sum at offset 4, the control frame
-/// is 4 bytes with a 1-byte XOR at offset 3. A single set of four descriptors on the codec
-/// could describe only one of them, which is why the previous version could neither write
-/// nor check a control frame's check byte — the data checksum field lies past the end of a
-/// control frame entirely.
+/// A protocol has more than one shape. MotProtocol has two, and they disagree about more than
+/// length: the data header is 8 bytes with a 16-bit sum at offset 4, the control frame is
+/// 4 bytes with a 1-byte XOR at offset 3. A single set of descriptors on the codec could
+/// describe only one of them, which is why the previous module could neither write nor check a
+/// control frame's check byte — the data checksum field lies past a control frame entirely.
 ///
-/// `base`, so a shape whose integrity is not a byte sum extends it and overrides
-/// [checksumOf]. That is the seam rather than a pluggable `int Function(Uint8List)`: a CRC
-/// is not decomposable over the two spans either side of the field.
-base class PacketFrameFormat {
-  const PacketFrameFormat({
-    required this.length,
-    required this.startId,
-    required this.startField,
-    required this.idField,
-    this.lengthField,
-    this.checksumField,
-    this.endian = Endian.little,
-    this.headerCaster,
-  });
-
+/// **A configuration interface with shared derivations.** A `mixin class`, so a shape is a
+/// named `const` class that states the few members it differs on and inherits the rest. Two or
+/// three per protocol, each one readable on its own, rather than one class configured by a
+/// list of named arguments. [lengthField] and [checksumField] default to absent, so a control
+/// shape names neither.
+///
+/// [headerOf] and [checksumOf] are the two members a shape overrides with behaviour rather
+/// than data — the first to read and write its header as a struct with named fields instead of
+/// through the descriptors, the second where its integrity is not a byte sum. Both are plain
+/// virtual methods; the previous version carried the first as a nullable function field, which
+/// said the same thing with a `?.call(...) ?? default` at the use site.
+abstract mixin class PacketFrameFormat {
   /// Header bytes. For a data shape the payload begins here; for a control shape this is the
   /// whole frame.
-  final int length;
+  int get headerLength;
 
-  /// Frame delimiter, written at [startField].
-  final int startId;
-
-  /// Byte order of every multi-byte field.
-  ///
-  /// On the shape rather than on the codec so that a format is self-contained: [buildHeader]
-  /// and [checksumOf] then need no context passed in, which is what lets an override be
-  /// written against the shape alone. [PacketCodec] derives its own from [dataFormat].
-  final Endian endian;
+  /// Byte order of every multi-byte field. On the shape rather than on the codec so a format
+  /// is self-contained — [checksumOf] and the header view need no context passed in.
+  Endian get endian => Endian.little;
 
   /// Present in every shape. The parser reads these before it knows which shape it has, so
   /// every format of one codec must place them identically — see
   /// [PacketCodec.hasConsistentIdPrefix].
-  final ByteField startField;
-  final ByteField idField;
+  ByteField get startField;
+  ByteField get idField;
 
   /// Total frame length as carried on the wire — header plus payload, matching the device
-  /// codec. Null for a shape that fixes its own length, which is what a control frame does.
-  final ByteField? lengthField;
+  /// codec. Absent on a shape that fixes its own length, which is what a control frame does.
+  ByteField? get lengthField => null;
 
-  /// Null for a shape that carries no integrity field.
-  final ByteField? checksumField;
-
-  /// Produces the [PacketHeader] view this shape is read and written through.
-  ///
-  /// Null uses the descriptors above. A protocol supplies one to read and write its header
-  /// as a struct with named fields instead — the `castHeader` route. Because build and parse
-  /// both go through the view, swapping it swaps *both* directions at once, without
-  /// overriding any of the logic around it.
-  ///
-  /// The one invariant: a caster must describe the same layout as the descriptors. The
-  /// descriptors stay authoritative for framing, because the parser reads fields out of a
-  /// buffer that is still filling and a struct cast throws below full length.
-  final PacketHeaderCaster? headerCaster;
+  /// Absent on a shape that carries no integrity field.
+  ByteField? get checksumField => null;
 
   bool get hasLength => lengthField != null;
   bool get hasChecksum => checksumField != null;
 
   /// Total frame length for [payloadLength] bytes of body. A shape with no length field
   /// carries no payload.
-  int frameLengthOf(int payloadLength) => hasLength ? length + payloadLength : length;
+  int frameLengthOf(int payloadLength) => hasLength ? headerLength + payloadLength : headerLength;
+
+  /// This shape's header over [frame], by name.
+  ///
+  /// The default reads and writes through the descriptors above, which is also the only thing
+  /// that works on a partial buffer. A shape whose header is an `ffi.Struct` overrides this —
+  /// and because build and parse both go through it, overriding swaps both directions at once.
+  ///
+  /// The one invariant: an override must describe the same layout as the descriptors, which
+  /// stay authoritative for framing.
+  PacketHeader headerOf(ByteData frame) => _FormatHeader(this, frame);
 
   /// Checksum over the first [lengthInBytes] of [frame], excluding the checksum field's own
   /// bytes, masked to that field's width.
   ///
-  /// The default sums the two spans either side of the field. Only call it on a shape with
-  /// [hasChecksum].
+  /// The default sums the two spans either side of the field. That is valid for a byte sum and
+  /// not for a CRC — `crc(a) + crc(b) != crc(a + b)` — which is why the hook is the whole
+  /// checksum rather than a pluggable reduction. Only called on a shape with [hasChecksum].
   int checksumOf(ByteData frame, int lengthInBytes) {
     final ByteField key = checksumField!;
     final int mask = (1 << (key.size * 8)) - 1;
-    return (_sum(Uint8List.sublistView(frame, 0, key.offset)) + _sum(Uint8List.sublistView(frame, key.end, lengthInBytes))) & mask;
+    return (_sumBytes(Uint8List.sublistView(frame, 0, key.offset)) + _sumBytes(Uint8List.sublistView(frame, key.end, lengthInBytes))) & mask;
   }
 
-  static int _sum(Uint8List bytes) => bytes.sum;
-
-  ///
-  /// [Build]
-  ///
-
-  /// The header of [frame], by name.
-  PacketHeader headerOf(ByteData frame) => headerCaster?.call(frame) ?? _FormatHeader(this, frame);
-
-  /// Write [id]'s header over a body of [payloadLength] bytes.
-  ///
-  /// One pass, after the payload has run — the payload reports its size and the framing
-  /// converts. The normalized number a payload speaks becomes the wire's total here, and
-  /// nowhere else, which is the same conversion `BUILD_TX_FRAME` performs on the device.
-  ///
-  /// The header is cleared first, so reserved bytes — a sequence counter, an option byte —
-  /// never carry whatever the previous frame left there. Checksum last: it covers the length.
-  void buildHeader(ByteData frame, PacketId id, [int payloadLength = 0]) {
-    for (int i = 0; i < length; i++) {
-      frame.setUint8(i, 0);
-    }
-
-    final PacketHeader header = headerOf(frame)
-      ..startField = startId
-      ..idField = id.intId
-      ..lengthField = frameLengthOf(payloadLength);
-
-    if (hasChecksum) header.checksumField = checksumOf(frame, header.lengthField);
-  }
-
-  @override
-  String toString() => 'PacketFrameFormat(length: $length)';
+  static int _sumBytes(Uint8List bytes) => bytes.sum;
 }
 
-/// [PacketHeader] — a frame's header fields, by name, whatever layout holds them.
+/// **Getters map onto bytes; methods compute.** `startField` and `idField` each sit at an
+/// offset and move bytes. [frameLength] and [payloadLength] are derived — from a length field
+/// where the shape carries one, from the shape itself where it does not — and are written as
+/// methods so the difference is visible at the call site rather than only in the docs. Neither
+/// has a setter: writing a length is the framing's job, through
+/// [PacketFrameFormat.frameLengthOf], in one place.
 ///
-/// **Mapped fields are read/write; the one derived reading is read-only.** `startField`
-/// through `checksumField` each sit at an offset and move bytes. [payloadLength] is the
-/// wire's total less this header — a normalized reading of a mapped field, which is what
-/// `Packet_Meta_T.Length` holds on the device. It has no setter because writing it is the
-/// framing's job, through [PacketFrameFormat.frameLengthOf], in one place.
+/// **This is the minimum that determines how long a frame is** — which is what the parser
+/// needs and all it needs, and what [Payload.parse] is handed. Everything past it is a
+/// particular shape's business: see [PacketHeader].
 ///
 /// Dart virtualises with getters, so this is a view over the frame's own bytes and nothing is
-/// copied — unlike the device, which has to extract into a struct.
-///
-/// Handed to [Payload.parse], which reads a header that exists. [Payload.build] is not given
-/// one: see there for why the two directions are deliberately not symmetric.
-///
-/// One type covers every shape rather than a union per shape. A field a shape does not
-/// carry reads as its neutral value and ignores writes: [lengthField] reports the shape's
-/// own fixed length, [checksumField] reports 0. So a control frame answers the same
-/// questions a data frame does, without a caller testing which it has.
+/// copied — unlike the device, which extracts into a `Packet_Meta_T` because C must.
 abstract interface class PacketHeaderPrefix {
   /// The delimiter and the id sit at the same offset in every shape of one codec — the
   /// parser reads them to choose a shape, so it cannot use a shape to find them.
@@ -227,8 +177,21 @@ abstract interface class PacketHeaderPrefix {
 
   int get idField;
   set idField(int value);
+
+  /// Total bytes of this frame, or null where the shape does not fix it and a length field
+  /// must be read. Answering null is how a prefix says "variable".
+  int? frameLength();
+
+  /// Payload bytes, on the same terms as [frameLength].
+  int? payloadLength();
 }
 
+/// A full header: the prefix, plus the fields a data shape carries.
+///
+/// One type covers every shape rather than a union per shape. A field a shape does not carry
+/// reads as its neutral value and ignores writes — [lengthField] reports the shape's own fixed
+/// length, [checksumField] reports 0 — so a control frame answers the same questions a data
+/// frame does, without a caller testing which it has.
 abstract interface class PacketHeader implements PacketHeaderPrefix {
   /// Total frame length as carried on the wire. Reports the shape's fixed length, and
   /// ignores writes, where the shape declares no length field.
@@ -239,18 +202,55 @@ abstract interface class PacketHeader implements PacketHeaderPrefix {
   int get checksumField;
   set checksumField(int value);
 
-  /// Payload bytes this frame declares. Derived, so read-only.
-  ///
-  /// **This is how a [Payload] knows how much of its region is real.** The region a
-  /// [PayloadCaster] is built over is the whole space available, not the frame's own payload,
-  /// because an `ffi.Struct` payload with a fixed `Array` cannot be cast over anything shorter
-  /// than itself — `Struct.create` throws below full length. So the span is deliberately
-  /// over-long and this is the count that bounds it.
-  int get payloadLength;
+  /// Never null here: a full header carries the length field a prefix may have to defer to.
+  @override
+  int frameLength();
+
+  @override
+  int payloadLength();
 }
 
-/// Produces a [PacketHeader] over a frame. Held by [PacketFrameFormat.headerCaster].
-typedef PacketHeaderCaster = PacketHeader Function(ByteData frame);
+/// The default [PacketCodec.prefixOf]: the delimiter and id from the shape-independent
+/// positions, and the frame length from whichever shape the id turns out to name.
+///
+/// Descriptor-driven throughout, because this is read while the buffer is still filling and a
+/// struct cast throws below its own length.
+final class _CodecPrefix implements PacketHeaderPrefix {
+  const _CodecPrefix(this._codec, this._frame);
+
+  final PacketCodec _codec;
+  final ByteData _frame;
+
+  /// Every shape places the delimiter and the id identically, so the data shape answers for
+  /// where they are. Which shape the *rest* of the frame follows is [_shape].
+  PacketFrameFormat get _prefix => _codec.dataFormat;
+
+  PacketFrameFormat get _shape {
+    final PacketId? id = _codec.idOf(idField);
+    return (id == null) ? _codec.dataFormat : _codec.formatOf(id);
+  }
+
+  @override
+  int get startField => _prefix.startField.getWord(_frame, _prefix.endian);
+  @override
+  set startField(int value) => _prefix.startField.setWord(_frame, value, _prefix.endian);
+
+  @override
+  int get idField => _prefix.idField.getWord(_frame, _prefix.endian);
+  @override
+  set idField(int value) => _prefix.idField.setWord(_frame, value, _prefix.endian);
+
+  /// Null on a shape that carries a length field — reading that field is the caller's, once
+  /// it holds the resolved [PacketFrameFormat].
+  @override
+  int? frameLength() => _shape.hasLength ? null : _shape.headerLength;
+
+  @override
+  int? payloadLength() => _shape.hasLength ? null : 0;
+
+  @override
+  String toString() => '[start: $startField, id: $idField, frame: ${frameLength()}]';
+}
 
 /// The default [PacketHeader]: the format's own descriptors, read and written in place.
 final class _FormatHeader implements PacketHeader {
@@ -270,7 +270,7 @@ final class _FormatHeader implements PacketHeader {
   set idField(int value) => _format.idField.setWord(_frame, value, _format.endian);
 
   @override
-  int get lengthField => _format.lengthField?.getWord(_frame, _format.endian) ?? _format.length;
+  int get lengthField => _format.lengthField?.getWord(_frame, _format.endian) ?? _format.headerLength;
   @override
   set lengthField(int value) => _format.lengthField?.setWord(_frame, value, _format.endian);
 
@@ -280,7 +280,10 @@ final class _FormatHeader implements PacketHeader {
   set checksumField(int value) => _format.checksumField?.setWord(_frame, value, _format.endian);
 
   @override
-  int get payloadLength => lengthField - _format.length;
+  int frameLength() => lengthField;
+
+  @override
+  int payloadLength() => lengthField - _format.headerLength;
 
   @override
   String toString() => '[start: $startField, id: $idField, length: $lengthField, checksum: $checksumField]';

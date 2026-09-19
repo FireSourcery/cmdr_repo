@@ -68,16 +68,16 @@ extension EnumCodecResolve<T extends Enum> on EnumCodec<T> {
   T? resolve(int? data) => (data != null) ? decode(data) : null;
 }
 
-// class EnumUnionCodec<V extends Enum> implements EnumCodec<V> {
-//   const EnumUnionCodec(this.codecs);
+class EnumUnionCodec<S extends Enum> {
+  EnumUnionCodec(this.codecs);
+  EnumUnionCodec.of(Set<List<S>> codecs) : codecs = {for (var c in codecs) c.first.runtimeType: c};
 
-//   final Map<Type, List<V>> codecs;
-//   @override
-//   List<V> get values => codecs[V] ?? (throw UnsupportedError('EnumUnionCodec: No codec for type $V'));
+  final Map<Type, List<S>> codecs;
 
-//   @override
-//   V decode(int data) => values.byIndex(data);
+  List<T> valuesTyped<T extends S>() => codecs[T] as List<T>? ?? (throw UnsupportedError('EnumUnionCodec: No codec for type $T'));
 
-//   @override
-//   int encode(V view) => view.index;
-// }
+  @override
+  List<S> get values => codecs.values.expand((e) => e).toList();
+
+  T? resolve<T extends S>(int? data) => (data != null) ? valuesTyped<T>().byIndex(data) : null;
+}
