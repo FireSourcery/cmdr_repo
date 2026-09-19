@@ -78,7 +78,7 @@ abstract class BitStructBase<T extends BitStructBase<T, K>, K extends BitField> 
   List<K> get keys;
 
   @override
-  BitStruct<K> get data => bitData as BitStruct<K>;
+  BitStruct<K> get data => bitData as BitStruct<K>; //keeps keys compatible with the extension type and class wrapper
 
   int get width => BitForm(keys).totalWidth;
 

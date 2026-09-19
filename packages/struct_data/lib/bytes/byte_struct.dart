@@ -43,10 +43,9 @@ abstract class ByteStructBase<S extends ByteStructBase<S, K>, K extends ByteFiel
   // only primitive types are keyed (and included in serialization). array sizes individual define by subclass. e.g. payload
   // handled with extension on bytedata
   final ByteData byteData;
+  List<K> get keys; // a method that is the meta contents, fieldsList
 
   ByteStruct<K> get data => byteData as ByteStruct<K>; // ByteData as base type of TypedData for immediate keyed access
-
-  List<K> get keys; // a method that is the meta contents, fieldsList
 
   int get size => byteData.lengthInBytes;
 

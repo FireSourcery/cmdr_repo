@@ -23,8 +23,8 @@ class MotConnection {
 
   final SerialLink serialLink = SerialLink();
 
-  static final Protocol _uninitialized = Protocol(const Link.uninitialized(), const MotPacketInterface());
-  late final Protocol _serial = Protocol(serialLink, const MotPacketInterface());
+  static final Protocol _uninitialized = Protocol(const Link.uninitialized(), const MotPacketCodec());
+  late final Protocol _serial = Protocol(serialLink, const MotPacketCodec());
 
   // connection callbacks
   final ValueNotifier<LinkStatus> status = ValueNotifier(const LinkDisconnected());

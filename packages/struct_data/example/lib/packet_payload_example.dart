@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:struct_data/packet/packet.dart';
 
+/// A fixed-size payload: two 32-bit words, cast in place over the packet's payload region.
 @Packed(1)
 final class EchoPayload extends Struct implements Payload<(int, int)> {
   @Uint32()
@@ -12,34 +13,18 @@ final class EchoPayload extends Struct implements Payload<(int, int)> {
 
   factory EchoPayload({int value1 = 0, int value0 = 0}) => Struct.create<EchoPayload>()..build((value1, value0));
 
-  factory EchoPayload.cast(TypedData typedData) => Struct.create<EchoPayload>(typedData); // ensures Struct.create<EchoPayload> is compiled at compile time
+  /// Ensures `Struct.create<EchoPayload>` is compiled ahead of time.
+  factory EchoPayload.cast(TypedData typedData) => Struct.create<EchoPayload>(typedData);
 
   @override
-  PayloadMeta build((int, int) args, [Packet? header]) {
+  PayloadMeta build((int, int) args) {
     final (newValue0, newValue1) = args;
     value0 = newValue0;
     value1 = newValue1;
     return const PayloadMeta(8);
   }
 
+  /// Fixed size, so the header's declared length is not consulted.
   @override
-  (int, int) parse([Packet? header, void stateMeta]) {
-    return (value0, value1);
-  }
-}
-
-enum PacketIdRequestExample<T, R> implements PacketIdRequest<T, R> {
-  echo(0xFF, requestCaster: EchoPayload.cast, responseCaster: EchoPayload.cast)
-  ;
-
-  const PacketIdRequestExample(this.intId, {required this.requestCaster, required this.responseCaster, this.responseId});
-
-  @override
-  final int intId;
-  @override
-  final PacketId? responseId;
-  @override
-  final PayloadCaster<T>? requestCaster;
-  @override
-  final PayloadCaster<R>? responseCaster;
+  (int, int) parse(PacketHeader header) => (value0, value1);
 }

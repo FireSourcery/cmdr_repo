@@ -1,6 +1,10 @@
 import 'package:meta/meta.dart';
 import '../binary_data.dart';
 
+/// [FieldEntry] — a key-value pair for a field in a struct
+typedef FieldEntry<K extends Field<V>, V> = ({K key, V value});
+typedef FieldEntries<K extends Field<V>, V> = Iterable<FieldEntry<K, V>>;
+
 /// [StructData] — zero-cost keyed view over an existing object.
 ///
 /// Handle key implementations, mapping to data
@@ -36,9 +40,9 @@ extension type const StructData<K extends Field<V>, V>(Object _data) implements 
   FieldEntry<Field<R>, R> fieldAs<R>(Field<R> key) => (key: key, value: this[key as K] as R); // handles user side casting
 
   // implementation handled by Form
-  Iterable<V> valuesAs(StructForm<K, V> type) => type(this).values;
   Iterable<FieldEntry<K, V>> fieldsAs(StructForm<K, V> type) => type(this).fields;
-  Map<K, V> toMapWith(StructForm<K, V> type) => type.mapWithData(this);
+  // Iterable<V> valuesAs(StructForm<K, V> type) => type(this).values;
+  // Map<K, V> toMapWith(StructForm<K, V> type) => type.mapWithData(this);
   // Map<K, V> mapWithFields(StructForm<K, V> type) => IndexMap<K, V>.of(type, type.map((k) => this[k]));
 }
 
@@ -51,11 +55,12 @@ extension type const StructData<K extends Field<V>, V>(Object _data) implements 
 /// _interface_ common between StructData and Map
 /// When `K extends Enum & Field`, serialization comes for free via [EnumMapByName] on `Map<Enum, V>`.
 ///
-/// Although the containing class with full context of relationships between fields
-/// By defining accessors on the key rather than the struct, the struct itself can remain a plain object (or extension type wrapper).
-/// The key maintains the type scope of `V`.
+/// Although the [StructData] provides the full context of relationships between fields
+/// By defining accessors on the key rather than the struct,
+///   The key maintains the type scope of `V`. Required for unified handling of mixed types in [StructData]
+///   the struct itself can remain a plain object (or extension type wrapper).
 ///
-/// Object struct as StructData or StructBase
+/// [Object struct] as StructData or StructBase
 abstract interface class Field<V> {
   /// Read this field's value from [struct].
   @protected
@@ -67,10 +72,12 @@ abstract interface class Field<V> {
 
   /// Whether this field is present/valid for [struct].
   /// Defaults to `true` (fixed-schema). Override for optional/sparse fields.
+  // isIn checks if the field is present in the struct, can be overridden for optional fields.
   bool testAccess(covariant Object struct) => true;
 }
 
 extension FieldExtension<K extends Field<V>, V> on K {
+  //  FieldEntry<K, V> call(StructData<K, V> struct) => (key: this, value: of(struct));
   V of(StructData<K, V> struct) => getIn(struct);
   V? validateType(StructData<K, dynamic> data) => data[this] is V ? data[this] as V : null;
 }
@@ -96,6 +103,8 @@ extension type const StructForm<K extends Field<V>, V>(List<K> fields) implement
   ({StructForm<K, V> form, StructData<K, V> data}) call(StructData<K, V> struct) => (form: this, data: struct);
 }
 
+// typedef StructReference<K extends Field<V>, V>  = ({StructForm<K, V> form, StructData<K, V> data});
+
 /// return context with both keys and data
 /// `StructForm(PersonField.values)(personA).toMap();`
 /// iterative operations
@@ -111,10 +120,6 @@ extension TypedStructReference<K extends Field<V>, V> on ({StructForm<K, V> form
     }
   }
 }
-
-/// [FieldEntry] — a key-value pair for a field in a struct
-typedef FieldEntry<K extends Field<V>, V> = ({K key, V value});
-typedef FieldEntries<K extends Field<V>, V> = Iterable<FieldEntry<K, V>>;
 
 /// [StructBase] — abstract base user subtype
 /// TypedStruct
@@ -151,6 +156,7 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   /// Implementor select `this` or nested data.
   StructData<K, V> get data;
 
+  // accessors bound to the key. These functions can be overridden when V the subclass handles V validation
   V operator [](covariant K key) => data[key];
   void operator []=(covariant K key, V value) => data[key] = value;
   bool testAccess(K key) => data.testAccess(key);
@@ -162,6 +168,11 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   bool trySetField(K key, V value) => data.trySetField(key, value);
   FieldEntry<Field<R>, R> fieldAs<R>(Field<R> key) => data.fieldAs<R>(key);
 
+  // FieldEntry<Field<R>, R> fieldAs<R>(covariant K key) {
+  //   assert(key is Field<R>);
+  //   return (key: key as Field<R>, value: this[key] as R);
+  // }
+
   // Iterable view requiring Fields list
   Iterable<V> get values => StructForm(keys)(data).values;
   Iterable<FieldEntry<K, V>> get fields => StructForm(keys)(data).fields;
@@ -170,6 +181,14 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   /// Snapshot as an [IndexMap]. If `K extends Enum`, call `.toJson()` on the
   /// result to serialise via [EnumMapByName].
   Map<K, V> toMap() => IndexMap.of(keys, values);
+
+  // mutable. []= is available
+  // immutable, pass constructor or copywith
+  // void fillFromMap(Map<K, V> map) {
+  //   for (final K key in keys) {
+  //       this[key] = map[key] ?? this[key];
+  //   }
+  // }
 }
 
 // inherit without mixin

@@ -7,7 +7,14 @@ This is a **Dart/Flutter monorepo** containing reusable library packages for emb
 - **`packages/cmdr`** — Flutter widgets, controllers, connection interfaces, file storage, settings, and var_notifier state management.
 - **`packages/binary_data`** — Pure Dart library for binary data manipulation: bit/byte structs, typed fields, serialization, binary codecs, and word-level operations.
 
-These libraries are **general-purpose, framework-level** packages designed to be consumed by downstream application projects (e.g., `kelly_user_app`).
+These libraries are **general-purpose, framework-level** packages designed to be consumed by downstream application projects.
+
+---
+### Documentation
+- Keep comments concise. Comments are reserved for points that the code cannot express, not what the code is doing.
+- Use visualizations with mermaid diagrams for describing what the code is doing
+- Extensive descriptions go in a separate markdown file, such as architecture notes.
+- When referring to a concept that is already modeled by a type or struct in code, refer to that type using `[]` e.g. `[TypeName_T]`.
 
 ---
 
