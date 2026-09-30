@@ -14,21 +14,16 @@ import '../var_notifier.dart';
 ///
 /// Both dialogs are driven by state already on [varNotifier]: the focus dialog by [child]'s focus,
 /// the submit dialog by [VarValueNotifier.isLastUpdateByView].
-class VarInputDialog extends StatelessWidget {
-  const VarInputDialog({
+class const VarInputDialog({
     super.key,
-    required this.child,
-    required this.varNotifier,
-    this.beginEditMessage,
-    this.endEditMessage,
+    required final Widget child,
+    required final VarNotifier varNotifier,
+    final ValueGetter<String?>? beginEditMessage,
+    final ValueGetter<String?>? endEditMessage,
     // final ValueSetter<VarNotifier<V>> onEvent
-  });
-
-  final VarNotifier varNotifier;
-  final Widget child;
-
-  final ValueGetter<String?>? beginEditMessage; // shown on first focus when it resolves non-null
-  final ValueGetter<String?>? endEditMessage; // shown on submit when it resolves non-null
+  }) extends StatelessWidget {
+// shown on first focus when it resolves non-null
+// shown on submit when it resolves non-null
 
   // final ValueSetter<VarNotifier<V>> onSubmit;
 

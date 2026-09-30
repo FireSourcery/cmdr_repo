@@ -14,9 +14,7 @@ import 'package:test/test.dart';
 /// factory members on the format (`cast`, `caster`, `headerOf`, `syncHeaderOf`).
 ///
 
-final class TestCodec extends PacketCodec {
-  const TestCodec();
-
+final class const TestCodec() extends PacketCodec {
   @override
   int get lengthMax => 40;
   @override
@@ -51,9 +49,7 @@ final class TestCodec extends PacketCodec {
 /// `Checksum = Start ^ SyncId ^ Option` (MotPacket.c:50). A shape whose integrity is not a
 /// byte sum, and whose field sits where the data shape's payload would be.
 /// `[Start, Id, Length, Sequence, Checksum:2, Flex:2]` then payload.
-final class TestDataFormat with PacketFrameFormat {
-  const TestDataFormat();
-
+final class const TestDataFormat() with PacketFrameFormat {
   @override
   int get headerLength => 8;
   @override
@@ -68,9 +64,7 @@ final class TestDataFormat with PacketFrameFormat {
 
 /// `[Start, Id, Option, _]` — names neither a length nor a checksum, so it inherits both as
 /// absent and the parser waves the frame through.
-final class TestControlFormat with PacketFrameFormat {
-  const TestControlFormat();
-
+final class const TestControlFormat() with PacketFrameFormat {
   @override
   int get headerLength => 4;
   @override
@@ -79,9 +73,7 @@ final class TestControlFormat with PacketFrameFormat {
   ByteField get idField => const ByteField<Uint8>(1);
 }
 
-final class XorControlFormat extends TestControlFormat {
-  const XorControlFormat();
-
+final class const XorControlFormat() extends TestControlFormat {
   @override
   ByteField? get checksumField => const ByteField<Uint8>(3);
 
@@ -101,11 +93,7 @@ final class XorControlFormat extends TestControlFormat {
 ///
 /// Held by the format, so it serves build *and* parse: swapping the view swaps both
 /// directions without overriding any of the logic around them.
-final class ManualHeader implements PacketHeader {
-  const ManualHeader(this.frame);
-
-  final ByteData frame;
-
+final class const ManualHeader(final ByteData frame) implements PacketHeader {
   @override
   int get startField => frame.getUint8(0);
   @override
@@ -136,44 +124,41 @@ final class ManualHeader implements PacketHeader {
   int payloadLength() => lengthField - 8;
 }
 
-final class ManualCodec extends TestCodec {
-  const ManualCodec();
-
+final class const ManualCodec() extends TestCodec {
   @override
   PacketFrameFormat get dataFormat => const ManualDataFormat();
 }
 
 /// The same layout, read and written through [ManualHeader] instead of the descriptors —
 /// a virtual [PacketFrameFormat.headerOf] where this used to be a `headerCaster` field.
-final class ManualDataFormat extends TestDataFormat {
-  const ManualDataFormat();
-
+final class const ManualDataFormat() extends TestDataFormat {
   @override
   PacketHeader headerOf(ByteData frame) => ManualHeader(frame);
 }
 
-final class XorControlCodec extends TestCodec {
-  const XorControlCodec();
-
+final class const XorControlCodec() extends TestCodec {
   @override
   PacketFrameFormat get controlFormat => const XorControlFormat();
 }
 
-enum TestControlId implements PacketControlId {
+enum TestControlId(
+  @override
+  final int intId) implements PacketControlId {
   ping(0xA0),
   ack(0xA2),
   nack(0xA3),
   abort(0xA4)
   ;
 
-  const TestControlId(this.intId);
-  @override
-  final int intId;
 }
 
 /// One row per exchange. [responseId] defaults to the request's own byte, so only an answer
 /// under a *different* byte says so.
-enum TestReqId<T, R> implements PacketRequestId<T, R> {
+enum TestReqId<T, R>(int id, 
+  @override
+  final PayloadCaster<T> caster, 
+  @override
+  final PayloadCaster<R> responseCaster, [int? responseId]) implements PacketRequestId<T, R> {
   /// Same byte, different codec — the common case, and the short form.
   echo<Uint8List, Uint8List>(0x10, BytesPayload.cast, BytesPayload.cast),
 
@@ -187,41 +172,31 @@ enum TestReqId<T, R> implements PacketRequestId<T, R> {
   fixed<Uint16List, Uint16List>(0x50, FixedArrayPayload.cast, FixedArrayPayload.cast)
   ;
 
-  const TestReqId(int id, this.caster, this.responseCaster, [int? responseId]) : intId = id, responseId = responseId ?? id;
+  this : intId = id, responseId = responseId ?? id;
 
   @override
   final int intId;
-  @override
-  final PayloadCaster<T> caster;
-  @override
-  final PayloadCaster<R> responseCaster;
   @override
   final int responseId;
 }
 
 /// A one-way command: a payload id that is not a request id, so no answer can be awaited of
 /// it. The distinction is the type, where it used to be a null `responseCaster`.
-enum TestCommandId<T> implements PacketPayloadId<T> {
+enum TestCommandId<T>(
+  @override
+  final int intId, 
+  @override
+  final PayloadCaster<T> caster) implements PacketPayloadId<T> {
   notify<Uint8List>(0x30, BytesPayload.cast)
   ;
 
-  const TestCommandId(this.intId, this.caster);
-
-  @override
-  final int intId;
-  @override
-  final PayloadCaster<T> caster;
 }
 
 /// A payload whose result depends on a field of the frame carrying it — the case that
 /// justifies [Payload.parse] taking the packet at all. A handler shared by several ids reads
 /// which one it is seeing; MotProtocol's data-mode handler does exactly this on the device.
-final class IdTaggedPayload implements Payload<(int id, Uint8List body)> {
-  IdTaggedPayload(this.region);
-
+final class IdTaggedPayload(final Uint8List region) implements Payload<(int id, Uint8List body)> {
   factory IdTaggedPayload.cast(TypedData payload) => IdTaggedPayload(Uint8List.sublistView(payload));
-
-  final Uint8List region;
 
   @override
   PayloadMeta build((int, Uint8List) values) {
@@ -265,12 +240,8 @@ base class FixedArrayPayload extends Struct implements Payload<Uint16List> {
 }
 
 /// Payload that is just its bytes.
-final class BytesPayload implements Payload<Uint8List> {
-  BytesPayload(this.region);
-
+final class BytesPayload(final Uint8List region) implements Payload<Uint8List> {
   factory BytesPayload.cast(TypedData payload) => BytesPayload(Uint8List.sublistView(payload));
-
-  final Uint8List region;
 
   @override
   PayloadMeta build(Uint8List values) {

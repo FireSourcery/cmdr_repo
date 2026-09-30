@@ -15,7 +15,7 @@ export 'bits.dart';
 // should be known as Bit-Fields, or Bits Field, Bit Struct, Bit-Field Struct
 //
 // todo implements Bitmask keep Bits interface
-abstract mixin class BitField implements Field<int> {
+abstract mixin class BitField() implements Field<int> {
   Bitmask get bitmask;
 
   @override
@@ -50,8 +50,9 @@ extension BitFieldsMethods on Iterable<BitField> {
 }
 
 /// BitIndexField /// Special case: single-bit field addressed by index.
-abstract mixin class BitIndexField implements BitField {
+abstract mixin class BitIndexField() implements BitField {
   int get index;
+  @override
   Bitmask get bitmask => Bitmask.index(index);
   @override
   int getIn(BitStruct<BitField> struct) => struct.getBits(bitmask);

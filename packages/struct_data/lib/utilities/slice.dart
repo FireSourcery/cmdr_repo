@@ -2,11 +2,7 @@ import 'dart:math';
 
 /// [Slicer]
 
-class Slicer<T> {
-  const Slicer(this.slicer, this.length);
-  final T Function(int start, int end) slicer;
-  final int length;
-
+class const Slicer<T>(final T Function(int start, int end) slicer, final int length) {
   Iterable<T> slices(int sliceLength) sync* {
     for (var index = 0; index < length; index += sliceLength) {
       yield slicer(index, min(index + sliceLength, length));

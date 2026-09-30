@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
 
-abstract interface class LogoButton extends StatelessWidget {
-  const LogoButton({super.key, this.onPressed, this.buttonStyle});
+abstract interface class const LogoButton({super.key, final VoidCallback? onPressed, final ButtonStyle? buttonStyle}) extends StatelessWidget {
   const factory LogoButton.icon({ButtonStyle? buttonStyle, VoidCallback? onPressed, Key? key}) = LogoIconButton;
   const factory LogoButton.fab({ButtonStyle? buttonStyle, VoidCallback? onPressed, Key? key}) = LogoFabButton;
   const factory LogoButton.wide({ButtonStyle? buttonStyle, VoidCallback? onPressed, Key? key}) = LogoWideButton;
 
-  final VoidCallback? onPressed;
-  final ButtonStyle? buttonStyle;
 }
 
-class LogoImage extends StatelessWidget {
-  const LogoImage({super.key});
-
+class const LogoImage({super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).extension<LogoTheme>()!;
@@ -20,9 +15,7 @@ class LogoImage extends StatelessWidget {
   }
 }
 
-class LogoIconButton extends LogoButton {
-  const LogoIconButton({super.buttonStyle, super.onPressed, super.key});
-
+class const LogoIconButton({super.buttonStyle, super.onPressed, super.key}) extends LogoButton {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).extension<LogoTheme>()!;
@@ -40,9 +33,7 @@ class LogoIconButton extends LogoButton {
   }
 }
 
-class LogoWideButton extends LogoButton {
-  const LogoWideButton({super.buttonStyle, super.onPressed, super.key});
-
+class const LogoWideButton({super.buttonStyle, super.onPressed, super.key}) extends LogoButton {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).extension<LogoTheme>()!;
@@ -58,9 +49,7 @@ class LogoWideButton extends LogoButton {
   }
 }
 
-class LogoFabButton extends LogoButton {
-  const LogoFabButton({super.buttonStyle, super.onPressed, super.key});
-
+class const LogoFabButton({super.buttonStyle, super.onPressed, super.key}) extends LogoButton {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).extension<LogoTheme>()!;
@@ -76,13 +65,7 @@ class LogoFabButton extends LogoButton {
   }
 }
 
-class LogoTheme extends ThemeExtension<LogoTheme> {
-  const LogoTheme({this.imageIcon, this.imageExpanded, this.buttonStyle});
-
-  final ButtonStyle? buttonStyle;
-  final AssetImage? imageIcon;
-  final AssetImage? imageExpanded;
-
+class const LogoTheme({final AssetImage? imageIcon, final AssetImage? imageExpanded, final ButtonStyle? buttonStyle}) extends ThemeExtension<LogoTheme> {
   @override
   ThemeExtension<LogoTheme> copyWith() {
     throw UnimplementedError();

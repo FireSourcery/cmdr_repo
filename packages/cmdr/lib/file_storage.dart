@@ -19,7 +19,7 @@
 /// final csvStorage = CsvFileStorage();
 /// final jsonStorage = JsonFileStorage();
 /// ```
-library cmdr.file_storage;
+library;
 
 // Core file storage classes
 export 'file_storage/file_storage.dart';

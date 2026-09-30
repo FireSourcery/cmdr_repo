@@ -1,8 +1,6 @@
 /// Mixin for methods
 /// Instantiate temporary object for type checking
-mixin class TypeKey<T> {
-  const TypeKey();
-
+mixin class const TypeKey<T>() {
   Type get type => T;
 
   bool isSubtype<S>() => this is TypeKey<S>;
@@ -22,8 +20,7 @@ extension TypeKeysValidate on List<TypeKey> {
 }
 
 // workaround for calling generic methods with type restrictions
-mixin class TypeRestrictedKey<T extends S, S> {
-  const TypeRestrictedKey();
+mixin class const TypeRestrictedKey<T extends S, S>() {
   R callWithRestrictedType<R>(R Function<G extends S>() callback) => callback<T>();
 }
 

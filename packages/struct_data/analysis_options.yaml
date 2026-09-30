@@ -1,4 +1,7 @@
-include: package:lints/recommended.yaml
+# include: package:lints/recommended.yaml
 
-formatter:
-  trailing_commas: preserve
+# formatter:
+#   trailing_commas: preserve
+
+include: ../../../analysis_options.yaml
+ 

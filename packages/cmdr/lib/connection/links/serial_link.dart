@@ -10,9 +10,7 @@ export '../base/link.dart';
 ///
 /// libserialport Serial Link
 ///
-class SerialLink implements Link {
-  SerialLink();
-  // static const List<int> baudList = [9600, 19200, 38400, 57600, 115200, 128000, 256000];
+class SerialLink() implements Link {
   static const List<int> baudList = [19200];
   static List<String> get portsAvailable => SerialPort.availablePorts;
 

@@ -5,9 +5,7 @@ import 'var_notifier.dart';
 /// immutable properties of a VarNotifier
 /// == and hash from ValueKey
 @immutable
-abstract mixin class VarKey<V> implements ValueKey<int> {
-  const VarKey();
-
+abstract mixin class const VarKey<V>() implements ValueKey<int> {
   @override
   int get value; // int id of the key, NOT the value of associated Var
   int get id => value;
@@ -79,8 +77,7 @@ enum VarReadWriteAccess {
 }
 
 /// [VarStatus]
-abstract mixin class VarStatus {
-  const VarStatus();
+abstract mixin class const VarStatus() {
   factory VarStatus.defaultOf(int code) = _VarStatus;
 
   int get code;
@@ -90,12 +87,9 @@ abstract mixin class VarStatus {
   bool get isError;
 }
 
-class _VarStatus extends VarStatus {
-  const _VarStatus(this.code);
-
+class const _VarStatus(
   @override
-  final int code;
-
+  final int code) extends VarStatus {
   @override
   Enum? get enumId => VarStatusDefault.values.elementAtOrNull(code) ?? VarStatusUnknown.unknown;
   @override
@@ -107,14 +101,17 @@ class _VarStatus extends VarStatus {
 }
 
 // mixin on enum to implement the Status interface
-abstract mixin class VarEnumStatus implements VarStatus, Enum {
+abstract mixin class VarEnumStatus() implements VarStatus, Enum {
+  @override
   int get code => index;
+  @override
   String get message => name;
+  @override
   Enum get enumId => this;
 }
 
 // generalize as system status, 0 -> ok, -1 -> error
-enum VarStatusDefault with VarStatus, VarEnumStatus {
+enum VarStatusDefault() with VarStatus, VarEnumStatus {
   success,
   error;
 
@@ -126,7 +123,7 @@ enum VarStatusDefault with VarStatus, VarEnumStatus {
 
 // enum VarStatusOkDefault with VarStatusOk, VarEnumStatus { ok }
 // enum VarStatusErrorDefault with VarStatusError, VarEnumStatus { error, unknown }
-enum VarStatusUnknown with VarStatus, VarEnumStatus {
+enum VarStatusUnknown() with VarStatus, VarEnumStatus {
   unknown;
 
   @override

@@ -77,7 +77,7 @@ abstract class WordBase<T extends WordBase<T, K>, K extends WordField> with MapB
 /// a field within a [WordStruct]
 /// interface for including [TypedField<T>], [Enum]
 /// type ensures bitmask is power of 2
-abstract mixin class WordField<V extends NativeType> implements Field<int>, TypedField<V> {
+abstract mixin class WordField<V extends NativeType>() implements Field<int>, TypedField<V> {
   /// can be overridden with compile time constant
   Bitmask get bitmask => Bitmask.bytes(offset, size);
 

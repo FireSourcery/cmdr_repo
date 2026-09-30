@@ -67,12 +67,8 @@ abstract interface class VarIOField extends StatelessWidget {
 
 /// map [VarNotifier] to [IOFieldConfig] and build
 /// options mapped in constructor
-class _VarIOField<V> extends StatelessWidget implements VarIOField {
+class const _VarIOField<V>._(final IOFieldConfig<V> config, {super.key}) extends StatelessWidget implements VarIOField {
   // accepts the type parameter passed to constructor
-  const _VarIOField._(this.config, {super.key});
-
-  final IOFieldConfig<V> config;
-
   @override
   Widget build(BuildContext context) => IOField<V>(config);
 }
@@ -81,19 +77,13 @@ class _VarIOField<V> extends StatelessWidget implements VarIOField {
 ///
 /// decouple from Var? to
 /// SelectableIOField
-class VarIOFieldWithMenu<T extends VarKey> extends StatelessWidget {
-  const VarIOFieldWithMenu({
-    this.initialVarKey,
-    this.varCache,
+class const VarIOFieldWithMenu<T extends VarKey>({
+    final T? initialVarKey,
+    final VarCache? varCache,
     super.key,
-    required this.menuSource,
+    required final FlyweightMenuSource<T> menuSource,
     // IOFieldConfig ? config,
-  });
-
-  final FlyweightMenuSource<T> menuSource;
-  final T? initialVarKey;
-  final VarCache? varCache;
-
+  }) extends StatelessWidget {
   Widget _varWidgetBuilder(VarNotifier varNotifier) {
     return VarIOField(varNotifier, showLabel: true, isDense: false, showPrefix: true, showSuffix: true);
   }
@@ -120,18 +110,16 @@ class VarIOFieldWithMenu<T extends VarKey> extends StatelessWidget {
 ///
 ///
 ///
-class VarIOFieldConfig<V> implements IOFieldConfig<V> {
-  const VarIOFieldConfig(
-    this.varNotifier, {
-    this.controller,
-    this.labelAlignment = FloatingLabelAlignment.start,
-    this.showLabel = true,
-    this.showPrefix = true,
-    this.showSuffix = true,
-    this.isDense = false,
-    this.readOnly,
-  });
-
+class const VarIOFieldConfig<V>(
+    final VarNotifier<V> varNotifier, {
+    final VarSingleController? controller,
+    final FloatingLabelAlignment? labelAlignment = FloatingLabelAlignment.start,
+    final bool showLabel = true,
+    final bool showPrefix = true,
+    final bool showSuffix = true,
+    final bool? isDense = false,
+    final bool? readOnly,
+  }) implements IOFieldConfig<V> {
   factory VarIOFieldConfig.of(VarNotifier varNotifier) {
     VarIOFieldConfig<G> local<G>() {
       return VarIOFieldConfig<G>(varNotifier as VarNotifier<G>);
@@ -140,17 +128,10 @@ class VarIOFieldConfig<V> implements IOFieldConfig<V> {
     return varNotifier.varKey.viewType.callWithType(local) as VarIOFieldConfig<V>;
   }
 
-  final VarNotifier<V> varNotifier; //alternatively split valuenotifier/valueUnion
-  final VarSingleController? controller; // unused for now
+//alternatively split valuenotifier/valueUnion
+// unused for now
 
   // alternatively handle in constructor
-  final FloatingLabelAlignment? labelAlignment;
-  final bool showLabel;
-  final bool showPrefix;
-  final bool showSuffix;
-  final bool? isDense;
-  final bool? readOnly;
-
   // InputDecoration? idDecoration
 
   // control over whether the parameters from VarNotifier are passed

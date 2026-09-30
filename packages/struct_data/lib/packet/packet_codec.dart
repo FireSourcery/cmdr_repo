@@ -22,9 +22,7 @@ part of 'packet.dart';
 ///
 /// `base`, so a protocol must `extend` and inherits the derived members below rather than
 /// reimplementing them.
-abstract base class PacketCodec {
-  const PacketCodec();
-
+abstract base class const PacketCodec() {
   /// A complete frame is never longer than this. Sizes every buffer.
   int get lengthMax;
 
@@ -102,7 +100,7 @@ abstract base class PacketCodec {
 /// through the descriptors, the second where its integrity is not a byte sum. Both are plain
 /// virtual methods; the previous version carried the first as a nullable function field, which
 /// said the same thing with a `?.call(...) ?? default` at the use site.
-abstract mixin class PacketFrameFormat {
+abstract mixin class PacketFrameFormat() {
   /// Header bytes. For a data shape the payload begins here; for a control shape this is the
   /// whole frame.
   int get headerLength;
@@ -169,7 +167,7 @@ abstract mixin class PacketFrameFormat {
 ///
 /// Dart virtualises with getters, so this is a view over the frame's own bytes and nothing is
 /// copied — unlike the device, which extracts into a `Packet_Meta_T` because C must.
-abstract interface class PacketHeaderPrefix {
+abstract interface class PacketHeaderPrefix() {
   /// The delimiter and the id sit at the same offset in every shape of one codec — the
   /// parser reads them to choose a shape, so it cannot use a shape to find them.
   int get startField;
@@ -192,7 +190,7 @@ abstract interface class PacketHeaderPrefix {
 /// reads as its neutral value and ignores writes — [lengthField] reports the shape's own fixed
 /// length, [checksumField] reports 0 — so a control frame answers the same questions a data
 /// frame does, without a caller testing which it has.
-abstract interface class PacketHeader implements PacketHeaderPrefix {
+abstract interface class PacketHeader() implements PacketHeaderPrefix {
   /// Total frame length as carried on the wire. Reports the shape's fixed length, and
   /// ignores writes, where the shape declares no length field.
   int get lengthField;
@@ -215,12 +213,7 @@ abstract interface class PacketHeader implements PacketHeaderPrefix {
 ///
 /// Descriptor-driven throughout, because this is read while the buffer is still filling and a
 /// struct cast throws below its own length.
-final class _CodecPrefix implements PacketHeaderPrefix {
-  const _CodecPrefix(this._codec, this._frame);
-
-  final PacketCodec _codec;
-  final ByteData _frame;
-
+final class const _CodecPrefix(final PacketCodec _codec, final ByteData _frame) implements PacketHeaderPrefix {
   /// Every shape places the delimiter and the id identically, so the data shape answers for
   /// where they are. Which shape the *rest* of the frame follows is [_shape].
   PacketFrameFormat get _prefix => _codec.dataFormat;
@@ -253,12 +246,7 @@ final class _CodecPrefix implements PacketHeaderPrefix {
 }
 
 /// The default [PacketHeader]: the format's own descriptors, read and written in place.
-final class _FormatHeader implements PacketHeader {
-  const _FormatHeader(this._format, this._frame);
-
-  final PacketFrameFormat _format;
-  final ByteData _frame;
-
+final class const _FormatHeader(final PacketFrameFormat _format, final ByteData _frame) implements PacketHeader {
   @override
   int get startField => _format.startField.getWord(_frame, _format.endian);
   @override

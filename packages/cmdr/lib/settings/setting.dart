@@ -1,7 +1,7 @@
 // with UnionValueKey<V>
 import 'dart:async';
 
-abstract interface class Setting<V> {
+abstract interface class Setting<V>() {
   // String get key;
 
   List<V>? get valueRange; // non-null for Enum types, or string options

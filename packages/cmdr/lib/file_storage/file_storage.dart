@@ -8,12 +8,7 @@ export 'dart:convert';
 ///   a FileCodec for encoding/decoding, and File read/write
 ///   optionally mixin a notifier for UI updates
 ///   optionally cache contents or user controller
-abstract class FileStorage<T> {
-  const FileStorage({this.extensions, this.defaultName});
-
-  final List<String>? extensions;
-  final String? defaultName;
-
+abstract class const FileStorage<T>({final List<String>? extensions, final String? defaultName}) {
   // per class/type
   // getter over mixin for codecs with state to maintain encapsulation
   // caller fuses to string codec
@@ -40,9 +35,7 @@ abstract class FileStorage<T> {
 
 typedef FileStringCodec<T> = FileCodec<T, String>;
 
-abstract class FileCodec<S, T> extends Codec<S, T> {
-  const FileCodec();
-
+abstract class const FileCodec<S, T>() extends Codec<S, T> {
   @override
   T encode(S input);
   @override
@@ -54,9 +47,7 @@ abstract class FileCodec<S, T> extends Codec<S, T> {
   Converter<T, S> get decoder => _SimpleConverter(decode);
 }
 
-class _SimpleConverter<S, T> extends Converter<S, T> {
-  const _SimpleConverter(this._convert);
-  final T Function(S) _convert;
+class const _SimpleConverter<S, T>(final T Function(S) _convert) extends Converter<S, T> {
   @override
   T convert(S input) => _convert(input);
 }

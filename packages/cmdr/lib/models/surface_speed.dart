@@ -60,7 +60,7 @@ class SurfaceSpeed {
   // }
 }
 
-enum SpeedUnits {
+enum SpeedUnits() {
   mph,
   kmh,
   rpm,

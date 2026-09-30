@@ -30,9 +30,7 @@ abstract interface class Link {
 }
 
 /// Inert placeholder — safe to call any method without null checks.
-class _LinkUninitialized implements Link {
-  const _LinkUninitialized();
-
+class const _LinkUninitialized() implements Link {
   @override
   String? get portActiveName => null;
   @override
@@ -63,10 +61,7 @@ class _LinkUninitialized implements Link {
 ///
 /// Every variant carries a [message] suitable for direct display in UI.
 ///
-sealed class LinkStatus {
-  const LinkStatus(this.message);
-  final String message;
-
+sealed class const LinkStatus(final String message) {
   bool get isConnected => switch (this) {
     LinkConnected() => true,
     _ => false,
@@ -74,16 +69,10 @@ sealed class LinkStatus {
 }
 
 /// Connection established successfully.
-class LinkConnected extends LinkStatus {
-  const LinkConnected([super.message = '']);
-}
+class const LinkConnected([super.message = '']) extends LinkStatus;
 
 /// Connection is closed (either was never open, or cleanly disconnected).
-class LinkDisconnected extends LinkStatus {
-  const LinkDisconnected([super.message = '']);
-}
+class const LinkDisconnected([super.message = '']) extends LinkStatus;
 
 /// An error prevented the operation from completing.
-class LinkError extends LinkStatus {
-  const LinkError(super.message);
-}
+class const LinkError(super.message) extends LinkStatus;

@@ -5,8 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 // SharedPreferencesRepository
 // Wrap with type parameter get/set and init
 // class SettingsService with ChangeNotifier {
-class SharedPrefService {
-  SharedPrefService._();
+class SharedPrefService._() {
   static final SharedPrefService main = SharedPrefService._();
   factory SharedPrefService() => main;
 
@@ -48,7 +47,7 @@ class SharedPrefService {
 // abstract interface class Setting<T>  = ServiceKey<T> UnionValueKey<V>
 
 // SettingBase using SharedPreferences
-abstract mixin class SharedPrefSetting<T> implements Setting<T?> {
+abstract mixin class SharedPrefSetting<T>() implements Setting<T?> {
   String get key;
 
   @override

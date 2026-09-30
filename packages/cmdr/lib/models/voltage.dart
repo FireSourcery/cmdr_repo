@@ -28,10 +28,9 @@ class VDivider {
   int get hashCode => r1.hashCode ^ r2.hashCode;
 }
 
-class VBattery {
-  const VBattery(this.vEmpty, this.vFull);
-  final double vEmpty; // v0
-  final double vFull; // v100
+class const VBattery(final double vEmpty, final double vFull) {
+// v0
+// v100
 
   double chargeOf(num volts) => (volts - vEmpty) / (vFull - vEmpty);
   // double chargeOfAdcu(int adcu) => adcu;

@@ -6,9 +6,7 @@ import 'dart:typed_data';
 import '../base/protocol.dart';
 import 'mot_packet.dart';
 
-class MotProtocolSocket extends ProtocolSocket {
-  MotProtocolSocket(super.protocol);
-
+class MotProtocolSocket(super.protocol) extends ProtocolSocket {
   ///
   /// Base wrappers
   ///

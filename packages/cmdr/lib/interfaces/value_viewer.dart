@@ -2,7 +2,7 @@ import 'package:cmdr/type_ext/stringifier.dart';
 import 'package:flutter/foundation.dart';
 
 // setting/var notifier
-abstract interface class ValueViewer<V> {
+abstract interface class ValueViewer<V>() {
   // alternatively handle in constructor
   // FloatingLabelAlignment? get labelAlignment;
   bool get showLabel;

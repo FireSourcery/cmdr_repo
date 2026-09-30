@@ -11,9 +11,7 @@ typedef ServiceSetSlice<K, V, S> = ({Iterable<(K, V)> pairs, Iterable<S>? status
 ///
 // implements IOSink
 // MappedService
-abstract mixin class ServiceIO<K, V, S> {
-  const ServiceIO();
-
+abstract mixin class const ServiceIO<K, V, S>() {
   bool get isConnected;
 
   FutureOr<V?> get(K key);
@@ -102,33 +100,18 @@ abstract mixin class ServiceIO<K, V, S> {
   }
 }
 
-class ServicePollStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceGetSlice<K, V>> {
-  ServicePollStreamHandler(this.protocolService, this.inputGetter, super.onDataSlice);
-
-  final ServiceIO<K, V, S> protocolService;
-  final Iterable<K> Function() inputGetter;
-
+class ServicePollStreamHandler<K, V, S>(final ServiceIO<K, V, S> protocolService, final Iterable<K> Function() inputGetter, super.onDataSlice) extends ServiceStreamHandler<ServiceGetSlice<K, V>> {
   @override
   Stream<ServiceGetSlice<K, V>> get stream => protocolService.pollFlex(inputGetter, delay: const Duration(milliseconds: 1));
 }
 
-class ServicePushStreamHandler<K, V, S> extends ServiceStreamHandler<ServiceSetSlice<K, V, S>> {
-  ServicePushStreamHandler(this.protocolService, this.inputGetter, super.onDataSlice);
-
-  final ServiceIO<K, V, S> protocolService;
-  final Iterable<(K, V)> Function() inputGetter;
-
+class ServicePushStreamHandler<K, V, S>(final ServiceIO<K, V, S> protocolService, final Iterable<(K, V)> Function() inputGetter, super.onDataSlice) extends ServiceStreamHandler<ServiceSetSlice<K, V, S>> {
   @override
   Stream<ServiceSetSlice<K, V, S>> get stream => protocolService.push(inputGetter, delay: const Duration(milliseconds: 1));
 }
 
-abstract class ServiceStreamHandler<T> {
-  ServiceStreamHandler(this.onDataSlice);
-
-  // createStream()
+abstract class ServiceStreamHandler<T>(final void Function(T data) onDataSlice) {
   Stream<T> get stream; // creates a new stream, call from begin() only
-
-  final void Function(T data) onDataSlice;
 
   StreamSubscription? streamSubscription;
   bool get isStopped => streamSubscription == null;

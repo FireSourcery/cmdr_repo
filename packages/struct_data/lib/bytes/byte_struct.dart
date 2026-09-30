@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:collection/collection.dart';
 
 import '../general/struct.dart';
-import '../word/word.dart';
 import 'typed_array.dart';
 import 'typed_field.dart';
 
@@ -36,15 +35,11 @@ extension type const ByteForm<K extends ByteField>(List<K> _fields) implements S
 /// ffi.Struct cannot mixin for Enumerated keyed access.
 /// boundary checking on access.
 ///
-abstract class ByteStructBase<S extends ByteStructBase<S, K>, K extends ByteField> with StructBase<S, K, int> {
-  const ByteStructBase(this.byteData);
-
-  // handle Array access
-  // only primitive types are keyed (and included in serialization). array sizes individual define by subclass. e.g. payload
-  // handled with extension on bytedata
-  final ByteData byteData;
+abstract class const ByteStructBase<S extends ByteStructBase<S, K>, K extends ByteField>(final ByteData byteData) with StructBase<S, K, int> {
+  @override
   List<K> get keys; // a method that is the meta contents, fieldsList
 
+  @override
   ByteStruct<K> get data => byteData as ByteStruct<K>; // ByteData as base type of TypedData for immediate keyed access
 
   int get size => byteData.lengthInBytes;
@@ -84,11 +79,9 @@ abstract mixin class ByteField<V extends NativeType> implements TypedField<V>, F
   bool setInOrNot(ByteData byteData, int value) => byteData.setWordOrNotAt<V>(offset, value);
 }
 
-class _ByteField<V extends NativeType> with TypedField<V>, ByteField<V> {
-  const _ByteField(this.offset);
-
+class const _ByteField<V extends NativeType>(
   @override
-  final int offset;
+  final int offset) with TypedField<V>, ByteField<V> {
 }
 
 // extension ByteFieldExtension on ByteField {

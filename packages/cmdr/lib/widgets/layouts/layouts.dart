@@ -2,28 +2,21 @@ import 'package:flutter/material.dart';
 
 /// Screen Layouts
 
-class ExpandedColumnExpanded extends StatelessWidget {
-  const ExpandedColumnExpanded(this.children, {super.key});
-  final List<Widget> children;
+class const ExpandedColumnExpanded(final List<Widget> children, {super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Expanded(
     child: Column(children: [for (final child in children) Expanded(child: child)]),
   );
 }
 
-class ExpandedRowExpanded extends StatelessWidget {
-  const ExpandedRowExpanded(this.children, {super.key});
-  final List<Widget> children;
+class const ExpandedRowExpanded(final List<Widget> children, {super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Expanded(
     child: Row(children: [for (final child in children) Expanded(child: child)]),
   );
 }
 
-class FlexExpanded extends StatelessWidget {
-  const FlexExpanded(this.direction, this.children, {super.key});
-  final Axis direction;
-  final List<Widget> children;
+class const FlexExpanded(final Axis direction, final List<Widget> children, {super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Flex(
     direction: direction,
@@ -31,10 +24,7 @@ class FlexExpanded extends StatelessWidget {
   );
 }
 
-class ExpandedFlexExpanded extends StatelessWidget {
-  const ExpandedFlexExpanded(this.direction, this.children, {/* flexfactor */ super.key});
-  final Axis direction;
-  final List<Widget> children;
+class const ExpandedFlexExpanded(final Axis direction, final List<Widget> children, {/* flexfactor */ super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Expanded(
     child: Flex(
@@ -44,14 +34,8 @@ class ExpandedFlexExpanded extends StatelessWidget {
   );
 }
 
-class Grid4 extends StatelessWidget {
-  const Grid4(this.upperLeft, this.upperRight, this.lowerLeft, this.lowerRight, {super.key});
+class const Grid4(final Widget upperLeft, final Widget upperRight, final Widget lowerLeft, final Widget lowerRight, {super.key}) extends StatelessWidget {
   Grid4.list(List<Widget> children, {Key? key}) : this(children[0], children[1], children[2], children[3], key: key);
-
-  final Widget upperLeft;
-  final Widget upperRight;
-  final Widget lowerLeft;
-  final Widget lowerRight;
 
   @override
   Widget build(BuildContext context) {
@@ -68,14 +52,7 @@ class Grid4 extends StatelessWidget {
   }
 }
 
-class Grid3 extends StatelessWidget {
-  const Grid3(this.half, this.quarter1, this.quarter2, {this.direction = Axis.horizontal, this.isHalfLeading = true, super.key});
-  final Widget half;
-  final Widget quarter1;
-  final Widget quarter2;
-  final Axis direction;
-  final bool isHalfLeading;
-
+class const Grid3(final Widget half, final Widget quarter1, final Widget quarter2, {final Axis direction = Axis.horizontal, final bool isHalfLeading = true, super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Flex(
@@ -89,20 +66,12 @@ class Grid3 extends StatelessWidget {
   }
 }
 
-class Grid2 extends StatelessWidget {
-  const Grid2(this.half1, this.half2, {this.direction = Axis.horizontal, super.key});
-  final Axis direction;
-  final Widget half1;
-  final Widget half2;
-
+class const Grid2(final Widget half1, final Widget half2, {final Axis direction = Axis.horizontal, super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => FlexExpanded(direction, [half1, half2]);
 }
 
-class ExpandedCard extends StatelessWidget {
-  const ExpandedCard(this.child, {this.flex = 1, super.key});
-  final Widget child;
-  final int flex;
+class const ExpandedCard(final Widget child, {final int flex = 1, super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Expanded(
     flex: flex,
@@ -115,23 +84,15 @@ class ExpandedCard extends StatelessWidget {
   );
 }
 
-class Grid6 extends StatelessWidget {
-  const Grid6({
-    required this.leftPanel,
-    required this.rightPanel,
-    required this.bottomLeftLeft,
-    required this.bottomLeftCenter,
-    required this.bottomRightCenter,
-    required this.bottomRightRight,
+class const Grid6({
+    required final Widget leftPanel,
+    required final Widget rightPanel,
+    required final Widget bottomLeftLeft,
+    required final Widget bottomLeftCenter,
+    required final Widget bottomRightCenter,
+    required final Widget bottomRightRight,
     super.key,
-  });
-  final Widget leftPanel;
-  final Widget rightPanel;
-  final Widget bottomLeftLeft;
-  final Widget bottomLeftCenter;
-  final Widget bottomRightCenter;
-  final Widget bottomRightRight;
-
+  }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(

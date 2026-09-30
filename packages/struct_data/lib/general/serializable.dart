@@ -69,7 +69,7 @@ typedef SerializableEntry<V> = ({SerializableField<V> key, V value});
 /// a key to each field, an type parameter, with an generated string, use as json key;
 /// effectively describe the memory allocation requirements
 /// maps entirety of the struct
-abstract mixin class SerializableField<V> implements Enum, Field<V> {
+abstract mixin class SerializableField<V>() implements Enum, Field<V> {
   // a function using a known interface access the fields of the user's class, maps ids to getters
   // within scope of V, for auto type checking. otherwise data class map
   // V getIn(covariant Serializable struct);

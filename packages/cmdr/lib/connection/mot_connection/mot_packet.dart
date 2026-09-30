@@ -13,9 +13,7 @@ export 'package:struct_data/packet/packet_parser.dart';
 /// Two frame shapes, and they disagree about more than length: the data header is 8 bytes
 /// with a 16-bit sum at offset 4, the control frame is 4 bytes with a 1-byte XOR at offset 3.
 /// Each is its own [PacketFrameFormat] for that reason.
-final class MotPacketCodec extends PacketCodec {
-  const MotPacketCodec();
-
+final class const MotPacketCodec() extends PacketCodec {
   @override
   int get lengthMax => 40;
   @override
@@ -47,9 +45,7 @@ final class MotPacketCodec extends PacketCodec {
 }
 
 /// `[Start, Id, Length, Sequence, Checksum:2, Flex:2]`, then payload.
-final class MotDataFormat with PacketFrameFormat {
-  const MotDataFormat();
-
+final class const MotDataFormat() with PacketFrameFormat {
   @override
   int get headerLength => 8;
   @override
@@ -73,9 +69,7 @@ final class MotDataFormat with PacketFrameFormat {
 /// this check byte went out as whatever the last frame had there. The device does not verify
 /// it today (`MotPacket_IsValid`'s control branch is commented out at MotPacket.c:150), which
 /// is why that was latent rather than broken.
-final class MotControlFormat with PacketFrameFormat {
-  const MotControlFormat();
-
+final class const MotControlFormat() with PacketFrameFormat {
   @override
   int get headerLength => 4;
   @override
@@ -188,7 +182,7 @@ base class MotPacketHeaderPrefix extends Struct implements PacketHeaderPrefix {
 /// [PacketId] tables
 ///
 
-sealed class MotPacketId implements PacketId {
+sealed class MotPacketId() implements PacketId {
   static MotPacketId? of(int intId) => _lookUpMap[intId];
 
   /// What an *arriving* byte means. Response ids share their request's byte, so they are not
@@ -200,7 +194,9 @@ sealed class MotPacketId implements PacketId {
   });
 }
 
-enum MotPacketControlId implements PacketControlId, MotPacketId {
+enum MotPacketControlId(
+  @override
+  final int intId) implements PacketControlId, MotPacketId {
   MOT_PACKET_PING(0xA0),
   // MOT_PACKET_PING_RESP(0xA1),
   MOT_PACKET_SYNC_ACK(0xA2),
@@ -210,24 +206,24 @@ enum MotPacketControlId implements PacketControlId, MotPacketId {
   MOT_PACKET_PING_ALT(0xAA),
   MOT_PACKET_PING_BOOT(0xAB);
 
-  const MotPacketControlId(this.intId);
-
-  @override
-  final int intId;
 }
 
-enum MotPacketReservedId implements MotPacketId {
+enum MotPacketReservedId(
+  @override
+  final int intId) implements MotPacketId {
   MOT_PACKET_ID_RESERVED_255(0xFF);
 
-  const MotPacketReservedId(this.intId);
-
-  @override
-  final int intId;
 }
 
 /// One row per exchange: the request byte, the codec that writes it, the codec that reads the
 /// answer, and — only where it differs — the byte the answer arrives under.
-enum MotPacketRequestId<T, R> implements PacketRequestId<T, R>, MotPacketId {
+enum MotPacketRequestId<T, R>(
+  @override
+  final int intId, 
+  @override
+  final PayloadCaster<T> caster, 
+  @override
+  final PayloadCaster<R> responseCaster, [int? responseId]) implements PacketRequestId<T, R>, MotPacketId {
   /* Fixed Length */
   MOT_PACKET_STOP_ALL<void, int>(0x00, StopRequest.cast, StopResponse.cast),
   MOT_PACKET_VERSION<void, VersionResponseValues>(0x01, VersionRequest.cast, VersionResponse.cast),
@@ -255,17 +251,10 @@ enum MotPacketRequestId<T, R> implements PacketRequestId<T, R>, MotPacketId {
 
   /// [responseId] defaults to the request's own byte, which is every row above. An exchange
   /// answered under a different byte passes it as the fourth argument.
-  const MotPacketRequestId(this.intId, this.caster, this.responseCaster, [int? responseId]) : responseId = responseId ?? intId;
+  this : responseId = responseId ?? intId;
 
-  @override
-  final int intId;
-  @override
-  final PayloadCaster<T> caster;
   @override
   final int responseId;
-  @override
-  final PayloadCaster<R> responseCaster;
-
   @override
   String toString() => name;
 }
@@ -572,8 +561,7 @@ base class Var32WriteResponse extends Struct implements Payload<Var32WriteRespon
 ///
 /// Stop
 ///
-class StopRequest implements Payload<void> {
-  StopRequest();
+class StopRequest() implements Payload<void> {
   factory StopRequest.cast(TypedData typedData) => StopRequest();
 
   @override
@@ -604,9 +592,7 @@ base class StopResponse extends Struct implements Payload<int> {
 ///
 typedef VersionResponseValues = ({int protocol, int library, int firmware});
 
-class VersionRequest implements Payload<void> {
-  VersionRequest();
-
+class VersionRequest() implements Payload<void> {
   factory VersionRequest.cast(TypedData typedData) => VersionRequest();
 
   @override

@@ -6,10 +6,7 @@ export '../links/serial_link.dart';
 ///
 /// SerialLinkView
 ///
-class SerialLinkConfigController with ChangeNotifier {
-  SerialLinkConfigController(this.serialLink);
-  final SerialLink serialLink;
-
+class SerialLinkConfigController(final SerialLink serialLink) with ChangeNotifier {
   void updatePortName(String name) {
     serialLink.portConfigName = name;
     notifyListeners();
@@ -24,22 +21,19 @@ class SerialLinkConfigController with ChangeNotifier {
 ///
 /// SerialLinkView
 ///
-abstract class SerialLinkView extends StatelessWidget {
-  const SerialLinkView._inner(this.configController, {super.key});
-
+abstract class const SerialLinkView._inner(final SerialLinkConfigController configController, {super.key}) extends StatelessWidget {
   const factory SerialLinkView.port(SerialLinkConfigController configController) = SerialLinkPortView;
   const factory SerialLinkView.portConfig(SerialLinkConfigController configController) = SerialLinkConfigView;
   const factory SerialLinkView.portDetails(SerialLinkConfigController configController) = SerialLinkPortDetailsView;
 
-  final SerialLinkConfigController configController;
   SerialLink get serialLink => configController.serialLink;
 }
 
 ///
 /// SerialLinkView
 ///
-class SerialLinkPortView extends SerialLinkView {
-  const SerialLinkPortView(super.configController, {super.key}) : super._inner();
+class const SerialLinkPortView(super.configController, {super.key}) extends SerialLinkView {
+  this : super._inner();
 
   List<PopupMenuEntry<String>> itemBuilder(_) => [for (final portString in SerialLink.portsAvailable) PopupMenuItem(value: portString, child: Text(portString))];
 
@@ -66,8 +60,8 @@ class SerialLinkPortView extends SerialLinkView {
 ///
 /// SerialLinkView
 ///
-class SerialLinkConfigView extends SerialLinkView {
-  const SerialLinkConfigView(super.configController, {super.key}) : super._inner();
+class const SerialLinkConfigView(super.configController, {super.key}) extends SerialLinkView {
+  this : super._inner();
 
   List<PopupMenuEntry<int>> itemBuilder(_) => [for (final baudRate in SerialLink.baudList) PopupMenuItem(value: baudRate, child: Text(baudRate.toString()))];
 
@@ -91,8 +85,8 @@ class SerialLinkConfigView extends SerialLinkView {
   }
 }
 
-class SerialLinkPortDetailsView extends SerialLinkView {
-  const SerialLinkPortDetailsView(super.configController, {super.key}) : super._inner();
+class const SerialLinkPortDetailsView(super.configController, {super.key}) extends SerialLinkView {
+  this : super._inner();
 
   @override
   Widget build(BuildContext context) {
@@ -106,11 +100,7 @@ class SerialLinkPortDetailsView extends SerialLinkView {
 ///
 /// libserialport SerialPort View
 ///
-class PortDetailsView extends StatelessWidget {
-  const PortDetailsView(this.serialPortName, {super.key});
-
-  final String? serialPortName;
-
+class const PortDetailsView(final String? serialPortName, {super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final port = (SerialPort.availablePorts.contains(serialPortName)) ? SerialPort(serialPortName!) : null;
@@ -179,10 +169,7 @@ extension SerialPortInt on int {
   }
 }
 
-class _ListTile extends StatelessWidget {
-  const _ListTile(this.label, this.value);
-  final String label;
-  final String? value;
+class const _ListTile(final String label, final String? value) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListTile(title: Text(value ?? 'N/A'), subtitle: Text(label));
 }

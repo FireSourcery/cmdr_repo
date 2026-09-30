@@ -1,18 +1,12 @@
-import 'package:struct_data/binary_format/quantity_format.dart';
 import 'package:flutter/material.dart';
 
 import '../var_notifier.dart';
-import 'var_widget.dart';
 
 export 'var_io_field.dart';
 export 'var_input_dialog.dart';
 export 'var_widget.dart';
 
-class VarSwitch extends StatelessWidget {
-  const VarSwitch(this.varNotifier, {super.key});
-
-  final VarNotifier<bool> varNotifier;
-
+class const VarSwitch(final VarNotifier<bool> varNotifier, {super.key}) extends StatelessWidget {
   Widget builder(BuildContext context, Widget? child) => Switch.adaptive(value: varNotifier.value, onChanged: varNotifier.updateByView);
 
   @override
@@ -21,11 +15,7 @@ class VarSwitch extends StatelessWidget {
   }
 }
 
-class VarSlider extends StatelessWidget {
-  const VarSlider(this.varNotifier, {super.key});
-
-  final VarNotifier<num> varNotifier;
-
+class const VarSlider(final VarNotifier<num> varNotifier, {super.key}) extends StatelessWidget {
   Widget builder(BuildContext context, Widget? child) {
     // must be num defined if type is numeric
     final min = varNotifier.numLimits!.min.toDouble();
@@ -55,13 +45,7 @@ class VarSlider extends StatelessWidget {
 /// A var button does not have a variable or view value.
 /// This widget is only for convenience of mapping a VarKey to a button.
 ///
-class VarButton<V> extends StatelessWidget {
-  const VarButton(this.varNotifier, {required this.writeValue, this.labelOverwrite, super.key});
-
-  final VarNotifier<V> varNotifier;
-  final V writeValue;
-  final Widget? labelOverwrite;
-
+class const VarButton<V>(final VarNotifier<V> varNotifier, {required final V writeValue, final Widget? labelOverwrite, super.key}) extends StatelessWidget {
   void onPressed() => varNotifier.updateByView(writeValue);
 
   @override

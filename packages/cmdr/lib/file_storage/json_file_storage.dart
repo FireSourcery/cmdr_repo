@@ -1,11 +1,9 @@
-import 'dart:convert';
 
 import 'file_storage.dart';
 
 typedef JsonMap = Map<String, Object?>;
 
-class JsonFileCodec extends FileStringCodec<JsonMap> {
-  const JsonFileCodec();
+class const JsonFileCodec() extends FileStringCodec<JsonMap> {
   static const JsonEncoder _encoder = JsonEncoder.withIndent(' ');
   static const JsonDecoder _decoder = JsonDecoder();
 
@@ -15,8 +13,8 @@ class JsonFileCodec extends FileStringCodec<JsonMap> {
   String encode(JsonMap input) => _encoder.convert(input);
 }
 
-abstract class JsonFileStorage extends FileStorage<JsonMap> {
-  const JsonFileStorage({super.defaultName, super.extensions = const ['json', 'txt']}) : super();
+abstract class const JsonFileStorage({super.defaultName, super.extensions = const ['json', 'txt']}) extends FileStorage<JsonMap> {
+  this : super();
 
   factory JsonFileStorage.handlers(Object? Function(JsonMap value) fromJson, JsonMap Function() toJson, {String? defaultName}) = _JsonFileStorageWithHandlers;
 
@@ -29,12 +27,7 @@ abstract class JsonFileStorage extends FileStorage<JsonMap> {
   JsonMap buildContents();
 }
 
-class _JsonFileStorageWithHandlers extends JsonFileStorage {
-  const _JsonFileStorageWithHandlers(this._fromJson, this._toJson, {super.defaultName});
-
-  final void Function(JsonMap json) _fromJson;
-  final JsonMap Function() _toJson;
-
+class const _JsonFileStorageWithHandlers(final void Function(JsonMap json) _fromJson, final JsonMap Function() _toJson, {super.defaultName}) extends JsonFileStorage {
   @override
   void parseContents(JsonMap json) => _fromJson(json);
   @override

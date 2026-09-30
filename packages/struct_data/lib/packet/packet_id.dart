@@ -15,7 +15,7 @@ part of 'packet.dart';
 /// makes an id table a plain `enum` declaration. Note that this is load-bearing — an enum
 /// does *not* satisfy a hand-declared `String get name`, only the `EnumName` extension that
 /// `implements Enum` brings, so every id must be an enum value.
-abstract interface class PacketId implements Enum {
+abstract interface class PacketId() implements Enum {
   int get intId;
 }
 
@@ -27,14 +27,14 @@ abstract interface class PacketId implements Enum {
 /// probe and a termination are control traffic just as an acknowledgment is, which is also why
 /// this is not called `PacketSyncId` — only two of the four synchronise anything, and `sync`
 /// already means synchronous execution in Dart and the start delimiter in framing.
-abstract interface class PacketControlId implements PacketId {}
+abstract interface class PacketControlId() implements PacketId {}
 
 /// An id that carries a payload, together with the codec for it.
 ///
 /// One id, one payload type, one codec — which is the unit that actually exists on the wire.
 /// A one-way command is exactly this and nothing more: it can be built and sent, and the
 /// type says no answer is coming.
-abstract interface class PacketPayloadId<V> implements PacketId {
+abstract interface class PacketPayloadId<V>() implements PacketId {
   PayloadCaster<V> get caster;
 }
 
@@ -60,7 +60,7 @@ abstract interface class PacketPayloadId<V> implements PacketId {
 ///
 /// One-way is expressed by *not* being a [PacketRequestId]. The type, rather than a null,
 /// carries whether an answer is expected.
-abstract interface class PacketRequestId<T, R> implements PacketPayloadId<T> {
+abstract interface class PacketRequestId<T, R>() implements PacketPayloadId<T> {
   /// The byte the answer arrives under. Defaults to this id's own.
   int get responseId;
 
@@ -79,8 +79,8 @@ extension PacketIdString on PacketId {
 ///
 /// Lists the ids a codec must recognise on arrival. A response is not a separate id — it is
 /// a byte and a codec on its request's row — so there is nothing here to collide with it.
-final class PacketIdMap {
-  PacketIdMap(Iterable<Iterable<PacketId>> idSets)
+final class PacketIdMap(Iterable<Iterable<PacketId>> idSets) {
+  this
     : _byIntId = Map<int, PacketId>.unmodifiable({
         for (final idSet in idSets)
           for (final id in idSet) id.intId: id,
@@ -134,7 +134,7 @@ typedef PayloadCaster<V> = Payload<V> Function(TypedData payload);
 /// directions speak one type — the device handler's `p_RxMeta` / `p_TxMeta` pair, reached
 /// differently: it extracts wire fields into a normalized struct because C has to, while this
 /// is a view over the frame's own bytes.
-abstract interface class Payload<V> {
+abstract interface class Payload<V>() {
   /// Write `values` into this payload, and return what the framing needs to describe it.
   ///
   /// **Deliberately not symmetric with [parse].** The two directions do not carry the same
@@ -180,12 +180,9 @@ abstract interface class Payload<V> {
 ///
 /// A field rather than a method, for the same reason the prefix's is a method: this one is
 /// stored, that one is computed.
-class PayloadMeta {
-  const PayloadMeta(this.length);
-
+class const PayloadMeta(
   /// Payload bytes. Excludes the header.
-  final int length;
-
+  final int length) {
   static const PayloadMeta empty = PayloadMeta(0);
 
   @override

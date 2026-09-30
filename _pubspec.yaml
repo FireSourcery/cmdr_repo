@@ -6,7 +6,7 @@ homepage: https://github.com/FireSourcery/cmdr
 publish_to: 'none'
 
 environment:
-  sdk: ^3.10.0
+  sdk: ^3.13.0
 #   flutter: ^3.32.0 
 
 # dependencies:

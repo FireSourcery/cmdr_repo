@@ -12,10 +12,7 @@ export '../src/type_markers.dart';
 ///   [WordStruct] - backed by [Bits/int]
 ///
 /// mixin can be applied to enum
-abstract mixin class TypedField<T extends NativeType> {
-  const TypedField._();
-  // const factory TypedField(int offset) = TypedOffset<T>;
-
+abstract mixin class const TypedField<T extends NativeType>._() {
   int get offset; // index of the first byte
 
   int get size => _sizeOf<T>();

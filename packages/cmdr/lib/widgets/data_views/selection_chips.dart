@@ -9,25 +9,16 @@ typedef ChipWrapperBuilder = Widget Function(BuildContext context, List<Widget> 
 
 /// Single select
 // Generic parameter ensures getter and setter are of the exact same type as List<T>
-class SingleSelectChips<T> extends StatelessWidget {
-  const SingleSelectChips({
+class const SingleSelectChips<T>({
     super.key,
-    required this.selectable,
-    required this.onSelected,
-    required this.selected,
-    this.spacing = 10,
-    this.labelBuilder,
-    this.builder,
-  });
-
-  final List<T> selectable;
-  final T? selected;
-  final ValueSetter<T?> onSelected;
+    required final List<T> selectable,
+    required final ValueSetter<T?> onSelected,
+    required final T? selected,
+    final double spacing = 10,
+    final ValueWidgetBuilder<T>? labelBuilder,
+    final ChipWrapperBuilder? builder,
+  }) extends StatelessWidget {
   // final ValueSetter<T?> setSelected;
-  final double spacing;
-  final ValueWidgetBuilder<T>? labelBuilder;
-  final ChipWrapperBuilder? builder;
-
   @override
   Widget build(BuildContext context) {
     final chips = [
@@ -59,33 +50,23 @@ class SingleSelectChips<T> extends StatelessWidget {
 //     );
 //   },
 // ),
-class MultiSelectChips<T> extends StatelessWidget {
-  const MultiSelectChips({
+class const MultiSelectChips<T>({
     super.key,
-    required this.selectable,
-    required this.selectedState,
-    this.selectMax,
-    this.labelBuilder,
-    this.spacing = 10,
-    this.onSelected,
-    this.onAdd,
-    this.onRemove,
-    this.builder,
-  });
+    required final Iterable<T> selectable,
+    required final Set<T> selectedState,
+    final int? selectMax,
+    final ValueWidgetBuilder<T>? labelBuilder,
+    final double spacing = 10,
+    final ValueSetter<T>? onSelected,
+    final ValueSetter<T>? onAdd,
+    final ValueSetter<T>? onRemove,
+    final ChipWrapperBuilder? builder,
+  }) extends StatelessWidget {
+// must be a new list
+// externally maintained state
 
-  final Iterable<T> selectable; // must be a new list
-  final Set<T> selectedState; // externally maintained state
-
-  final ValueSetter<T>? onSelected; // does not include add/remove info
-  final ValueSetter<T>? onAdd; // alternatively ValueSetter<(T,bool)>
-  final ValueSetter<T>? onRemove;
-
-  final int? selectMax;
-  final ValueWidgetBuilder<T>? labelBuilder;
-  final double spacing;
-
-  final ChipWrapperBuilder? builder;
-
+// does not include add/remove info
+// alternatively ValueSetter<(T,bool)>
   @override
   Widget build(BuildContext context) {
     final chips = [
@@ -113,12 +94,7 @@ class MultiSelectChips<T> extends StatelessWidget {
   }
 }
 
-class _Label<T> extends StatelessWidget {
-  const _Label({super.key, required this.labelBuilder, required this.chipKey});
-
-  final ValueWidgetBuilder<T>? labelBuilder;
-  final T chipKey;
-
+class const _Label<T>({super.key, required final ValueWidgetBuilder<T>? labelBuilder, required final T chipKey}) extends StatelessWidget {
   // static Widget _enumLabelBuilder(BuildContext context, dynamic value, Widget? child) => Text(value.name.pascalCase);
   // static Widget _objectLabelBuilder(BuildContext context, dynamic value, Widget? child) => Text(value.toString().pascalCase);
 

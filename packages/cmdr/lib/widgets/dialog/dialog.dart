@@ -4,19 +4,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../data_views/selection_chips.dart';
 
 /// "Subtypes"
 
-class ConfirmationDialog<T> extends StatelessWidget {
-  const ConfirmationDialog({super.key, this.onCancel, this.onConfirm, this.title, this.icon, this.iconColor, this.content});
-  final ValueGetter<T>? onCancel;
-  final ValueGetter<T>? onConfirm;
-  final Widget? title;
-  final Widget? icon;
-  final Color? iconColor;
-  final Widget? content;
-
+class const ConfirmationDialog<T>({super.key, final ValueGetter<T>? onCancel, final ValueGetter<T>? onConfirm, final Widget? title, final Widget? icon, final Color? iconColor, final Widget? content}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -36,22 +27,15 @@ class ConfirmationDialog<T> extends StatelessWidget {
 ///   It displays a loading indicator while the operation is in progress.
 ///   The dialog closes when the operation is complete.
 ///   T is the return type of the async operation, and is passed to the onConfirmContent builder.
-class AsyncConfirmationDialog<T> extends StatefulWidget {
-  const AsyncConfirmationDialog({super.key, required this.onConfirm, required this.initialContent, required this.onConfirmContent, this.title, this.icon, this.iconColor});
-
-  final Widget initialContent;
-  final AsyncValueGetter<T> onConfirm; // process on confirm, asyncProcess
-  final AsyncWidgetBuilder<T> onConfirmContent; // onConfirm, pending completion, asyncProcessContent
-
-  final Widget? icon;
-  final Color? iconColor;
-  final Widget? title;
+class const AsyncConfirmationDialog<T>({super.key, required final AsyncValueGetter<T> onConfirm, required final Widget initialContent, required final AsyncWidgetBuilder<T> onConfirmContent, final Widget? title, final Widget? icon, final Color? iconColor}) extends StatefulWidget {
+// process on confirm, asyncProcess
+// onConfirm, pending completion, asyncProcessContent
 
   @override
   State<AsyncConfirmationDialog<T>> createState() => _AsyncConfirmationDialogState<T>();
 }
 
-class _AsyncConfirmationDialogState<T> extends State<AsyncConfirmationDialog<T>> {
+class _AsyncConfirmationDialogState<T>() extends State<AsyncConfirmationDialog<T>> {
   final Completer<void> userConfirmation = Completer(); // results of 'Confirm' button, held by widget
   Future<T>? onConfirmProcess; // process onConfirm. Connect after user confirmation
 

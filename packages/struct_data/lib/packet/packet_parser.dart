@@ -23,8 +23,8 @@ export 'packet_buffer.dart';
 /// Always copies the remainder rather than shifting a view over it. That double-buffers, and
 /// it is the deliberate trade the previous version made too: the alternative is tracking a
 /// start offset through every field read, and the buffer is a few hundred bytes.
-final class HeaderParser extends PacketBuffer {
-  HeaderParser(PacketCodec codec, [int? size]) : super(codec, size ?? codec.lengthMax * 4) {
+final class HeaderParser(PacketCodec codec, [int? size]) extends PacketBuffer {
+  this : super(codec, size ?? codec.lengthMax * 4) {
     // Every shape must be at least as long as what it takes to size one, or a whole frame of
     // that shape could arrive and still not be readable.
     assert(codec.prefixLength <= codec.controlFormat.headerLength && codec.prefixLength <= codec.dataFormat.headerLength);
@@ -180,11 +180,7 @@ final class HeaderParser extends PacketBuffer {
 /// finish with it before yielding control, or copy it. This is what lets a frame reach an
 /// application without allocating per packet, and it is why the output sink is driven
 /// synchronously.
-class PacketTransformer extends StreamTransformerBase<Uint8List, Packet> implements EventSink<Uint8List> {
-  PacketTransformer({required this.parser});
-
-  final HeaderParser parser;
-
+class PacketTransformer({required final HeaderParser parser}) extends StreamTransformerBase<Uint8List, Packet> implements EventSink<Uint8List> {
   late final EventSink<Packet> _outputSink;
 
   @override
@@ -262,8 +258,8 @@ extension PacketCodecTransformer on PacketCodec {
   PacketTransformer get transformer => PacketTransformer(parser: HeaderParser(this));
 }
 
-sealed class PacketStatus {}
+sealed class PacketStatus() {}
 
-enum PacketStatusOk implements PacketStatus { ok }
+enum PacketStatusOk() implements PacketStatus { ok }
 
-enum PacketStatusException implements PacketStatus, Exception { meta, checksum }
+enum PacketStatusException() implements PacketStatus, Exception { meta, checksum }

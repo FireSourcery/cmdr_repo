@@ -14,7 +14,7 @@ class Person {
   factory Person.fromJson(Map<String, Object?> json) => Person.fromMap(StructForm(PersonField.values).fromJson(json));
 }
 
-enum PersonField<V extends Object> with SerializableField<V> {
+enum PersonField<V extends Object>() with SerializableField<V> {
   id<int>(),
   age<int>(),
   name<String>()
@@ -46,7 +46,7 @@ enum PersonField<V extends Object> with SerializableField<V> {
 // short hand with mixin
 // person.toMap() instead of StructForm(PersonField.values).mapWithData(person)
 
-enum SerializablePersonField<V extends Object> with SerializableField<V> {
+enum SerializablePersonField<V extends Object>() with SerializableField<V> {
   id<int>(),
   age<int>(),
   name<String>()
@@ -86,6 +86,7 @@ class SerializablePerson with Immutable<SerializablePerson>, Serializable<Serial
 
   factory SerializablePerson.fromJson(Map<String, Object?> json) => SerializablePerson.fromMap(const StructForm(SerializablePersonField.values).fromJson(json));
 
+  @override
   List<SerializablePersonField> get keys => SerializablePersonField.values;
 
   @override
@@ -93,16 +94,15 @@ class SerializablePerson with Immutable<SerializablePerson>, Serializable<Serial
 }
 
 //
-enum SensorField<V extends NativeType> with WordField<V>, TypedField<V> {
+enum SensorField<V extends NativeType>(
+  @override
+  final int offset) with WordField<V>, TypedField<V> {
   deviceId<Uint16>(0),
   sensorType<Uint8>(2),
   flags<Uint8>(3),
   reading<Int32>(4)
   ;
 
-  const SensorField(this.offset);
-  @override
-  final int offset;
 }
 
 void main() {

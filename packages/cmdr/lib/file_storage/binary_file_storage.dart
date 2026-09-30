@@ -31,27 +31,21 @@ abstract mixin class FirmwareFileStorage implements FileStorage<Map<int, Uint8Li
 }
 
 /// hex codec
-class HexFileCodec extends FileStringCodec<List<MemorySegment>> {
-  const HexFileCodec();
-
+class const HexFileCodec() extends FileStringCodec<List<MemorySegment>> {
   @override
   List<MemorySegment> decode(String encoded) => IntelHexFile.fromString(encoded).segments;
   @override
   String encode(List<MemorySegment> input) => throw UnimplementedError();
 }
 
-class HexFileMapCodec extends FileCodec<Map<int, Uint8List>, List<MemorySegment>> {
-  const HexFileMapCodec();
-
+class const HexFileMapCodec() extends FileCodec<Map<int, Uint8List>, List<MemorySegment>> {
   @override
   Map<int, Uint8List> decode(List<MemorySegment> contents) => {for (final e in contents) e.address: e.slice()};
   @override
   List<MemorySegment> encode(Map<int, Uint8List> decoded) => decoded.entries.map((e) => MemorySegment.fromBytes(address: e.key, data: e.value)).toList();
 }
 
-class HexFileStorage extends FileStorage<Map<int, Uint8List>> with FirmwareFileStorage {
-  HexFileStorage({super.defaultName, super.extensions = const ['hex']});
-
+class HexFileStorage({super.defaultName, super.extensions = const ['hex']}) extends FileStorage<Map<int, Uint8List>> with FirmwareFileStorage {
   @override
   Codec<Map<int, Uint8List>, String> get stringCodec => const HexFileMapCodec().fuse(const HexFileCodec());
 

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-mixin class TimerCounter {
-  TimerCounter();
-
+mixin class TimerCounter() {
   final Stopwatch _stopwatch = Stopwatch();
   final ValueNotifier<int> elapsedNotifier = ValueNotifier(0);
   int get elapsed => elapsedNotifier.value;

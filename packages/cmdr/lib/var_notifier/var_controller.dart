@@ -1,19 +1,11 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 
 import 'var_notifier.dart';
-import 'service_io.dart';
-import 'var_cache.dart';
 
 /// [VarRepo]/[VarCache] with [Serivce]
 ///
-class VarCacheController {
-  const VarCacheController({required this.cache, required this.protocolService});
-
-  final VarCache cache;
-  final ServiceIO<int, int, int> protocolService;
-
+class const VarCacheController({required final VarCache cache, required final ServiceIO<int, int, int> protocolService}) {
   void dispose() => cache.dispose();
 
   ///
@@ -111,13 +103,12 @@ class VarCacheController {
 //
 // if an entry is removed from the cache map, listener will still exist synced with previously allocated Var.
 // it will no longer be updated by Streams.
-class VarStreamController extends VarCacheController {
-  VarStreamController({required super.cache, required super.protocolService});
-
+class VarStreamController({required super.cache, required super.protocolService}) extends VarCacheController {
   final List<int> _readBuffer = []; // reuse allocation, no new List each cycle
   final List<(int, int)> _writeBuffer = [];
   final Set<VarPollingScope> _scopes = {};
 
+  @override
   void dispose() {
     endPeriodic().whenComplete(() => cache.dispose());
   }
@@ -187,8 +178,12 @@ class VarStreamController extends VarCacheController {
   }
 
   void resume() {
-    while (pollSubscription?.isPaused == true) pollSubscription?.resume();
-    while (pushSubscription?.isPaused == true) pushSubscription?.resume();
+    while (pollSubscription?.isPaused == true) {
+      pollSubscription?.resume();
+    }
+    while (pushSubscription?.isPaused == true) {
+      pushSubscription?.resume();
+    }
   }
 
   /// Holds the stream for the duration of [action].
@@ -211,9 +206,8 @@ class VarStreamController extends VarCacheController {
   bool get isActive => (pollSubscription?.isPaused == false && pushSubscription?.isPaused == false);
 }
 
-class VarPollingScope {
-  VarPollingScope._(this._controller, Iterable<VarKey> keys) : _keys = Set.unmodifiable(keys);
-  final VarStreamController _controller;
+class VarPollingScope._(final VarStreamController _controller, Iterable<VarKey> keys) {
+  this : _keys = Set.unmodifiable(keys);
   Set<VarKey> _keys;
 
   void update(Iterable<VarKey> keys) => _keys = Set.unmodifiable(keys);
@@ -226,12 +220,7 @@ class VarPollingScope {
 /// call service immediately
 /// value will not be synced with cache
 ///
-class VarSingleController<V> {
-  const VarSingleController({required this.varNotifier, required this.protocolService});
-
-  final ServiceIO<int, int, int> protocolService;
-  final VarNotifier<V> varNotifier;
-
+class const VarSingleController<V>({required final VarNotifier<V> varNotifier, required final ServiceIO<int, int, int> protocolService}) {
   // async send request id, then receiving value
   Future<V?> fetch() async {
     if (await protocolService.get(varNotifier.dataKey) case int data) {

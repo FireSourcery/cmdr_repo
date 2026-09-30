@@ -18,7 +18,7 @@
 /// final connection = MotConnection();
 /// final protocol = MotProtocol();
 /// ```
-library cmdr.mot_connection;
+library;
 
 export 'connection/mot_connection/mot_connection.dart';
 export 'connection/mot_connection/mot_packet.dart';

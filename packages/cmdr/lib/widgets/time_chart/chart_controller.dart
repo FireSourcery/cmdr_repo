@@ -11,18 +11,16 @@ import 'chart_data.dart';
 
 /// TimeChartController
 // notifies on every data update, caller handle selection update
-class ChartController with TimerNotifier, ChangeNotifier {
-  ChartController({
+class ChartController({
     List<ChartEntry>? chartEntries,
-    this.updateInterval = const Duration(milliseconds: 20),
+    var Duration updateInterval = const Duration(milliseconds: 20),
     int samplesMax = 200, // e.g 100 samples at 10ms => 10s display
     int entriesMax = kSelectionCountMax,
-    double? yMin,
-    double? yMax,
-  }) : assert(entriesMax <= kSelectionCountMax),
+    var double? _yMin,
+    var double? _yMax,
+  }) with TimerNotifier, ChangeNotifier {
+  this : assert(entriesMax <= kSelectionCountMax),
        chartEntries = chartEntries ?? [],
-       _yMax = yMax,
-       _yMin = yMin,
        _chartData = ChartData.zero(
          samplesMax: samplesMax,
          linesMax: entriesMax,
@@ -98,7 +96,6 @@ class ChartController with TimerNotifier, ChangeNotifier {
   }
 
   // TimerNotifier timerNotifier = TimerNotifier();
-  Duration updateInterval;
   bool get isActive => _timer?.isActive ?? false;
   bool get isStopped => !isActive;
 
@@ -116,14 +113,12 @@ class ChartController with TimerNotifier, ChangeNotifier {
   // todo view change
   bool get useNormalizedY => true;
 
-  double? _yMin;
   double? get yMin => (useNormalizedY) ? -1.1 : _yMin;
   set yMin(double? value) {
     _yMin = value;
     // notifyListeners();
   }
 
-  double? _yMax;
   double? get yMax => (useNormalizedY) ? 1.1 : _yMax;
   set yMax(double? value) {
     _yMax = value;
@@ -209,28 +204,23 @@ class ChartController with TimerNotifier, ChangeNotifier {
 
 // ChartEntry
 // Chart Data Generator
-class ChartEntry {
-  const ChartEntry({
-    required this.name,
-    required this.valueGetter,
-    this.color,
-    this.onSelect,
-    this.preferredPrecision,
-    this.normalRef = 1,
-  }) : assert(normalRef != 0);
+class const ChartEntry({
+    required final String name,
+    required final ValueGetter<num> valueGetter,
+    final Color? color,
+    final VoidCallback? onSelect,
+    final int? preferredPrecision,
+    final num normalRef = 1,
+  }) {
+  this : assert(normalRef != 0);
 
-  final String name;
-  final ValueGetter<num> valueGetter;
-
-  final num normalRef; // yRange
+// yRange
   // final T key;
 
-  final Color? color; //override default
-  final VoidCallback? onSelect;
-  final int? preferredPrecision;
+//override default
 }
 
-abstract mixin class TimerNotifier implements ChangeNotifier {
+abstract mixin class TimerNotifier() implements ChangeNotifier {
   Stopwatch stopwatch = Stopwatch();
   RestartableTimer? _timer;
   VoidCallback _callback = () {};

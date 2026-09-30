@@ -4,19 +4,9 @@ import "dart:async";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 
-class DriveShift extends StatefulWidget {
-  const DriveShift({super.key, this.onSelect, this.confirmSelected, this.initialSelect, required this.enumF, required this.enumN, required this.enumR, required this.enumP});
-
-  final ValueSetter<Enum>? onSelect;
+class const DriveShift({super.key, final ValueSetter<Enum>? onSelect, final AsyncValueGetter<Enum?>? confirmSelected, final Enum? initialSelect, required final Enum enumF, required final Enum enumN, required final Enum enumR, required final Enum enumP}) extends StatefulWidget {
   // final ValueNotifier<Enum>? valueNotifier;
-  final AsyncValueGetter<Enum?>? confirmSelected;
-  final Enum? initialSelect;
   // directly return users type
-  final Enum enumF;
-  final Enum enumN;
-  final Enum enumR;
-  final Enum enumP;
-
   final Radius radius = const Radius.circular(10.0);
   final double size = 25;
 
@@ -24,9 +14,7 @@ class DriveShift extends StatefulWidget {
   State<DriveShift> createState() => _DriveShiftState();
 }
 
-class _DriveShiftState extends State<DriveShift> {
-  _DriveShiftState();
-
+class _DriveShiftState() extends State<DriveShift> {
   late final Color errorColor = Theme.of(context).colorScheme.error;
   late final Color borderColor = Theme.of(context).colorScheme.outline;
   late final ButtonStyle buttonStyle = Theme.of(context).elevatedButtonTheme.style ?? const ButtonStyle();
@@ -137,12 +125,7 @@ class _DriveShiftState extends State<DriveShift> {
 
 // enum DriveShiftSelect { forward, neutral, reverse, park }
 
-class _ButtonBackgroundColor implements WidgetStateProperty<Color?> {
-  const _ButtonBackgroundColor(this.baseColor, this.errorColor);
-
-  final Color baseColor;
-  final Color errorColor;
-
+class const _ButtonBackgroundColor(final Color baseColor, final Color errorColor) implements WidgetStateProperty<Color?> {
   @override
   Color? resolve(Set<WidgetState> states) {
     Color selectedColor = baseColor.withAlpha(100);
@@ -162,11 +145,7 @@ class _ButtonBackgroundColor implements WidgetStateProperty<Color?> {
 //   OutlinedBorder? resolve(Set<MaterialState> states);
 // }
 
-class _ButtonBorderSide implements WidgetStateProperty<BorderSide?> {
-  const _ButtonBorderSide(this.borderColor);
-
-  final Color borderColor;
-
+class const _ButtonBorderSide(final Color borderColor) implements WidgetStateProperty<BorderSide?> {
   @override
   BorderSide? resolve(Set<WidgetState> states) {
     BorderSide borderSide1 = BorderSide(color: borderColor, width: 1, strokeAlign: BorderSide.strokeAlignOutside);

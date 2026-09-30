@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 
 /// [Stringifier]
 typedef Stringifier<T> = String Function(T input);

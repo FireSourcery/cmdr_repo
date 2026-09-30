@@ -6,9 +6,7 @@
 //
 typedef ValueTest<T> = bool Function(T input);
 
-abstract mixin class PropertyFilter<T> {
-  const PropertyFilter();
-
+abstract mixin class const PropertyFilter<T>() {
   ValueTest<T> get test;
 
   Iterable<T> call(Iterable<T> input) => input.where(test);

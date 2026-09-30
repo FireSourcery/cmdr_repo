@@ -5,7 +5,6 @@
 library;
 
 import 'package:struct_data/struct_data.dart';
-import 'package:struct_data/struct_data.dart';
 
 // ---------------------------------------------------------------------------
 // Example 1: Bit-level operations with Bits
@@ -29,15 +28,14 @@ void bitsExample() {
 // ---------------------------------------------------------------------------
 // Example 2: BitStruct — named bit fields within an integer
 // ---------------------------------------------------------------------------
-enum StatusField with BitField {
+enum StatusField(
+  @override
+  final Bitmask bitmask) with BitField {
   ready(Bitmask(0, 1)), // bit 0, width 1
   error(Bitmask(1, 1)), // bit 1, width 1
   mode(Bitmask(2, 3))
   ; // bits 2-4, width 3
 
-  const StatusField(this.bitmask);
-  @override
-  final Bitmask bitmask;
 }
 
 void bitStructExample() {
@@ -74,7 +72,7 @@ void versionExample() {
 // ---------------------------------------------------------------------------
 // Example 4: EnumMap — type-safe enum-keyed collections
 // ---------------------------------------------------------------------------
-enum Color { red, green, blue }
+enum Color() { red, green, blue }
 
 void enumMapExample() {
   print('=== EnumMap Example ===');
@@ -88,7 +86,7 @@ void enumMapExample() {
 // ---------------------------------------------------------------------------
 // Example 5: BoolMap — boolean flags backed by a single integer
 // ---------------------------------------------------------------------------
-enum Permission { read, write, execute }
+enum Permission() { read, write, execute }
 
 void boolMapExample() {
   print('=== BoolMap Example ===');
@@ -128,14 +126,10 @@ void binaryFormatExample() {
 // ---------------------------------------------------------------------------
 // Example 7: Serializable — enum-keyed struct with JSON
 // ---------------------------------------------------------------------------
-class PersonData {
-  const PersonData(this.id, this.name, this.age);
-  final int id;
-  final String name;
-  final int age;
+class const PersonData(final int id, final String name, final int age) {
 }
 
-enum PersonField<V extends Object> with SerializableField<V> {
+enum PersonField<V extends Object>() with SerializableField<V> {
   id<int>(),
   name<String>(),
   age<int>()

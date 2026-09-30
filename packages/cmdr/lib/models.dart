@@ -19,7 +19,7 @@
 /// final voltage = Voltage(12.5);
 /// final direction = Direction.forward;
 /// ```
-library cmdr.models;
+library;
 
 // Core models
 export 'models/adc_config.dart';

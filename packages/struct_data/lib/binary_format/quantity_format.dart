@@ -62,12 +62,7 @@ extension type const NumDataScale(num coefficient) {
 
 // Caller provides [NumConversion] for chaining
 // wrap format with numeric only conversion
-class _BinaryQuantityCodecWith<V extends num> implements BinaryCodec<V> {
-  const _BinaryQuantityCodecWith(this.format, this.conversion, {this.numLimits});
-  final BinaryCodec<V> format;
-  final NumConversion conversion;
-  final ({num min, num max})? numLimits;
-
+class const _BinaryQuantityCodecWith<V extends num>(final BinaryCodec<V> format, final NumConversion conversion, {final ({num min, num max})? numLimits}) implements BinaryCodec<V> {
   @override
   V decode(int data) => conversion.decode(format.decode(data)).to<V>();
 

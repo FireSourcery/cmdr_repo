@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-import 'var_controller.dart';
 import 'var_notifier.dart';
 
 /// Get [VarCacheController] via Context
 /// For library side to include widgets find key type
 ///
 // abstract class VarContext<T extends VarContext<dynamic>> extends InheritedWidget { //alternatively pass parameter type
-abstract class VarContext extends InheritedWidget {
-  const VarContext({super.key, required this.repo, required super.child});
-
+abstract class const VarContext({super.key, required final VarCacheController repo, required super.child}) extends InheritedWidget {
   /// `T extends VarContext`
   static T? maybeOf<T extends VarContext>(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<T>();
@@ -28,18 +25,12 @@ abstract class VarContext extends InheritedWidget {
     return VarKeyContext.of(context).contextTypeOfVarKey(varKey).callWithRestrictedType(<G extends VarContext>() => VarContext.of<G>(context));
   }
 
-  final VarCacheController repo;
-
   @override
   bool updateShouldNotify(covariant VarContext oldWidget) => repo != oldWidget.repo;
 }
 
 /// additional sub type containing [VarStreamController]
-class VarRealTimeContext extends VarContext {
-  const VarRealTimeContext({super.key, required VarStreamController super.repo, required super.child});
-
-  // static T of<T extends VarRealTimeContext>(BuildContext context) => VarContext.of<T>(context);
-
+class const VarRealTimeContext({super.key, required VarStreamController super.repo, required super.child}) extends VarContext {
   @override
   VarStreamController get repo => super.repo as VarStreamController;
 }
@@ -48,9 +39,11 @@ class VarRealTimeContext extends VarContext {
 /// For Library side interfaces: There can only be 1 KeyContext Type. Any number of instances can exist in the Widget tree.
 ///
 /// this way VarKey does not need to include context as dependency
-final class VarKeyContext extends InheritedWidget {
-  const VarKeyContext({super.key, required this.contextTypeOfVarKey, required super.child});
-
+final class const VarKeyContext({super.key, 
+  /// User provides function - using control type properties to determine the [VarContext] and [VarCacheController] type
+  // effectively provides varKey.contextType, without directly including type in VarKey, as that results in dependency of view layer
+  /// slight workaround for `T extends VarContext`
+  required final TypeRestrictedKey<VarContext, VarContext> Function(VarKey) contextTypeOfVarKey, required super.child}) extends InheritedWidget {
   static VarKeyContext? maybeOf(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<VarKeyContext>();
   }
@@ -60,11 +53,6 @@ final class VarKeyContext extends InheritedWidget {
     assert(result != null, 'No $VarKeyContext found in context');
     return result!;
   }
-
-  /// User provides function - using control type properties to determine the [VarContext] and [VarCacheController] type
-  // effectively provides varKey.contextType, without directly including type in VarKey, as that results in dependency of view layer
-  /// slight workaround for `T extends VarContext`
-  final TypeRestrictedKey<VarContext, VarContext> Function(VarKey) contextTypeOfVarKey;
 
   // Alternatively, controllers per keyContext, instead of search by context type
   // holds the cache allocations

@@ -1,6 +1,4 @@
-import 'dart:collection';
 
-import 'enum_map.dart';
 import 'struct.dart';
 export 'enum_map.dart';
 
@@ -15,27 +13,39 @@ export 'enum_map.dart';
 // typedef Enumerated<K extends EnumeratedField<Object?>> = StructBase<K, Object?>;
 
 mixin Enumerated<K extends EnumeratedField<Object?>> implements StructBase<Enumerated<K>, K, Object?> {
+  @override
   List<K> get keys;
+  @override
   StructData<K, dynamic> get data => this as StructData<K, dynamic>; // data passed to Keys
 
   // duplicate code until combine mixin is support
 
   // otherwise keep mapping overrid here, when type comparison is not needed
+  @override
   Object? operator [](covariant K key) => data[key];
+  @override
   void operator []=(covariant K key, Object? value) => data[key] = value;
+  @override
   bool testAccess(K key) => data.testAccess(key);
 
+  @override
   Object? fieldOrNull(K key) => data.fieldOrNull(key);
+  @override
   bool trySetField(K key, Object? value) => data.trySetField(key, value);
+  @override
   field(covariant K key) => data.field(key);
+  @override
   fieldAs<R>(covariant EnumeratedField<R> key) => data.fieldAs<R>(key);
 
   // Iterable<V> get values => StructForm(keys)(data).values;
   // Iterable<FieldEntry<K, V>> get fields => StructForm(keys)(data).fields;
+  @override
   Iterable<Object?> get values => keys.map((k) => this[k]);
+  @override
   Iterable<FieldEntry<K, Object?>> get fields => keys.map((k) => (key: k, value: this[k]));
 
   StructForm<K, Object?> get _type => StructForm<K, Object?>(keys);
+  @override
   Map<K, Object?> toMap() => _type.mapWithData(data);
   // Map<K, Object?> toMap() => StructForm(keys)(data).toMap();
 
@@ -65,11 +75,14 @@ mixin Enumerated<K extends EnumeratedField<Object?>> implements StructBase<Enume
 // }
 
 // alternatively wrap a transport descriptor instead of implementing it
-abstract mixin class EnumeratedField<V> implements Enum, Field<V> {
+abstract mixin class EnumeratedField<V>() implements Enum, Field<V> {
   // V call(covariant Enumerated struct);
+  @override
   V getIn(covariant Enumerated struct);
   // default implementation
+  @override
   void setIn(covariant Enumerated struct, V value) => throw UnimplementedError();
+  @override
   bool testAccess(covariant Enumerated struct) => true;
 
   String get groupName => runtimeType.toString();

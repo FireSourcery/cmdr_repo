@@ -174,16 +174,15 @@ base class VersionStandard extends Version<VersionFieldStandard> {
   }
 }
 
-enum VersionFieldStandard with TypedField<Uint8>, WordField<Uint8> {
+enum VersionFieldStandard(
+  @override
+  final int offset) with TypedField<Uint8>, WordField<Uint8> {
   fix(0),
   minor(1),
   major(2),
   optional(3)
   ;
 
-  const VersionFieldStandard(this.offset);
-  @override
-  final int offset;
 }
 
 extension WordAsVersion<K extends WordField> on Word {

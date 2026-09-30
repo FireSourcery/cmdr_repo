@@ -32,18 +32,18 @@ abstract mixin class BoolMap<K extends dynamic> implements BitsMap<K, bool> {
   }
 }
 
-class MutableBoolMap<K extends dynamic> extends BitsMap<K, bool> with BoolMap<K> {
-  MutableBoolMap(super.keys, [this.bits = const Bits.allZeros()]) : super._();
-
+class MutableBoolMap<K extends dynamic>(super.keys, [
   @override
-  Bits bits;
+  var Bits bits = const Bits.allZeros()]) extends BitsMap<K, bool> with BoolMap<K> {
+  this : super._();
+
 }
 
-class ConstBoolMap<K extends dynamic> extends BitsMap<K, bool> with BoolMap<K> {
-  const ConstBoolMap(super.keys, this.bits) : super._();
-
+class const ConstBoolMap<K extends dynamic>(super.keys, 
   @override
-  final Bits bits;
+  final Bits bits) extends BitsMap<K, bool> with BoolMap<K> {
+  this : super._();
+
   @override
   set bits(Bits value) => throw UnsupportedError('ConstBoolMap.bits is read-only');
 }

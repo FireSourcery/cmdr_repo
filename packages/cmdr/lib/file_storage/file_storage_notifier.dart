@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:async/async.dart';
 import 'package:flutter/foundation.dart';
 
 import 'file_storage.dart';
 
 // app side extends FileStorage can mixin instead of creating controller
-abstract mixin class FileStorageNotifier<T> implements FileStorage<T> {
+abstract mixin class FileStorageNotifier<T>() implements FileStorage<T> {
   // FileStorage<T> fileStorage;
 
   /// ValueNotifiers for caller update

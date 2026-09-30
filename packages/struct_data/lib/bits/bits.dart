@@ -120,8 +120,7 @@ extension BitmasksMethods on Iterable<Bitmask> {
 /// contain bits for setters - Cannot be extension type
 /// allows `pass by pointer`
 /// use by BitsMap. BitsStuct, BoolMap, etc.
-abstract mixin class BitData {
-  const BitData();
+abstract mixin class const BitData() {
   factory BitData.mutable([Bits bits]) = MutableBits;
   const factory BitData.constant(Bits bits) = ConstBits;
 
@@ -160,23 +159,19 @@ abstract mixin class BitData {
 }
 
 /// base for Map or Struct
-base class MutableBits extends BitData {
-  MutableBits([this.bits = const Bits.allZeros()]);
-
+base class MutableBits([
   @override
-  Bits bits;
+  var Bits bits = const Bits.allZeros()]) extends BitData {
   @override
   int get width => 64;
 }
 
 // although only MutableBits must wrap Bits, this way they both implement and derive the same interfaces
 @immutable
-base class ConstBits extends BitData {
-  const ConstBits(this.bits);
-  const ConstBits.value(int value) : this(value as Bits);
-
+base class const ConstBits(
   @override
-  final Bits bits;
+  final Bits bits) extends BitData {
+  const ConstBits.value(int value) : this(value as Bits);
 
   @override
   set bits(Bits _) => throw UnsupportedError('Cannot modify unmodifiable');

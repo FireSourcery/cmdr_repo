@@ -5,9 +5,7 @@ import 'dart:collection';
 ///   optimized for small fixed set of keys
 ///   guarantees all keys are present
 ///   can guarantee non null return - if V is defined as non nullable
-abstract interface class FixedMap<K, V> implements Map<K, V> {
-  const FixedMap();
-
+abstract interface class const FixedMap<K, V>() implements Map<K, V> {
   @override
   List<K> get keys;
 

@@ -7,11 +7,9 @@ import 'package:struct_data/packet/packet_parser.dart';
 import 'link.dart';
 
 /// Hold Link, Format, and common state
-class Protocol {
-  Protocol(this.link, this.codec) : _packetTransformer = codec.transformer;
+class Protocol(final Link link, final PacketCodec codec) {
+  this : _packetTransformer = codec.transformer;
 
-  final Link link;
-  final PacketCodec codec;
   final PacketTransformer _packetTransformer;
 
   /// Keyed by the wire byte, not by [PacketId]: a response is its own id and may share its
@@ -364,7 +362,7 @@ class ProtocolSocket implements Sink<Packet> {
   }
 }
 
-enum ProtocolSyncOptions {
+enum ProtocolSyncOptions() {
   none,
   sendOnly,
   recvOnly,
@@ -384,10 +382,7 @@ enum ProtocolSyncOptions {
   };
 }
 
-class ProtocolException implements Exception {
-  const ProtocolException([this.message = "Undefined Protocol Exception", this.socketId]);
-  final String message;
-  final int? socketId;
+class const ProtocolException([final String message = "Undefined Protocol Exception", final int? socketId]) implements Exception {
 }
 
 void debugLog(Object? message) {

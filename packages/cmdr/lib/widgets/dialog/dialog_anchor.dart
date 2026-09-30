@@ -6,35 +6,29 @@ import 'package:flutter/material.dart';
 /// e.g. warning dialog before editing a field, and a dialog after submitting a field
 ///
 /// [T] is the type of the event value that triggers the event dialog.
-class DialogAnchor<T> extends StatefulWidget {
-  const DialogAnchor({
+class const DialogAnchor<T>({
     super.key,
-    this.initialDialogBuilder,
-    this.eventNotifier,
-    this.eventGetter,
-    this.eventDialogBuilder,
-    this.eventMatch,
-    this.notificationMatch,
-    required this.child,
-  });
+    final WidgetBuilder? initialDialogBuilder,
+    final Listenable? eventNotifier,
+    final ValueGetter<T?>? eventGetter,
+    final ValueWidgetBuilder<T?>? eventDialogBuilder,
+    final T? eventMatch,
+    final Notification? notificationMatch,
+    required final Widget child,
+  }) extends StatefulWidget {
+// controls opening of dialog
+// when set, open only on the transition into [eventGetter] == [eventMatch]
 
-  // allow a more general interface, instead of ValueListenable<T?>? eventNotifier;
-  final Listenable? eventNotifier; // controls opening of dialog
-  final ValueGetter<T?>? eventGetter;
-  final T? eventMatch; // when set, open only on the transition into [eventGetter] == [eventMatch]
+// additional way to match event
 
-  final Notification? notificationMatch; // additional way to match event
+// on first focus
 
-  final WidgetBuilder? initialDialogBuilder; // on first focus
-
-  final ValueWidgetBuilder<T?>? eventDialogBuilder; // on event, e.g. submit, or other event. user match widget built to the notification event
-  final Widget child;
-
+// on event, e.g. submit, or other event. user match widget built to the notification event
   @override
   State<DialogAnchor> createState() => _DialogAnchorState<T>();
 }
 
-class _DialogAnchorState<T> extends State<DialogAnchor<T>> {
+class _DialogAnchorState<T>() extends State<DialogAnchor<T>> {
   final FocusNode _focusNode = FocusNode();
   bool _focusedOnce = false;
   T? _lastEvent; // previous [eventGetter] value, for [eventMatch] edge detection
@@ -112,20 +106,8 @@ class _DialogAnchorState<T> extends State<DialogAnchor<T>> {
 ///
 /// [DialogButton] is a button that opens a dialog when pressed.
 ///
-class DialogButton<T> extends StatelessWidget {
-  const DialogButton({super.key, required this.dialogBuilder, this.child, this.onPressed, this.onPop, this.useRootNavigator = true, this.styleId, this.barrierDismissible = false});
-  // use the warning theme
-  // const DialogButton.warning({super.key, required this.dialogBuilder, this.useRootNavigator = true, this.child, this.onPop, this.onPressed}) : themeStyle = DialogButtonStyle.warning;
-
-  final WidgetBuilder dialogBuilder; // must build new for async
-  final Widget? child;
-  final VoidCallback? onPressed;
-  final ValueSetter<T?>? onPop;
-  final bool useRootNavigator;
-  final DialogButtonStyle? styleId;
-
-  final bool barrierDismissible;
-
+class const DialogButton<T>({super.key, required final WidgetBuilder dialogBuilder, final Widget? child, final VoidCallback? onPressed, final ValueSetter<T?>? onPop, final bool useRootNavigator = true, final DialogButtonStyle? styleId, final bool barrierDismissible = false}) extends StatelessWidget {
+// must build new for async
   @override
   Widget build(BuildContext context) {
     final buttonStyle = switch (styleId) {
@@ -150,16 +132,11 @@ class DialogButton<T> extends StatelessWidget {
   }
 }
 
-enum DialogButtonStyle { normal, warning }
+enum DialogButtonStyle() { normal, warning }
 
 //DialogExtensionTheme
-class DialogButtonTheme extends ThemeExtension<DialogButtonTheme> {
-  const DialogButtonTheme({this.buttonStyle, this.warningButtonStyle, this.warningColor});
-
-  final ButtonStyle? buttonStyle;
-  final ButtonStyle? warningButtonStyle;
+class const DialogButtonTheme({final ButtonStyle? buttonStyle, final ButtonStyle? warningButtonStyle, final Color? warningColor}) extends ThemeExtension<DialogButtonTheme> {
   // final Icon? warningIcon;
-  final Color? warningColor;
   // Color? get warningBackgroundColor => buttonStyle?.backgroundColor?.resolve({});
 
   @override

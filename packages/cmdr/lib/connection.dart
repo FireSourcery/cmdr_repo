@@ -19,6 +19,7 @@
 /// final link = SerialLink();
 /// final protocol = MotProtocol(link);
 /// ```
+library;
 
 // Base connection classes
 export 'connection/base/link.dart';

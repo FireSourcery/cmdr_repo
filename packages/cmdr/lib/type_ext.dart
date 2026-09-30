@@ -17,6 +17,6 @@
 /// // Use type extensions
 /// final result = someValue.asString();
 /// ```
-library cmdr.type_ext;
+library;
 
 // export 'type_ext/**';

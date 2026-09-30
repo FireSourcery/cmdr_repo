@@ -2,26 +2,19 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-class BottomSheetButton extends StatefulWidget {
-  const BottomSheetButton({
-    required this.backgroundImage,
-    this.shape,
-    this.heightScale = .33,
-    required this.child,
-    this.iconOpen = const Icon(Icons.keyboard_arrow_up, size: 50),
-    this.iconClose = const Icon(Icons.keyboard_arrow_down, size: 50),
+class const BottomSheetButton({
+    required final ImageProvider backgroundImage,
+    final OutlinedBorder? shape,
+    final double heightScale = .33,
+    required final Widget? child,
+    final Icon iconOpen = const Icon(Icons.keyboard_arrow_up, size: 50),
+    final Icon iconClose = const Icon(Icons.keyboard_arrow_down, size: 50),
     // this.iconInactive = const Icon(Icons.circle_outlined, size: 50),
-    this.iconInactive,
+    final Icon? iconInactive,
     super.key,
-  });
-
-  final ImageProvider backgroundImage;
-  final OutlinedBorder? shape;
-  final Icon iconOpen;
-  final Icon iconClose;
-  final Icon? iconInactive;
-  final double heightScale; // default
-  final Widget? child; // initial and default bottom sheet
+  }) extends StatefulWidget {
+// default
+// initial and default bottom sheet
   // final Color shadowClosed =  Colors.black;
   // final Color shadowOpen = Colors.black;
   // final double elevationOpen =  10;
@@ -32,7 +25,7 @@ class BottomSheetButton extends StatefulWidget {
 }
 
 /// Public. [selectedBottomSheet] can be set to a new widget to change the bottom sheet.
-class BottomSheetButtonState extends State<BottomSheetButton> {
+class BottomSheetButtonState() extends State<BottomSheetButton> {
   late final BottomSheetThemeData theme = Theme.of(context).bottomSheetTheme;
   late final Color color = Theme.of(context).bottomAppBarTheme.color ?? Theme.of(context).colorScheme.surface;
   late final double buttonBarHeight = Scaffold.of(context).appBarMaxHeight ?? 137;
@@ -127,13 +120,7 @@ class BottomSheetButtonState extends State<BottomSheetButton> {
 //   void didReplace({Route? newRoute, Route? oldRoute}) => bottomSheetButtonState.exitRootBottomSheet();
 // }
 
-class _MaterialWrap extends StatelessWidget {
-  const _MaterialWrap({super.key, required this.color, required this.theme, required this.shape, required this.child});
-
-  final Color color;
-  final BottomSheetThemeData theme;
-  final ShapeBorder? shape;
-  final Widget? child;
+class const _MaterialWrap({required final Color color, required final BottomSheetThemeData theme, required final ShapeBorder? shape, required final Widget? child}) extends StatelessWidget {
   // Material? materialWrapOpen(Widget child) => Material(type: MaterialType.card, shadowColor: shadowOpen, elevation: elevationOpen, shape: shape, child: Center(child: child));
   // Material? materialWrapClose(Widget child) => Material(type: MaterialType.card, shadowColor: shadowClosed, elevation: elevationClosed, shape: shape, child: Center(child: child));
 

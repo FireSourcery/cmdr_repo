@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:struct_data/utilities/basic_types.dart';
 
 import '../var_context.dart';
 import '../var_notifier.dart';
@@ -11,13 +10,7 @@ import '../var_notifier.dart';
 ///
 
 //
-class VarKeyBuilder extends StatelessWidget {
-  const VarKeyBuilder(this.varKey, this.builder, {this.varCache, super.key});
-
-  final Widget Function(VarNotifier) builder;
-  final VarKey varKey;
-  final VarCache? varCache;
-
+class const VarKeyBuilder(final VarKey varKey, final Widget Function(VarNotifier) builder, {final VarCache? varCache, super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final varNotifier = varCache?.resolve(varKey) ?? VarContext.ofKey(context, varKey).repo.cache.resolve(varKey);
@@ -29,13 +22,7 @@ class VarKeyBuilder extends StatelessWidget {
 /// Retrieves VarNotifier/Controller using VarKey via InheritedWidget/BuildContext
 /// if the callers context/class does not directly contain the VarCache,
 /// [VarContext] and [VarKeyContext] must be provided.
-class VarKeyContextBuilder extends StatelessWidget {
-  const VarKeyContextBuilder(this.varKey, this.builder, {super.key});
-  // const VarKeyContextBuilder.typed(this.varKey, Widget Function<G>(VarNotifier) builder, {super.key}) : builder = builder;
-
-  final VarKey varKey;
-  final Widget Function(VarNotifier) builder;
-
+class const VarKeyContextBuilder(final VarKey varKey, final Widget Function(VarNotifier) builder, {super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final varNotifier = VarContext.ofKey(context, varKey).repo.cache.resolve(varKey);
@@ -43,12 +30,7 @@ class VarKeyContextBuilder extends StatelessWidget {
   }
 }
 
-class VarKeyContextBuilderWithType extends StatelessWidget {
-  const VarKeyContextBuilderWithType(this.varKey, this.builder, {super.key});
-
-  final VarKey varKey;
-  final Widget Function<G>(VarNotifier) builder;
-
+class const VarKeyContextBuilderWithType(final VarKey varKey, final Widget Function<G>(VarNotifier) builder, {super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final varNotifier = VarContext.ofKey(context, varKey).repo.cache.resolve(varKey);

@@ -20,7 +20,7 @@
 /// VarIoField(varKey: myVarKey)
 /// ChartWidget(data: chartData)
 /// ```
-library cmdr.widgets;
+library;
 
 // Application general widgets
 export 'widgets/app_general/bottom_sheet_button.dart';

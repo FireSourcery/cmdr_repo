@@ -20,6 +20,6 @@
 ///   // Implementation
 /// }
 /// ```
-library cmdr.interfaces;
+library;
 
 export 'var_notifier/service_io.dart';

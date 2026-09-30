@@ -6,12 +6,7 @@ import '../widgets/io_field/io_field.dart';
 import 'setting.dart';
 import 'settings_controller.dart';
 
-class SettingFieldTile extends StatelessWidget {
-  const SettingFieldTile({required this.setting, required this.settingsController, super.key});
-
-  final Setting<dynamic> setting;
-  final SettingsController settingsController;
-
+class const SettingFieldTile({required final Setting<dynamic> setting, required final SettingsController settingsController, super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -47,12 +42,7 @@ class SettingFieldTile extends StatelessWidget {
   }
 }
 
-class SettingWidgetsList extends StatelessWidget {
-  const SettingWidgetsList({super.key, required this.settingsController, required this.settings});
-
-  final SettingsController settingsController;
-  final List<Setting> settings;
-
+class const SettingWidgetsList({super.key, required final SettingsController settingsController, required final List<Setting> settings}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -98,10 +88,7 @@ abstract class SettingTypedWidget extends StatelessWidget {
   // static String _stringifyEnum(Enum value) => value.name.titleCase;
 }
 
-class _SettingTypedWidget<V> extends StatelessWidget implements SettingTypedWidget {
-  const _SettingTypedWidget(this.config, {super.key});
-  final IOFieldConfig<V> config;
-
+class const _SettingTypedWidget<V>(final IOFieldConfig<V> config, {super.key}) extends StatelessWidget implements SettingTypedWidget {
   @override
   Widget build(BuildContext context) {
     return IOField<V>(config);

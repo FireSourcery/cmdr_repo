@@ -45,34 +45,15 @@ class ChartLegend extends StatelessWidget {
   }
 }
 
-class _LegendListTile extends StatelessWidget {
-  const _LegendListTile({
-    required this.listenable,
-    required this.name,
-    required this.color,
-    required this.valueGetter,
-    this.onSelect,
-    this.textStyle,
+class const _LegendListTile({
+    required final Listenable listenable,
+    required final String name,
+    required final Color color,
+    required final ValueGetter<num> valueGetter,
+    final void Function()? onSelect,
+    final TextStyle? textStyle,
     // this.isSelected = false,
-  });
-
-  // factory _LegendListTile.chartEntry(ChartEntry entry, ChartController controller, {ChartStyle? style, void Function()? onSelect}) {
-  //   return _LegendListTile(
-  //     name: entry.name,
-  //     valueGetter: entry.valueGetter,
-  //     listenable: controller,
-  //     color: style.effectiveColor,
-  //     textStyle: effectiveTextStyle,
-  //     onSelect: entry.onSelect,
-  //   );
-  // }
-
-  final Listenable listenable;
-  final ValueGetter<num> valueGetter;
-  final String name;
-  final Color color;
-  final void Function()? onSelect;
-  final TextStyle? textStyle;
+  }) extends StatelessWidget {
   // final bool isSelected;
 
   Widget builder(context, child) => Text(valueGetter().toStringAsFixed(1), textAlign: TextAlign.right, style: textStyle);

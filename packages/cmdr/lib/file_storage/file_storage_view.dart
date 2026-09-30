@@ -7,36 +7,20 @@ import 'package:file_picker/file_picker.dart';
 import 'file_storage_notifier.dart';
 import 'file_storage.dart';
 
-class OpenFileButton extends FileLoadButton {
-  const OpenFileButton({required super.fileNotifier, super.title = 'Open File', super.iconData = Icons.file_open, super.key});
-  // final VoidCallback onLoaded;
-
-  // @override
-  // Future<void> beginAsync() async {
-  //   await super.beginAsync();
-  //   onLoaded();
-  // }
+class const OpenFileButton({required super.fileNotifier, super.title = 'Open File', super.iconData = Icons.file_open, super.key}) extends FileLoadButton {
   @override
   Future<void> beginAsync() async => fileNotifier.openParseWithNotify(fileNotifier.pickFile());
 }
 
-class SaveFileButton extends FileLoadButton {
-  const SaveFileButton({required super.fileNotifier, super.title = 'Save File', super.iconData = Icons.file_copy, super.key});
-  // @override
-  // Future<void> beginAsync() async {
-  //   onCommit();
-  //   return super.beginAsync();
-  // }
+class const SaveFileButton({required super.fileNotifier, super.title = 'Save File', super.iconData = Icons.file_copy, super.key}) extends FileLoadButton {
   @override
   Future<void> beginAsync() async => fileNotifier.saveBuildWithNotify(fileNotifier.pickSaveFile());
 }
 
 // async notifier, refresh on show dialog
-abstract class FileLoadButton extends StatelessWidget {
-  const FileLoadButton({required this.fileNotifier, required this.title, required this.iconData, super.key});
-  final FileStorageNotifier fileNotifier;
-  final String title; // e.g. open close
-  final IconData iconData; // e.g. Icons.file_open
+abstract class const FileLoadButton({required final FileStorageNotifier fileNotifier, required final String title, required final IconData iconData, super.key}) extends StatelessWidget {
+// e.g. open close
+// e.g. Icons.file_open
 
   Future<void> beginAsync(); // load initial async state referenced by dialog, sets fileNotifier.operationCompleted
 
@@ -98,21 +82,14 @@ abstract class FileLoadButton extends StatelessWidget {
 
 // can combine with async confirmation dialogs
 // with nested futures
-class FileConfirmationDialogButton extends StatelessWidget {
-  const FileConfirmationDialogButton({
-    required this.fileNotifier,
-    required this.title,
-    required this.iconData,
-    required this.onConfirmOperation,
-    this.confirmationText = 'Confirm?',
+class const FileConfirmationDialogButton({
+    required final FileStorageNotifier fileNotifier,
+    required final String title,
+    required final IconData iconData,
+    required final AsyncCallback onConfirmOperation,
+    final String confirmationText = 'Confirm?',
     super.key,
-  });
-  final FileStorageNotifier fileNotifier;
-  final String title;
-  final IconData iconData;
-  final AsyncCallback onConfirmOperation;
-  final String confirmationText;
-
+  }) extends StatelessWidget {
   void _onConfirm() {
     fileNotifier.confirm();
     fileNotifier.processWithNotify(onConfirmOperation);
@@ -225,10 +202,7 @@ class FileConfirmationDialogButton extends StatelessWidget {
   }
 }
 
-class FileOperationText extends StatelessWidget {
-  const FileOperationText(this.fileNotifier, {super.key});
-  final FileStorageNotifier fileNotifier;
-
+class const FileOperationText(final FileStorageNotifier fileNotifier, {super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(

@@ -3,11 +3,7 @@ import '../../file_storage/file_storage_notifier.dart';
 import 'chart_controller.dart';
 import 'chart_data.dart';
 
-class ChartFileStorage extends CsvFileStorage with FileStorageNotifier<Map<String, List<dynamic>>> {
-  ChartFileStorage(this.chartController);
-
-  final ChartController chartController;
-
+class ChartFileStorage(final ChartController chartController) extends CsvFileStorage with FileStorageNotifier<Map<String, List<dynamic>>> {
   @override
   void parseContents(Map<String, List<dynamic>> contents) => chartController.chartData = ChartData.fromMap(contents);
 

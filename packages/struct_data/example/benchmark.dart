@@ -20,7 +20,7 @@ import 'package:struct_data/struct_data.dart';
 typedef BenchmarkFn = void Function();
 
 /// Collected benchmark results for the summary table.
-class BenchmarkResults {
+class BenchmarkResults() {
   double bitStructPack = 0;
   double bitStructUnpack = 0;
   double wordStructPack = 0;
@@ -56,7 +56,9 @@ String _fmtUs(double us) => '${us.toStringAsFixed(3)} µs';
 // =============================================================================
 
 /// 8 bit fields packed into a single int — models a hardware status register.
-enum StatusBits with BitField {
+enum StatusBits(
+  @override
+  final Bitmask bitmask) with BitField {
   ready(Bitmask(0, 1)),
   error(Bitmask(1, 1)),
   mode(Bitmask(2, 3)),
@@ -67,9 +69,6 @@ enum StatusBits with BitField {
   reserved(Bitmask(18, 6))
   ;
 
-  const StatusBits(this.bitmask);
-  @override
-  final Bitmask bitmask;
 }
 
 void benchmarkBitStructVsProtobuf(BenchmarkResults r) {
@@ -145,7 +144,7 @@ class BenchPerson with Immutable<BenchPerson>, Serializable<BenchPerson> {
   BenchPerson copyWithMap(Map<Field, Object?> data) => BenchPerson.fromMap(data as Map<SerializableField, Object?>);
 }
 
-enum BenchPersonField<V extends Object> with SerializableField<V> {
+enum BenchPersonField<V extends Object>() with SerializableField<V> {
   id<int>(),
   name<String>(),
   age<int>(),
@@ -226,20 +225,21 @@ void benchmarkSerializableVsCodegen(BenchmarkResults r) {
 // =============================================================================
 
 /// 8-byte WordStruct: models a sensor reading packet.
-enum SensorField<V extends NativeType> with WordField<V>, TypedField<V> {
+enum SensorField<V extends NativeType>(
+  @override
+  final int offset) with WordField<V>, TypedField<V> {
   deviceId<Uint16>(0),
   sensorType<Uint8>(2),
   flags<Uint8>(3),
   value<Int32>(4)
   ;
 
-  const SensorField(this.offset);
-  @override
-  final int offset;
 }
 
 /// 16-byte ByteStruct: models a larger telemetry frame.
-enum TelemetryField<V extends NativeType> with ByteField<V>, TypedField<V> {
+enum TelemetryField<V extends NativeType>(
+  @override
+  final int offset) with ByteField<V>, TypedField<V> {
   timestamp<Uint32>(0),
   deviceId<Uint16>(4),
   sensorType<Uint8>(6),
@@ -248,9 +248,6 @@ enum TelemetryField<V extends NativeType> with ByteField<V>, TypedField<V> {
   valueB<Int32>(12)
   ;
 
-  const TelemetryField(this.offset);
-  @override
-  final int offset;
 }
 
 void benchmarkWordByteStructVsPackme(BenchmarkResults r) {

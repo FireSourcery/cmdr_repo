@@ -21,7 +21,7 @@
 /// // Use settings controller
 /// final controller = SettingsController(SettingsService());
 /// ```
-library cmdr.settings;
+library;
 
 export 'settings/setting.dart';
 export 'settings/settings_controller.dart';

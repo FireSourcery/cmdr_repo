@@ -1,25 +1,18 @@
 import 'package:flutter/material.dart';
 
-class ChartStyle extends ThemeExtension<ChartStyle> {
-  const ChartStyle({
-    this.tooltipColor,
-    this.backgroundColor,
-    this.legendColors,
-    this.lineTextStyle,
-    this.legendTextStyle,
-  });
-
-  final Color? backgroundColor;
-  final Color? tooltipColor;
-  final List<Color>? legendColors;
-  final TextStyle? lineTextStyle;
-  final TextStyle? legendTextStyle;
-
+class const ChartStyle({
+    final Color? tooltipColor,
+    final Color? backgroundColor,
+    final List<Color>? legendColors,
+    final TextStyle? lineTextStyle,
+    final TextStyle? legendTextStyle,
+  }) extends ThemeExtension<ChartStyle> {
   // List<LinearGradient>? get gradients => (legendColors != null) ? legendColors!.map((color) => ChartColors.gradient(color)).toList() : null;
 
   LinearGradient? gradient(int index) => (legendColors != null) ? ChartColors.gradient(legendColors![index]) : null;
   Color? legendColor(int index) => legendColors?[index % legendColors!.length];
 
+  @override
   ChartStyle copyWith({
     Color? backgroundColor,
     List<Color>? legendColors,
@@ -40,12 +33,7 @@ class ChartStyle extends ThemeExtension<ChartStyle> {
   }
 }
 
-class ChartStyleDefault extends ChartStyle {
-  const ChartStyleDefault();
-
-  // @override
-  // Color get tooltipColor => Colors.grey;
-
+class const ChartStyleDefault() extends ChartStyle {
   @override
   TextStyle get lineTextStyle => const TextStyle(fontSize: 10);
   @override
@@ -57,8 +45,8 @@ class ChartStyleDefault extends ChartStyle {
   List<Color> get legendColors => ChartColors.colorsNeon;
 }
 
-class ChartColors {
-  static LinearGradient gradient(Color color) => LinearGradient(colors: [color.withOpacity(0), color], stops: const [0.01, 1.0]);
+class ChartColors() {
+  static LinearGradient gradient(Color color) => LinearGradient(colors: [color.withValues(alpha: 0), color], stops: const [0.01, 1.0]);
 
   static const Color neonBlue = Color(0xFF2196F3);
   static const Color neonYellow = Color(0xFFFFC300);

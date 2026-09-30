@@ -4,13 +4,8 @@ import 'flyweight_menu.dart';
 
 /// General
 // Menu 'hosts' must wrap MenuAnchor (with menu.menuItems) under MenuSourceContext -> menuItems access menu and its notifier via context
-class FlyweightMenuOverlay<T> extends StatelessWidget {
-  const FlyweightMenuOverlay({super.key, required this.menu, this.child, required this.builder});
-
-  final FlyweightMenu<T> menu; // menuItems onPressed will find the notifier from MenuSourceInstance
-  final ValueWidgetBuilder<T> builder;
-  final Widget? child;
-
+class const FlyweightMenuOverlay<T>({super.key, required final FlyweightMenu<T> menu, final Widget? child, required final ValueWidgetBuilder<T> builder}) extends StatelessWidget {
+// menuItems onPressed will find the notifier from MenuSourceInstance
   @override
   Widget build(BuildContext context) {
     return FlyweightMenuContext<T>(
@@ -26,11 +21,7 @@ class FlyweightMenuOverlay<T> extends StatelessWidget {
   }
 }
 
-class FlyweightMenuButton<T> extends StatelessWidget {
-  const FlyweightMenuButton({super.key, required this.menu});
-
-  final FlyweightMenu<T> menu;
-
+class const FlyweightMenuButton<T>({super.key, required final FlyweightMenu<T> menu}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FlyweightMenuContext<T>(
@@ -41,12 +32,8 @@ class FlyweightMenuButton<T> extends StatelessWidget {
 }
 
 /// Default Widgets
-class MenuAnchorButton extends StatelessWidget {
-  const MenuAnchorButton({required this.menuItems, this.icon = const Icon(Icons.more_horiz), super.key});
-
-  final List<Widget> menuItems; // MenuItemButton
-  final Widget icon;
-
+class const MenuAnchorButton({required final List<Widget> menuItems, final Widget icon = const Icon(Icons.more_horiz), super.key}) extends StatelessWidget {
+// MenuItemButton
   Widget builder(BuildContext context, MenuController controller, Widget? child) {
     return IconButton(onPressed: () => (controller.isOpen) ? controller.close() : controller.open(), icon: icon);
   }
@@ -63,7 +50,7 @@ class MenuAnchorButton extends StatelessWidget {
 }
 
 class MenuAnchorOverlay extends StatelessWidget {
-  const MenuAnchorOverlay._({required this.menuItems, required this.child, this.menuController, super.key});
+  const MenuAnchorOverlay._({required this.menuItems, required this.child});
 
   MenuAnchorOverlay({required this.menuItems, required this.child, MenuController? menuController, super.key}) : menuController = menuController ?? MenuController();
 

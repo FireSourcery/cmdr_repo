@@ -1,8 +1,6 @@
 import 'package:cmdr/cmdr.dart';
 import 'package:flutter/foundation.dart';
 
-import 'package:struct_data/struct_data.dart';
-import 'var_key.dart';
 
 export 'package:struct_data/struct_data.dart';
 export 'service_io.dart';
@@ -103,7 +101,7 @@ extension VarNotifiers on Iterable<VarNotifier> {
 }
 
 ///
-abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V> {
+abstract mixin class VarValueNotifier<V>() implements VarValue<V>, ValueNotifier<V> {
   ///
   /// Typed view [value] as view side
   ///
@@ -157,7 +155,7 @@ abstract mixin class VarValueNotifier<V> implements VarValue<V>, ValueNotifier<V
   bool get hasPendingChanges => _viewValue != null;
 }
 
-mixin class VarValue<V> {
+mixin class VarValue<V>() {
   /// `Config`
   /// caching results from VarKey for performance.
   /// by default get from varKey. resolve in constructor to cached values derived from varKey
@@ -294,7 +292,7 @@ mixin class VarValue<V> {
 ///
 // todo as async status contain response status handle user iniiated await
 ///
-abstract mixin class VarStatusNotifier implements ChangeNotifier {
+abstract mixin class VarStatusNotifier() implements ChangeNotifier {
   int _statusCode = 0;
   int get statusCode => _statusCode;
   set statusCode(int value) {
@@ -322,6 +320,7 @@ extension VarValueNumExt on VarValue<num> {
   ({num min, num max})? get numLimits {
     if (codec is BinaryQuantityCodec) return (codec as BinaryQuantityCodec).numLimits ?? (codec as BinaryQuantityCodec).format.valueRange;
     if (codec is NumFormat) return (codec as NumFormat).valueRange;
+    return null;
     // return (min: 0, max: 0);
   }
 

@@ -16,7 +16,7 @@
 /// ```dart
 /// import 'package:cmdr/cmdr.dart';
 /// ```
-library cmdr;
+library;
 
 // External package exports
 export 'package:struct_data/struct_data.dart';

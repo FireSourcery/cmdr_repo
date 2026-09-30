@@ -61,7 +61,7 @@ extension type const StructData<K extends Field<V>, V>(Object _data) implements 
 ///   the struct itself can remain a plain object (or extension type wrapper).
 ///
 /// [Object struct] as StructData or StructBase
-abstract interface class Field<V> {
+abstract interface class Field<V>() {
   /// Read this field's value from [struct].
   @protected
   V getIn(covariant Object struct);
@@ -234,11 +234,7 @@ mixin ImmutableStructBase1<S extends StructBase1<K, V>, K extends Field<V>, V> i
 
 // Utility
 /// proxy over a map
-class StructInitializer<T extends StructBase<T, K, V>, K extends Field<V>, V> implements StructBase<T, K, V> {
-  const StructInitializer(this._init);
-
-  final Map<K, V> _init;
-
+class const StructInitializer<T extends StructBase<T, K, V>, K extends Field<V>, V>(final Map<K, V> _init) implements StructBase<T, K, V> {
   @override
   List<K> get keys => _init.keys.toList();
 

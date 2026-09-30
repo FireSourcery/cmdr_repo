@@ -2,12 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:recase/recase.dart';
 
 /// is expanded and selecct are on the same notifier
-class MainMenuController with ChangeNotifier {
-  MainMenuController(this.initialMenuList, {this.navigatorKey});
-
-  final List<MenuEntry> initialMenuList;
-  final GlobalKey<NavigatorState>? navigatorKey;
-
+class MainMenuController(final List<MenuEntry> initialMenuList, {final GlobalKey<NavigatorState>? navigatorKey}) with ChangeNotifier {
   late List<MenuEntry> _menuList = initialMenuList;
   List<MenuEntry> get menuList => _menuList;
   set menuList(List<MenuEntry>? value) {
@@ -44,8 +39,8 @@ class MainMenuController with ChangeNotifier {
   String get selectedLabel => menuList[indexOf(selectedId)].label;
 }
 
-class LinkedMenuController {
-  LinkedMenuController(List<MenuEntry> menuListMain, List<MenuEntry> menuListAux)
+class LinkedMenuController(List<MenuEntry> menuListMain, List<MenuEntry> menuListAux) {
+  this
     : mainMenu = MainMenuController(menuListMain, navigatorKey: GlobalKey()),
       auxMenu = MainMenuController(menuListAux, navigatorKey: null);
 
@@ -63,18 +58,18 @@ class LinkedMenuController {
   }
 }
 
-class MenuEntry {
-  const MenuEntry({required this.id, this.label = '', this.icon, this.route});
-  final Enum id; // menu in order of index
-  final String label;
-  final IconData? icon;
-  final String? route;
+class const MenuEntry({required final Enum id, final String label = '', final IconData? icon, final String? route}) {
+// menu in order of index
 }
 
-abstract mixin class MenuEntryId implements MenuEntry, Enum {
+abstract mixin class MenuEntryId() implements MenuEntry, Enum {
+  @override
   Enum get id => this;
+  @override
   String get label => name.pascalCase;
+  @override
   IconData? get icon;
+  @override
   String? get route;
   // int get index => id.index;
 }

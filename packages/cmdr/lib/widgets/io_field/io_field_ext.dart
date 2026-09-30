@@ -18,19 +18,14 @@ extension IOFieldNumTo on num {
 
 /// connected widget using same config
 
-class IOFieldSlider<T extends num> extends StatelessWidget implements IOField<T> {
-  const IOFieldSlider(this.config, {super.key});
-
-  final IOFieldConfig<T> config;
-
+class const IOFieldSlider<T extends num>(final IOFieldConfig<T> config, {super.key}) extends StatelessWidget implements IOField<T> {
   void onChanged(double value) => config.valueChanged?.call(value.to<T>());
   void onChangeEnd(double value) => config.valueSetter?.call(value.to<T>());
 
   Widget builder(BuildContext context, Widget? child) {
     final min = config.valueNumLimits!.min.toDouble();
     final max = config.valueNumLimits!.max.toDouble();
-    final value = config.valueGetter()?.toDouble().clamp(min, max);
-    if (value == null) return const Text('Error');
+    final value = config.valueGetter().toDouble().clamp(min, max);
 
     return Slider.adaptive(label: config.idDecoration.labelText, min: min, max: max, value: value, onChanged: onChanged, onChangeEnd: onChangeEnd);
   }
@@ -41,9 +36,7 @@ class IOFieldSlider<T extends num> extends StatelessWidget implements IOField<T>
 
 // Composites
 // convenience for attaching the same config
-class IOFieldWithSlider<T extends num> extends StatelessWidget {
-  const IOFieldWithSlider(this.config, {this.breakWidth = 400, super.key});
-
+class const IOFieldWithSlider<T extends num>(final IOFieldConfig<T> config, {final int breakWidth = 400, super.key}) extends StatelessWidget {
   factory IOFieldWithSlider.of(IOFieldConfig config, {Key? key}) {
     assert(config.valueNumLimits != null);
     return switch (config) {
@@ -54,9 +47,6 @@ class IOFieldWithSlider<T extends num> extends StatelessWidget {
         }
         as IOFieldWithSlider<T>;
   }
-
-  final IOFieldConfig<T> config;
-  final int breakWidth;
 
   @override
   Widget build(BuildContext context) {

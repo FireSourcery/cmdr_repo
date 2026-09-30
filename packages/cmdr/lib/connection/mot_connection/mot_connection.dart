@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 
-import '../base/link.dart';
 import '../base/protocol.dart';
 import '../links/serial_link.dart';
 import 'mot_packet.dart';
@@ -16,8 +15,7 @@ export 'mot_protocol.dart';
 // 19200 bauds | 520.833 µs | 12.499992 ms | 20.83332 ms
 // 115200 bauds | 86.806 µs | 2.083344 ms | 3.47224 ms
 
-class MotConnection {
-  MotConnection._();
+class MotConnection._() {
   static final MotConnection _singleton = MotConnection._();
   factory MotConnection() => _singleton;
 

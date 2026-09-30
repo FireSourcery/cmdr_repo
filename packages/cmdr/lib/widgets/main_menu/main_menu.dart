@@ -4,15 +4,8 @@ import 'package:flutter/material.dart';
 import '../app_general/logo.dart';
 import 'main_menu_controller.dart';
 
-class MainMenu extends StatelessWidget {
-  const MainMenu({required this.background, required this.menuController, this.useIndicator, super.key, this.trailing});
-  final ImageProvider<AssetBundleImageKey> background;
-  final MainMenuController menuController;
-  final bool? useIndicator;
-
-  final Widget? trailing;
-
-  Widget _navigationRail(BuildContext _, Widget? __) {
+class const MainMenu({required final ImageProvider<AssetBundleImageKey> background, required final MainMenuController menuController, final bool? useIndicator, super.key, final Widget? trailing}) extends StatelessWidget {
+  Widget _navigationRail(BuildContext _, Widget? _) {
     return NavigationRail(
       selectedIndex: menuController.selectedIdByIndex,
       extended: menuController.isExpanded,
@@ -49,12 +42,7 @@ class MainMenu extends StatelessWidget {
   }
 }
 
-class RightMenu extends StatelessWidget {
-  const RightMenu({required this.menuController, required this.background, super.key, this.trailing});
-  final ImageProvider<AssetBundleImageKey> background;
-  final MainMenuController menuController;
-
-  final Widget? trailing;
+class const RightMenu({required final MainMenuController menuController, required final ImageProvider<AssetBundleImageKey> background, super.key, final Widget? trailing}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -66,12 +54,7 @@ class RightMenu extends StatelessWidget {
 
 // Filled Scrollable Side Panel
 // stretch ScrollView height available
-class MenuContainer extends StatelessWidget {
-  const MenuContainer({required this.background, this.edgeInsets = const EdgeInsets.symmetric(horizontal: 5), required this.child, super.key});
-  final ImageProvider<Object> background;
-  final EdgeInsets edgeInsets;
-  final Widget child;
-
+class const MenuContainer({required final ImageProvider<Object> background, final EdgeInsets edgeInsets = const EdgeInsets.symmetric(horizontal: 5), required final Widget child, super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -93,13 +76,7 @@ class MenuContainer extends StatelessWidget {
   }
 }
 
-class MenuLeading extends StatelessWidget {
-  const MenuLeading({this.collapsedButton, this.expandedButton, this.alignment = AlignmentDirectional.centerStart, this.inset = 10, super.key});
-  final Widget? collapsedButton;
-  final Widget? expandedButton;
-  final AlignmentDirectional alignment;
-  final double inset;
-
+class const MenuLeading({final Widget? collapsedButton, final Widget? expandedButton, final AlignmentDirectional alignment = AlignmentDirectional.centerStart, final double inset = 10, super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final animation = NavigationRail.extendedAnimation(context);

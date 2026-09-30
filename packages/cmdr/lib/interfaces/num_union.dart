@@ -1,4 +1,3 @@
-import 'package:struct_data/struct_data.dart';
 
 ///
 

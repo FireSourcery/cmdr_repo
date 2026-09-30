@@ -138,11 +138,9 @@ abstract class BitStructBase<T extends BitStructBase<T, K>, K extends BitField> 
 
 /// Concrete pair: keys passed in, immutable (uses [ConstBits]).
 @immutable
-class _BitStruct<K extends BitField> extends BitStructBase<_BitStruct<K>, K> {
-  const _BitStruct(this.keys, super.bitData);
+class const _BitStruct<K extends BitField>(
   @override
-  final List<K> keys;
-
+  final List<K> keys, super.bitData) extends BitStructBase<_BitStruct<K>, K> {
   @override
   _BitStruct<K> copyWithData(covariant BitStruct<K> data) => _BitStruct(keys, ConstBits(data.bits) as BitStruct<K>);
 }
@@ -154,12 +152,10 @@ class _BitStruct<K extends BitField> extends BitStructBase<_BitStruct<K>, K> {
 ///   EnumType.name1: 2,
 ///   EnumType.name2: 3,
 /// });
-class BitsInitializer<K extends BitField> extends BitData {
-  const BitsInitializer(this._init);
-
-  final Map<K, int> _init;
-
+class const BitsInitializer<K extends BitField>(final Map<K, int> _init) extends BitData {
+  @override
   int get width => BitForm(_init.keys.toList()).totalWidth;
+  @override
   Bits get bits => Bits.ofMap(_init.map((key, value) => MapEntry(key.bitmask, value)));
 
   @override

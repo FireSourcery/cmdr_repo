@@ -1,9 +1,7 @@
 ///
 /// [BinaryCodec<V>]
 ///
-abstract interface class BinaryCodec<V> {
-  const BinaryCodec._();
-
+abstract interface class const BinaryCodec<V>._() {
   static const BinaryCodec<int> identity = BinaryCodecIdentity._();
 
   V decode(int data);
@@ -17,21 +15,14 @@ abstract interface class BinaryCodec<V> {
 typedef DataDecoder<T> = T Function(int data);
 typedef DataEncoder<T> = int Function(T view);
 
-class BinaryCodecByHandlers<V> implements BinaryCodec<V> {
-  const BinaryCodecByHandlers({required this.decoder, required this.encoder});
-
-  final DataDecoder<V> decoder;
-  final DataEncoder<V> encoder;
-
+class const BinaryCodecByHandlers<V>({required final DataDecoder<V> decoder, required final DataEncoder<V> encoder}) implements BinaryCodec<V> {
   @override
   V decode(int data) => decoder(data);
   @override
   int encode(V view) => encoder(view);
 }
 
-class BinaryCodecIdentity implements BinaryCodec<int> {
-  const BinaryCodecIdentity._();
-
+class const BinaryCodecIdentity._() implements BinaryCodec<int> {
   @override
   int decode(int data) => data;
   @override

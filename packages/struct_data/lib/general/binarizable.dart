@@ -11,7 +11,7 @@ import 'package:struct_data/general/enumerated.dart';
 ///
 /// Word access comes from [TypedField.getWord]/[TypedField.setWord], which resolve their width from
 /// [B] per key. Nothing here or in [BinarizableData] names a width, so a struct may mix them.
-abstract mixin class BinarizableField<V, B extends NativeType> implements EnumeratedField<V>, TypedField<B> {
+abstract mixin class BinarizableField<V, B extends NativeType>() implements EnumeratedField<V>, TypedField<B> {
   // TypedField<B> get transport; optionally compose
 
   // optionally with format for exact type decoding

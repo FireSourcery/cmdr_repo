@@ -11,9 +11,9 @@ part 'bool_map.dart';
 /// Enforce concrete keys as base.
 /// A special case of [FixedMap], all values retrieve from a [Bits] object
 /// Map operators implemented by subclass depending on V type, int or bool.
-abstract interface class BitsMap<K, V> with MapBase<K, V> implements Map<K, V> {
-  const BitsMap._(this.keys);
-
+abstract interface class const BitsMap<K, V>._(
+  @override
+  final List<K> keys) with MapBase<K, V> implements Map<K, V> {
   factory BitsMap.of(List<K> keys, [int bits = 0, bool mutable = true]) {
     return switch (keys) {
           List<BitIndexField> keys => mutable ? MutableBoolMap(keys, Bits(bits)) : ConstBoolMap(keys, Bits(bits)),
@@ -25,15 +25,16 @@ abstract interface class BitsMap<K, V> with MapBase<K, V> implements Map<K, V> {
         as BitsMap<K, V>;
   }
 
-  @override
-  final List<K> keys;
-
   Bits get bits;
   set bits(Bits value);
 
+  @override
   V operator [](covariant K key);
+  @override
   void operator []=(covariant K key, V value);
+  @override
   void clear();
+  @override
   V remove(covariant K key);
 }
 
@@ -60,18 +61,18 @@ abstract mixin class BitFieldMap<K extends BitField> implements BitsMap<K, int> 
   }
 }
 
-class MutableBitFieldMap<K extends BitField> extends BitsMap<K, int> with BitFieldMap<K> {
-  MutableBitFieldMap(super.keys, [this.bits = const Bits.allZeros()]) : super._();
-
+class MutableBitFieldMap<K extends BitField>(super.keys, [
   @override
-  Bits bits;
+  var Bits bits = const Bits.allZeros()]) extends BitsMap<K, int> with BitFieldMap<K> {
+  this : super._();
+
 }
 
-class ConstBitFieldMap<K extends BitField> extends BitsMap<K, int> with BitFieldMap<K> {
-  const ConstBitFieldMap(super.keys, this.bits) : super._();
-
+class const ConstBitFieldMap<K extends BitField>(super.keys, 
   @override
-  final Bits bits;
+  final Bits bits) extends BitsMap<K, int> with BitFieldMap<K> {
+  this : super._();
+
   @override
   set bits(Bits value) => throw UnsupportedError('ConstBitFieldMap.bits is read-only');
 }

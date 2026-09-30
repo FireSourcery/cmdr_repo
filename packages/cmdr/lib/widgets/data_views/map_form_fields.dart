@@ -76,7 +76,7 @@ class MapFormFields<K, V> extends StatefulWidget {
   State<MapFormFields<K, V>> createState() => _MapFormFieldsState<K, V>();
 }
 
-class _MapFormFieldsState<K, V> extends State<MapFormFields<K, V>> {
+class _MapFormFieldsState<K, V>() extends State<MapFormFields<K, V>> {
   // Seeded once. Each TextFormField owns its own controller via initialValue, so this map is the
   // only state kept here - updated on change, read by the aggregating FormField on save.
   late final Map<K, V> results = {for (final MapEntry(:key, :value) in widget.entries) key: value};
@@ -157,14 +157,7 @@ class _MapFormFieldsState<K, V> extends State<MapFormFields<K, V>> {
 /// The read-only counterpart to [MapFormFields], as [StringTile] is to [StringFormField].
 /// Displays Map entries as a two column key/value [Table], keys left aligned, values right aligned.
 /// Suited to confirmation dialogs and summaries, where the same map is shown without a [Form].
-class MapTable<K, V> extends StatelessWidget {
-  const MapTable({super.key, required this.entries, this.keyStringifier, this.valueStringifier, this.title});
-
-  final Iterable<MapEntry<K, V>> entries;
-  final String Function(K key)? keyStringifier;
-  final String Function(V value)? valueStringifier;
-  final String? title;
-
+class const MapTable<K, V>({super.key, required final Iterable<MapEntry<K, V>> entries, final String Function(K key)? keyStringifier, final String Function(V value)? valueStringifier, final String? title}) extends StatelessWidget {
   String labelOf(K key) => keyStringifier?.call(key) ?? key.toString();
   String textOf(V value) => valueStringifier?.call(value) ?? value.toString();
 
@@ -198,14 +191,7 @@ class MapTable<K, V> extends StatelessWidget {
 
 /// A text 'word' that is also a 64-bit integer 'word'.
 /// Editable views
-class StringFormField extends StatelessWidget {
-  const StringFormField({required this.word, this.label, super.key, this.isReadOnly = false, this.onSaved, this.maxLength = 8});
-  final Word word;
-  final String? label;
-  final bool isReadOnly;
-  final ValueSetter<Word>? onSaved;
-  final int maxLength;
-
+class const StringFormField({required final Word word, final String? label, super.key, final bool isReadOnly = false, final ValueSetter<Word>? onSaved, final int maxLength = 8}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
@@ -224,11 +210,7 @@ class StringFormField extends StatelessWidget {
   }
 }
 
-class StringTile extends StatelessWidget {
-  const StringTile({required this.nameId, this.label = "Name Id", super.key});
-  final Word nameId;
-  final String? label;
-
+class const StringTile({required final Word nameId, final String? label = "Name Id", super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(

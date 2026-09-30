@@ -21,6 +21,7 @@
 ///   child: MyWidget(),
 /// )
 /// ```
+library;
 
 // Core variable notifier classes
 export 'var_notifier/var_notifier.dart';
