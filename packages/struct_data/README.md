@@ -148,7 +148,7 @@ enum PersonField<V extends Object> with SerializableField<V> {
   bool testAccess(Object struct) => struct is Person;
 }
 
-class Person with Immutable<Person>, Serializable<Person> {
+class Person with Immutable<Person>, Serializable<PersonField> {
   const Person(this.id, this.name, this.age);
 
   Person.fromMap(Map<SerializableField, Object?> map)
@@ -235,8 +235,8 @@ All three are extension types wrapping their backing storage. Field access is di
 | `StructData<K, V>` | Zero-cost keyed view over any object via `Field` keys |
 | `Field<V>` | Interface for field descriptors: `getIn`, `setIn`, `testAccess` |
 | `StructForm<K, V>` | Schema definition (wraps `List<K>`); bridges to `Map` and serialization |
-| `StructBase<S, K, V>` | Mixin for user-defined struct classes holding data in their own fields |
-| `Serializable<S>` | Mixin providing `toMap()`, `toJson()`, value equality via `SerializableField` keys |
+| `StructBase<K, V>` | Mixin for user-defined struct classes holding data in their own fields |
+| `Serializable<K>` | `StructBase<K, Object?>` keyed by `SerializableField`; `toJson()` and `fromJson` via `Enum.name` |
 | `Immutable<S>` | Mixin providing `withField`, `withFields`, `withMap` for functional copies |
 
 ### Collections

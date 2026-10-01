@@ -35,12 +35,12 @@ extension type const ByteForm<K extends ByteField>(List<K> _fields) implements S
 /// ffi.Struct cannot mixin for Enumerated keyed access.
 /// boundary checking on access.
 ///
-abstract class const ByteStructBase<S extends ByteStructBase<S, K>, K extends ByteField>(
+abstract class const ByteStructBase<K extends ByteField>(
   // handle Array access
   // only primitive types are keyed (and included in serialization). array sizes individual define by subclass. e.g. payload
   // handled with extension on bytedata
   final ByteData byteData,
-) with StructBase<S, K, int> {
+) with StructBase<K, int> {
   @override
   List<K> get keys; // a method that is the meta contents, fieldsList
 

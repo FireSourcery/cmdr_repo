@@ -20,7 +20,7 @@ export '../src/type_markers.dart';
 /// [V] determines value conversion
 
 /// Hierarchy axis on handling, rather than storage
-/// Base sttorage type can be "inherited" by typedef with type marker
+/// `Base storage type can be "inherited" by typedef with type marker`
 // BinaryFormat
 //  ├─ NumFormat<S, V>          ← (num) has signedness/width
 //  │   ├─ IntFormat<S>         ← (int) raw integer pass-through
@@ -137,7 +137,11 @@ typedef EnumInt16<V extends Enum> = EnumOffsetFormat<Int16, V>;
 typedef EnumInt32<V extends Enum> = EnumOffsetFormat<Int32, V>;
 
 /// for custom handling, separate from index-based. include list for view
-class const EnumFormatByHandlers<V extends Enum>(super.values, {required final DataDecoder<V> decoder, required final DataEncoder<V> encoder}) extends EnumFormat<Int, V> {
+class const EnumFormatByHandlers<V extends Enum>(
+  super.values, {
+  required final DataDecoder<V> decoder,
+  required final DataEncoder<V> encoder,
+}) extends EnumFormat<Int, V> {
   V decode(int data) => decoder(data);
   int encode(V view) => encoder(view);
 }

@@ -140,7 +140,7 @@ extension TypedStructReference<K extends Field<V>, V> on ({StructForm<K, V> form
 /// [StructBase] hold data directly in their own fields. [Field.getIn] /
 /// [Field.setIn] receive `this` as the host object.
 ///
-/// [StructBase] provides opt-in value equality via [keys]. When `K` also
+/// [StructBase] provides value equality via [keys]. When `K` also
 /// extends [Enum], the existing `EnumMapByName` extension on `Map<Enum, V>`
 /// gives serialization for free — just call `toMap().toJson()`.
 ///
@@ -149,7 +149,7 @@ extension TypedStructReference<K extends Field<V>, V> on ({StructForm<K, V> form
 /// — so that all keyed access delegates through the same [Field]-based dispatch.
 /// This also allows `inner` to be passed to APIs that accept `StructData<K, V>`.
 ///
-mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
+mixin StructBase<K extends Field<V>, V> {
   /// a method from its TypeObject
   /// The ordered list of keys — defines the schema.
   /// Typically returns `MyField.values` for an enum-based key type.
@@ -160,7 +160,6 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   /// Proxy to allow the same keys
   /// [Object] as [StructData<K, V>] data passed to Keys
   /// Implementor select `this` or nested data.
-  // StructData<K, V> get data;
   // point to this by default. BitStruct can override. This way other subtpes become simpel typedefs.
   StructData<K, V> get data => this as StructData<K, V>;
 
@@ -169,12 +168,16 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   void operator []=(covariant K key, V value) => data[key] = value;
   bool testAccess(K key) => data.testAccess(key);
 
-  // todo call local function, flexible override this class instead of Field class
-  // V? fieldOrNull(K key) => testAccess(key) ? this[key] : null;
-  FieldEntry<K, V> field(K key) => data.field(key);
-  V? fieldOrNull(K key) => data.fieldOrNull(key);
-  bool trySetField(K key, V value) => data.trySetField(key, value);
-  FieldEntry<Field<R>, R> fieldAs<R>(Field<R> key) => data.fieldAs<R>(key);
+  // Derived through `[]`, `[]=`, [testAccess] so subtype overrides apply
+  FieldEntry<K, V> field(K key) => (key: key, value: this[key]);
+  V? fieldOrNull(K key) => testAccess(key) ? this[key] : null;
+  bool trySetField(K key, V value) {
+    if (!testAccess(key)) return false;
+    this[key] = value;
+    return true;
+  }
+
+  FieldEntry<Field<R>, R> fieldAs<R>(Field<R> key) => (key: key, value: this[key as K] as R);
 
   // FieldEntry<Field<R>, R> fieldAs<R>(covariant K key) {
   //   assert(key is Field<R>);
@@ -182,8 +185,8 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   // }
 
   // Iterable view requiring Fields list
-  Iterable<V> get values => StructForm(keys)(data).values;
-  Iterable<FieldEntry<K, V>> get fields => StructForm(keys)(data).fields;
+  Iterable<V> get values => keys.map((k) => this[k]);
+  Iterable<FieldEntry<K, V>> get fields => keys.map(field);
 
   // Conversion — bridge to Map (and therefore to serialization)
   /// Snapshot as an [IndexMap]. If `K extends Enum`, call `.toJson()` on the
@@ -198,18 +201,19 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
   //   }
   // }
 
-  //   @override
-  // bool operator ==(Object other) {
-  //   if (identical(this, other)) return true;
-  //   // if (other is! StructBase<T, K, V>) return false;
-  //   // Keys lists for enum types are const singletons; identity means same schema.
-  //   if (!identical(keys, other.keys)) return false;
-  //   return keys.every((key) => this[key] == other[key]);
-  // }
+  /// Same schema and equal field values. Keys lists for enum types are const singletons; identity means same schema.
+  @override
+  bool operator ==(Object other) => identical(this, other) || (other is StructBase<K, V> && identical(keys, other.keys) && keys.every((k) => this[k] == other[k]));
+
+  @override
+  int get hashCode => Object.hashAll(values);
+
+  @override
+  String toString() => '(${keys.map((k) => '$k: ${this[k]}').join(', ')})';
 }
 
 // inherit without mixin
-// extension StructBaseMethods<S extends StructBase<S, K, V>, K extends Field<V>, V> on StructBase<S, K, V> {
+// extension StructBaseMethods<K extends Field<V>, V> on StructBase<K, V> {
 //   V? fieldOrNull(K key) => data.fieldOrNull(key);
 //   bool trySetField(K key, V value) => data.trySetField(key, value);
 //   FieldEntry<K, V> field(K key) => data.field(key);
@@ -226,16 +230,18 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
 // }
 
 // separate parameter S
-// mixin ImmutableStructBase1<S extends StructBase1<K, V>, K extends Field<V>, V> implements StructBase1<K, V> {
-//   void fillFromMap(Map<K, V> map) => throw TypeError();
-//   S copyWithMap(Map<K, V> data); // or StructFormBase holds constructor  S create( );
+mixin ImmutableStructBase<S extends StructBase<K, V>, K extends Field<V>, V> implements StructBase<K, V> {
+  void operator []=(covariant K key, V value) => throw UnsupportedError('Immutable struct cannot be modified');
 
-//   S get self => this as S;
-// }
+  void fillFromMap(Map<K, V> map) => throw UnsupportedError('Immutable struct cannot be modified');
+  S copyWithMap(Map<K, V> data); // or StructFormBase holds constructor  S create( );
+
+  S get self => this as S;
+}
 
 // Utility
 /// proxy over a map
-class const StructInitializer<T extends StructBase<T, K, V>, K extends Field<V>, V>(final Map<K, V> _init) implements StructBase<T, K, V> {
+class const StructInitializer<K extends Field<V>, V>(final Map<K, V> _init) implements StructBase<K, V> {
   @override
   List<K> get keys => _init.keys.toList();
 

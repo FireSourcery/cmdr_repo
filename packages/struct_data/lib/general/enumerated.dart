@@ -1,77 +1,12 @@
 import 'struct.dart';
 export 'enum_map.dart';
 
-// may replace serialable
-
-// 1. Struct to handle transport only, simplfied mapping from Model , saves toBytes().. separately handle map
-// 2. extend ByteStruct (embedded around ByteData) free transport and data view map. seperately implement model view map
+// 1. Struct to handle transport only, simplified mapping from Model , saves toBytes().. separately handle map
+// 2. extend ByteStruct (embedded around ByteData) free transport and data view map. separately implement model view map
 // 3. extend Enumerated free model view map, with field accessors. separately handle transport
 
 // `StructForm<EnumeratedField>(.values)(enumeratedData).toMap();`
-
-// typedef Enumerated<K extends EnumeratedField<Object?>> = StructBase<K, Object?>;
-
-mixin Enumerated<K extends EnumeratedField<Object?>> implements StructBase<Enumerated<K>, K, Object?> {
-  @override
-  List<K> get keys;
-  @override
-  StructData<K, dynamic> get data => this as StructData<K, dynamic>; // data passed to Keys
-
-  // duplicate code until combine mixin is support
-
-  // otherwise keep mapping overrid here, when type comparison is not needed
-  @override
-  Object? operator [](covariant K key) => data[key];
-  @override
-  void operator []=(covariant K key, Object? value) => data[key] = value;
-  @override
-  bool testAccess(K key) => data.testAccess(key);
-
-  @override
-  Object? fieldOrNull(K key) => data.fieldOrNull(key);
-  @override
-  bool trySetField(K key, Object? value) => data.trySetField(key, value);
-  @override
-  field(covariant K key) => data.field(key);
-  @override
-  fieldAs<R>(covariant EnumeratedField<R> key) => data.fieldAs<R>(key);
-
-  // Iterable<V> get values => StructForm(keys)(data).values;
-  // Iterable<FieldEntry<K, V>> get fields => StructForm(keys)(data).fields;
-  @override
-  Iterable<Object?> get values => keys.map((k) => this[k]);
-  @override
-  Iterable<FieldEntry<K, Object?>> get fields => keys.map((k) => (key: k, value: this[k]));
-
-  StructForm<K, Object?> get _type => StructForm<K, Object?>(keys);
-  @override
-  Map<K, Object?> toMap() => _type.mapWithData(data);
-  // Map<K, Object?> toMap() => StructForm(keys)(data).toMap();
-
-  // Value equality
-  @override
-  int get hashCode => keys.fold(0, (prev, key) => prev ^ this[key].hashCode);
-
-  /// Value equality: two structures are equal if they share the same keys
-  /// reference (same schema) and all corresponding field values are equal.
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! Enumerated<K>) return false;
-    // Keys lists for enum types are const singletons; identity means same schema.
-    if (!identical(keys, other.keys)) return false;
-    return keys.every((key) => this[key] == other[key]);
-  }
-
-  @override
-  String toString() => '(${keys.map((k) => '$k: ${this[k]}').join(', ')})';
-}
-
-// mixin ImmutableEnumerated<S,  K extends Field<Object?>> on Object implements StructBase<S, K, Object?>
-
-// mixin EnumSchema implements Enum, Field<Object?> {
-//   // static composible constructor(List<Enum> values)
-// }
+typedef Enumerated<K extends EnumeratedField<Object?>> = StructBase<K, Object?>;
 
 // alternatively wrap a transport descriptor instead of implementing it
 abstract mixin class EnumeratedField<V>() implements Enum, Field<V> {

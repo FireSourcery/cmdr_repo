@@ -5,65 +5,12 @@ import 'enum_map.dart';
 
 export 'enum_map.dart';
 
-/// [Serializable] -
-/// mixin in 1 step for serialization
-/// provide toMap or implements MapBase and duplicate code until combine mixin is support
-/// mixin toMap
-/// implementing Map would require subclasses to mixin MapBase
+/// [Serializable] — a [StructBase] keyed by [SerializableField], whose `Enum.name` is the JSON key.
+/// JSON side: [SerializableMethods.toJson] on the struct, `fromJson` on the key list ([StructForm]).
+/// Keyed by `K` rather than the class, so access can use dot notation -> person[.age]
+typedef Serializable<K extends SerializableField<Object?>> = StructBase<K, Object?>;
 
-// if K parameter is included.
-// mixin Serializable<S extends Serializable<S>, K extends Field<Object?>> on Object implements StructBase<S, K, Object?>
-// class definition becomes slightly more verbose -> class Person with  Serializable<Person, PersonField>
-// however access can use dot notation -> person[.age] instead of person[PersonField.age]
-//   person.withField(.age, 31) instead of person.withField(PersonField.age, 31)
-// mixin Serializable<  K extends Field<Object?>> on Object implements StructBase<S, K, Object?>
-
-mixin Serializable<S extends Serializable<S>> implements StructBase<S, SerializableField, Object?> {
-  List<SerializableField<Object?>> get keys;
-  StructData<SerializableField, dynamic> get data => this as StructData<SerializableField, dynamic>; // data passed to Keys
-
-  // duplicate code until combine mixin is support
-  Object? operator [](covariant SerializableField key) => data[key];
-  void operator []=(covariant SerializableField key, Object? value) => data[key] = value;
-  bool testAccess(SerializableField key) => data.testAccess(key);
-
-  Object? fieldOrNull(SerializableField key) => data.fieldOrNull(key);
-  bool trySetField(SerializableField key, Object? value) => data.trySetField(key, value);
-  SerializableEntry<Object?> field(covariant SerializableField key) => data.field(key);
-  SerializableEntry<R> fieldAs<R>(covariant SerializableField<R> key) => data.fieldAs<R>(key) as SerializableEntry<R>;
-  Iterable<Object?> get values => keys.map((k) => this[k]);
-  Iterable<SerializableEntry<Object?>> get fields => keys.map((k) => (key: k, value: this[k]));
-  StructForm<SerializableField, Object?> get _type => StructForm<SerializableField, Object?>(keys);
-
-  FieldMap<SerializableField, Object?> toMap() => _type.mapWithData(data);
-
-  // Value equality
-  @override
-  int get hashCode => keys.fold(0, (prev, key) => prev ^ this[key].hashCode);
-
-  /// Value equality: two structures are equal if they share the same keys
-  /// reference (same schema) and all corresponding field values are equal.
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! Serializable<S>) return false;
-    // Keys lists for enum types are const singletons; identity means same schema.
-    if (!identical(keys, other.keys)) {
-      if (keys.length != other.keys.length) return false;
-    }
-    for (final key in keys) {
-      if (this[key] != other[key]) return false;
-    }
-    return true;
-  }
-
-  @override
-  String toString() => '$S(${keys.map((k) => '$k: ${this[k]}').join(', ')})';
-}
-
-typedef SerializableEntry<V> = ({SerializableField<V> key, V value});
-
-// mixin ImmutableSerializable<S,  K extends Field<Object?>> on Object implements StructBase<S, K, Object?>
+// mixin ImmutableSerializable<S,  K extends Field<Object?>> on Object implements StructBase<K, Object?>
 
 /// [SerializableField<V>]/[NamedField]
 /// a key to each field, an type parameter, with an generated string, use as json key;

@@ -72,7 +72,7 @@ enum SerializablePersonField<V extends Object>() with SerializableField<V> {
   bool testAccess(Object struct) => struct is Person;
 }
 
-class SerializablePerson with Immutable<SerializablePerson>, Serializable<SerializablePerson> {
+class SerializablePerson with Immutable<SerializablePerson>, Serializable<SerializablePersonField> {
   const SerializablePerson(this.id, this.name, this.age);
 
   final String name;
@@ -150,7 +150,7 @@ void main() {
     });
 
     test('withField returns new instance with updated field', () {
-      final person = SerializablePerson.fromJson(testJson).withField(PersonField.age, 31);
+      final person = SerializablePerson.fromJson(testJson).withField(SerializablePersonField.age, 31);
       expect(person.age, 31);
       expect(person.id, 1);
       expect(person.name, 'Alice');
@@ -167,8 +167,8 @@ void main() {
     });
 
     test('field access via mismatched key type throws', () {
-      final person = SerializablePerson.fromJson(testJson);
-      // PersonField.testAccess checks for Person, not PersonB
+      // statically rejected on SerializablePerson; through the erased view the key type is checked at runtime
+      final Serializable person = SerializablePerson.fromJson(testJson);
       expect(() => person[PersonField.age], throwsA(isA<TypeError>()));
     });
   });

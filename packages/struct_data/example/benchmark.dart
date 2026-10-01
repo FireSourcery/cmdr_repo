@@ -121,7 +121,7 @@ void benchmarkBitStructVsProtobuf(BenchmarkResults r) {
 // 2. Serializable JSON vs Codegen (json_serializable / freezed)
 // =============================================================================
 
-class BenchPerson with Immutable<BenchPerson>, Serializable<BenchPerson> {
+class BenchPerson with Immutable<BenchPerson>, Serializable<BenchPersonField> {
   BenchPerson(this.id, this.name, this.age, this.email);
 
   BenchPerson.fromMap(Map<SerializableField, Object?> map)

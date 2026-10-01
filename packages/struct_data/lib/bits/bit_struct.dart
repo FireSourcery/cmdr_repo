@@ -53,7 +53,7 @@ extension type const BitForm<K extends BitField>(List<K> _fields) implements Str
 /// [BitStructBase] — abstract base for user-defined bit struct subtypes.
 /// Analogue of [StructBase] for the bit domain.
 ///
-/// Mixes in [MapBase<K, int>], [BitFieldMap<K>], and [StructureBase<T, K, int>]
+/// Mixes in [MapBase<K, int>], [BitFieldMap<K>], and [StructBase<K, int>]
 /// providing: Map operators, serialization via [toMap], value equality, and
 /// immutable copy helpers via [withField] / [withEntries] / [withMap].
 ///
@@ -67,7 +67,7 @@ extension type const BitForm<K extends BitField>(List<K> _fields) implements Str
 // remove MapBase simplfies mixin
 // Directly extending BitData would give const constructors but would require handling mutable and immutable variants, may unify StructBase, data => this
 /// caller compose for compile time const. const BitStructBase(ConstBits(11))
-abstract class BitStructBase<T extends BitStructBase<T, K>, K extends BitField> with MapBase<K, int>, StructBase<T, K, int> {
+abstract class BitStructBase<T extends BitStructBase<T, K>, K extends BitField> with MapBase<K, int>, StructBase<K, int> {
   const BitStructBase(this.bitData);
   BitStructBase.from(int bits) : bitData = ConstBits(bits as Bits);
   const BitStructBase.withData(BitStruct<K> this.bitData); // base for copy, copys value
