@@ -54,7 +54,7 @@ abstract mixin class Packet {
 
   /// [packetId] when it is a control id, else null.
   PacketControlId? get controlId => switch (packetId) {
-    final PacketControlId id => id,
+    final PacketControlId? id => id,
     _ => null,
   };
 

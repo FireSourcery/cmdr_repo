@@ -260,6 +260,11 @@ extension PacketCodecTransformer on PacketCodec {
 
 sealed class PacketStatus() {}
 
-enum PacketStatusOk() implements PacketStatus { ok }
+enum PacketStatusOk() implements PacketStatus {
+  ok,
+}
 
-enum PacketStatusException() implements PacketStatus, Exception { meta, checksum }
+enum PacketStatusException() implements PacketStatus, Exception {
+  meta,
+  checksum,
+}

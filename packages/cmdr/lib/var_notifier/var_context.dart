@@ -41,11 +41,11 @@ class const VarRealTimeContext({super.key, required VarStreamController super.re
 /// For Library side interfaces: There can only be 1 KeyContext Type. Any number of instances can exist in the Widget tree.
 ///
 /// this way VarKey does not need to include context as dependency
-final class const VarKeyContext({super.key, 
-  /// User provides function - using control type properties to determine the [VarContext] and [VarCacheController] type
-  // effectively provides varKey.contextType, without directly including type in VarKey, as that results in dependency of view layer
-  /// slight workaround for `T extends VarContext`
-  required final TypeRestrictedKey<VarContext, VarContext> Function(VarKey) contextTypeOfVarKey, required super.child}) extends InheritedWidget {
+///
+/// User provides function - using control type properties to determine the [VarContext] and [VarCacheController] type
+// effectively provides varKey.contextType, without directly including type in VarKey, as that results in dependency of view layer
+/// slight workaround for `T extends VarContext`
+final class const VarKeyContext({super.key, required final TypeRestrictedKey<VarContext, VarContext> Function(VarKey) contextTypeOfVarKey, required super.child}) extends InheritedWidget {
   static VarKeyContext? maybeOf(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<VarKeyContext>();
   }

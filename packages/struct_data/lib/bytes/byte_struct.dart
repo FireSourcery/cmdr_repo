@@ -84,10 +84,7 @@ abstract mixin class ByteField<V extends NativeType> implements TypedField<V>, F
   bool setInOrNot(ByteData byteData, int value) => byteData.setWordOrNotAt<V>(offset, value);
 }
 
-class const _ByteField<V extends NativeType>(
-  @override
-  final int offset) with TypedField<V>, ByteField<V> {
-}
+class const _ByteField<V extends NativeType>(@override final int offset) with TypedField<V>, ByteField<V> {}
 
 // extension ByteFieldExtension on ByteField {
 //   Word asWordOf(ByteStructBase struct) => Word(struct[this]);

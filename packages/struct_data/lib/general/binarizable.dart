@@ -37,7 +37,7 @@ abstract mixin class BinarizableField<V, B extends NativeType>() implements Enum
 ///
 /// Applies to any keyed struct that serializes. Storage lifecycle — has it been read, is the
 /// segment still erased — is [NvmData].
-mixin BinarizableData<K extends BinarizableField<V, NativeType>, V> {
+mixin BinarizableData<K extends BinarizableField<V, NativeType>, V> /* implements StructBase<K, V>  */ {
   String get name; // view name
 
   /// Typed views. [Enumerated.toMap] is `Map<K, Object?>`; these keep the numeric scope that the

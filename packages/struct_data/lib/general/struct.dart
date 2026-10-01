@@ -168,6 +168,7 @@ mixin StructBase<K extends Field<V>, V> {
   void operator []=(covariant K key, V value) => data[key] = value;
   bool testAccess(K key) => data.testAccess(key);
 
+  // move to extension if non individualize override is sufficient
   // Derived through `[]`, `[]=`, [testAccess] so subtype overrides apply
   FieldEntry<K, V> field(K key) => (key: key, value: this[key]);
   V? fieldOrNull(K key) => testAccess(key) ? this[key] : null;
@@ -214,30 +215,22 @@ mixin StructBase<K extends Field<V>, V> {
 
 // inherit without mixin
 // extension StructBaseMethods<K extends Field<V>, V> on StructBase<K, V> {
-//   V? fieldOrNull(K key) => data.fieldOrNull(key);
-//   bool trySetField(K key, V value) => data.trySetField(key, value);
-//   FieldEntry<K, V> field(K key) => data.field(key);
-//   FieldEntry<Field<R>, R> fieldAs<R>(Field<R> key) => data.fieldAs<R>(key);
 
-//   // Iterable view requiring Fields list
-//   Iterable<V> get values => StructForm(keys)(data).values;
-//   Iterable<FieldEntry<K, V>> get fields => StructForm(keys)(data).fields;
-
-//   // Conversion — bridge to Map (and therefore to serialization)
-//   /// Snapshot as an [IndexMap]. If `K extends Enum`, call `.toJson()` on the
-//   /// result to serialise via [EnumMapByName].
-//   Map<K, V> toMap() => IndexMap.of(keys, values);
 // }
 
 // separate parameter S
-mixin ImmutableStructBase<S extends StructBase<K, V>, K extends Field<V>, V> implements StructBase<K, V> {
-  void operator []=(covariant K key, V value) => throw UnsupportedError('Immutable struct cannot be modified');
+// mixin ImmutableStructBase<S extends StructBase<K, V>, K extends Field<V>, V> implements StructBase<K, V> {
+//   void operator []=(covariant K key, V value) => throw UnsupportedError('Immutable struct cannot be modified');
 
-  void fillFromMap(Map<K, V> map) => throw UnsupportedError('Immutable struct cannot be modified');
-  S copyWithMap(Map<K, V> data); // or StructFormBase holds constructor  S create( );
+//   void fillFromMap(Map<K, V> map) => throw UnsupportedError('Immutable struct cannot be modified');
+//   S copyWithMap(Map<K, V> data); // or StructFormBase holds constructor  S create( );
 
-  S get self => this as S;
-}
+// T withField(K key, int value) => copyWithMap(data.withField(key, value));
+// T withFields(Iterable<FieldEntry<K>> entries) => copyWithMap(data.withFields(entries));
+// T withMap(Map<K, int> map) => copyWithMap(data.withMap(map));
+
+//   S get self => this as S;
+// }
 
 // Utility
 /// proxy over a map

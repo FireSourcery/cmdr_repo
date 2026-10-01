@@ -382,8 +382,7 @@ enum ProtocolSyncOptions() {
   };
 }
 
-class const ProtocolException([final String message = "Undefined Protocol Exception", final int? socketId]) implements Exception {
-}
+class const ProtocolException([final String message = "Undefined Protocol Exception", final int? socketId]) implements Exception {}
 
 void debugLog(Object? message) {
   assert(() {

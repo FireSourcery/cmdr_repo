@@ -67,6 +67,8 @@ extension type const BitForm<K extends BitField>(List<K> _fields) implements Str
 // remove MapBase simplfies mixin
 // Directly extending BitData would give const constructors but would require handling mutable and immutable variants, may unify StructBase, data => this
 /// caller compose for compile time const. const BitStructBase(ConstBits(11))
+//
+//alternatively drop for extension type only, put method on cast to record reference
 abstract class BitStructBase<T extends BitStructBase<T, K>, K extends BitField> with MapBase<K, int>, StructBase<K, int> {
   const BitStructBase(this.bitData);
   BitStructBase.from(int bits) : bitData = ConstBits(bits as Bits);

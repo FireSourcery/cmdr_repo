@@ -53,9 +53,9 @@ final class const MotDataFormat() with PacketFrameFormat {
   @override
   ByteField get idField => const ByteField<Uint8>(1);
   @override
-  ByteField? get lengthField => const ByteField<Uint8>(2);
+  ByteField get lengthField => const ByteField<Uint8>(2);
   @override
-  ByteField? get checksumField => const ByteField<Uint16>(4);
+  ByteField get checksumField => const ByteField<Uint16>(4);
 
   /// Read and written as a struct with named fields, rather than through the descriptors.
   @override
@@ -77,7 +77,7 @@ final class const MotControlFormat() with PacketFrameFormat {
   @override
   ByteField get idField => const ByteField<Uint8>(1);
   @override
-  ByteField? get checksumField => const ByteField<Uint8>(3);
+  ByteField get checksumField => const ByteField<Uint8>(3);
 
   @override
   PacketHeader headerOf(ByteData frame) => MotPacketControlHeader.cast(frame);
@@ -194,9 +194,7 @@ sealed class MotPacketId() implements PacketId {
   });
 }
 
-enum MotPacketControlId(
-  @override
-  final int intId) implements PacketControlId, MotPacketId {
+enum MotPacketControlId(@override final int intId) implements PacketControlId, MotPacketId {
   MOT_PACKET_PING(0xA0),
   // MOT_PACKET_PING_RESP(0xA1),
   MOT_PACKET_SYNC_ACK(0xA2),
@@ -204,26 +202,21 @@ enum MotPacketControlId(
   MOT_PACKET_SYNC_ABORT(0xA4),
   MOT_PACKET_SYNC_RESV(0xA5),
   MOT_PACKET_PING_ALT(0xAA),
-  MOT_PACKET_PING_BOOT(0xAB);
-
+  MOT_PACKET_PING_BOOT(0xAB),
 }
 
-enum MotPacketReservedId(
-  @override
-  final int intId) implements MotPacketId {
-  MOT_PACKET_ID_RESERVED_255(0xFF);
-
+enum MotPacketReservedId(@override final int intId) implements MotPacketId {
+  MOT_PACKET_ID_RESERVED_255(0xFF),
 }
 
 /// One row per exchange: the request byte, the codec that writes it, the codec that reads the
 /// answer, and — only where it differs — the byte the answer arrives under.
 enum MotPacketRequestId<T, R>(
-  @override
-  final int intId, 
-  @override
-  final PayloadCaster<T> caster, 
-  @override
-  final PayloadCaster<R> responseCaster, [int? responseId]) implements PacketRequestId<T, R>, MotPacketId {
+  @override final int intId,
+  @override final PayloadCaster<T> caster,
+  @override final PayloadCaster<R> responseCaster, [
+  int? responseId,
+]) implements PacketRequestId<T, R>, MotPacketId {
   /* Fixed Length */
   MOT_PACKET_STOP_ALL<void, int>(0x00, StopRequest.cast, StopResponse.cast),
   MOT_PACKET_VERSION<void, VersionResponseValues>(0x01, VersionRequest.cast, VersionResponse.cast),
@@ -251,10 +244,10 @@ enum MotPacketRequestId<T, R>(
 
   /// [responseId] defaults to the request's own byte, which is every row above. An exchange
   /// answered under a different byte passes it as the fourth argument.
-  this : responseId = responseId ?? intId;
-
+  // this : responseId = responseId ?? intId;
   @override
-  final int responseId;
+  final int responseId = responseId ?? intId;
+
   @override
   String toString() => name;
 }

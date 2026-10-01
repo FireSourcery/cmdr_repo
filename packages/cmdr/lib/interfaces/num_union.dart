@@ -1,4 +1,3 @@
-
 ///
 
 ///
@@ -77,4 +76,17 @@
 //       _ => throw UnsupportedError('Unsupported type: $T'),
 //     };
 //   }
+// }
+// extension NumUnionView on ({BinaryFormat codec, num value}) {
+
+// //   // maintain for view options
+// //   // Limits as the values the num can take, inclusive, compare with >= and <=
+// //   ({num min, num max})? get numLimits; // must be null for non-num types
+// //   List<Enum>? get enumRange; // EnumSubtype.values must be non-null for Enum types
+// //   List<BitField>? get bitsKeys;
+// //   // Iterable<V>? get enumRange;
+// //   // ({V min, V max})? get numLimits; // must be null for non-num types
+
+// //   V decode(int data) => decodeAs<V>(data);
+// //   int encode(V view) => encodeAs<V>(view);
 // }

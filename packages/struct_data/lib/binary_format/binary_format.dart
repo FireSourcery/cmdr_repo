@@ -89,6 +89,8 @@ mixin class const NativeTypeBase<S extends NativeType>() {
   int signedOf(int raw) => signExtension?.call(raw) ?? raw;
 }
 
+// Subtypes
+
 /// Int/Fract
 sealed class const NumFormat<S extends NativeType, V extends num>() extends BinaryFormat<S, V> {
   ({num min, num max}) get valueRange => binaryRange;
