@@ -41,6 +41,7 @@ export '../src/type_markers.dart';
 //   Adcu() =>
 // }
 sealed class const BinaryFormat<S extends NativeType, V>() with NativeTypeBase<S> implements BinaryCodec<V> {
+  // NativeTypeBase<S> get baseType => NativeTypeBase<S>();
   TypeKey<V> get viewType => TypeKey<V>();
 
   int binaryOf(int raw) => signExtension?.call(raw) ?? raw;
@@ -142,6 +143,8 @@ class const EnumFormatByHandlers<V extends Enum>(super.values, {required final D
 }
 
 abstract class const FixedPoint<S extends NativeType>() extends FractFormat<S> {
+  // ergonomic const def
+  // FixedPoint<Int16>.n(15)
   const factory FixedPoint.n(int fractBits) = FixedPointN<S>;
   // FixedPoint<Int16>.d(2) scaling factor 100
   // FixedPoint<Int16>.da(2) scaling factor 1/100

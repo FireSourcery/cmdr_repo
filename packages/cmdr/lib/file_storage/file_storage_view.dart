@@ -8,20 +8,34 @@ import 'file_storage_notifier.dart';
 import 'file_storage.dart';
 
 class const OpenFileButton({required super.fileNotifier, super.title = 'Open File', super.iconData = Icons.file_open, super.key}) extends FileLoadButton {
+  // final VoidCallback onLoaded;
+
+  // @override
+  // Future<void> beginAsync() async {
+  //   await super.beginAsync();
+  //   onLoaded();
+  // }
   @override
   Future<void> beginAsync() async => fileNotifier.openParseWithNotify(fileNotifier.pickFile());
 }
 
 class const SaveFileButton({required super.fileNotifier, super.title = 'Save File', super.iconData = Icons.file_copy, super.key}) extends FileLoadButton {
+  // @override
+  // Future<void> beginAsync() async {
+  //   onCommit();
+  //   return super.beginAsync();
+  // }
   @override
   Future<void> beginAsync() async => fileNotifier.saveBuildWithNotify(fileNotifier.pickSaveFile());
 }
 
 // async notifier, refresh on show dialog
-abstract class const FileLoadButton({required final FileStorageNotifier fileNotifier, required final String title, required final IconData iconData, super.key}) extends StatelessWidget {
-// e.g. open close
-// e.g. Icons.file_open
-
+abstract class const FileLoadButton({
+  required final FileStorageNotifier fileNotifier,
+  required final String title, // e.g. open close
+  required final IconData iconData, // e.g. Icons.file_open
+  super.key,
+}) extends StatelessWidget {
   Future<void> beginAsync(); // load initial async state referenced by dialog, sets fileNotifier.operationCompleted
 
   // Future object reference is set once initially. changes do not update without ChangeNotifier.

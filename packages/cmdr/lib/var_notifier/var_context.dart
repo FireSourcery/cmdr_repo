@@ -31,6 +31,8 @@ abstract class const VarContext({super.key, required final VarCacheController re
 
 /// additional sub type containing [VarStreamController]
 class const VarRealTimeContext({super.key, required VarStreamController super.repo, required super.child}) extends VarContext {
+  // static T of<T extends VarRealTimeContext>(BuildContext context) => VarContext.of<T>(context);
+
   @override
   VarStreamController get repo => super.repo as VarStreamController;
 }

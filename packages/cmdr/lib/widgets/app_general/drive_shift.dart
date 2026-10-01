@@ -4,9 +4,18 @@ import "dart:async";
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 
-class const DriveShift({super.key, final ValueSetter<Enum>? onSelect, final AsyncValueGetter<Enum?>? confirmSelected, final Enum? initialSelect, required final Enum enumF, required final Enum enumN, required final Enum enumR, required final Enum enumP}) extends StatefulWidget {
-  // final ValueNotifier<Enum>? valueNotifier;
+class const DriveShift({
+  super.key,
+  final ValueSetter<Enum>? onSelect,
+  final AsyncValueGetter<Enum?>? confirmSelected,
+  final Enum? initialSelect,
   // directly return users type
+  required final Enum enumF,
+  required final Enum enumN,
+  required final Enum enumR,
+  required final Enum enumP,
+}) extends StatefulWidget {
+  // final ValueNotifier<Enum>? valueNotifier;
   final Radius radius = const Radius.circular(10.0);
   final double size = 25;
 

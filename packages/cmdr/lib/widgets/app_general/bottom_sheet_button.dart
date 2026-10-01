@@ -5,16 +5,14 @@ import 'package:flutter/material.dart';
 class const BottomSheetButton({
     required final ImageProvider backgroundImage,
     final OutlinedBorder? shape,
-    final double heightScale = .33,
-    required final Widget? child,
+    final double heightScale = .33, // default
+    required final Widget? child, // initial and default bottom sheet
     final Icon iconOpen = const Icon(Icons.keyboard_arrow_up, size: 50),
     final Icon iconClose = const Icon(Icons.keyboard_arrow_down, size: 50),
     // this.iconInactive = const Icon(Icons.circle_outlined, size: 50),
     final Icon? iconInactive,
     super.key,
   }) extends StatefulWidget {
-// default
-// initial and default bottom sheet
   // final Color shadowClosed =  Colors.black;
   // final Color shadowOpen = Colors.black;
   // final double elevationOpen =  10;

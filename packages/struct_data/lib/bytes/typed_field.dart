@@ -13,6 +13,8 @@ export '../src/type_markers.dart';
 ///
 /// mixin can be applied to enum
 abstract mixin class const TypedField<T extends NativeType>._() {
+  // const factory TypedField(int offset) = TypedOffset<T>;
+
   int get offset; // index of the first byte
 
   int get size => _sizeOf<T>();

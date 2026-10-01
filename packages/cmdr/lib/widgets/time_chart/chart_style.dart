@@ -34,6 +34,9 @@ class const ChartStyle({
 }
 
 class const ChartStyleDefault() extends ChartStyle {
+  // @override
+  // Color get tooltipColor => Colors.grey;
+
   @override
   TextStyle get lineTextStyle => const TextStyle(fontSize: 10);
   @override

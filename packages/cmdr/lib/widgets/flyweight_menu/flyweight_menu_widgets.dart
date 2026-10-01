@@ -4,8 +4,12 @@ import 'flyweight_menu.dart';
 
 /// General
 // Menu 'hosts' must wrap MenuAnchor (with menu.menuItems) under MenuSourceContext -> menuItems access menu and its notifier via context
-class const FlyweightMenuOverlay<T>({super.key, required final FlyweightMenu<T> menu, final Widget? child, required final ValueWidgetBuilder<T> builder}) extends StatelessWidget {
-// menuItems onPressed will find the notifier from MenuSourceInstance
+class const FlyweightMenuOverlay<T>({
+  super.key,
+  required final FlyweightMenu<T> menu, // menuItems onPressed will find the notifier from MenuSourceInstance
+  final Widget? child,
+  required final ValueWidgetBuilder<T> builder,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FlyweightMenuContext<T>(
@@ -32,8 +36,11 @@ class const FlyweightMenuButton<T>({super.key, required final FlyweightMenu<T> m
 }
 
 /// Default Widgets
-class const MenuAnchorButton({required final List<Widget> menuItems, final Widget icon = const Icon(Icons.more_horiz), super.key}) extends StatelessWidget {
-// MenuItemButton
+class const MenuAnchorButton({
+  required final List<Widget> menuItems, // MenuItemButton
+  final Widget icon = const Icon(Icons.more_horiz),
+  super.key,
+}) extends StatelessWidget {
   Widget builder(BuildContext context, MenuController controller, Widget? child) {
     return IconButton(onPressed: () => (controller.isOpen) ? controller.close() : controller.open(), icon: icon);
   }
@@ -50,7 +57,7 @@ class const MenuAnchorButton({required final List<Widget> menuItems, final Widge
 }
 
 class MenuAnchorOverlay extends StatelessWidget {
-  const MenuAnchorOverlay._({required this.menuItems, required this.child});
+  const MenuAnchorOverlay._({required this.menuItems, required this.child, this.menuController, super.key});
 
   MenuAnchorOverlay({required this.menuItems, required this.child, MenuController? menuController, super.key}) : menuController = menuController ?? MenuController();
 

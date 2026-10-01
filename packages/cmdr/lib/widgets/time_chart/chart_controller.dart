@@ -207,17 +207,14 @@ class ChartController({
 class const ChartEntry({
     required final String name,
     required final ValueGetter<num> valueGetter,
-    final Color? color,
+    final Color? color, //override default
     final VoidCallback? onSelect,
     final int? preferredPrecision,
-    final num normalRef = 1,
+    final num normalRef = 1, // yRange
   }) {
   this : assert(normalRef != 0);
 
-// yRange
   // final T key;
-
-//override default
 }
 
 abstract mixin class TimerNotifier() implements ChangeNotifier {

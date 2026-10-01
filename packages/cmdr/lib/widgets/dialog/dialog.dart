@@ -27,10 +27,15 @@ class const ConfirmationDialog<T>({super.key, final ValueGetter<T>? onCancel, fi
 ///   It displays a loading indicator while the operation is in progress.
 ///   The dialog closes when the operation is complete.
 ///   T is the return type of the async operation, and is passed to the onConfirmContent builder.
-class const AsyncConfirmationDialog<T>({super.key, required final AsyncValueGetter<T> onConfirm, required final Widget initialContent, required final AsyncWidgetBuilder<T> onConfirmContent, final Widget? title, final Widget? icon, final Color? iconColor}) extends StatefulWidget {
-// process on confirm, asyncProcess
-// onConfirm, pending completion, asyncProcessContent
-
+class const AsyncConfirmationDialog<T>({
+  super.key,
+  required final AsyncValueGetter<T> onConfirm, // process on confirm, asyncProcess
+  required final Widget initialContent,
+  required final AsyncWidgetBuilder<T> onConfirmContent, // onConfirm, pending completion, asyncProcessContent
+  final Widget? title,
+  final Widget? icon,
+  final Color? iconColor,
+}) extends StatefulWidget {
   @override
   State<AsyncConfirmationDialog<T>> createState() => _AsyncConfirmationDialogState<T>();
 }

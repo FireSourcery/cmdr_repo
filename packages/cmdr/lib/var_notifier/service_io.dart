@@ -111,6 +111,7 @@ class ServicePushStreamHandler<K, V, S>(final ServiceIO<K, V, S> protocolService
 }
 
 abstract class ServiceStreamHandler<T>(final void Function(T data) onDataSlice) {
+  // createStream()
   Stream<T> get stream; // creates a new stream, call from begin() only
 
   StreamSubscription? streamSubscription;

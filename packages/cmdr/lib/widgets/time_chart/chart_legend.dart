@@ -54,6 +54,17 @@ class const _LegendListTile({
     final TextStyle? textStyle,
     // this.isSelected = false,
   }) extends StatelessWidget {
+  // factory _LegendListTile.chartEntry(ChartEntry entry, ChartController controller, {ChartStyle? style, void Function()? onSelect}) {
+  //   return _LegendListTile(
+  //     name: entry.name,
+  //     valueGetter: entry.valueGetter,
+  //     listenable: controller,
+  //     color: style.effectiveColor,
+  //     textStyle: effectiveTextStyle,
+  //     onSelect: entry.onSelect,
+  //   );
+  // }
+
   // final bool isSelected;
 
   Widget builder(context, child) => Text(valueGetter().toStringAsFixed(1), textAlign: TextAlign.right, style: textStyle);

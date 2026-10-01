@@ -58,9 +58,12 @@ class LinkedMenuController(List<MenuEntry> menuListMain, List<MenuEntry> menuLis
   }
 }
 
-class const MenuEntry({required final Enum id, final String label = '', final IconData? icon, final String? route}) {
-// menu in order of index
-}
+class const MenuEntry({
+  required final Enum id, // menu in order of index
+  final String label = '',
+  final IconData? icon,
+  final String? route,
+});
 
 abstract mixin class MenuEntryId() implements MenuEntry, Enum {
   @override

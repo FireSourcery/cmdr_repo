@@ -8,22 +8,15 @@ import 'package:flutter/material.dart';
 /// [T] is the type of the event value that triggers the event dialog.
 class const DialogAnchor<T>({
     super.key,
-    final WidgetBuilder? initialDialogBuilder,
-    final Listenable? eventNotifier,
+    final WidgetBuilder? initialDialogBuilder, // on first focus
+    // allow a more general interface, instead of ValueListenable<T?>? eventNotifier;
+    final Listenable? eventNotifier, // controls opening of dialog
     final ValueGetter<T?>? eventGetter,
-    final ValueWidgetBuilder<T?>? eventDialogBuilder,
-    final T? eventMatch,
-    final Notification? notificationMatch,
+    final ValueWidgetBuilder<T?>? eventDialogBuilder, // on event, e.g. submit, or other event. user match widget built to the notification event
+    final T? eventMatch, // when set, open only on the transition into [eventGetter] == [eventMatch]
+    final Notification? notificationMatch, // additional way to match event
     required final Widget child,
   }) extends StatefulWidget {
-// controls opening of dialog
-// when set, open only on the transition into [eventGetter] == [eventMatch]
-
-// additional way to match event
-
-// on first focus
-
-// on event, e.g. submit, or other event. user match widget built to the notification event
   @override
   State<DialogAnchor> createState() => _DialogAnchorState<T>();
 }
@@ -106,8 +99,19 @@ class _DialogAnchorState<T>() extends State<DialogAnchor<T>> {
 ///
 /// [DialogButton] is a button that opens a dialog when pressed.
 ///
-class const DialogButton<T>({super.key, required final WidgetBuilder dialogBuilder, final Widget? child, final VoidCallback? onPressed, final ValueSetter<T?>? onPop, final bool useRootNavigator = true, final DialogButtonStyle? styleId, final bool barrierDismissible = false}) extends StatelessWidget {
-// must build new for async
+class const DialogButton<T>({
+  super.key,
+  required final WidgetBuilder dialogBuilder, // must build new for async
+  final Widget? child,
+  final VoidCallback? onPressed,
+  final ValueSetter<T?>? onPop,
+  final bool useRootNavigator = true,
+  final DialogButtonStyle? styleId,
+  final bool barrierDismissible = false,
+}) extends StatelessWidget {
+  // use the warning theme
+  // const DialogButton.warning({super.key, required this.dialogBuilder, this.useRootNavigator = true, this.child, this.onPop, this.onPressed}) : themeStyle = DialogButtonStyle.warning;
+
   @override
   Widget build(BuildContext context) {
     final buttonStyle = switch (styleId) {

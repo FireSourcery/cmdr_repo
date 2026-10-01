@@ -111,8 +111,9 @@ class const VarIOFieldWithMenu<T extends VarKey>({
 ///
 ///
 class const VarIOFieldConfig<V>(
-    final VarNotifier<V> varNotifier, {
-    final VarSingleController? controller,
+    final VarNotifier<V> varNotifier, { //alternatively split valuenotifier/valueUnion
+    final VarSingleController? controller, // unused for now
+    // alternatively handle in constructor
     final FloatingLabelAlignment? labelAlignment = FloatingLabelAlignment.start,
     final bool showLabel = true,
     final bool showPrefix = true,
@@ -128,10 +129,6 @@ class const VarIOFieldConfig<V>(
     return varNotifier.varKey.viewType.callWithType(local) as VarIOFieldConfig<V>;
   }
 
-//alternatively split valuenotifier/valueUnion
-// unused for now
-
-  // alternatively handle in constructor
   // InputDecoration? idDecoration
 
   // control over whether the parameters from VarNotifier are passed

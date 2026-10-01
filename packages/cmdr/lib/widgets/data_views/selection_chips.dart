@@ -52,21 +52,16 @@ class const SingleSelectChips<T>({
 // ),
 class const MultiSelectChips<T>({
     super.key,
-    required final Iterable<T> selectable,
-    required final Set<T> selectedState,
+    required final Iterable<T> selectable, // must be a new list
+    required final Set<T> selectedState, // externally maintained state
     final int? selectMax,
     final ValueWidgetBuilder<T>? labelBuilder,
     final double spacing = 10,
-    final ValueSetter<T>? onSelected,
-    final ValueSetter<T>? onAdd,
+    final ValueSetter<T>? onSelected, // does not include add/remove info
+    final ValueSetter<T>? onAdd, // alternatively ValueSetter<(T,bool)>
     final ValueSetter<T>? onRemove,
     final ChipWrapperBuilder? builder,
   }) extends StatelessWidget {
-// must be a new list
-// externally maintained state
-
-// does not include add/remove info
-// alternatively ValueSetter<(T,bool)>
   @override
   Widget build(BuildContext context) {
     final chips = [

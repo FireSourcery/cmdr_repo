@@ -23,6 +23,8 @@ class const VarKeyBuilder(final VarKey varKey, final Widget Function(VarNotifier
 /// if the callers context/class does not directly contain the VarCache,
 /// [VarContext] and [VarKeyContext] must be provided.
 class const VarKeyContextBuilder(final VarKey varKey, final Widget Function(VarNotifier) builder, {super.key}) extends StatelessWidget {
+  // const VarKeyContextBuilder.typed(this.varKey, Widget Function<G>(VarNotifier) builder, {super.key}) : builder = builder;
+
   @override
   Widget build(BuildContext context) {
     final varNotifier = VarContext.ofKey(context, varKey).repo.cache.resolve(varKey);

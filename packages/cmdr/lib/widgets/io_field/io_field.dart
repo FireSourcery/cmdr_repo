@@ -45,32 +45,27 @@ abstract class IOField<T> implements Widget {
 /// Union of all mode/subtype parameters. pass to subtype variations' constructors as a common interface
 /// optionally as var widdget interface
 class const IOFieldConfig<T>({
-  final InputDecoration idDecoration = const InputDecoration(),
+  final InputDecoration idDecoration = const InputDecoration(), // using input decoration to hold label fields
   final bool isReadOnly = false, // alternatively move this to constructor parameter
   final String tip = '',
 
   /// using Listenable for cases where value is not of the same type as valueListenable
-  required final Listenable valueListenable,
-  required final ValueGetter<T> valueGetter,
+  required final Listenable valueListenable, // read/output update
+  required final ValueGetter<T> valueGetter, // caller handles nullability via T (e.g. IOFieldConfig<Foo?>)
   final ValueSetter<T>? valueSetter,
-  final ValueGetter<bool>? errorGetter,
+  final ValueGetter<bool>? errorGetter, // true on error
+  // the single value -> display string interface. defaults to valueGetter().toString().
+  // also stringifies each [valueEnumRange] entry for menu labels.
   final Stringifier<T>? valueStringifier,
-  final List<T>? valueEnumRange,
-  final ({num min, num max})? valueNumLimits,
-  final ValueChanged<T>? valueChanged,
+  final List<T>? valueEnumRange, // enum or String selection, alternatively type as enum only
+  final ({num min, num max})? valueNumLimits, // required for num type, slider and input range check on submit
+  final ValueChanged<T>? valueChanged, // slider only for now
   // this.useSliderBorder = false,
   final bool useSwitchBorder = true,
   final IOFieldBoolStyle boolStyle = IOFieldBoolStyle.latchingSwitch,
 }) {
-  // using input decoration to hold label fields
-  // read/output update
-  // caller handles nullability via T (e.g. IOFieldConfig<Foo?>)
-  // slider only for now
-  // true on error
-  // the single value -> display string interface. defaults to valueGetter().toString().
-  // also stringifies each [valueEnumRange] entry for menu labels.
-  // required for num type, slider and input range check on submit
-  // enum or String selection, alternatively type as enum only
+  // this : assert(!((T == num || T == int || T == double) && (valueNumLimits == null /*  && valueEnumRange == null */ ))),
+  //      assert(!((T == Enum) && (valueEnumRange == null)));
 
   // final bool useSliderBorder;
   IOFieldConfig<T> copyWith({
@@ -171,7 +166,18 @@ class IOFieldReader<T> extends StatelessWidget implements IOField<T> {
 /// [_IOFieldTextNum], [_IOFieldTextString]) carries the per-type keyboard, formatters, and
 /// parsing. [IOFieldText.config] selects one by value type via pattern matching, so no runtime
 /// type inspection (`switch (T)` / `is`) is needed once a subtype is chosen.
-abstract class const IOFieldText<T>._config(IOFieldConfig<T> config, {super.key}) extends StatefulWidget implements IOField<T> {
+// ignore: prefer_const_constructors_in_immutables
+abstract class IOFieldText<T>({
+  required final Listenable listenable,
+  final InputDecoration? decoration,
+  required final ValueGetter<T> valueGetter,
+  final ValueSetter<T>? valueSetter,
+  final String tip = '',
+  final Stringifier<T>? valueStringifier, // num or String does not need other conversion, unless user implements precision
+  final ValueGetter<bool>? errorGetter,
+  final ({num min, num max})? numLimits,
+  super.key,
+}) extends StatefulWidget implements IOField<T> {
   // int?/double? are matched before num? — both are subtypes of num?. Nullable patterns also
   // catch the non-nullable form (int <: int?), so a plain `int` field routes here too. Leaves
   // stay generic in T: a leaf fixed to `double?` can't be returned as IOFieldText<T> for a
@@ -186,24 +192,46 @@ abstract class const IOFieldText<T>._config(IOFieldConfig<T> config, {super.key}
     };
   }
 
-  this
-    : listenable = config.valueListenable,
-      decoration = config.idDecoration,
-      valueGetter = config.valueGetter,
-      valueSetter = config.valueSetter,
-      tip = config.tip,
-      numLimits = config.valueNumLimits,
-      errorGetter = config.errorGetter,
-      valueStringifier = config.valueStringifier;
+  IOFieldText._config(IOFieldConfig<T> config, {Key? key})
+    : this(
+        listenable: config.valueListenable,
+        decoration: config.idDecoration,
+        valueGetter: config.valueGetter,
+        valueSetter: config.valueSetter,
+        tip: config.tip,
+        numLimits: config.valueNumLimits,
+        errorGetter: config.errorGetter,
+        valueStringifier: config.valueStringifier,
+        key: key,
+      );
 
-  final Listenable listenable;
-  final InputDecoration? decoration;
-  final ValueGetter<T> valueGetter;
-  final ValueSetter<T>? valueSetter;
-  final String tip;
-  final Stringifier<T>? valueStringifier; // num or String does not need other conversion, unless user implements precision
-  final ValueGetter<bool>? errorGetter;
-  final ({num min, num max})? numLimits; // required for num subtypes
+  // : listenable = config.valueListenable,
+  //   decoration = config.idDecoration,
+  //   valueGetter = config.valueGetter,
+  //   valueSetter = config.valueSetter,
+  //   tip = config.tip,
+  //   numLimits = config.valueNumLimits,
+  //   errorGetter = config.errorGetter,
+  //   valueStringifier = config.valueStringifier;
+
+  // this
+  //   : listenable = config.valueListenable,
+  //     decoration = config.idDecoration,
+  //     valueGetter = config.valueGetter,
+  //     valueSetter = config.valueSetter,
+  //     tip = config.tip,
+  //     numLimits = config.valueNumLimits,
+  //     errorGetter = config.errorGetter,
+  //     valueStringifier = config.valueStringifier;
+
+  // final Listenable listenable;
+  // final InputDecoration? decoration;
+  // final ValueGetter<T> valueGetter;
+  // final ValueSetter<T>? valueSetter;
+  // final String tip;
+  // final Stringifier<T>? valueStringifier; // num or String does not need other conversion, unless user implements precision
+  // final ValueGetter<bool>? errorGetter;
+  // final ({num min, num max})? numLimits; // required for num subtypes
 
   num get numMin => numLimits!.min;
   num get numMax => numLimits!.max;
@@ -218,7 +246,7 @@ abstract class const IOFieldText<T>._config(IOFieldConfig<T> config, {super.key}
 }
 
 /// num/double/int share the decimal keyboard and clamp; double/int only narrow [parse].
-class const _IOFieldTextNum<T>(super.config, {super.key}) extends IOFieldText<T> {
+class _IOFieldTextNum<T>(super.config, {super.key}) extends IOFieldText<T> {
   this : assert(config.valueNumLimits != null, 'num field requires valueNumLimits'), super._config();
   @override
   List<TextInputFormatter>? get inputFormatters => [FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}')), FilteringTextInputFormatter.singleLineFormatter];
@@ -228,12 +256,12 @@ class const _IOFieldTextNum<T>(super.config, {super.key}) extends IOFieldText<T>
   T? parse(String text) => num.tryParse(text)?.clamp(numMin, numMax) as T?;
 }
 
-class const _IOFieldTextDouble<T>(super.config, {super.key}) extends _IOFieldTextNum<T> {
+class _IOFieldTextDouble<T>(super.config, {super.key}) extends _IOFieldTextNum<T> {
   @override
   T? parse(String text) => double.tryParse(text)?.clamp(numMin, numMax).toDouble() as T?;
 }
 
-class const _IOFieldTextInt<T>(super.config, {super.key}) extends _IOFieldTextNum<T> {
+class _IOFieldTextInt<T>(super.config, {super.key}) extends _IOFieldTextNum<T> {
   @override
   List<TextInputFormatter>? get inputFormatters => [FilteringTextInputFormatter.digitsOnly, FilteringTextInputFormatter.singleLineFormatter];
   @override
@@ -242,7 +270,7 @@ class const _IOFieldTextInt<T>(super.config, {super.key}) extends _IOFieldTextNu
   T? parse(String text) => int.tryParse(text)?.clamp(numMin, numMax).toInt() as T?;
 }
 
-class const _IOFieldTextString<T>(super.config, {super.key}) extends IOFieldText<T> {
+class _IOFieldTextString<T>(super.config, {super.key}) extends IOFieldText<T> {
   this : super._config();
   @override
   List<TextInputFormatter>? get inputFormatters => null;

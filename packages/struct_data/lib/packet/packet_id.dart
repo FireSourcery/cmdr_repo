@@ -182,7 +182,8 @@ abstract interface class Payload<V>() {
 /// stored, that one is computed.
 class const PayloadMeta(
   /// Payload bytes. Excludes the header.
-  final int length) {
+  final int length,
+) {
   static const PayloadMeta empty = PayloadMeta(0);
 
   @override

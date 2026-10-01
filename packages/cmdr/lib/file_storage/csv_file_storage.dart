@@ -3,13 +3,18 @@ import 'package:csv/csv.dart';
 import 'file_storage.dart';
 
 class const CsvFileCodec() extends FileStringCodec<List<List<dynamic>>> {
+  // @override
+  // String encode(List<List<dynamic>> input) => const CsvEncoder().convert(input, convertNullTo: '');
+  // @override
+  // List<List<dynamic>> decode(String encoded) => const CsvDecoder().convert(encoded, convertEmptyTo: null);
+
   @override
   String encode(List<List<dynamic>> input) => const CsvEncoder().convert(input);
   @override
   List<List<dynamic>> decode(String encoded) => const CsvDecoder().convert(encoded);
 }
 
-class CsvFileMapCodec({var bool transposeToColumnMap = false, var List<String>? skipEntries}) extends FileCodec<Map<String, List<dynamic>>, List<List<dynamic>>> {
+class CsvFileMapCodec({var bool transposeToColumnMap = false, var List<String>? skipEntries}) extends FileCodec<Map<String, List<dynamic>>, List<List<dynamic>>> { // potential make const if needed
   @override
   List<List> encode(Map<String, List> decoded) => transposeToColumnMap ? csvOfColumnMap(decoded) : csvOfRowMap(decoded);
   @override

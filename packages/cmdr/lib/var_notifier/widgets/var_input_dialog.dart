@@ -18,13 +18,10 @@ class const VarInputDialog({
     super.key,
     required final Widget child,
     required final VarNotifier varNotifier,
-    final ValueGetter<String?>? beginEditMessage,
-    final ValueGetter<String?>? endEditMessage,
+    final ValueGetter<String?>? beginEditMessage, // shown on first focus when it resolves non-null
+    final ValueGetter<String?>? endEditMessage, // shown on submit when it resolves non-null
     // final ValueSetter<VarNotifier<V>> onEvent
   }) extends StatelessWidget {
-// shown on first focus when it resolves non-null
-// shown on submit when it resolves non-null
-
   // final ValueSetter<VarNotifier<V>> onSubmit;
 
   Widget _dialog(BuildContext context, String message) {
