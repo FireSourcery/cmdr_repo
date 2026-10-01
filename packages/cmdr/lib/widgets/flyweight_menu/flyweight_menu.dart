@@ -47,19 +47,20 @@ class const FlyweightMenuSource<T>({
 ///    - original values, including callbacks can be overridden
 /// its [menuItems] will find itself via context, and update the notifier + any other callbacks
 class FlyweightMenu<T>(
-    FlyweightMenuSource<T> menuSource, {
-    final ValueSetter<T>? onPressed, // additional onPressed
-    T? initialValue,
-    // IterableFilter<T>? filter,
-    // ValueSetter<({T newValue, T oldValue})>? onPressedExt,
-  }) extends FlyweightMenuSource<T> with ChangeNotifier implements ValueNotifier<T> {
+  FlyweightMenuSource<T> menuSource, {
+  final ValueSetter<T>? onPressed, // additional onPressed
+  T? initialValue,
+  // IterableFilter<T>? filter,
+  // ValueSetter<({T newValue, T oldValue})>? onPressedExt,
+}) extends FlyweightMenuSource<T> with ChangeNotifier implements ValueNotifier<T> {
   //maybe make this private
 
-  this : _value = (initialValue ?? menuSource.defaultKey) as T, // T is either nullable, or initialValue must be provided
-       super(
-         menuItems: menuSource.menuItems,
-         defaultKey: menuSource.defaultKey,
-       ) {
+  this
+    : _value = (initialValue ?? menuSource.defaultKey) as T, // T is either nullable, or initialValue must be provided
+      super(
+        menuItems: menuSource.menuItems,
+        defaultKey: menuSource.defaultKey,
+      ) {
     if (onPressed != null) addListener(_onPressedAsListener);
   }
 
@@ -189,14 +190,14 @@ typedef MenuWidgetBuilder<T> = Widget Function(BuildContext context, FlyweightMe
 /// wraps user provided menu around user provided key widget
 /// FlyweightMenuContainer<T>
 class const MenuAnchorBuilder<T>({
-    super.key,
-    required final FlyweightMenuSource<T> menuSource,
-    // required this.menuInstance,
-    final T? initialItem,
-    required final MenuWidgetBuilder<T> menuAnchorBuilder, // builds the outer wrap
-    required final ValueWidgetBuilder<T> keyBuilder, // itemBuilder builds the inner widget under the menu, passed to menuAnchorBuilder
-    final Widget? child, // passed to keyBuilder
-  }) extends StatefulWidget {
+  super.key,
+  required final FlyweightMenuSource<T> menuSource,
+  // required this.menuInstance,
+  final T? initialItem,
+  required final MenuWidgetBuilder<T> menuAnchorBuilder, // builds the outer wrap
+  required final ValueWidgetBuilder<T> keyBuilder, // itemBuilder builds the inner widget under the menu, passed to menuAnchorBuilder
+  final Widget? child, // passed to keyBuilder
+}) extends StatefulWidget {
   // final FlyweightMenu<T> menuInstance;  // provide one of either
 
   @override
@@ -227,7 +228,6 @@ class _MenuAnchorBuilderState<T>() extends State<MenuAnchorBuilder<T>> {
 class const MenuListenableBuilder<T>({super.key, required super.builder, super.child, required FlyweightMenu<T> menu}) extends ValueListenableBuilder<T> {
   this : super(valueListenable: menu);
 }
-
 
 ////
 /// not used by library layer

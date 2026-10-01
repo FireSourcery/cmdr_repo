@@ -10,6 +10,11 @@ This is a **Dart/Flutter monorepo** containing reusable library packages for emb
 These libraries are **general-purpose, framework-level** packages designed to be consumed by downstream application projects.
 
 ---
+ 
+## Core Principles
+- **Expression through code**: Use code as the language to express what its doing. Favor code that expresses itself over extensive comments.
+- **Declarative functions**. Favor less local variables. Function body should look like the equation in its docstring, not reconstruct it.
+ 
 ### Documentation
 - Keep comments concise. Comments are reserved for points that the code cannot express, not what the code is doing.
 - Use visualizations with mermaid diagrams for describing what the code is doing

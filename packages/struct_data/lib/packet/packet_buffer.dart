@@ -20,9 +20,7 @@ export 'packet.dart';
 /// existed to carry a `TypedDataCaster<T>` so a generic buffer could produce a protocol's own
 /// `Packet` subclass; with no subclass to produce there is no caster to carry, and the
 /// intermediate class had no other member and no other user.
-base class PacketBuffer(
-  @override
-  final PacketCodec codec, [int? size]) extends TypedDataBuffer with Packet {
+base class PacketBuffer(@override final PacketCodec codec, [int? size]) extends TypedDataBuffer with Packet {
   this : super(size ?? codec.lengthMax);
 
   /// Bounded by [lengthInBytes], not by the allocation.

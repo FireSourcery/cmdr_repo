@@ -1,4 +1,3 @@
-
 import 'struct.dart';
 export 'enum_map.dart';
 

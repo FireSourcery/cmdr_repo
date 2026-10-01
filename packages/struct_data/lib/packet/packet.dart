@@ -32,10 +32,10 @@ part 'packet_id.dart';
 /// absent / present-and-wrong / present-and-right — lives there.
 abstract mixin class Packet {
   /// A detached view over [byteData].
-  factory Packet(PacketCodec codec, ByteData byteData) = PacketView;
+  factory(PacketCodec codec, ByteData byteData) = PacketView;
 
   /// A detached view over [data].
-  factory Packet.of(PacketCodec codec, TypedData data) = PacketView.of;
+  factory of(PacketCodec codec, TypedData data) = PacketView.of;
 
   PacketCodec get codec;
 
@@ -229,16 +229,8 @@ abstract mixin class Packet {
 /// A detached [Packet] over a frame that is exactly its own bytes.
 ///
 /// What the parser hands out: a listener gets a frame, not the buffer that assembled it.
-final class PacketView with Packet {
-  PacketView(this.codec, this.byteData);
-
-  PacketView.of(this.codec, TypedData data) : byteData = ByteData.sublistView(data);
-
-  @override
-  final PacketCodec codec;
-
-  @override
-  final ByteData byteData;
+final class PacketView(final PacketCodec codec, final ByteData byteData) with Packet {
+  PacketView.of(PacketCodec codec, TypedData data) : this(codec, ByteData.sublistView(data));
 
   @override
   String toString() => toDebugString();

@@ -1,4 +1,5 @@
 import 'dart:collection';
+
 import 'package:collection/collection.dart';
 
 import '../general/index_map.dart';
@@ -11,18 +12,15 @@ part 'bool_map.dart';
 /// Enforce concrete keys as base.
 /// A special case of [FixedMap], all values retrieve from a [Bits] object
 /// Map operators implemented by subclass depending on V type, int or bool.
-abstract interface class const BitsMap<K, V>._(
-  @override
-  final List<K> keys) with MapBase<K, V> implements Map<K, V> {
+abstract interface class const BitsMap<K, V>._(@override final List<K> keys) with MapBase<K, V> implements Map<K, V> {
   factory BitsMap.of(List<K> keys, [int bits = 0, bool mutable = true]) {
     return switch (keys) {
-          List<BitIndexField> keys => mutable ? MutableBoolMap(keys, Bits(bits)) : ConstBoolMap(keys, Bits(bits)),
-          List<BitField> keys => mutable ? MutableBitFieldMap(keys, Bits(bits)) : ConstBitFieldMap(keys, Bits(bits)),
-          List<Enum> keys => mutable ? MutableBoolMap(keys, Bits(bits)) : ConstBoolMap(keys, Bits(bits)),
-          List<dynamic> keys when (keys.first.index == keys.first.index) => mutable ? MutableBoolMap(keys, Bits(bits)) : ConstBoolMap(keys, Bits(bits)),
-          [...] => throw UnimplementedError(),
-        }
-        as BitsMap<K, V>;
+      List<BitIndexField> keys => mutable ? MutableBoolMap(keys, Bits(bits)) : ConstBoolMap(keys, Bits(bits)),
+      List<BitField> keys => mutable ? MutableBitFieldMap(keys, Bits(bits)) : ConstBitFieldMap(keys, Bits(bits)),
+      List<Enum> keys => mutable ? MutableBoolMap(keys, Bits(bits)) : ConstBoolMap(keys, Bits(bits)),
+      List<dynamic> keys when (keys.first.index == keys.first.index) => mutable ? MutableBoolMap(keys, Bits(bits)) : ConstBoolMap(keys, Bits(bits)),
+      [...] => throw UnimplementedError(),
+    } as BitsMap<K, V>;
   }
 
   Bits get bits;
@@ -61,16 +59,11 @@ abstract mixin class BitFieldMap<K extends BitField> implements BitsMap<K, int> 
   }
 }
 
-class MutableBitFieldMap<K extends BitField>(super.keys, [
-  @override
-  var Bits bits = const Bits.allZeros()]) extends BitsMap<K, int> with BitFieldMap<K> {
+class MutableBitFieldMap<K extends BitField>(super.keys, [@override var Bits bits = const Bits.allZeros()]) extends BitsMap<K, int> with BitFieldMap<K> {
   this : super._();
-
 }
 
-class const ConstBitFieldMap<K extends BitField>(super.keys, 
-  @override
-  final Bits bits) extends BitsMap<K, int> with BitFieldMap<K> {
+class const ConstBitFieldMap<K extends BitField>(super.keys, @override final Bits bits) extends BitsMap<K, int> with BitFieldMap<K> {
   this : super._();
 
   @override

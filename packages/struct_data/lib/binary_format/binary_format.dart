@@ -187,7 +187,6 @@ class const Adcu() extends NumFormat<Uint16, double> {
 }
 
 // binary_formats.dart
-
 // Concrete definitions for common formats.
 final class const Fract16() extends FixedPoint<Int16> {
   num get scalingFactor => (1 << 15);
@@ -273,22 +272,3 @@ final class const Uint8Int() extends IntFormat<Uint8>;
 final class const Int32Int() extends IntFormat<Int32>;
 
 final class const Uint32Int() extends IntFormat<Uint32>;
-
-// extension type BinaryValue<V>(int value) {
-//   /// UnionCodec
-//   // num get valueAsNum => numView;
-//   // int get valueAsInt => (numView).toInt();
-//   // double get valueAsDouble => (numView).toDouble();
-//   // bool get valueAsBool => (numView != 0);
-//   // String get valueAsString => String.fromCharCodes(valueAsBytes);
-//   // Uint8List get valueAsBytes => Uint8List(8)..buffer.asByteData().setUint64(0, numView as int, Endian.little);
-
-//   int asInt([IntFormat? format]) => format?.decode(value) ?? value;
-//   double asDouble([FractFormat? format]) => format?.decode(value) ?? value.toDouble();
-//   bool asBool() => (value != 0);
-//   // String get asString() => String.fromCharCodes(valueAsBytes);
-
-//   R as<R>(BinaryFormat<NativeType, R>? format) => format?.decode(value) as R;
-
-//   // R _asDefault<R>() {}
-// }

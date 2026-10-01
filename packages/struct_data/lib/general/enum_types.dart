@@ -34,9 +34,8 @@ abstract mixin class EnumCodecByOffset<V extends Enum>() implements EnumCodec<V>
   int encode(V view) => view.index - zeroIndex;
 }
 
-class const EnumCodecByHandlers<V extends Enum>({
-  @override
-  required final List<V> values, required final V Function(int data) decoder, required final int Function(V view) encoder}) implements EnumCodec<V> {
+class const EnumCodecByHandlers<V extends Enum>({@override required final List<V> values, required final V Function(int data) decoder, required final int Function(V view) encoder})
+    implements EnumCodec<V> {
   @override
   V decode(int data) => decoder(data);
   @override
@@ -44,21 +43,11 @@ class const EnumCodecByHandlers<V extends Enum>({
 }
 
 /// concrete
-class const EnumCodecDefault<V extends Enum>(
-  @override
-  final List<V> values) with EnumCodecByIndex<V> {
-}
+class const EnumCodecDefault<V extends Enum>(@override final List<V> values) with EnumCodecByIndex<V> {}
 
-class const EnumCodecOffset<V extends Enum>(
-  @override
-  final List<V> values, 
-  @override
-  final int zeroIndex) with EnumCodecByOffset<V> {
-}
+class const EnumCodecOffset<V extends Enum>(@override final List<V> values, @override final int zeroIndex) with EnumCodecByOffset<V> {}
 
-class const EnumCodecSign<V extends Enum>(
-  @override
-  final List<V> values) with EnumCodecByOffset<V> {
+class const EnumCodecSign<V extends Enum>(@override final List<V> values) with EnumCodecByOffset<V> {
   @override
   final int zeroIndex = 1; // default to offset of 1 for sign enums with -1, 0, 1 values
 }

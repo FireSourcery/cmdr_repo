@@ -52,8 +52,6 @@ class const _SimpleConverter<S, T>(final T Function(S) _convert) extends Convert
   T convert(S input) => _convert(input);
 }
 
- 
-
 // enum FileStorageStatus implements Exception {
 //   ok,
 //   processing,
@@ -68,5 +66,3 @@ class const _SimpleConverter<S, T>(final T Function(S) _convert) extends Convert
 //   @override
 //   toString() => message;
 // }
-
- 

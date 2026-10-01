@@ -43,13 +43,12 @@ abstract class IOField<T> implements Widget {
 /// Effectively:
 /// The IOField generative constructor, which can be shared without inheritance
 /// Union of all mode/subtype parameters. pass to subtype variations' constructors as a common interface
-/// optionally as var widdget interface
+/// optionally as var widget interface
 class const IOFieldConfig<T>({
   final InputDecoration idDecoration = const InputDecoration(), // using input decoration to hold label fields
   final bool isReadOnly = false, // alternatively move this to constructor parameter
   final String tip = '',
-
-  /// using Listenable for cases where value is not of the same type as valueListenable
+  //  using Listenable for cases where value is not of the same type as valueListenable
   required final Listenable valueListenable, // read/output update
   required final ValueGetter<T> valueGetter, // caller handles nullability via T (e.g. IOFieldConfig<Foo?>)
   final ValueSetter<T>? valueSetter,
@@ -67,7 +66,6 @@ class const IOFieldConfig<T>({
   // this : assert(!((T == num || T == int || T == double) && (valueNumLimits == null /*  && valueEnumRange == null */ ))),
   //      assert(!((T == Enum) && (valueEnumRange == null)));
 
-  // final bool useSliderBorder;
   IOFieldConfig<T> copyWith({
     InputDecoration? idDecoration,
     bool? isReadOnly,
@@ -94,7 +92,6 @@ class const IOFieldConfig<T>({
       valueStringifier: valueStringifier ?? this.valueStringifier,
       valueEnumRange: valueEnumRange ?? this.valueEnumRange,
       valueChanged: sliderChanged ?? valueChanged,
-      // useSliderBorder: useSliderBorder ?? this.useSliderBorder,
       useSwitchBorder: useSwitchBorder ?? this.useSwitchBorder,
       boolStyle: boolStyle ?? this.boolStyle,
     );
@@ -204,34 +201,6 @@ abstract class IOFieldText<T>({
         valueStringifier: config.valueStringifier,
         key: key,
       );
-
-  // : listenable = config.valueListenable,
-  //   decoration = config.idDecoration,
-  //   valueGetter = config.valueGetter,
-  //   valueSetter = config.valueSetter,
-  //   tip = config.tip,
-  //   numLimits = config.valueNumLimits,
-  //   errorGetter = config.errorGetter,
-  //   valueStringifier = config.valueStringifier;
-
-  // this
-  //   : listenable = config.valueListenable,
-  //     decoration = config.idDecoration,
-  //     valueGetter = config.valueGetter,
-  //     valueSetter = config.valueSetter,
-  //     tip = config.tip,
-  //     numLimits = config.valueNumLimits,
-  //     errorGetter = config.errorGetter,
-  //     valueStringifier = config.valueStringifier;
-
-  // final Listenable listenable;
-  // final InputDecoration? decoration;
-  // final ValueGetter<T> valueGetter;
-  // final ValueSetter<T>? valueSetter;
-  // final String tip;
-  // final Stringifier<T>? valueStringifier; // num or String does not need other conversion, unless user implements precision
-  // final ValueGetter<bool>? errorGetter;
-  // final ({num min, num max})? numLimits; // required for num subtypes
 
   num get numMin => numLimits!.min;
   num get numMax => numLimits!.max;

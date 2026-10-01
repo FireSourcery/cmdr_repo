@@ -9,7 +9,7 @@ export 'enum_map.dart';
 /// mixin in 1 step for serialization
 /// provide toMap or implements MapBase and duplicate code until combine mixin is support
 /// mixin toMap
-/// implmenting Map would require subclasses to mixin MapBase
+/// implementing Map would require subclasses to mixin MapBase
 
 // if K parameter is included.
 // mixin Serializable<S extends Serializable<S>, K extends Field<Object?>> on Object implements StructBase<S, K, Object?>

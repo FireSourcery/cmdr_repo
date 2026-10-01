@@ -36,13 +36,8 @@ extension type const WordStruct<K extends WordField>(Word word) implements Word,
 extension type const WordForm<K extends WordField>(List<K> _fields) implements StructForm<K, int> {}
 
 /// [WordStructBase] — abstract base for user-defined word struct subtypes.
-abstract class WordBase<T extends WordBase<T, K>, K extends WordField> with MapBase<K, int>, StructBase<T, K, int> {
-  const WordBase(this.word);
-  const WordBase.value(int value) : word = value as WordStruct<K>;
-  // WordBase.intiailizer(Map<WordField, int> map) : word = WordStruct.intiailizer(map);
-
-  const WordBase.withData(this.word); // same as default.
-
+abstract class const WordBase<T extends WordBase<T, K>, K extends WordField>(final WordStruct<K> word) with MapBase<K, int>, StructBase<T, K, int> {
+  const WordBase.value(int value) : this(value as WordStruct<K>);
   //for now
   static const int sizeMax = 8;
   static const int _mask8 = 0xFF;
@@ -52,8 +47,6 @@ abstract class WordBase<T extends WordBase<T, K>, K extends WordField> with MapB
   const WordBase.of16s(int ls16, [int upperLs16 = 0, int lowerMs16 = 0, int ms16 = 0]) : this.of32s((upperLs16 << 16) | (ls16 & _mask16), (ms16 << 16) | (lowerMs16 & _mask16));
   const WordBase.of8s(int lsb, [int lsb1 = 0, int lsb2 = 0, int lsb3 = 0, int msb3 = 0, int msb2 = 0, int msb1 = 0, int msb = 0])
     : this.of16s((lsb1 << 8) | (lsb & _mask8), (lsb3 << 8) | (lsb2 & _mask8), (msb2 << 8) | (msb3 & _mask8), (msb << 8) | (msb1 & _mask8));
-
-  final WordStruct<K> word;
 
   @override
   List<K> get keys;

@@ -76,11 +76,6 @@ extension type const Word(int _value) implements Bits, int {
   // ByteData toByteData1(int lentgh, [Endian endian = Endian.little]) => ByteData(8)..setUint64(0, this, endian).trimWord(byteLength ?? this.byteLength, endian);
   // Uint8List toBytes1(int lentgh, [Endian endian = Endian.little]) => Uint8List.sublistView(toByteData(endian));
 
-  // by offset
-  // ByteData toByteDataAt(Endian endian, [int start = 0, int? end]) => ByteData.sublistView(toByteData(endian), start, end);
-
-  // R toList<R extends TypedData>(Endian endian, [int? byteLength]) => toByteData(endian).trim(byteLength ?? this.byteLength, endian).sublistView<R>();
-
   /// String Char operations using Bits
   String charOfCode(int index) => String.fromCharCode(byteAt(index)); // 0x31 => '1'
   int withCharAsCode(int index, String char) => withByteAt(index, char.runes.single); // '1' => 0x31
@@ -99,9 +94,6 @@ extension type const Word(int _value) implements Bits, int {
 }
 
 ///
-///
-///
-
 extension SizedWord on ByteData {
   /// Word value for intervals not of pow2, e.g. 3 bytes, 5 bytes
   // allows non pow2 intervals. use case [2][3][3] stored in a int64

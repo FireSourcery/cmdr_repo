@@ -1,4 +1,5 @@
 import 'dart:collection';
+
 import 'package:meta/meta.dart';
 
 import '../general/struct.dart';
@@ -138,9 +139,7 @@ abstract class BitStructBase<T extends BitStructBase<T, K>, K extends BitField> 
 
 /// Concrete pair: keys passed in, immutable (uses [ConstBits]).
 @immutable
-class const _BitStruct<K extends BitField>(
-  @override
-  final List<K> keys, super.bitData) extends BitStructBase<_BitStruct<K>, K> {
+class const _BitStruct<K extends BitField>(@override final List<K> keys, super.bitData) extends BitStructBase<_BitStruct<K>, K> {
   @override
   _BitStruct<K> copyWithData(covariant BitStruct<K> data) => _BitStruct(keys, ConstBits(data.bits) as BitStruct<K>);
 }

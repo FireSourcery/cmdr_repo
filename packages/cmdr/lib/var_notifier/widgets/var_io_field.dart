@@ -78,12 +78,12 @@ class const _VarIOField<V>._(final IOFieldConfig<V> config, {super.key}) extends
 /// decouple from Var? to
 /// SelectableIOField
 class const VarIOFieldWithMenu<T extends VarKey>({
-    final T? initialVarKey,
-    final VarCache? varCache,
-    super.key,
-    required final FlyweightMenuSource<T> menuSource,
-    // IOFieldConfig ? config,
-  }) extends StatelessWidget {
+  final T? initialVarKey,
+  final VarCache? varCache,
+  super.key,
+  required final FlyweightMenuSource<T> menuSource,
+  // IOFieldConfig ? config,
+}) extends StatelessWidget {
   Widget _varWidgetBuilder(VarNotifier varNotifier) {
     return VarIOField(varNotifier, showLabel: true, isDense: false, showPrefix: true, showSuffix: true);
   }
@@ -111,16 +111,16 @@ class const VarIOFieldWithMenu<T extends VarKey>({
 ///
 ///
 class const VarIOFieldConfig<V>(
-    final VarNotifier<V> varNotifier, { //alternatively split valuenotifier/valueUnion
-    final VarSingleController? controller, // unused for now
-    // alternatively handle in constructor
-    final FloatingLabelAlignment? labelAlignment = FloatingLabelAlignment.start,
-    final bool showLabel = true,
-    final bool showPrefix = true,
-    final bool showSuffix = true,
-    final bool? isDense = false,
-    final bool? readOnly,
-  }) implements IOFieldConfig<V> {
+  final VarNotifier<V> varNotifier, { //alternatively split valuenotifier/valueUnion
+  final VarSingleController? controller, // unused for now
+  // alternatively handle in constructor
+  final FloatingLabelAlignment? labelAlignment = FloatingLabelAlignment.start,
+  final bool showLabel = true,
+  final bool showPrefix = true,
+  final bool showSuffix = true,
+  final bool? isDense = false,
+  final bool? readOnly,
+}) implements IOFieldConfig<V> {
   factory VarIOFieldConfig.of(VarNotifier varNotifier) {
     VarIOFieldConfig<G> local<G>() {
       return VarIOFieldConfig<G>(varNotifier as VarNotifier<G>);

@@ -1,9 +1,6 @@
 import 'package:meta/meta.dart';
-import '../binary_data.dart';
 
-/// [FieldEntry] — a key-value pair for a field in a struct
-typedef FieldEntry<K extends Field<V>, V> = ({K key, V value});
-typedef FieldEntries<K extends Field<V>, V> = Iterable<FieldEntry<K, V>>;
+import '../binary_data.dart';
 
 /// [StructData] — zero-cost keyed view over an existing object.
 ///
@@ -40,6 +37,7 @@ extension type const StructData<K extends Field<V>, V>(Object _data) implements 
   FieldEntry<Field<R>, R> fieldAs<R>(Field<R> key) => (key: key, value: this[key as K] as R); // handles user side casting
 
   // implementation handled by Form
+  // depreciate
   Iterable<FieldEntry<K, V>> fieldsAs(StructForm<K, V> type) => type(this).fields;
   // Iterable<V> valuesAs(StructForm<K, V> type) => type(this).values;
   // Map<K, V> toMapWith(StructForm<K, V> type) => type.mapWithData(this);
@@ -81,6 +79,10 @@ extension FieldExtension<K extends Field<V>, V> on K {
   V of(StructData<K, V> struct) => getIn(struct);
   V? validateType(StructData<K, dynamic> data) => data[this] is V ? data[this] as V : null;
 }
+
+/// [FieldEntry] — a key-value pair for a field in a struct
+typedef FieldEntry<K extends Field<V>, V> = ({K key, V value});
+typedef FieldEntries<K extends Field<V>, V> = Iterable<FieldEntry<K, V>>;
 
 /// [StructForm]
 /// StructData TypeClass
@@ -223,14 +225,13 @@ mixin StructBase<S extends StructBase<S, K, V>, K extends Field<V>, V> {
 //   Map<K, V> toMap() => IndexMap.of(keys, values);
 // }
 
-// seperate paramter S
-mixin StructBase1<K extends Field<V>, V> {}
-mixin ImmutableStructBase1<S extends StructBase1<K, V>, K extends Field<V>, V> implements StructBase1<K, V> {
-  void fillFromMap(Map<K, V> map) => throw TypeError();
-  S copyWithMap(Map<K, V> data); // or StructFormBase holds constructor  S create( );
+// separate parameter S
+// mixin ImmutableStructBase1<S extends StructBase1<K, V>, K extends Field<V>, V> implements StructBase1<K, V> {
+//   void fillFromMap(Map<K, V> map) => throw TypeError();
+//   S copyWithMap(Map<K, V> data); // or StructFormBase holds constructor  S create( );
 
-  S get self => this as S;
-}
+//   S get self => this as S;
+// }
 
 // Utility
 /// proxy over a map
