@@ -87,7 +87,8 @@ typedef FieldEntries<K extends Field<V>, V> = Iterable<FieldEntry<K, V>>;
 /// [StructForm]
 /// StructData TypeClass
 /// Common viewer interface
-/// handle creation, creation here gurantees all keys are 'Struct' keys are present
+/// The full list becomes a `constructor` for in Map form.
+/// handle creation, creation here guarantees all keys are 'Struct' keys are present
 /// Conversion — bridge to Map (and therefore to serialization)
 ///
 /// `List<Enum>` includes serialization
@@ -101,6 +102,8 @@ extension type const StructForm<K extends Field<V>, V>(List<K> fields) implement
   Map<K, V> _hashMap(StructData<K, V> struct) => {for (final key in fields) key: struct[key]};
 
   Map<K, V> mapWithData(StructData<K, V> struct) => _structMap(struct);
+
+  // Map<K, V?> create([StructData<K, V>? struct]) => _structMap(struct ?? StructData<K, V>.empty());
 
   ({StructForm<K, V> form, StructData<K, V> data}) call(StructData<K, V> struct) => (form: this, data: struct);
 }

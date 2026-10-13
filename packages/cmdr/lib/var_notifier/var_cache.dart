@@ -95,8 +95,9 @@ class VarCache {
   Iterable<int> dataIdsOf(Iterable<VarKey> keys) => varsOf(keys).map((e) => e.dataKey); // use the cached value
 
   /// Collective Data Write - Individual write use VarController/VarValue Instance
-  Iterable<(int, int)> get dataPairs => varEntries.map((e) => e.dataPair);
-  Iterable<(int, int)> dataPairsOf(Iterable<VarKey> keys) => varsOf(keys).map((e) => e.dataPair);
+  /// Read-only vars are never sent
+  Iterable<(int, int)> get dataPairs => varEntries.writable.map((e) => e.dataPair);
+  Iterable<(int, int)> dataPairsOf(Iterable<VarKey> keys) => varsOf(keys).writable.map((e) => e.dataPair);
 
   ///
   /// Collective Data Read Response - Update by Packet
@@ -130,7 +131,7 @@ class VarCache {
   /// Collective Data Write
   ///
   /// awaiting push
-  Iterable<VarNotifier> get varsUpdatedByView => varEntries.where((e) => e.hasPendingChanges);
+  Iterable<VarNotifier> get varsUpdatedByView => varEntries.writable.where((e) => e.hasPendingChanges);
   Iterable<(int, int)> get dataPairsUpdatedByView => varsUpdatedByView.map((e) => e.dataPair);
 
   /// Update by Response Data
@@ -206,6 +207,10 @@ class VarCache {
     print(this);
     _cache.forEach((key, value) => print('{ ${value.varKey} : $value }'));
   }
+}
+
+extension on Iterable<VarNotifier> {
+  Iterable<VarNotifier> get writable => where((e) => e.varKey.access.isWritable);
 }
 
 ///
