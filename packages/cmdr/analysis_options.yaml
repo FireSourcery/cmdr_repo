@@ -3,10 +3,10 @@
 # # Additional information about this file can be found at
 # # https://dart.dev/guides/language/analysis-options
 
-# formatter:
-#   trailing_commas: preserve
-# analyzer:
-#   exclude:
-#     - build/** 
+formatter:
+  trailing_commas: preserve 
+analyzer:
+  exclude:
+    - build/**
 
-include: ../../../analysis_options.yaml
+# include: ../../../analysis_options.yaml

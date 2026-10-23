@@ -75,8 +75,9 @@ abstract mixin class FileStorageNotifier<T>() implements FileStorage<T> {
   // returns null for no file selected
   // await file resolve file set
   // dispatch fileNotifier update after parsing
-  Future<T?> openWithNotify(Future<File?> value) async => processWithNotify<T?>(() async => await openAsync(pickedFile = value)).whenComplete(() async => file = await pickedFile);
-  Future<Object?> openParseWithNotify(Future<File?> value) async => processWithNotify<Object?>(() async => await openContents(pickedFile = value)).whenComplete(() async => file = await pickedFile);
+  // bypass pickedFile setter, it notifies before parse completes, making the post-parse notify a no-op on the same File
+  Future<T?> openWithNotify(Future<File?> value) async => processWithNotify<T?>(() async => await openAsync(_pickedFile = value)).whenComplete(() async => file = await pickedFile);
+  Future<Object?> openParseWithNotify(Future<File?> value) async => processWithNotify<Object?>(() async => await openContents(_pickedFile = value)).whenComplete(() async => file = await pickedFile);
 
   Future<File?> saveWithNotify(Future<File?> value, T contents) async => processWithNotify<File?>(() async => await saveAsync(pickedFile = value, contents));
   Future<File?> saveBuildWithNotify(Future<File?> value) async => processWithNotify<File?>(() async => await saveContents(pickedFile = value));
