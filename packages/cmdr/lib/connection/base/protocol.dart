@@ -8,19 +8,22 @@ import 'link.dart';
 
 /// Hold Link, Format, and common state
 class Protocol(final Link link, final PacketCodec codec) {
-  this : _packetTransformer = codec.transformer;
-
-  final PacketTransformer _packetTransformer;
-
   /// Keyed by the wire byte, not by [PacketId]: a response is its own id and may share its
   /// request's byte, so the two are different objects that must route to the same socket.
   final Map<int, ProtocolSocket> respSocketMap = {};
   final Lock _lock = Lock();
 
   StreamSubscription<Packet>? _packetSubscription; // state for is started
-  /// begin Socket Rx
-  void begin() => _packetSubscription ??= link.streamIn?.transform(_packetTransformer).listen(_demux, onError: _onError);
-  void end() => _packetSubscription?.cancel().whenComplete(() => _packetSubscription = null);
+  /// begin Socket Rx, once per link session: each connect opens a new reader, and a [PacketTransformer] binds once.
+  void begin() {
+    _packetSubscription?.cancel();
+    _packetSubscription = link.streamIn?.transform(codec.transformer).listen(_demux, onError: _onError);
+  }
+
+  void end() {
+    _packetSubscription?.cancel();
+    _packetSubscription = null;
+  }
 
   /// central distributor for socket streams
   /// limitations:

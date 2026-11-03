@@ -44,13 +44,12 @@ class SerialLink() implements Link {
     portConfig.baudRate = baudRate ?? portConfig.baudRate;
 
     if (portConfigName == null) return const LinkError('No Port Selected');
+    if (isConnected) _close(); // each connect is a new session. Windows opens a port exclusively, so the held one must go first
     _serialPort = SerialPort(portConfigName!);
-
-    if (isConnected) return LinkConnected('Already Connected $portActiveName');
-    _serialPort!.config = portConfig;
 
     try {
       if (_serialPort!.openReadWrite()) {
+        _serialPort!.config = portConfig; // libserialport configures an open port only
         _serialPortReader = SerialPortReader(_serialPort!);
         return LinkConnected('$portActiveName');
       } else {
@@ -80,10 +79,15 @@ class SerialLink() implements Link {
     flushInput();
   }
 
-  @override
-  void dispose() {
+  // close, not dispose: a SerialPort frees the config set on it, and [portConfig] is shared across ports
+  void _close() {
     _serialPortReader?.close();
     _serialPort?.close();
+  }
+
+  @override
+  void dispose() {
+    _close();
     _serialPort?.dispose();
   }
 

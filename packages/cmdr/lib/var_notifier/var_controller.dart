@@ -137,30 +137,29 @@ class VarStreamController({required super.cache, required super.protocolService}
 
   void Function(Object error)? _onError;
 
-  // cancelOnError: true (default) cancels the dead subscription, then re-subscribe with a fresh stream
+  // cancelOnError: true cancels the dead subscription, then re-subscribe with a fresh stream. without it, the dead one keeps polling beside its replacement
+  // the replacement takes its sibling's pause state, which pause/resume keep in step
   // endPeriodic nulls subscriptions, so the null check prevents restart after intentional stop
   void _restartPollOnError(Object error) {
     _onError?.call(error);
     if (pushSubscription == null) return;
-    // final pause = (pushSubscription?.isPaused ?? false);
-    pollSubscription = _readStream.listen(_onReadSlice, onError: _restartPollOnError);
-    // if (pause) pushSubscription?.pause();
+    pollSubscription = _readStream.listen(_onReadSlice, onError: _restartPollOnError, cancelOnError: true);
+    if (pushSubscription!.isPaused) pollSubscription!.pause();
   }
 
   void _restartPushOnError(Object error) {
     _onError?.call(error);
     if (pushSubscription == null) return;
-    // final pause = (pushSubscription?.isPaused ?? false);
-    pushSubscription = _writeStream.listen(_onWriteSlice, onError: _restartPushOnError);
-    // if (pause) pushSubscription?.pause();
+    pushSubscription = _writeStream.listen(_onWriteSlice, onError: _restartPushOnError, cancelOnError: true);
+    if (pollSubscription?.isPaused ?? false) pushSubscription!.pause();
   }
 
   ///
   bool beginPeriodic({void Function(Object error)? onError}) {
     if (!protocolService.isConnected) return false;
     _onError = onError;
-    pollSubscription ??= _readStream.listen(_onReadSlice, onError: _restartPollOnError);
-    pushSubscription ??= _writeStream.listen(_onWriteSlice, onError: _restartPushOnError);
+    pollSubscription ??= _readStream.listen(_onReadSlice, onError: _restartPollOnError, cancelOnError: true);
+    pushSubscription ??= _writeStream.listen(_onWriteSlice, onError: _restartPushOnError, cancelOnError: true);
     return true;
   }
 
