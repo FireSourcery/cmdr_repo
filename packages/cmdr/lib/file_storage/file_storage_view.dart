@@ -14,7 +14,7 @@ class const OpenFileButton({required super.fileNotifier, super.title = 'Open Fil
 
 class const SaveFileButton({required super.fileNotifier, super.title = 'Save File', super.iconData = Icons.file_copy, super.key}) extends FileLoadButton {
   @override
-  Future<void> beginAsync() async => fileNotifier.saveBuildWithNotify(fileNotifier.pickSaveFile());
+  Future<void> beginAsync() async => fileNotifier.processWithNotify<File?>(() async => await (fileNotifier.pickedFile = fileNotifier.pickAndSaveFile()));
 }
 
 // async notifier, refresh on show dialog
@@ -230,24 +230,29 @@ extension FileStoragePickFile on FileStorage {
   /// File picker using settings
   Future<File?> pickFile({List<String>? allowedExtensions}) async {
     allowedExtensions ??= extensions;
-    FilePickerResult? result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: allowedExtensions, lockParentWindow: true, allowMultiple: false);
-    return (result != null) ? File(result.files.single.path!) : null;
+    final result = await FilePicker.pickFile(
+      type: FileType.custom,
+      allowedExtensions: allowedExtensions,
+      windowsOptions: const WindowsOptions(lockParentWindow: true),
+    );
+    return result != null ? File.fromUri(result.uri) : null;
   }
 
-  Future<File?> pickSaveFile({List<String>? allowedExtensions, String? defaultName}) async {
+  /// Selects a destination and saves the built contents there.
+  Future<File?> pickAndSaveFile({List<String>? allowedExtensions, String? defaultName}) async {
     allowedExtensions ??= extensions;
-    defaultName ??= defaultName;
+    defaultName ??= this.defaultName;
     if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
-      String? path = await FilePicker.saveFile(
-        type: FileType.custom,
-        allowedExtensions: allowedExtensions,
-        lockParentWindow: true,
+      final contents = Uint8List.fromList(utf8.encode(stringCodec.encode(buildContents())));
+      final uri = await FilePicker.saveFile(
+        bytes: contents,
+        windowsOptions: const WindowsOptions(lockParentWindow: true),
         dialogTitle: 'Save As:',
         fileName: '${defaultName ?? 'untitled'}.${allowedExtensions?.first ?? 'txt'}',
       );
-      return (path != null) ? File(path) : null;
+      return uri != null ? File.fromUri(uri) : null;
     } else {
-      return pickFile();
+      return saveContents(pickFile(allowedExtensions: allowedExtensions));
     }
   }
 }
