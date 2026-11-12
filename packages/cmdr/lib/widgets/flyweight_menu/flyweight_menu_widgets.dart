@@ -57,7 +57,7 @@ class const MenuAnchorButton({
 }
 
 class MenuAnchorOverlay extends StatelessWidget {
-  const MenuAnchorOverlay._({required this.menuItems, required this.child, this.menuController, super.key});
+  const MenuAnchorOverlay._({required this.menuItems, required this.child}) : menuController = null;
 
   MenuAnchorOverlay({required this.menuItems, required this.child, MenuController? menuController, super.key}) : menuController = menuController ?? MenuController();
 

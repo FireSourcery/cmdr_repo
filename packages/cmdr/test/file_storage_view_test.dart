@@ -7,8 +7,8 @@ import 'package:cmdr/file_storage/file_storage_view.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class TestStorage extends FileStorage<String> with FileStorageNotifier<String> {
-  TestStorage() : super(extensions: ['txt'], defaultName: 'report');
+class TestStorage() extends FileStorage<String> with FileStorageNotifier<String> {
+  this : super(extensions: ['txt'], defaultName: 'report');
 
   @override
   Codec<String, String> get stringCodec => const _IdentityCodec();
@@ -20,9 +20,7 @@ class TestStorage extends FileStorage<String> with FileStorageNotifier<String> {
   Object? parseContents(String contents) => contents;
 }
 
-class _IdentityCodec extends Codec<String, String> {
-  const _IdentityCodec();
-
+class const _IdentityCodec() extends Codec<String, String> {
   @override
   Converter<String, String> get decoder => const _IdentityConverter();
 
@@ -30,14 +28,12 @@ class _IdentityCodec extends Codec<String, String> {
   Converter<String, String> get encoder => const _IdentityConverter();
 }
 
-class _IdentityConverter extends Converter<String, String> {
-  const _IdentityConverter();
-
+class const _IdentityConverter() extends Converter<String, String> {
   @override
   String convert(String input) => input;
 }
 
-class TestPicker extends FilePickerPlatform {
+class TestPicker() extends FilePickerPlatform {
   Uri? savedUri;
   PlatformFile? selectedFile;
   String? fileName;
@@ -87,12 +83,9 @@ class TestPicker extends FilePickerPlatform {
   }
 }
 
-base class TestPlatformFile extends PlatformFile {
-  TestPlatformFile(this.uri);
-
+base class TestPlatformFile(
   @override
-  final Uri uri;
-
+  final Uri uri) extends PlatformFile {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

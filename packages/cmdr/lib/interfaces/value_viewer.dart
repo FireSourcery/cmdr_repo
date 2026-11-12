@@ -1,5 +1,4 @@
-import 'package:cmdr/type_ext/stringifier.dart';
-import 'package:flutter/foundation.dart';
+// either as interface or common config object replacement for IOFieldConfig
 
 // setting/var notifier
 // abstract interface class ValueViewer<V>() {
