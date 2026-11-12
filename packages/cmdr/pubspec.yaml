@@ -12,7 +12,7 @@ environment:
 resolution: workspace
 
 dependencies: 
-  struct_data:  
+  struct_data: ^0.1.3
 
   flutter:
     sdk: flutter

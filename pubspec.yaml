@@ -1,0 +1,11 @@
+name: cmdr_workspace
+description: Workspace root for the cmdr and struct_data packages.
+homepage: https://github.com/FireSourcery/cmdr
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+workspace:
+  - packages/cmdr
+  - packages/struct_data

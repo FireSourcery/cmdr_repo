@@ -3,5 +3,5 @@
 # formatter:
 #   trailing_commas: preserve
 
-include: ../../../analysis_options.yaml
+include: ../../analysis_options.yaml
  

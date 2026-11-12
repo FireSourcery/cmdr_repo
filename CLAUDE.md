@@ -5,7 +5,7 @@
 This is a **Dart/Flutter monorepo** containing reusable library packages for embedded systems GUI applications. The primary packages are:
 
 - **`packages/cmdr`** — Flutter widgets, controllers, connection interfaces, file storage, settings, and var_notifier state management.
-- **`packages/binary_data`** — Pure Dart library for binary data manipulation: bit/byte structs, typed fields, serialization, binary codecs, and word-level operations.
+- **`packages/struct_data`** — Pure Dart library for binary data manipulation: bit/byte structs, typed fields, serialization, binary codecs, and word-level operations.
 
 These libraries are **general-purpose, framework-level** packages designed to be consumed by downstream application projects.
 
@@ -26,7 +26,9 @@ These libraries are **general-purpose, framework-level** packages designed to be
 ## Repository Structure
 
 ```
-cmdr_repo/
+./
+├── pubspec.yaml               # pub workspace root for both packages
+├── analysis_options.yaml      # shared by both packages
 ├── packages/
 │   ├── cmdr/lib/
 │   │   ├── connection/        # Serial links, MOT protocol, packet transforms
@@ -51,12 +53,14 @@ cmdr_repo/
 │   │       ├── main_menu/     # MainMenu + MainMenuController
 │   │       └── time_chart/    # Chart controller, data, legend, style, widgets
 │   │
-│   └── binary_data/lib/
+│   └── struct_data/lib/
 │       ├── binary_format/     # BinaryCodec, BinaryFormat, QuantityFormat
-│       ├── bits/              # BitField, BitStruct, BitsMap, BoolMap
+│       ├── bits/              # Bits, BitField, BitStruct, BitsMap, BoolMap
 │       ├── bytes/             # ByteStruct, TypedArray, TypedDataBuffer, TypedField
-│       ├── data/              # BasicTypes, EnumMap, IndexMap, Serializable, Struct, Slice
-│       ├── models/            # Packet, Version
+│       ├── general/           # Struct, Enumerated, Serializable, Binarizable, EnumMap, IndexMap
+│       ├── models/            # Version
+│       ├── packet/            # Packet, PacketCodec, PacketBuffer, PacketParser, PacketId
+│       ├── utilities/         # BasicTypes, extensions, Slice
 │       └── word/              # Word, WordStruct
 ```
 
@@ -65,8 +69,7 @@ cmdr_repo/
 ## Build & Run Commands
 
 ```bash
-# Get dependencies (run from package directory or repo root with melos)
-dart pub get
+# Get dependencies for both packages (the repo root is the pub workspace root)
 flutter pub get
 
 # Analyze code
@@ -74,7 +77,7 @@ dart analyze
 flutter analyze
 
 # Run tests
-dart test                          # for binary_data (pure Dart)
+dart test                          # for struct_data (pure Dart)
 flutter test                       # for cmdr (Flutter)
 
 # Run tests in a specific file
@@ -83,9 +86,6 @@ flutter test test/path/to/test.dart
 
 # Format code
 dart format .
-
-# Generate code (if using build_runner, e.g., for freezed/json_serializable)
-dart run build_runner build --delete-conflicting-outputs
 ```
 
 ---
@@ -137,7 +137,7 @@ dart run build_runner build --delete-conflicting-outputs
 - **Prefer `const` constructors** for widgets and immutable objects.
 - **Avoid `as` casts** — use pattern matching or type checks.
 - **Extension methods** are preferred for adding functionality to existing types (see `type_ext/`, `data/basic_ext.dart`, `data/num_ext.dart`).
-- **Keep packages independent** — `binary_data` has zero Flutter dependencies; `cmdr` may depend on `binary_data` but not vice versa.
+- **Keep packages independent** — `struct_data` has zero Flutter dependencies; `cmdr` may depend on `struct_data` but not vice versa.
 - Follow **effective Dart** lint rules. Run `dart analyze` with zero warnings before committing.
 
 ### Testing
@@ -175,7 +175,7 @@ dart run build_runner build --delete-conflicting-outputs
 
 ## Common Pitfalls
 
-- **Don't import Flutter in `binary_data`** — it's a pure Dart package.
+- **Don't import Flutter in `struct_data`** — it's a pure Dart package.
 - **VarNotifier disposal** — always dispose VarNotifiers when the owning widget/controller is disposed to avoid memory leaks.
 - **BitStruct field order** — bit fields are packed LSB-first by default; verify bit offset calculations match your hardware specification.
 - **Packet framing** — when implementing a new `PacketTransformer`, handle partial packets and buffer accumulation correctly in the stream transformer.
