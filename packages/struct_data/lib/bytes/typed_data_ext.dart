@@ -10,11 +10,14 @@ import 'dart:typed_data';
 T typedList<T extends TypedDataList>(int length) {
   return switch (T) {
         const (Uint8List) => Uint8List(length),
+        const (Uint8ClampedList) => Uint8ClampedList(length),
         const (Uint16List) => Uint16List(length),
         const (Uint32List) => Uint32List(length),
+        const (Uint64List) => Uint64List(length),
         const (Int8List) => Int8List(length),
         const (Int16List) => Int16List(length),
         const (Int32List) => Int32List(length),
+        const (Int64List) => Int64List(length),
         _ => throw UnimplementedError(),
       }
       as T;
@@ -38,11 +41,14 @@ T fromListInt<T extends TypedDataList<int>>(List<int> elements) {
 T sublistView<T extends TypedData>(TypedData data, [int start = 0, int? end]) {
   return switch (T) {
         const (Uint8List) => Uint8List.sublistView(data, start, end),
+        const (Uint8ClampedList) => Uint8ClampedList.sublistView(data, start, end),
         const (Uint16List) => Uint16List.sublistView(data, start, end),
         const (Uint32List) => Uint32List.sublistView(data, start, end),
+        const (Uint64List) => Uint64List.sublistView(data, start, end),
         const (Int8List) => Int8List.sublistView(data, start, end),
         const (Int16List) => Int16List.sublistView(data, start, end),
         const (Int32List) => Int32List.sublistView(data, start, end),
+        const (Int64List) => Int64List.sublistView(data, start, end),
         const (ByteData) => ByteData.sublistView(data, start, end),
         _ => throw UnimplementedError(),
       }
@@ -52,11 +58,14 @@ T sublistView<T extends TypedData>(TypedData data, [int start = 0, int? end]) {
 int bytesPerElementOf<T extends TypedData>() {
   return switch (T) {
     const (Uint8List) => Uint8List.bytesPerElement,
+    const (Uint8ClampedList) => Uint8ClampedList.bytesPerElement,
     const (Uint16List) => Uint16List.bytesPerElement,
     const (Uint32List) => Uint32List.bytesPerElement,
+    const (Uint64List) => Uint64List.bytesPerElement,
     const (Int8List) => Int8List.bytesPerElement,
     const (Int16List) => Int16List.bytesPerElement,
     const (Int32List) => Int32List.bytesPerElement,
+    const (Int64List) => Int64List.bytesPerElement,
     _ => throw UnimplementedError(),
   };
 }

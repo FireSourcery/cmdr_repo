@@ -67,7 +67,7 @@ class IndexMap<K extends dynamic, V> with MapBase<K, V> implements FixedMap<K, V
   List<V> get values => _valuesBuffer;
 
   @override
-  V operator [](covariant K key) => _valuesBuffer[key.index]!;
+  V operator [](covariant K key) => _valuesBuffer[key.index];
   @override
   void operator []=(covariant K key, V value) => _valuesBuffer[key.index] = value;
 

@@ -19,7 +19,7 @@ abstract mixin class FileStorageNotifier<T>() implements FileStorage<T> {
   // final ValueNotifier<FileStorageStatus> statusNotifier = ValueNotifier(FileStorageStatus.ok);
   final ValueNotifier<String?> statusNotifier = ValueNotifier(null);
   String get status => statusNotifier.value ?? 'Ok';
-  set status(String value) => statusNotifier.value = status;
+  set status(String value) => statusNotifier.value = value;
 
   // normalized progress to 0-1
   final ValueNotifier<double> progressNotifier = ValueNotifier(0);
@@ -37,7 +37,9 @@ abstract mixin class FileStorageNotifier<T>() implements FileStorage<T> {
   Completer<void> userConfirmation = Completer();
   Future<void> get userConfirmed => userConfirmation.future;
   void initUserConfirmation() => userConfirmation = Completer<void>();
-  void confirm() => userConfirmation.complete();
+  void confirm() {
+    if (!userConfirmation.isCompleted) userConfirmation.complete();
+  }
 
   // Future<Result<R>> processWithNotify1<R>(Future<R> Function() operation) async {
   //   statusNotifier.value = null;

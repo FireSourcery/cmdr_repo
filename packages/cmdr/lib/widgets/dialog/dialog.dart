@@ -1,6 +1,4 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -25,7 +23,7 @@ class const ConfirmationDialog<T>({super.key, final ValueGetter<T>? onCancel, fi
 
 /// [AsyncConfirmationDialog] is a dialog that performs an async operation on confirm.
 ///   It displays a loading indicator while the operation is in progress.
-///   The dialog closes when the operation is complete.
+///   On completion, 'Ok' closes the dialog with the result.
 ///   T is the return type of the async operation, and is passed to the onConfirmContent builder.
 class const AsyncConfirmationDialog<T>({
   super.key,
@@ -41,8 +39,7 @@ class const AsyncConfirmationDialog<T>({
 }
 
 class _AsyncConfirmationDialogState<T>() extends State<AsyncConfirmationDialog<T>> {
-  final Completer<void> userConfirmation = Completer(); // results of 'Confirm' button, held by widget
-  Future<T>? onConfirmProcess; // process onConfirm. Connect after user confirmation
+  Future<T>? process; // null until the user confirms
 
   // @override
   // void initState() {
@@ -54,64 +51,33 @@ class _AsyncConfirmationDialogState<T>() extends State<AsyncConfirmationDialog<T
   //   super.dispose();
   // }
 
-  void onPressedConfirm() {
-    userConfirmation.complete();
-    onConfirmProcess = widget.onConfirm();
-  }
+  void onPressedConfirm() => setState(() {
+    process = widget.onConfirm();
+  });
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      icon: widget.icon,
-      iconColor: widget.iconColor,
-      title: widget.title,
-      content: FutureBuilder(
-        future: userConfirmation.future,
-        builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-          return switch (snapshot.connectionState) {
-            ConnectionState.waiting => widget.initialContent,
-            ConnectionState.done => FutureBuilder(future: onConfirmProcess, builder: widget.onConfirmContent),
-            ConnectionState.none || ConnectionState.active => const SizedBox.shrink(),
-          };
-        },
-      ),
-
-      // Buttons
-      actions: [
-        // /// Cancel Button
-        // FutureBuilder(
-        //   future: userConfirmation.future,
-        //   builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-        //     return switch (snapshot.connectionState) {
-        //       ConnectionState.waiting => TextButton(onPressed: Navigator.of(context).pop, child: const Text('Cancel')),
-        //       ConnectionState.none || ConnectionState.active || ConnectionState.done => const SizedBox.shrink(),
-        //     };
-        //   },
-        // ),
-
-        /// Progress Indicator - replacing buttons after user confirmation
-        FutureBuilder(
-          future: onConfirmProcess,
-          builder: (BuildContext context, AsyncSnapshot<T> snapshot) {
-            return switch (snapshot.connectionState) {
-              ConnectionState.none || ConnectionState.waiting => TextButton(onPressed: Navigator.of(context).pop, child: const Text('Cancel')),
-              ConnectionState.active => const CircularProgressIndicator(),
-              ConnectionState.done => TextButton(onPressed: () => Navigator.of(context).pop(snapshot.data), child: const Text('Ok')), // with or without error
-            };
+    return FutureBuilder(
+      future: process,
+      builder: (BuildContext context, AsyncSnapshot<T> snapshot) {
+        return AlertDialog(
+          icon: widget.icon,
+          iconColor: widget.iconColor,
+          title: widget.title,
+          content: switch (snapshot.connectionState) {
+            ConnectionState.none => widget.initialContent,
+            _ => widget.onConfirmContent(context, snapshot),
           },
-        ),
-
-        /// Confirm Button
-        FutureBuilder(
-          future: userConfirmation.future,
-          builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-            return switch (snapshot.connectionState) {
-              ConnectionState.waiting => TextButton(onPressed: onPressedConfirm, child: const Text('Confirm')),
-              ConnectionState.none || ConnectionState.active || ConnectionState.done => const SizedBox.shrink(),
-            };
+          actions: switch (snapshot.connectionState) {
+            ConnectionState.none => [
+              TextButton(onPressed: Navigator.of(context).pop, child: const Text('Cancel')),
+              TextButton(onPressed: onPressedConfirm, child: const Text('Confirm')),
+            ],
+            ConnectionState.done => [TextButton(onPressed: () => Navigator.of(context).pop(snapshot.data), child: const Text('Ok'))], // with or without error
+            _ => [const CircularProgressIndicator()],
           },
-        ),
-      ],
+        );
+      },
     );
   }
 }

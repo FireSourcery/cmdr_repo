@@ -3,9 +3,10 @@
 library;
 
 extension EnumByIndex<T extends Enum> on List<T> {
-  T byIndex(int index, [T? defaultValue]) => elementAt(index.clamp(0, length - 1));
+  T byIndex(int index, [T? defaultValue]) => resolve(index) ?? defaultValue ?? (throw RangeError.index(index, this));
 
-  T? resolve(int? index) => (index != null) ? elementAtOrNull(index) : null;
+  /// null when [index] is null or out of range. [elementAtOrNull] alone throws on a negative index.
+  T? resolve(int? index) => (index != null && index >= 0) ? elementAtOrNull(index) : null;
 
   EnumCodec<T> asCodec() => EnumCodecDefault(this);
 }
@@ -55,10 +56,6 @@ class const EnumCodecSign<V extends Enum>(@override final List<V> values) with E
   int get zeroIndex => 1; // default to offset of 1 for sign enums with -1, 0, 1 values
 }
 
-extension EnumCodecResolve<T extends Enum> on EnumCodec<T> {
-  T? resolve(int? data) => (data != null) ? decode(data) : null;
-}
-
 ///
 class EnumUnionCodec<S extends Enum> {
   const EnumUnionCodec(this.codecs);
@@ -71,5 +68,5 @@ class EnumUnionCodec<S extends Enum> {
   @override
   List<S> get values => codecs.values.expand((e) => e).toList();
 
-  T? resolve<T extends S>(int? data) => (data != null) ? valuesTyped<T>().byIndex(data) : null;
+  T? resolve<T extends S>(int? data) => valuesTyped<T>().resolve(data);
 }

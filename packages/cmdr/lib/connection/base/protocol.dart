@@ -17,7 +17,7 @@ class Protocol(final Link link, final PacketCodec codec) {
   /// begin Socket Rx, once per link session: each connect opens a new reader, and a [PacketTransformer] binds once.
   void begin() {
     _packetSubscription?.cancel();
-    _packetSubscription = link.streamIn?.transform(codec.transformer).listen(_demux, onError: _onError);
+    _packetSubscription = link.streamIn?.transform(codec.transformer).listen(_demux, onError: onError);
   }
 
   void end() {
@@ -36,7 +36,7 @@ class Protocol(final Link link, final PacketCodec codec) {
     if (respSocketMap[packet.idField] case ProtocolSocket socket) {
       socket.add(packet);
     } else {
-      _onError(const ProtocolException('No matching socket'));
+      onError(const ProtocolException('No matching socket'));
     }
   }
 
@@ -49,7 +49,7 @@ class Protocol(final Link link, final PacketCodec codec) {
     } on TimeoutException {
       debugLog("trySend Timeout");
     } catch (e) {
-      _onError(e);
+      onError(e);
     } finally {}
   }
 
@@ -105,7 +105,8 @@ class Protocol(final Link link, final PacketCodec codec) {
   //   }
   // }
 
-  void _onError(Object error) {
+  @protected
+  void onError(Object error) {
     switch (error) {
       case ProtocolException():
       // handleProtocolException(error);
@@ -139,7 +140,7 @@ class ProtocolSocket implements Sink<Packet> {
 
   final Lock _lock = Lock();
 
-  Completer<Packet> _recved = Completer.sync(); // sync completer: latches a received packet and calls parse as soon as complete() is called.
+  Completer<Packet>? _recved; // sync completer: latches a received packet and calls parse as soon as complete() is called. Null while idle: nothing sent awaits an answer.
 
   int waitingOnLockCount = 0;
   // ProtocolException status = ProtocolException.ok; // use eventSink
@@ -250,16 +251,18 @@ class ProtocolSocket implements Sink<Packet> {
   ///
 
   ///
-  Future<PacketControlId?> ping(covariant PacketControlId id, {covariant PacketControlId? respId, Duration timeout = timeoutDefault}) async {
-    protocol.mapResponse(respId ?? id, this);
-    if (respId != null) _recved = Completer<Packet>.sync();
-
-    return sendSync(id).then((_) async => await recvSync(timeout)); // rethrow timeout unlike requestResponse case
+  Future<PacketControlId?> ping(covariant PacketControlId id, {covariant PacketControlId? respId, Duration timeout = timeoutDefault}) {
+    return _lock.synchronized(() async {
+      protocol.mapResponse(respId ?? id, this);
+      await sendSync(id);
+      return recvSync(timeout);
+    });
   }
 
   /// respondSync
   @protected
   Future<void> sendSync(PacketControlId controlId) {
+    _recved = Completer<Packet>.sync(); // arm before send: a ping is answered, an ack or nack may pull the next frame
     packetBufferOut.buildControl(controlId);
     return protocol.trySend(packetBufferOut.view);
   }
@@ -268,6 +271,10 @@ class ProtocolSocket implements Sink<Packet> {
   Future<PacketControlId?> recvSync([Duration timeout = rxTimeoutDefault]) {
     return tryRecv<PacketControlId>(() => packetBufferIn.controlId, timeout);
   }
+
+  /// Run [step] as one exchange: no other request on this socket interleaves with it.
+  @protected
+  Future<T> synchronized<T>(Future<T> Function() step) => _lock.synchronized(step);
 
   // Future<void> sendBytes(Uint8List bytes, {PacketId? id, Duration timeout = timeoutDefault}) async {
   //   // protocol.mapRequestResponse(packetId, this);
@@ -294,10 +301,13 @@ class ProtocolSocket implements Sink<Packet> {
   // using sync completer to execute parse immediately, although code it is not the final computation.
   @protected
   Future<R?> tryRecv<R>(R? Function() parse, [Duration timeout = rxTimeoutDefault]) async {
+    final Completer<Packet>? latch = _recved;
+    if (latch == null) return null;
     try {
-      return await _recved.future.timeout(timeout).then((_) => parse());
+      return await latch.future.timeout(timeout).then((_) => parse());
     } on TimeoutException {
       debugLog("Socket Recv Response Timeout");
+      if (protocol.link.isConnected) protocol.link.flushInput(); // a late response still in the port is not the next request's
       return null;
     } on ProtocolException catch (e) {
       //should be handled by protocol
@@ -311,7 +321,8 @@ class ProtocolSocket implements Sink<Packet> {
       // payload parser may throw if invalid packet passes header parser as valid
       return null;
     } finally {
-      _recved = Completer.sync(); // re-arm eagerly, before the gap to the next recv, so an incoming packet is latched
+      // after a packet, re-arm eagerly, before the gap to the next recv, so the next packet of the exchange is latched. after a timeout, idle: a late one is dropped
+      _recved = latch.isCompleted ? Completer.sync() : null;
     }
   }
 
@@ -319,12 +330,12 @@ class ProtocolSocket implements Sink<Packet> {
   @override
   void add(Packet event) {
     timer.stop();
-    packetBufferIn.copy(event.bytes); // sets buffer length to packet length, [PacketTransformer] handles max buffer length
-    // socket table does not unmap. might receive packets following completion
-    if (!_recved.isCompleted) {
-      _recved.complete(packetBufferIn.view); // latch: caught even if the recv awaits after this
+    // socket table does not unmap. might receive packets following completion, or while idle
+    if (_recved case final Completer<Packet> latch when !latch.isCompleted) {
+      packetBufferIn.copy(event.bytes); // sets buffer length to packet length, [PacketTransformer] handles max buffer length
+      latch.complete(packetBufferIn.view); // latch: caught even if the recv awaits after this
     } else {
-      throw const ProtocolException('Unexpected Rx');
+      protocol.onError(const ProtocolException('Unexpected Rx')); // dropped: the buffer may still back the last response's views
     }
   }
 

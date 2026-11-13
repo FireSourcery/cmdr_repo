@@ -48,10 +48,7 @@ abstract mixin class const VarKey<V>() implements ValueKey<int> {
 
   // strictly by id. disregard subtype and generic type
   @override
-  bool operator ==(covariant VarKey other) {
-    if (identical(this, other)) return true;
-    return other.value == value;
-  }
+  bool operator ==(Object other) => other is VarKey && other.value == value;
 
   @override
   int get hashCode => value.hashCode;

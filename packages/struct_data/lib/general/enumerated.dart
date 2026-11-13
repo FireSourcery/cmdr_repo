@@ -1,10 +1,6 @@
 import 'struct.dart';
 export 'enum_map.dart';
 
-// 1. Struct to handle transport only, simplified mapping from Model , saves toBytes().. separately handle map
-// 2. extend ByteStruct (embedded around ByteData) free transport and data view map. separately implement model view map
-// 3. extend Enumerated free model view map, with field accessors. separately handle transport
-
 // `StructForm<EnumeratedField>(.values)(enumeratedData).toMap();`
 typedef Enumerated<K extends EnumeratedField<Object?>> = StructBase<K, Object?>;
 

@@ -62,12 +62,15 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
 
   // ValueListenable<String> get toTextListenable => ValueNotifier<String>(valueString);
 
-  // status with data
-  void commitByResponseStatus() {
-    if (status.isSuccess) {
-      serverData = data; // safe: serverData now matches what we sent
-      _viewValue = null; // unblocks further [data] updates to affect [view]
+  /// Device response to a write of [sent]: accepted commits, unless the view changed since; rejected reverts to [serverData].
+  void applyWriteResponse(int sent, int status) {
+    _statusCode = status;
+    if (statusOf(status).isSuccess) {
+      commitViewOnResponse(sent);
+    } else {
+      _viewValue = null;
     }
+    notifyListeners();
   }
 
   ///

@@ -743,15 +743,16 @@ base class MemWriteRequest extends Struct implements Payload<MemWriteRequestValu
 
   @override
   PayloadMeta build(MemWriteRequestValues args) {
-    if (size > sizeMax) throw ArgumentError('Max Length $sizeMax: $size');
+    if (args.size < 0 || args.size > sizeMax) throw ArgumentError.value(args.size, 'size', 'Must be within 0..$sizeMax');
+    if (args.data.length < args.size) throw ArgumentError.value(args.data.length, 'data.length', 'Shorter than size ${args.size}');
     address = args.address;
     size = args.size;
     config = args.config;
     // loops on size. args.data.length may be greater
-    for (var index = 0; index < size; index++) {
+    for (var index = 0; index < args.size; index++) {
       data[index] = args.data[index];
     }
-    return PayloadMeta(size + 8);
+    return PayloadMeta(args.size + 8);
   }
 
   @override

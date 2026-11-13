@@ -580,6 +580,43 @@ void main() {
       expect(errors, isEmpty);
       expect(packets.map((p) => Packet.of(codec, p).packetId), [TestControlId.ack, TestReqId.echo]);
     });
+
+    test('back-to-back control frames each pass the length bound', () {
+      final control = Uint8List.fromList((PacketBuffer(codec)..buildControl(TestControlId.ack)).bytes);
+
+      final (packets, errors) = run([
+        Uint8List.fromList([...control, ...control]),
+      ]);
+
+      expect(errors, isEmpty);
+      expect(packets.map((p) => Packet.of(codec, p).packetId), [TestControlId.ack, TestControlId.ack]);
+    });
+
+    // A length inside the header would complete the frame before its checksum field arrived.
+    for (int declared = codec.prefixLength; declared < codec.dataFormat.headerLength; declared++) {
+      test('a declared length of $declared, shorter than the header, is reported and the next frame still arrives', () {
+        final short = requestBytes(TestReqId.echo, [1, 2, 3])..[codec.dataFormat.lengthField!.offset] = declared;
+        final good = requestBytes(TestReqId.echo, [4, 5, 6]);
+
+        final (packets, errors) = run([short, good]);
+
+        expect(errors, [PacketStatusException.meta]);
+        expect(packets, hasLength(1), reason: 'no packet from the short frame');
+        expect(Packet.of(codec, packets.single).payloadAsList<Uint8List>(), [4, 5, 6]);
+      });
+    }
+
+    test('a read larger than the buffer is reported, drops the partial frame, and the next frame still arrives', () {
+      final partial = Uint8List.sublistView(requestBytes(TestReqId.echo, [1, 2, 3]), 0, 3);
+      final burst = Uint8List(HeaderParser(codec).lengthMax);
+      final good = requestBytes(TestReqId.echo, [4, 5, 6]);
+
+      final (packets, errors) = run([partial, burst, good]);
+
+      expect(errors, [PacketStatusException.meta]);
+      expect(packets, hasLength(1));
+      expect(Packet.of(codec, packets.single).payloadAsList<Uint8List>(), [4, 5, 6]);
+    });
   });
 
   group('round trip', () {

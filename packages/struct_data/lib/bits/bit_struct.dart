@@ -127,7 +127,7 @@ abstract class BitStructBase<T extends BitStructBase<T, K>, K extends BitField> 
   }
 
   @override
-  int get hashCode => keys.hashCode ^ bits.hashCode;
+  int get hashCode => bits.hashCode;
 }
 
 // abstract mixin class BitStructImmutable<T extends BitStructBase<T, K>, K extends BitField> implements BitStructBase<T, K> {

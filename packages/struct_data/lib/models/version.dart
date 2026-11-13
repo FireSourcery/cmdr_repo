@@ -106,10 +106,7 @@ abstract base class Version<K extends WordField> extends WordBase<Version<K>, K>
   Map<String, Object> toJsonVerbose() => (toMap() as Map<Enum, Object>).toJson();
 
   @override
-  bool operator ==(covariant Version<K> other) {
-    if (identical(this, other)) return true;
-    return other.name == name && other.bits == bits;
-  }
+  bool operator ==(Object other) => identical(this, other) || (other is Version && other.name == name && other.bits == bits);
 
   @override
   int get hashCode => name.hashCode ^ bits.hashCode;

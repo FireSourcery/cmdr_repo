@@ -30,7 +30,7 @@ extension type const EnumMapFactory<T extends Enum>(List<T> enums) implements Li
   /// iterable values must be in order of each index
   EnumMap<T, V> mapWithValues<V>(Iterable<V> values) => IndexMap.of(this, values) as EnumMap<T, V>;
 
-  EnumMap<T, V> mapByName<V>(Map<String, V> input) => IndexMap.of(this, map((k) => input[k.name])) as EnumMap<T, V>;
+  EnumMap<T, V> mapByName<V>(Map<String, V> input) => IndexMap<T, V>.of(this, map((k) => input[k.name] as V)) as EnumMap<T, V>;
   // EnumMap<T, V> mapByName<V>(Map<String, V> input) => {for (final e in this) e: input[e.name]  } as EnumMap<T, V>;
 
   // complete map only. partial can use addMapByName

@@ -149,10 +149,7 @@ abstract mixin class const BitData() {
   String toStringAsBits() => bits.toRadixString(2); // 000
 
   @override
-  bool operator ==(covariant BitData other) {
-    if (identical(this, other)) return true;
-    return other.bits == bits;
-  }
+  bool operator ==(Object other) => identical(this, other) || (other is BitData && other.bits == bits);
 
   @override
   int get hashCode => bits.hashCode;

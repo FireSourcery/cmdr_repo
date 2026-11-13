@@ -94,6 +94,34 @@ class SerializablePerson with Immutable<SerializablePerson>, Serializable<Serial
 }
 
 //
+enum NoteField<V>() with SerializableField<V> {
+  title<String>(),
+  body<String?>()
+  ;
+
+  @override
+  V getIn(Note struct) {
+    return switch (this) {
+      NoteField.title => struct.title as V,
+      NoteField.body => struct.body as V,
+    };
+  }
+
+  @override
+  void setIn(Note struct, V value) => throw UnimplementedError('Note is immutable');
+
+  @override
+  bool testAccess(Object struct) => struct is Note;
+}
+
+class const Note(final String title, final String? body) with Serializable<NoteField> {
+  Note.fromMap(Map<NoteField, Object?> map) : this(map[NoteField.title] as String, map[NoteField.body] as String?);
+
+  @override
+  List<NoteField> get keys => NoteField.values;
+}
+
+//
 enum SensorField<V extends NativeType>(
   @override
   final int offset) with WordField<V>, TypedField<V> {
@@ -170,6 +198,17 @@ void main() {
       // statically rejected on SerializablePerson; through the erased view the key type is checked at runtime
       final Serializable person = SerializablePerson.fromJson(testJson);
       expect(() => person[PersonField.age], throwsA(isA<TypeError>()));
+    });
+  });
+
+  group('Serializable with a null field', () {
+    const note = Note('title', null);
+
+    test('toMap holds the null', () => expect(note.toMap(), {NoteField.title: 'title', NoteField.body: null}));
+    test('toJson holds the null', () => expect(note.toJson(), {'title': 'title', 'body': null}));
+    test('round-trips through fromJson', () {
+      final copy = Note.fromMap(SerializableNullableType(StructForm<NoteField, Object?>(NoteField.values)).fromJson(note.toJson()));
+      expect((copy.title, copy.body), (note.title, note.body));
     });
   });
 

@@ -3,6 +3,10 @@ import 'dart:typed_data';
 import 'package:struct_data/binary_data.dart';
 import 'package:struct_data/general/enumerated.dart';
 
+// 1. Struct to handle transport only, simplified mapping from Model , saves toBytes().. separately handle map
+// 2. extend ByteStruct (embedded around ByteData) free transport and data view map. separately implement model view map
+// 3. extend Enumerated free model view map, with field accessors. separately handle transport
+
 /// [BinarizableField]
 ///
 /// Key carrying both descriptors: the view side value ([EnumeratedField], type [V]) and the data

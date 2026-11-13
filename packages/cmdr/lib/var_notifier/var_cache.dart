@@ -143,12 +143,7 @@ class VarCache {
   //   -> user function interrupt: set value, set pushPending
   //   clear pushPending
   // if (value == varNotifier.dataValue) varNotifier.lastUpdate = VarLastUpdate.clear; // clear push pending unless value has changed since send
-  void _updateByDataResponse(int id, int value, int status) {
-    if (_cache[id] case VarNotifier varNotifier) {
-      varNotifier.updateStatusByData(status);
-      varNotifier.commitViewOnResponse(value);
-    }
-  }
+  void _updateByDataResponse(int id, int value, int status) => _cache[id]?.applyWriteResponse(value, status);
 
   /// Update Status by mot response to view initiated write, per var status
   void updateByDataResponse(Iterable<(int id, int value)> pairs, Iterable<int> statusesIn) {

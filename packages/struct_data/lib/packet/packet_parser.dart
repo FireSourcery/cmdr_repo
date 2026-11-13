@@ -66,12 +66,12 @@ final class HeaderParser(PacketCodec codec, [int? size]) extends PacketBuffer {
   /// and then the shape's length field is what says.
   int? get frameLengthOrNull => prefixOrNull?.frameLength() ?? lengthFieldOrNull;
 
-  /// The frame length the prefix declares, against what the codec can hold.
+  /// The frame length the prefix declares, from the shape's own header to what the codec can hold.
   ///
   /// Asked of [frameLengthOrNull] rather than of a length field, so it answers for a control
   /// shape — which declares its length by being one — as well as for a data frame.
   bool? get isFrameLengthValid => switch (frameLengthOrNull) {
-    final int frameLength => frameLength >= codec.prefixLength && frameLength <= codec.lengthMax,
+    final int frameLength => frameLength >= (formatOrNull?.headerLength ?? codec.prefixLength) && frameLength <= codec.lengthMax,
     null => null,
   };
 
@@ -145,11 +145,14 @@ final class HeaderParser(PacketCodec codec, [int? size]) extends PacketBuffer {
   /// a delimiter byte is payload.
   void receive(Uint8List bytes) {
     if (isEmpty) {
-      if (bytes.seekChar(codec.startId) case final Uint8List found) copy(found);
+      if (bytes.seekChar(codec.startId) case final Uint8List found) copy(_fitting(found));
     } else {
-      add(bytes);
+      add(_fitting(bytes));
     }
   }
+
+  /// A read the buffer has no room for leaves the frame in progress unfinishable.
+  Uint8List _fitting(Uint8List bytes) => (length + bytes.length <= lengthMax) ? bytes : throw PacketStatusException.meta;
 
   /// Drop everything before the next delimiter, or all of it if there is none.
   void seekStart() {
@@ -185,7 +188,11 @@ class PacketTransformer({required final HeaderParser parser}) extends StreamTran
 
   @override
   void add(Uint8List bytesIn) {
-    parser.receive(bytesIn);
+    try {
+      parser.receive(bytesIn);
+    } on PacketStatusException catch (e) {
+      return _recover(e);
+    }
 
     // A read may carry more than one frame, or a fraction of one.
     //
@@ -208,6 +215,11 @@ class PacketTransformer({required final HeaderParser parser}) extends StreamTran
           case HeaderParser(isIdFieldValid: false):
             throw PacketStatusException.meta;
 
+          // A length field naming a frame the codec cannot hold, or one ending inside its own
+          // header. Checked before completeness, which such a length would satisfy early.
+          case HeaderParser(isFrameLengthValid: false):
+            throw PacketStatusException.meta;
+
           case HeaderParser(isComplete: true):
             assert(parser.isStartFieldValid != false);
             assert(parser.isIdFieldValid != false);
@@ -220,26 +232,25 @@ class PacketTransformer({required final HeaderParser parser}) extends StreamTran
                 throw PacketStatusException.checksum;
             }
 
-          // A length field naming a frame the codec cannot hold. Checked after completeness
-          // so that back-to-back control frames, which carry no length, are not measured.
-          case HeaderParser(isFrameLengthValid: false):
-            throw PacketStatusException.meta;
-
           // Recognised and still arriving.
           case HeaderParser(isComplete: false):
             assert(parser.length < parser.codec.lengthMax, 'a frame over lengthMax should have failed isFrameLengthValid');
             return;
         }
       } on PacketStatusException catch (e) {
-        switch (e) {
-          case PacketStatusException.meta:
-            parser.clear(); // nothing here can be resynchronised against
-          case PacketStatusException.checksum:
-            parser.seekTrailing(); // the frame was well formed; the next one may be fine
-        }
-        _outputSink.addError(e);
+        _recover(e);
       }
     }
+  }
+
+  void _recover(PacketStatusException e) {
+    switch (e) {
+      case PacketStatusException.meta:
+        parser.clear(); // nothing here can be resynchronised against
+      case PacketStatusException.checksum:
+        parser.seekTrailing(); // the frame was well formed; the next one may be fine
+    }
+    _outputSink.addError(e);
   }
 
   @override
