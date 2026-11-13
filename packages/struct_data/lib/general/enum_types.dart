@@ -70,3 +70,7 @@ class EnumUnionCodec<S extends Enum> {
 
   T? resolve<T extends S>(int? data) => valuesTyped<T>().resolve(data);
 }
+
+extension EnumCodecResolve<T extends Enum> on EnumCodec<T> {
+  T? resolve(int? data) => (data != null) ? decode(data) : null;
+}
