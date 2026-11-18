@@ -1,10 +1,19 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import '../app_general/logo.dart';
 import 'main_menu_controller.dart';
 
-class const MainMenu({required final ImageProvider<AssetBundleImageKey> background, required final MainMenuController menuController, final bool? useIndicator, super.key, final Widget? trailing}) extends StatelessWidget {
+/// [backdrop], when given, is painted behind the rail in place of, or over, the [background] image.
+class const MainMenu({
+  final ImageProvider<AssetBundleImageKey>? background,
+  final Widget? backdrop,
+  required final MainMenuController menuController,
+  final bool? useIndicator,
+  super.key,
+  final Widget? trailing,
+}) extends StatelessWidget {
   Widget _navigationRail(BuildContext _, Widget? _) {
     return NavigationRail(
       selectedIndex: menuController.selectedIdByIndex,
@@ -37,6 +46,7 @@ class const MainMenu({required final ImageProvider<AssetBundleImageKey> backgrou
   Widget build(BuildContext context) {
     return MenuContainer(
       background: background,
+      backdrop: backdrop,
       child: ListenableBuilder(listenable: menuController, builder: _navigationRail),
     );
   }
@@ -54,7 +64,13 @@ class const RightMenu({required final MainMenuController menuController, require
 
 // Filled Scrollable Side Panel
 // stretch ScrollView height available
-class const MenuContainer({required final ImageProvider<Object> background, final EdgeInsets edgeInsets = const EdgeInsets.symmetric(horizontal: 5), required final Widget child, super.key}) extends StatelessWidget {
+class const MenuContainer({
+  final ImageProvider<Object>? background,
+  final Widget? backdrop,
+  final EdgeInsets edgeInsets = const EdgeInsets.symmetric(horizontal: 5),
+  required final Widget child,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -65,10 +81,23 @@ class const MenuContainer({required final ImageProvider<Object> background, fina
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             margin: edgeInsets,
             clipBehavior: Clip.none,
-            decoration: BoxDecoration(
-              image: DecorationImage(image: background, fit: BoxFit.fill),
+            decoration: switch (background) {
+              ImageProvider<Object> image => BoxDecoration(
+                image: DecorationImage(image: image, fit: BoxFit.fill),
+              ),
+              null => null,
+            },
+            child: IntrinsicHeight(
+              child: Stack(
+                children: [
+                  ?switch (backdrop) {
+                    Widget backdrop => Positioned.fill(child: backdrop),
+                    null => null,
+                  },
+                  child,
+                ],
+              ),
             ),
-            child: IntrinsicHeight(child: child),
           ),
         );
       },
@@ -76,7 +105,8 @@ class const MenuContainer({required final ImageProvider<Object> background, fina
   }
 }
 
-class const MenuLeading({final Widget? collapsedButton, final Widget? expandedButton, final AlignmentDirectional alignment = AlignmentDirectional.centerStart, final double inset = 10, super.key}) extends StatelessWidget {
+class const MenuLeading({final Widget? collapsedButton, final Widget? expandedButton, final AlignmentDirectional alignment = AlignmentDirectional.centerStart, final double inset = 10, super.key})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final animation = NavigationRail.extendedAnimation(context);

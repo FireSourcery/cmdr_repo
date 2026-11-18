@@ -29,6 +29,10 @@ export 'widgets/dialog/dialog_anchor.dart';
 export 'widgets/num_input_formatters.dart';
 export 'widgets/io_field/io_field.dart';
 export 'widgets/io_field/io_field_ext.dart';
+export 'widgets/flyweight_menu/flyweight_menu.dart';
+export 'widgets/flyweight_menu/flyweight_menu_widgets.dart';
+export 'widgets/main_menu/main_menu.dart';
+export 'widgets/main_menu/main_menu_controller.dart';
 
 // Time chart widgets
 export 'widgets/time_chart/chart_controller.dart';
@@ -40,6 +44,7 @@ export 'widgets/time_chart/chart_widgets.dart';
 export 'widgets/time_chart/time_chart.dart';
 
 // Variable notifier widgets
+export 'var_notifier/widgets/var_menu.dart';
 export 'var_notifier/widgets/var_io_field.dart';
 export 'var_notifier/widgets/var_input_dialog.dart';
 export 'var_notifier/widgets/var_widget.dart';
