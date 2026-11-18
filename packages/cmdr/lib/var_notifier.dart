@@ -3,15 +3,6 @@
 /// This library provides a reactive system for managing embedded device variables
 /// with real-time updates, caching, and context management.
 ///
-/// ## Features
-///
-/// - Real-time variable monitoring
-/// - Automatic caching and persistence
-/// - Context-aware variable management
-/// - Flutter integration with inherited widgets
-///
-/// ## Usage
-///
 /// ```dart
 /// import 'package:cmdr/var_notifier.dart';
 ///

@@ -41,7 +41,7 @@ class BinaryQuantityCodec<V extends num> implements BinaryCodec<V> {
   /// disabled conversion, direct data to view mapping
   static const NumDataConversion _disabled = (viewOfData: _defaultNumOf, dataOfView: _defaultDataOf);
   static num _defaultNumOf(int data) => data;
-  static int _defaultDataOf(num view) => view.toInt();
+  static int _defaultDataOf(num view) => view.round();
 }
 
 /// Numeric value conversion
@@ -51,7 +51,7 @@ typedef NumDataConversion = ({NumOfData viewOfData, DataOfNum dataOfView});
 
 extension type const NumDataScale(num coefficient) {
   num viewOf(int dataValue) => (dataValue * coefficient);
-  int dataOf(num viewValue) => (viewValue ~/ coefficient);
+  int dataOf(num viewValue) => (viewValue / coefficient).round();
 
   NumDataConversion? get conversion {
     // no conversion needed for coefficient of 1, 0, or infinite (e.g. for unbounded quantities).

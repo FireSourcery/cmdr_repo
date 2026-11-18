@@ -229,6 +229,7 @@ final class const _Angle16<S extends NativeType>() extends FractFormat<S> {
   num get scalingFactor => 65536;
   get valueRange => (min: 0.0, max: fullScale);
   double decode(int raw) => signedOf(raw) * fullScale / scalingFactor;
+  // a negative value within half an ulp of 0 has `value % fullScale` round to fullScale itself, encoding 65536: the device wraps it to 0
   int encode(double value) => ((value % fullScale) * scalingFactor ~/ fullScale);
 }
 

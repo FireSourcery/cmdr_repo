@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:typed_data';
 
 import 'package:cmdr/connection/base/link.dart';
+import 'package:flutter/foundation.dart';
 
 /// A [Link] without a port, for a test that plays the device.
 ///
-/// [receive] delivers bytes to [streamIn], [sent] keeps every write, and [onSend] answers one.
+/// [receive] delivers bytes to [streamIn] and [receiveError] a read error, [sent] keeps every write, and [onSend] answers one.
 /// [unread] holds bytes that reached the port but not the reader: the next [send] reads them out, and [flushInput] drops them.
 class FakeLink() implements Link {
   final StreamController<Uint8List> _rx = StreamController.broadcast();
@@ -15,18 +15,21 @@ class FakeLink() implements Link {
   void Function(Uint8List bytes)? onSend;
 
   void receive(Uint8List bytes) => _rx.add(bytes);
+  void receiveError(Object error) => _rx.addError(error);
 
   @override
   String? get portActiveName => 'fake';
   @override
   Stream<Uint8List> get streamIn => _rx.stream;
   @override
-  bool get isConnected => true;
+  bool get isConnected => status.value.isConnected;
+  @override
+  final ValueNotifier<LinkStatus> status = ValueNotifier(const LinkConnected('fake'));
 
   @override
-  LinkStatus connect() => const LinkConnected('fake');
+  LinkStatus connect() => status.value = const LinkConnected('fake');
   @override
-  LinkStatus disconnect() => const LinkDisconnected('fake');
+  LinkStatus disconnect() => status.value = const LinkDisconnected('fake');
 
   @override
   Future<Uint8List?> recv([int? byteCount]) async => null;

@@ -15,9 +15,10 @@ class Protocol(final Link link, final PacketCodec codec) {
 
   StreamSubscription<Packet>? _packetSubscription; // state for is started
   /// begin Socket Rx, once per link session: each connect opens a new reader, and a [PacketTransformer] binds once.
+  /// Errors ahead of the transformer are the link's own; the end of its stream ends the session.
   void begin() {
     _packetSubscription?.cancel();
-    _packetSubscription = link.streamIn?.transform(codec.transformer).listen(_demux, onError: onError);
+    _packetSubscription = link.streamIn?.handleError(_onLinkError).transform(codec.transformer).listen(_demux, onError: onError, onDone: link.disconnect);
   }
 
   void end() {
@@ -49,7 +50,7 @@ class Protocol(final Link link, final PacketCodec codec) {
     } on TimeoutException {
       debugLog("trySend Timeout");
     } catch (e) {
-      onError(e);
+      _onLinkError(e);
     } finally {}
   }
 
@@ -104,6 +105,12 @@ class Protocol(final Link link, final PacketCodec codec) {
   //     completer.complete(packet);  // data flows through the completer
   //   }
   // }
+
+  /// A failed read or write loses the link: [Link.disconnect] reports it on [Link.status].
+  void _onLinkError(Object error) {
+    onError(error);
+    link.disconnect();
+  }
 
   @protected
   void onError(Object error) {

@@ -3,16 +3,6 @@
 /// This library provides widgets, utilities, and interfaces for communicating with
 /// embedded devices, managing variable data, and creating rich user interfaces.
 ///
-/// ## Features
-///
-/// - embedded device communication protocols
-/// - Real-time variable monitoring and caching
-/// - Rich widget library for data visualization
-/// - Settings management
-/// - File storage utilities
-///
-/// ## Usage
-///
 /// ```dart
 /// import 'package:cmdr/cmdr.dart';
 /// ```

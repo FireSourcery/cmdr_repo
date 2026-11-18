@@ -79,7 +79,8 @@ class ChartController({
     stop();
     _chartData = value;
     // match chart entries, values getters disabled
-    replaceEntries(_chartData.lineEntries.map((e) => ChartEntry(name: e.name, valueGetter: () => 0)));
+    (chartEntries..clear()).addAll(_chartData.lineEntries.map((e) => ChartEntry(name: e.name, valueGetter: () => 0)));
+    stopwatch.reset();
     notifyListeners();
   }
 

@@ -25,7 +25,7 @@ class MotConnection._() {
   late final Protocol _serial = Protocol(serialLink, const MotPacketCodec());
 
   // connection callbacks
-  final ValueNotifier<LinkStatus> status = ValueNotifier(const LinkDisconnected());
+  ValueListenable<LinkStatus> get status => serialLink.status;
 
   Link get activeLink => activeProtocol.link;
 
@@ -39,19 +39,18 @@ class MotConnection._() {
 
   LinkStatus begin({Enum? linkType, String? name, int? baudRate}) {
     //  switch on link type
+    activeProtocol = _serial; // [status] listeners run inside connect, and read [isConnected] through it
     final LinkStatus result = serialLink.connect(name: name, baudRate: baudRate);
 
     if (result.isConnected) {
       _serial.begin();
 
-      activeProtocol = _serial;
       general = MotProtocolSocket(_serial);
       stop = MotProtocolSocket(_serial);
       varRead = MotProtocolSocket(_serial);
       varWrite = MotProtocolSocket(_serial);
     }
 
-    status.value = result;
     return result;
   }
 }

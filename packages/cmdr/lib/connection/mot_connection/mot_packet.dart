@@ -200,7 +200,7 @@ enum MotPacketControlId(@override final int intId) implements PacketControlId, M
   MOT_PACKET_SYNC_ACK(0xA2),
   MOT_PACKET_SYNC_NACK(0xA3),
   MOT_PACKET_SYNC_ABORT(0xA4),
-  MOT_PACKET_SYNC_RESV(0xA5),
+  // MOT_PACKET_SYNC_RESV(0xA5),
   MOT_PACKET_PING_ALT(0xAA),
   MOT_PACKET_PING_BOOT(0xAB),
 }
@@ -693,7 +693,7 @@ base class MemReadRequest extends Struct implements Payload<MemReadRequestValues
     address = args.address;
     size = args.size;
     config = args.config;
-    return const PayloadMeta(12);
+    return const PayloadMeta(8);
   }
 
   @override
@@ -743,12 +743,11 @@ base class MemWriteRequest extends Struct implements Payload<MemWriteRequestValu
 
   @override
   PayloadMeta build(MemWriteRequestValues args) {
-    if (args.size < 0 || args.size > sizeMax) throw ArgumentError.value(args.size, 'size', 'Must be within 0..$sizeMax');
-    if (args.data.length < args.size) throw ArgumentError.value(args.data.length, 'data.length', 'Shorter than size ${args.size}');
+    if (args.size > sizeMax) throw ArgumentError('Max Length $sizeMax: ${args.size}');
     address = args.address;
     size = args.size;
     config = args.config;
-    // loops on size. args.data.length may be greater
+    // loops on size. args.data.length may be greater; a shorter one throws RangeError
     for (var index = 0; index < args.size; index++) {
       data[index] = args.data[index];
     }

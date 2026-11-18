@@ -3,15 +3,6 @@
 /// This library provides a comprehensive settings system with support for
 /// persistent storage, type-safe settings, and reactive updates.
 ///
-/// ## Features
-///
-/// - Type-safe setting definitions
-/// - Automatic persistence to storage
-/// - Reactive setting controllers
-/// - Flutter integration with settings views
-///
-/// ## Usage
-///
 /// ```dart
 /// import 'package:cmdr/settings.dart';
 ///

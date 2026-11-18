@@ -92,7 +92,7 @@ abstract mixin class Packet {
   PacketHeader get header => format.headerOf(byteData);
   Uint8List get payload => Uint8List.sublistView(byteData, payloadOffset, lengthInBytes);
 
-  /// Payload as a list of `R`'s element width, bounds-checked by [ByteBuffer].
+  /// Payload as a list of `R`'s element width, bounded by this view.
   /// `length` counts **elements**, not bytes.
   R payloadAt<R extends TypedDataList<int>>([int byteOffset = 0, int? length]) => byteData.arrayAt<R>(byteOffset + payloadOffset, length);
 

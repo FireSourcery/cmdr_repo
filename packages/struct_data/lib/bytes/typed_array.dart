@@ -33,14 +33,19 @@ extension TypedDataCast on TypedData {
 
 extension ByteDataArrayAccess on ByteData {
   /// offsetInBytes
-  /// length using parameter T type size
-  // let ByteBuffer handle RangeError
-  T arrayAt<T extends TypedDataList<int>>([int offset = 0, int? length]) => asTypedIntList<T>(offset, length);
+  /// length using parameter T type size, defaults to the rest of the view
+  T arrayAt<T extends TypedDataList<int>>([int offset = 0, int? length]) {
+    assert(testArray<T>(offset, length), 'outside the view');
+    return asTypedIntList<T>(offset, length ?? (lengthInBytes - offset) ~/ bytesPerElementOf<T>());
+  }
 
   // testPart
   /// `this.length`
   bool testLength(int offset, int length) => (offset + length <= lengthInBytes);
-  T? arrayOrNullAt<T extends TypedDataList<int>>([int offset = 0, int? length]) => testLength(offset, length ?? 0) ? arrayAt<T>(offset, length) : null;
+
+  /// The input condition [arrayAt] asserts, in elements of `T`
+  bool testArray<T extends TypedDataList<int>>(int offset, int? length) => offset >= 0 && testLength(offset, (length ?? 0) * bytesPerElementOf<T>());
+  T? arrayOrNullAt<T extends TypedDataList<int>>([int offset = 0, int? length]) => testArray<T>(offset, length) ? arrayAt<T>(offset, length) : null;
 }
 
 

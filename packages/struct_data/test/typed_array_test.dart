@@ -8,9 +8,11 @@ void main() {
 
   group('arrayAt is bounded by the view', () {
     test('default length runs to the end of the view', () => expect(view.arrayAt<Uint8List>().length, 4));
+    test('default length takes the whole elements of a 5-byte view', () => expect(ByteData.sublistView(Uint8List(16), 4, 9).arrayAt<Uint16List>().length, 2));
     test('offset is relative to the view', () => expect(view.arrayAt<Uint8List>(1, 2), [5, 6]));
     test('length is in elements of T', () => expect(view.arrayAt<Uint16List>(0, 2).lengthInBytes, 4));
-    test('past the view throws', () => expect(() => view.arrayAt<Uint8List>(0, 5), throwsRangeError));
+    test('past the view asserts', () => expect(() => view.arrayAt<Uint8List>(0, 5), throwsA(isA<AssertionError>())));
+    test('before the view asserts', () => expect(() => view.arrayAt<Uint8List>(-4, 4), throwsA(isA<AssertionError>())));
   });
 
   group('arrayOrNullAt compares bytes with bytes', () {

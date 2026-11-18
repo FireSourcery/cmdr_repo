@@ -50,21 +50,23 @@ void main() {
 
     setUp(() => controller.readAll());
 
-    test('writeUpdated reverts a rejected var to the device value, commits the accepted vars, and reports the error', () async {
+    test('writeUpdated reverts a rejected var to the device value, commits the accepted var, reports the error, and sends no further slice', () async {
       final notifications = <int>[];
       controller.cache[keys[1]]!.addListener(() => notifications.add(1));
       service.setReplies.add((pairs) => [...service.writeDevice(pairs.take(1)), rejected]);
 
       expect((await controller.writeUpdated())?.code, rejected);
-      expect(varsOf(keys).map(viewOf), [(false, edit, 0), (false, 20, rejected), (false, edit, 0)]);
+      expect(varsOf(keys).map(viewOf), [(false, edit, 0), (false, 20, rejected), (true, edit, 0)]);
       expect(notifications, hasLength(1));
+      expect(service.device, {...device, 1: edit});
     });
 
-    test('writeUpdated finishes every slice after one with no response, and reports the failure', () async {
+    test('writeUpdated stops at a slice with no response, and reports the failure', () async {
       service.setReplies.add((_) => null);
 
       expect(await controller.writeUpdated(), isNull);
-      expect(varsOf(keys).map(viewOf), [(true, edit, 0), (true, edit, 0), (false, edit, 0)]);
+      expect(varsOf(keys).map(viewOf), everyElement((true, edit, 0)));
+      expect(service.device, device);
     });
 
     test('write commits an accepted value', () async {

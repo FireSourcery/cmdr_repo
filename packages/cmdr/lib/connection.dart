@@ -3,15 +3,6 @@
 /// This library provides abstractions and implementations for communicating
 /// with motor controllers through various connection types (serial, network, etc.).
 ///
-/// ## Features
-///
-/// - Abstract connection interfaces
-/// - Protocol definitions and packet transformers
-/// - Serial link implementations
-/// - Connection management widgets
-///
-/// ## Usage
-///
 /// ```dart
 /// import 'package:cmdr/connection.dart';
 ///

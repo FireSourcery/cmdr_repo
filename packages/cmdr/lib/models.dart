@@ -3,15 +3,6 @@
 /// This library provides data models and type definitions used throughout
 /// the embedded device communication system.
 ///
-/// ## Features
-///
-/// - Motor controller data models
-/// - Type-safe model definitions
-/// - Conversion utilities
-/// - Model view widgets
-///
-/// ## Usage
-///
 /// ```dart
 /// import 'package:cmdr/models.dart';
 ///

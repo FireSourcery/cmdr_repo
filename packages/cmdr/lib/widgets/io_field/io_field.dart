@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../num_input_formatters.dart';
+
 import '../../type_ext/stringifier.dart';
 
 /// [IOField] is effectively a view union of IO types styled similar to a [TextField]
@@ -209,20 +211,25 @@ abstract class IOFieldText<T>({
   List<TextInputFormatter>? get inputFormatters;
   TextInputType get keyboardType;
   T? parse(String text);
+  String get tooltipMessage => tip;
 
   @override
   State<IOFieldText<T>> createState() => _IOFieldTextState<T>();
 }
 
-/// num/double/int share the decimal keyboard and clamp; double/int only narrow [parse].
+/// num/double/int share the keyboard, formatter and clamp, derived from [isSigned] and [isDecimal]; double/int narrow [parse].
 class _IOFieldTextNum<T>(super.config, {super.key}) extends IOFieldText<T> {
   this : assert(config.valueNumLimits != null, 'num field requires valueNumLimits'), super._config();
+  bool get isSigned => numMin < 0;
+  bool get isDecimal => true;
   @override
-  List<TextInputFormatter>? get inputFormatters => [FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}')), FilteringTextInputFormatter.singleLineFormatter];
+  List<TextInputFormatter>? get inputFormatters => numInputFormatters(signed: isSigned, decimal: isDecimal);
   @override
-  TextInputType get keyboardType => const TextInputType.numberWithOptions(decimal: true, signed: true);
+  TextInputType get keyboardType => TextInputType.numberWithOptions(decimal: isDecimal, signed: isSigned);
   @override
   T? parse(String text) => num.tryParse(text)?.clamp(numMin, numMax) as T?;
+  @override
+  String get tooltipMessage => [tip, '$numMin..$numMax'].where((line) => line.isNotEmpty).join('\n');
 }
 
 class _IOFieldTextDouble<T>(super.config, {super.key}) extends _IOFieldTextNum<T> {
@@ -232,9 +239,7 @@ class _IOFieldTextDouble<T>(super.config, {super.key}) extends _IOFieldTextNum<T
 
 class _IOFieldTextInt<T>(super.config, {super.key}) extends _IOFieldTextNum<T> {
   @override
-  List<TextInputFormatter>? get inputFormatters => [FilteringTextInputFormatter.digitsOnly, FilteringTextInputFormatter.singleLineFormatter];
-  @override
-  TextInputType get keyboardType => const TextInputType.numberWithOptions(decimal: false, signed: true);
+  bool get isDecimal => false;
   @override
   T? parse(String text) => int.tryParse(text)?.clamp(numMin, numMax).toInt() as T?;
 }
@@ -254,6 +259,7 @@ class _IOFieldTextState<T>() extends State<IOFieldText<T>> {
   final TextEditingController textController = TextEditingController();
   final WidgetStatesController materialStates = WidgetStatesController();
   final FocusNode focusNode = FocusNode();
+  bool isParseError = false;
 
   @override
   void initState() {
@@ -271,7 +277,7 @@ class _IOFieldTextState<T>() extends State<IOFieldText<T>> {
   }
 
   void updateOnFocusLoss() {
-    if (!focusNode.hasFocus) {
+    if (!focusNode.hasFocus && !isParseError) {
       textController.text = _viewString(widget.valueGetter, widget.valueStringifier);
       // if submit on focus loss
       // onSubmitted(textController.text);
@@ -280,16 +286,19 @@ class _IOFieldTextState<T>() extends State<IOFieldText<T>> {
 
   void onSubmitted(String text) {
     final value = widget.parse(text);
-    materialStates.update(WidgetState.error, value == null); // reject unparseable input
+    isParseError = value == null; // reject unparseable input
+    updateError();
     if (value != null) widget.valueSetter?.call(value);
     // if use notification
     // context.dispatchNotification(IOFieldNotification(message: value));
   }
 
-  /// handles updates from getter/listenable
+  void updateError() => materialStates.update(WidgetState.error, isParseError || (widget.errorGetter?.call() ?? false));
+
+  /// handles updates from getter/listenable. Typing in progress is kept until focus loss.
   Widget _builder(BuildContext context, Widget? child) {
-    textController.text = _viewString(widget.valueGetter, widget.valueStringifier);
-    if (widget.errorGetter != null) materialStates.update(WidgetState.error, widget.errorGetter!());
+    if (!focusNode.hasFocus && !isParseError) textController.text = _viewString(widget.valueGetter, widget.valueStringifier);
+    updateError();
     return child!;
   }
 
@@ -319,7 +328,7 @@ class _IOFieldTextState<T>() extends State<IOFieldText<T>> {
       ),
     );
 
-    return Tooltip(message: widget.tip, child: textField);
+    return Tooltip(message: widget.tooltipMessage, child: textField);
   }
 }
 

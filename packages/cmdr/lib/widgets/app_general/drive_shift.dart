@@ -6,9 +6,11 @@ import "package:flutter/material.dart";
 
 class const DriveShift({
   super.key,
-  final ValueSetter<Enum>? onSelect,
+  final AsyncValueSetter<Enum>? onSelect,
   final AsyncValueGetter<Enum?>? confirmSelected,
-  final Enum? initialSelect,
+
+  /// The gear the device reports, rendered as selected. A request shows pending until [onSelect], then [confirmSelected], answers.
+  required final ValueListenable<Enum?> actual,
   // directly return users type
   required final Enum enumF,
   required final Enum enumN,
@@ -51,29 +53,33 @@ class _DriveShiftState() extends State<DriveShift> {
   late final BorderSide baseBorderSide = BorderSide(color: borderColor, width: 2, strokeAlign: BorderSide.strokeAlignInside);
   late final OutlinedBorder baseBorder = BeveledRectangleBorder(borderRadius: BorderRadius.all(radius * 2.5), side: baseBorderSide);
 
-  late final WidgetStatesController controllerF = WidgetStatesController({if (widget.initialSelect == widget.enumF) WidgetState.selected});
-  late final WidgetStatesController controllerN = WidgetStatesController({if (widget.initialSelect == widget.enumN) WidgetState.selected});
-  late final WidgetStatesController controllerR = WidgetStatesController({if (widget.initialSelect == widget.enumR) WidgetState.selected});
-  late final WidgetStatesController controllerP = WidgetStatesController({if (widget.initialSelect == widget.enumP) WidgetState.selected});
+  late final WidgetStatesController controllerF = WidgetStatesController();
+  late final WidgetStatesController controllerN = WidgetStatesController();
+  late final WidgetStatesController controllerR = WidgetStatesController();
+  late final WidgetStatesController controllerP = WidgetStatesController();
 
   // late DriveShiftSelect _selected = widget.initialSelect;
 
-  Future<void> handleSelect(Enum select) async {
-    widget.onSelect?.call(select);
-    controllerF.update(WidgetState.selected, (select == widget.enumF));
-    controllerN.update(WidgetState.selected, (select == widget.enumN));
-    controllerR.update(WidgetState.selected, (select == widget.enumR));
-    controllerP.update(WidgetState.selected, (select == widget.enumP));
+  Enum? pending; // requested, until [DriveShift.onSelect], then [DriveShift.confirmSelected], answers
 
-    // handle returning null result as null, null function use the selected value directly
+  void mark(WidgetState state, Enum? select) {
+    controllerF.update(state, (select == widget.enumF));
+    controllerN.update(state, (select == widget.enumN));
+    controllerR.update(state, (select == widget.enumR));
+    controllerP.update(state, (select == widget.enumP));
+  }
+
+  Future<void> handleSelect(Enum select) async {
+    setState(() => pending = select);
+    await widget.onSelect?.call(select);
+
+    // handle returning null result as null, null function leaves the request unconfirmed
     if (widget.confirmSelected case AsyncValueGetter<Enum?> confirmed) {
       Enum? errorSelect = (await confirmed() == select) ? null : select;
       if (!mounted) return;
-      controllerF.update(WidgetState.error, (errorSelect == widget.enumF));
-      controllerN.update(WidgetState.error, (errorSelect == widget.enumN));
-      controllerR.update(WidgetState.error, (errorSelect == widget.enumR));
-      controllerP.update(WidgetState.error, (errorSelect == widget.enumP));
+      mark(WidgetState.error, errorSelect);
     }
+    if (mounted && pending == select) setState(() => pending = null);
   }
 
   // short hand wrapper
@@ -82,14 +88,20 @@ class _DriveShiftState() extends State<DriveShift> {
       onPressed: () => handleSelect(id),
       style: style,
       statesController: controller,
-      child: Text(label, textAlign: TextAlign.center, style: letterStyle),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Text(label, textAlign: TextAlign.center, style: letterStyle),
+          if (id == pending) const CircularProgressIndicator(),
+        ],
+      ),
     );
   }
 
-  late final ElevatedButton forward = button(widget.enumF, "F", styleForward, controllerF);
-  late final ElevatedButton neutral = button(widget.enumN, "N", styleSeed, controllerN);
-  late final ElevatedButton reverse = button(widget.enumR, "R", styleReverse, controllerR);
-  late final ElevatedButton park = button(widget.enumP, "P", styleSeed, controllerP);
+  ElevatedButton get forward => button(widget.enumF, "F", styleForward, controllerF);
+  ElevatedButton get neutral => button(widget.enumN, "N", styleSeed, controllerN);
+  ElevatedButton get reverse => button(widget.enumR, "R", styleReverse, controllerR);
+  ElevatedButton get park => button(widget.enumP, "P", styleSeed, controllerP);
 
   // if material3 == false
   // Widget wrapTheme(Widget child) => Theme(data: ThemeData(useMaterial3: true, colorSchemeSeed: borderColor, brightness: Brightness.dark), child: child);
@@ -102,16 +114,22 @@ class _DriveShiftState() extends State<DriveShift> {
         padding: const EdgeInsets.all(15),
         height: 250,
         width: 100,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            park,
-            const Divider(height: 0, color: Colors.transparent),
-            forward,
-            neutral,
-            reverse,
-          ],
+        child: ValueListenableBuilder(
+          valueListenable: widget.actual,
+          builder: (context, actual, child) {
+            mark(WidgetState.selected, actual);
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                park,
+                const Divider(height: 0, color: Colors.transparent),
+                forward,
+                neutral,
+                reverse,
+              ],
+            );
+          },
         ),
       ),
     );
@@ -140,8 +158,8 @@ class const _ButtonBackgroundColor(final Color baseColor, final Color errorColor
     Color selectedColor = baseColor.withAlpha(100);
     Color unselectedColor = baseColor.withAlpha(25);
 
-    if (states.contains(WidgetState.error)) return errorColor;
     if (states.contains(WidgetState.selected)) return selectedColor;
+    if (states.contains(WidgetState.error)) return errorColor;
     return unselectedColor;
   }
 }

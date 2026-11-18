@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
 
 /// Bidirectional data link interface.
 ///
@@ -14,6 +15,9 @@ abstract interface class Link {
 
   /// Whether the underlying transport is currently open.
   bool get isConnected;
+
+  /// The outcome of the last [connect] or [disconnect], including a disconnect on loss of the link.
+  ValueListenable<LinkStatus> get status;
 
   /// Establish a connection. Returns a [LinkStatus] describing the outcome.
   LinkStatus connect();
@@ -37,7 +41,9 @@ class const _LinkUninitialized() implements Link {
   Stream<Uint8List> get streamIn => const Stream.empty();
   @override
   bool get isConnected => false;
-  // ValueListenable<LinkStatus> get status;
+  @override
+  ValueListenable<LinkStatus> get status => _status;
+  static final ValueNotifier<LinkStatus> _status = ValueNotifier(const LinkDisconnected());
 
   @override
   LinkStatus connect() => const LinkError('Link Uninitialized');

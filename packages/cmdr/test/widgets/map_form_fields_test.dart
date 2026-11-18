@@ -39,8 +39,15 @@ void main() {
     expect(MapFormFields<String, int>.digits(entries: const <MapEntry<String, int>>[], onSaved: (_) {}, numLimits: (-1000, 10)).maxDigits, 5);
     expect(MapFormFields<String, int>.digits(entries: const <MapEntry<String, int>>[], onSaved: (_) {}, numLimits: (0, 65535)).maxDigits, 5);
   });
+  test('maxDigits is null for a decimal field, and without limits', () {
+    expect(MapFormFields<String, double>.digits(entries: const <MapEntry<String, double>>[], onSaved: (_) {}, numLimits: (0, 65535)).maxDigits, isNull);
+    expect(MapFormFields<String, int>.digits(entries: const <MapEntry<String, int>>[], onSaved: (_) {}).maxDigits, isNull);
+  });
+  testWidgets('int caps at the longer of the limits', (tester) async {
+    expect(await typeInto<int>(tester, '-50001', numLimits: (-1000, 5000)), '-5000');
+  });
   testWidgets('double has room for a fraction past the length of the limits', (tester) async {
-    expect(await typeInto<double>(tester, '12345.6', numLimits: (0, 65535)), '12345.6');
+    expect(await typeInto<double>(tester, '12345.678', numLimits: (0, 65535)), '12345.678');
   });
   testWidgets('a seeded double longer than the limits keeps its digits on the next keystroke', (tester) async {
     await tester.pumpWidget(

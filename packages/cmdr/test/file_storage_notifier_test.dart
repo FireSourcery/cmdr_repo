@@ -37,12 +37,32 @@ void main() {
       expect(storage.status, 'Saved');
     });
 
-    test('confirm twice does not throw and completes userConfirmed', () async {
-      final storage = _Storage()
-        ..confirm()
-        ..confirm();
+    test('confirm completes userConfirmed, once per initUserConfirmation', () async {
+      final storage = _Storage()..confirm();
 
       await expectLater(storage.userConfirmed, completes);
+      expect(storage.confirm, throwsStateError);
+    });
+
+    test('processWithNotify passes an error to its caller, and the status keeps the stage', () async {
+      final storage = _Storage();
+
+      await expectLater(
+        storage.processWithNotify<String>(() async {
+          storage.status = 'Erasing...';
+          throw Exception('erase failed');
+        }),
+        throwsException,
+      );
+      expect(storage.statusNotifier.value, 'Erasing...');
+    });
+
+    test('dispose releases its notifiers', () {
+      final storage = _Storage()..dispose();
+
+      for (final notifier in [storage.fileNotifier, storage.statusNotifier, storage.progressNotifier]) {
+        expect(() => notifier.addListener(() {}), throwsFlutterError);
+      }
     });
   });
 }

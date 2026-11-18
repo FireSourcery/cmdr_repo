@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:libserialport/libserialport.dart';
 export 'package:libserialport/libserialport.dart';
 
@@ -32,10 +32,13 @@ class SerialLink() implements Link {
   String? get portActiveName => _serialPort?.name;
 
   @override
-  Stream<Uint8List>? get streamIn => _serialPortReader?.stream.handleError(_onStreamError);
+  Stream<Uint8List>? get streamIn => _serialPortReader?.stream;
 
   @override
   bool get isConnected => _serialPort?.isOpen ?? false;
+
+  @override
+  final ValueNotifier<LinkStatus> status = ValueNotifier(const LinkDisconnected());
 
   @override
   LinkStatus connect({String? name, int? baudRate, SerialPortConfig? config}) {
@@ -43,7 +46,7 @@ class SerialLink() implements Link {
     portConfig = config ?? portConfig;
     portConfig.baudRate = baudRate ?? portConfig.baudRate;
 
-    if (portConfigName == null) return const LinkError('No Port Selected');
+    if (portConfigName == null) return status.value = const LinkError('No Port Selected');
     if (isConnected) _close(); // each connect is a new session. Windows opens a port exclusively, so the held one must go first
     _serialPort = SerialPort(portConfigName!);
 
@@ -51,13 +54,13 @@ class SerialLink() implements Link {
       if (_serialPort!.openReadWrite()) {
         _serialPort!.config = portConfig; // libserialport configures an open port only
         _serialPortReader = SerialPortReader(_serialPort!);
-        return LinkConnected('$portActiveName');
+        return status.value = LinkConnected('$portActiveName');
       } else {
         // _serialPort!.dispose();
-        return LinkError('Cannot Open $portConfigName ${SerialPort.lastError}');
+        return status.value = LinkError('Cannot Open $portConfigName ${SerialPort.lastError}');
       }
     } on SerialPortError catch (e) {
-      return LinkError('Driver ${e.message}');
+      return status.value = LinkError('Driver ${e.message}');
     }
   }
 
@@ -66,17 +69,12 @@ class SerialLink() implements Link {
     if (!isConnected) return const LinkDisconnected('Not Connected');
 
     try {
-      dispose();
+      _close();
       // portConfig.dispose();
-      return LinkDisconnected('$portActiveName');
+      return status.value = LinkDisconnected('$portActiveName');
     } on SerialPortError catch (e) {
       return LinkError('Driver ${e.message}');
     }
-  }
-
-  void _onStreamError(Object object, StackTrace stackTrace) {
-    // lastStatus = LinkStatus('Link Rx Stream Error: $object' );
-    flushInput();
   }
 
   // close, not dispose: a SerialPort frees the config set on it, and [portConfig] is shared across ports
@@ -89,6 +87,7 @@ class SerialLink() implements Link {
   void dispose() {
     _close();
     _serialPort?.dispose();
+    _serialPort = null; // freed: a late disconnect reads [isConnected]
   }
 
   @override

@@ -4,7 +4,9 @@ import 'dart:typed_data';
 import 'package:cmdr/file_storage/file_storage.dart';
 import 'package:cmdr/file_storage/file_storage_notifier.dart';
 import 'package:cmdr/file_storage/file_storage_view.dart';
+import 'package:cmdr/widgets/dialog/dialog_anchor.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class TestStorage() extends FileStorage<String> with FileStorageNotifier<String> {
@@ -90,6 +92,20 @@ base class TestPlatformFile(
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class const _FailingLoadButton({required super.fileNotifier, super.title = 'Load', super.iconData = Icons.file_open}) extends FileLoadButton {
+  @override
+  Future<void> beginAsync() => fileNotifier.processWithNotify<File?>(() async => throw Exception('read failed'));
+}
+
+/// The shape of an app's result builder: the error, else the value, else 'Complete'.
+Widget resultContent(BuildContext context, AsyncSnapshot<String> snapshot) {
+  return switch (snapshot) {
+    AsyncSnapshot(hasError: true) => Text('Error: ${snapshot.error}'),
+    AsyncSnapshot(connectionState: ConnectionState.done) => Text(snapshot.data ?? 'Complete'),
+    _ => const SizedBox.shrink(),
+  };
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -141,5 +157,89 @@ void main() {
 
     expect(await storage.pickedFile, isNull);
     expect(storage.file, isNull);
+  });
+
+  testWidgets('a failing load shows its error in the dialog, and the error does not escape the dialog', (tester) async {
+    // a storage made inside the test's fake-async zone, so its picked-file future resolves under pump
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: _FailingLoadButton(fileNotifier: TestStorage())),
+      ),
+    );
+    await tester.tap(find.text('Load'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Error: Exception: read failed'), findsOneWidget);
+  });
+
+  group('FileConfirmationDialogButton', () {
+    Future<void> pumpButton(WidgetTester tester, Future<String> Function() operation, {bool enabled = true, DialogButtonStyle? styleId}) {
+      return tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FileConfirmationDialogButton<String>(
+              fileNotifier: storage,
+              title: 'Program',
+              iconData: Icons.file_download,
+              enabled: enabled,
+              styleId: styleId,
+              onConfirmOperation: operation,
+              resultContent: resultContent,
+            ),
+          ),
+        ),
+      );
+    }
+
+    Future<void> confirm(WidgetTester tester, Future<String> Function() operation) async {
+      await pumpButton(tester, operation);
+      await tester.tap(find.text('Program'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Confirm'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a failing operation shows its error and the stage it stopped at, and no Complete', (tester) async {
+      await confirm(tester, () async {
+        storage.status = 'Erasing...';
+        throw Exception('erase failed');
+      });
+
+      expect(find.text('Erasing...'), findsOneWidget);
+      expect(find.text('Error: Exception: erase failed'), findsOneWidget);
+      expect(find.textContaining('Complete'), findsNothing);
+    });
+
+    testWidgets('a succeeding operation shows its result once, in one dialog that Ok closes', (tester) async {
+      await confirm(tester, () async {
+        storage.status = 'Writing...';
+        return 'Success';
+      });
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text('Success'), findsOneWidget);
+      expect(find.textContaining('Complete'), findsNothing);
+
+      await tester.tap(find.text('Ok'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+    });
+
+    testWidgets('disabled, it opens no confirmation', (tester) async {
+      await pumpButton(tester, () async => 'Success', enabled: false);
+      await tester.tap(find.text('Program'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+    });
+
+    testWidgets('a warning styleId puts the warning icon on its confirmation', (tester) async {
+      await pumpButton(tester, () async => 'Success', styleId: DialogButtonStyle.warning);
+      await tester.tap(find.text('Program'));
+      await tester.pumpAndSettle();
+
+      expect(find.descendant(of: find.byType(AlertDialog), matching: find.byIcon(Icons.warning)), findsOneWidget);
+    });
   });
 }

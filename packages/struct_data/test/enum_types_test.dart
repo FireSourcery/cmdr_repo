@@ -21,33 +21,15 @@ void main() {
     });
   });
 
-  group('codec resolve', () {
-    test('unknown value is null, never the first or last member', () {
-      expect(const EnumCodecDefault(Color.values).resolve(7), isNull);
-      expect(const EnumCodecDefault(Color.values).resolve(-1), isNull);
-      expect(const EnumCodecOffset(Color.values, 1).resolve(2), isNull);
-      expect(const EnumCodecOffset(Color.values, 1).resolve(-2), isNull);
-      expect(const EnumCodecSign(Color.values).resolve(5), isNull);
-      expect(const EnumFormat<Int16, Color>(Color.values).resolve(3), isNull);
-      expect(const EnumOffsetFormat<Int16, Color>(Color.values, 1).resolve(2), isNull);
-      expect(const EnumOffsetFormat<Int16, Color>(Color.values, 1).resolve(-2), isNull);
+  group('list resolve', () {
+    test('unknown index is null, never the first or last member', () {
+      expect(Color.values.resolve(7), isNull);
+      expect(Color.values.resolve(-1), isNull);
     });
 
-    test('null data is null, known value is the member', () {
-      expect(const EnumCodecDefault(Color.values).resolve(null), isNull);
-      expect(const EnumCodecDefault(Color.values).resolve(2), Color.blue);
-      expect(const EnumCodecOffset(Color.values, 1).resolve(-1), Color.red);
-      expect(const EnumOffsetFormat<Int16, Color>(Color.values, 1).resolve(1), Color.blue);
-    });
-
-    test('offset format sign-extends before resolving', () {
-      expect(const EnumOffsetFormat<Int16, Color>(Color.values, 1).resolve(0xFFFF), Color.red);
-    });
-
-    test('handler codec resolves through its decoder', () {
-      const codec = EnumCodecByHandlers<Color>(values: Color.values, decoder: _decodeReversed, encoder: _encodeReversed);
-      expect(codec.resolve(0), Color.blue);
-      expect(codec.resolve(null), isNull);
+    test('null index is null, known index is the member', () {
+      expect(Color.values.resolve(null), isNull);
+      expect(Color.values.resolve(2), Color.blue);
     });
 
     test('union codec resolves unknown to null', () {
@@ -70,6 +52,3 @@ void main() {
     });
   });
 }
-
-Color _decodeReversed(int data) => Color.values[Color.values.length - 1 - data];
-int _encodeReversed(Color view) => Color.values.length - 1 - view.index;

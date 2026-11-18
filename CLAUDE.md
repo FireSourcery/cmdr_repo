@@ -17,8 +17,9 @@ These libraries are **general-purpose, framework-level** packages designed to be
  
 ### Documentation
 - Keep comments concise. Comments are reserved for points that the code cannot express, not what the code is doing.
-- Use visualizations with mermaid diagrams for describing what the code is doing
+- Use visualizations with mermaid diagrams in a separate markdown file for describing what the code is doing
 - Extensive descriptions go in a separate markdown file, such as architecture notes.
+- Markdown stays in `.md` files: a doc comment keeps prose, `[Identifier]` links, backtick literals and short code samples, never a diagram or a `##` section, and points to the `.md` that has them. Why: `../kelly_user_app/doc/decisions/0002_markdown_in_md_files.md`.
 - When referring to a concept that is already modeled by a type or struct in code, refer to that type using `[]` e.g. `[TypeName_T]`.
 
 ---
@@ -72,20 +73,20 @@ These libraries are **general-purpose, framework-level** packages designed to be
 # Get dependencies for both packages (the repo root is the pub workspace root)
 flutter pub get
 
-# Analyze code
+# Analyze code (from the root, both packages)
 dart analyze
 flutter analyze
 
-# Run tests
-dart test                          # for struct_data (pure Dart)
-flutter test                       # for cmdr (Flutter)
+# Run tests, per package
+cd packages/struct_data && dart test     # pure Dart
+cd packages/cmdr && flutter test         # Flutter
 
-# Run tests in a specific file
+# Run tests in a specific file, from its package folder
 dart test test/path/to/test.dart
 flutter test test/path/to/test.dart
 
-# Format code
-dart format .
+# Format only the files you changed: a blanket `dart format .` reflows hand-laid-out code
+dart format <files>
 ```
 
 ---
@@ -98,20 +99,15 @@ dart format .
 - Minimum SDK constraints defined in each package's `pubspec.yaml`
 
 ### Naming
-- **Files**: `snake_case.dart`
-- **Classes**: `PascalCase`
-- **Variables/functions**: `camelCase`
-- **Constants**: `camelCase` (Dart convention, not SCREAMING_SNAKE)
-- **Private members**: prefix with `_`
-- **Enum values**: `camelCase`
+- Effective Dart, except enums that mirror firmware ids (`MotPacketRequestId`, `MotPacketControlId`, …): they keep the C names and order of `FireSourcery_Library/Motor/MotProtocol/`.
 
 ### Architecture Patterns
 - **VarNotifier pattern**: Reactive state management using `VarNotifier`, `VarKey`, `VarCache`, and `VarController`. This is the primary state management approach — prefer it over raw `ValueNotifier`/`ChangeNotifier` for domain values.
 - **Service/Controller/View separation**: Settings module demonstrates this split — `SettingsService` (persistence), `SettingsController` (logic), `SettingsView` (UI).
-- **Protocol abstraction**: Connection layer uses `Link` → `PacketTransformer` → `Protocol` layering. Implement new transports by extending `Link`, new wire formats via `PacketTransformer`.
+- **Protocol abstraction**: `Protocol(link, codec)` puts a `Link` (transport) under a `PacketCodec` (wire format, struct_data `packet/`), whose `transformer` frames the Rx stream. A new transport extends `Link`; a new wire format is a `PacketCodec`.
 - **Struct-based binary data**: Use `BitStruct`, `ByteStruct`, `WordStruct` for memory-mapped binary layouts. Use `TypedField` for individual typed fields within structs.
 - **EnumMap / IndexMap**: Prefer `EnumMap<E, V>` for enum-keyed collections and `IndexMap` for index-keyed collections over raw `Map`.
-- **Serializable**: Types that persist or transfer over the wire should implement `Serializable`.
+- **Serializable**: `typedef Serializable<K> = StructBase<K, Object?>`, keyed by its field enum; JSON through the `toJson` / `fromJson` extensions.
 
 ### Widget Conventions
 - Reusable widgets live in `cmdr/lib/widgets/` organized by feature subdirectory.
@@ -136,9 +132,9 @@ dart format .
 - **Prefer `final`** for local variables and fields that don't change after initialization.
 - **Prefer `const` constructors** for widgets and immutable objects.
 - **Avoid `as` casts** — use pattern matching or type checks.
-- **Extension methods** are preferred for adding functionality to existing types (see `type_ext/`, `data/basic_ext.dart`, `data/num_ext.dart`).
+- **Extension methods** are preferred for adding functionality to existing types (see cmdr `type_ext/`, struct_data `utilities/basic_ext.dart`, `utilities/num_ext.dart`).
 - **Keep packages independent** — `struct_data` has zero Flutter dependencies; `cmdr` may depend on `struct_data` but not vice versa.
-- Follow **effective Dart** lint rules. Run `dart analyze` with zero warnings before committing.
+- Run `dart analyze`: no new issues over the current baseline (struct_data's are almost all `avoid_print` in `example/`).
 
 ### Testing
 - Unit tests go in `test/` mirroring the `lib/` structure.
@@ -150,26 +146,27 @@ dart format .
 
 ## Key Abstractions to Know
 
-| Concept | Location | Purpose |
-|---|---|---|
-| `VarNotifier<T>` | `var_notifier/var_notifier.dart` | Reactive variable with notification |
-| `VarKey` | `var_notifier/var_key.dart` | Identifier for a VarNotifier in a VarCache |
-| `VarCache` | `var_notifier/var_cache.dart` | Registry/cache of VarNotifiers |
-| `VarController` | `var_notifier/var_controller.dart` | Orchestrates VarCache + connection sync |
-| `Link` | `connection/base/link.dart` | Abstract bidirectional data link |
-| `Protocol` | `connection/base/protocol.dart` | Abstract command/response protocol |
-| `PacketTransformer` | `connection/base/packet_transformer.dart` | Stream transformer for packet framing |
-| `BitStruct` | `bits/bit_struct.dart` | Struct with bit-level field accessors |
-| `ByteStruct` | `bytes/byte_struct.dart` | Struct with byte-level field accessors |
-| `TypedField` | `bytes/typed_field.dart` | Single typed field within a byte buffer |
-| `BinaryFormat` | `binary_format/binary_format.dart` | Descriptor for binary encoding of a value |
-| `Serializable` | `data/serializable.dart` | Interface for serialize/deserialize |
-| `EnumMap<E,V>` | `data/enum_map.dart` | Type-safe enum-keyed map |
-| `IOField` | `widgets/io_field/io_field.dart` | Base input/output text field widget |
-| `FileStorage` | `file_storage/file_storage.dart` | Abstract file read/write |
-| `ServiceIO` | `interfaces/service_io.dart` | Abstract service input/output interface |
-| `Stringifier` | `interfaces/stringifier.dart` | Interface for value ↔ string conversion |
-| `Property` | `type_ext/property.dart` | Descriptor pairing a value with metadata |
+| Concept | Package | Location (under `lib/`) | Purpose |
+|---|---|---|---|
+| `VarNotifier<T>` | cmdr | `var_notifier/var_notifier.dart` | Reactive variable with notification |
+| `VarKey` | cmdr | `var_notifier/var_key.dart` | Identifier for a VarNotifier in a VarCache |
+| `VarCache` | cmdr | `var_notifier/var_cache.dart` | Registry/cache of VarNotifiers |
+| `VarController` | cmdr | `var_notifier/var_controller.dart` | Orchestrates VarCache + connection sync |
+| `ServiceIO` | cmdr | `var_notifier/service_io.dart` | Abstract service input/output interface |
+| `Link` | cmdr | `connection/base/link.dart` | Abstract bidirectional data link |
+| `Protocol` | cmdr | `connection/base/protocol.dart` | Command/response over a `Link` and a `PacketCodec` |
+| `IOField` | cmdr | `widgets/io_field/io_field.dart` | Base input/output text field widget |
+| `FileStorage` | cmdr | `file_storage/file_storage.dart` | Abstract file read/write |
+| `Stringifier` | cmdr | `type_ext/stringifier.dart` | Interface for value ↔ string conversion |
+| `Property` | cmdr | `type_ext/property.dart` | Descriptor pairing a value with metadata |
+| `PacketCodec` | struct_data | `packet/packet_codec.dart` | Wire format: frame shapes, ids, checksum |
+| `PacketTransformer` | struct_data | `packet/packet_parser.dart` | Stream transformer framing packets through `HeaderParser` |
+| `BitStruct` | struct_data | `bits/bit_struct.dart` | Struct with bit-level field accessors |
+| `ByteStruct` | struct_data | `bytes/byte_struct.dart` | Struct with byte-level field accessors |
+| `TypedField` | struct_data | `bytes/typed_field.dart` | Single typed field within a byte buffer |
+| `BinaryFormat` | struct_data | `binary_format/binary_format.dart` | Descriptor for binary encoding of a value |
+| `Serializable` | struct_data | `general/serializable.dart` | `StructBase` keyed by its field enum, JSON via extensions |
+| `EnumMap<E,V>` | struct_data | `general/enum_map.dart` | Type-safe enum-keyed map |
 
 ---
 
@@ -180,3 +177,12 @@ dart format .
 - **BitStruct field order** — bit fields are packed LSB-first by default; verify bit offset calculations match your hardware specification.
 - **Packet framing** — when implementing a new `PacketTransformer`, handle partial packets and buffer accumulation correctly in the stream transformer.
 - **File paths** — use `path` package for cross-platform path handling in file storage implementations.
+- **Primary constructors** are the house style: `class const X(final int a) extends Y`, initializers after `this :`. Run `dart fix` one `--code` at a time and read the diff (traps: app README, "Local development").
+- **pub.dev names** — pub.dev's `cmdr` is an unrelated package, and pub.dev's `struct_data` 0.1.3 differs from the local copy under the same version. cmdr's pubspec names struct_data in hosted form so it stays publishable; the workspace resolves it locally, consumers override it ([decision 0001](doc/decisions/0001_hosted_sibling_dependency.md)).
+- **Commented-out code** is design intent parked mid-implementation, not dead code.
+
+## Changing library code
+Why, with instances: [doc/conventions/library_code.md](doc/conventions/library_code.md). Index of the library's docs: [doc/README.md](doc/README.md).
+- A fix goes inside the expression or loop the file already has. Needing a new construction to make it fit is the signal to look again.
+- A constraint every caller already meets is an `assert`, not runtime checking. Runtime handling is for wire data and user input.
+- An anomaly something downstream absorbs (the device wraps `Angle16`'s 65536 to 0) gets a one-line comment and a test pinning it, not a guard.

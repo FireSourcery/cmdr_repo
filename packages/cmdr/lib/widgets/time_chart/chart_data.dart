@@ -46,7 +46,8 @@ class LineData {
     };
   }
 
-  factory LineData.fromMapEntry(MapEntry<String, List> mapEntry) => LineData.from(mapEntry.key, List<double>.from(mapEntry.value.map((e) => e ?? 0.0)));
+  // csv cells decode as text; a blank or non-numeric cell reads 0
+  factory LineData.fromMapEntry(MapEntry<String, List> mapEntry) => LineData.from(mapEntry.key, mapEntry.value.map((e) => double.tryParse('$e') ?? 0.0));
   factory LineData.ofMapEntry(MapEntry<String, List<double>> mapEntry) => LineData.from(mapEntry.key, List<double>.of(mapEntry.value));
 
   MapEntry<String, List<double>> toMapEntry() => MapEntry<String, List<double>>(name, values.toList());
@@ -125,7 +126,7 @@ class ChartData {
   // factory ChartData.ofMap(Map<String, List<double?>> map) {
   factory ChartData.fromMap(Map<String, List<dynamic>> map) {
     if (map case {'time': List timeList}) {
-      if (timeList case List<double?>()) {
+      if (timeList.every((e) => double.tryParse('$e') != null)) {
         if (map.entries.skip(1) case Iterable<MapEntry<String, List>> lines) {
           return ChartData._(
             lineEntries: [for (final line in lines) LineData.fromMapEntry(line)],

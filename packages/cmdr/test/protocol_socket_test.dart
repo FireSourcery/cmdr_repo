@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:cmdr/connection/base/link.dart';
 import 'package:cmdr/connection/base/protocol.dart';
 import 'package:cmdr/connection/mot_connection/mot_packet.dart';
 import 'package:cmdr/connection/mot_connection/mot_protocol.dart';
@@ -83,5 +84,55 @@ void main() {
     expect(await version, _version(3));
     expect(await ping, MotPacketControlId.MOT_PACKET_PING);
     expect(protocol.errors, isEmpty);
+  });
+
+  group('the link status', () {
+    late List<LinkStatus> statuses;
+    setUp(() {
+      statuses = [];
+      link.status.addListener(() => statuses.add(link.status.value));
+    });
+
+    test('a read error is reported, disconnects the link, and notifies once', () async {
+      link.receiveError(Exception('unplugged'));
+      await pumpEventQueue();
+
+      expect(protocol.errors, [isA<Exception>()]);
+      expect(statuses, [isA<LinkDisconnected>()]);
+      expect(link.isConnected, isFalse);
+    });
+
+    test('a failed write disconnects the link', () async {
+      link.onSend = (_) => throw Exception('write failed');
+      expect(await socket.requestResponse(MotPacketRequestId.MOT_PACKET_VERSION, null, timeout: _timeout), isNull);
+
+      expect(statuses, [isA<LinkDisconnected>()]);
+    });
+
+    test('the end of the link stream disconnects the link', () async {
+      await link.dispose();
+      await pumpEventQueue();
+
+      expect(statuses, [isA<LinkDisconnected>()]);
+    });
+
+    test('a corrupt frame is reported, and the link stays connected', () async {
+      link.receive(_versionFrame(1)..[4] ^= 0xFF);
+      await pumpEventQueue();
+
+      expect(protocol.errors, [PacketStatusException.checksum]);
+      expect(statuses, isEmpty);
+    });
+
+    test('a reconnect moves the status back, and the next session is watched', () async {
+      link.receiveError(Exception('unplugged'));
+      await pumpEventQueue();
+      link.connect();
+      protocol.begin();
+      link.receiveError(Exception('unplugged'));
+      await pumpEventQueue();
+
+      expect(statuses, [isA<LinkDisconnected>(), isA<LinkConnected>(), isA<LinkDisconnected>()]);
+    });
   });
 }

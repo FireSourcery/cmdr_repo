@@ -3,15 +3,6 @@
 /// This library provides utilities for reading, writing, and managing various
 /// file formats including CSV, JSON, and binary data.
 ///
-/// ## Features
-///
-/// - Multiple file format support (CSV, JSON, binary)
-/// - Reactive file storage with notifications
-/// - File management widgets
-/// - Type-safe file operations
-///
-/// ## Usage
-///
 /// ```dart
 /// import 'package:cmdr/file_storage.dart';
 ///

@@ -3,16 +3,6 @@
 /// This library provides a comprehensive collection of Flutter widgets
 /// specifically designed for embedded device applications and data visualization.
 ///
-/// ## Features
-///
-/// - Data visualization widgets (charts, gauges, meters)
-/// - Input/output field widgets
-/// - Dialog and modal components
-/// - Application-specific UI components
-/// - Layout and navigation widgets
-///
-/// ## Usage
-///
 /// ```dart
 /// import 'package:cmdr/widgets.dart';
 ///
@@ -36,6 +26,7 @@ export 'widgets/dialog/dialog.dart';
 export 'widgets/dialog/dialog_anchor.dart';
 
 // Input/Output field widgets
+export 'widgets/num_input_formatters.dart';
 export 'widgets/io_field/io_field.dart';
 export 'widgets/io_field/io_field_ext.dart';
 

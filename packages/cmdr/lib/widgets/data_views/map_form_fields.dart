@@ -1,7 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:struct_data/word/word.dart';
 import 'package:struct_data/utilities/basic_ext.dart';
+
+import '../num_input_formatters.dart';
 
 /// A singular FormField partitioned corresponding to the Map input.
 /// Displays a TextFormField for each Map entry, with initial values from the map.
@@ -44,11 +48,7 @@ class MapFormFields<K, V> extends StatefulWidget {
                  _ => throw UnsupportedError('$V must be num type'),
                }
                as V? Function(String),
-       inputFormatters = switch (V) {
-         const (int) => [FilteringTextInputFormatter.digitsOnly],
-         const (double) || const (num) => [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
-         _ => null,
-       };
+       inputFormatters = numInputFormatters(signed: numLimits == null || numLimits.$1 < 0, decimal: V != int);
 
   final Iterable<MapEntry<K, V>> entries; // Map <K, V>
   final bool isReadOnly;
@@ -68,7 +68,11 @@ class MapFormFields<K, V> extends StatefulWidget {
   //
   final (num min, num max)? numLimits;
 
-  int? get maxDigits => numLimits?.$2.toString().length;
+  /// int entries only. A length cap on a decimal entry would cut its fraction; the formatter already restricts its characters.
+  int? get maxDigits => switch (numLimits) {
+    (num min, num max) when V == int => math.max('$min'.length, '$max'.length),
+    _ => null,
+  };
 
   static bool isNumeric<T>() => T == int || T == double || T == num;
 

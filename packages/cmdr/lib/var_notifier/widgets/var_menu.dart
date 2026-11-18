@@ -25,7 +25,6 @@ class const VarKeyWidgetBuilder({
 // wraps widget under, select with right click
 // convenience for combining build logic
 // use build on VarKey instead of VarNotifier. This way FlyweightMenuSource can be prebuilt, without VarCache state.
-// T used to match FlyweightMenuContext<T>
 @immutable
 class const VarSelectableBuilder<T extends VarKey>({
     required final FlyweightMenuSource<T> menuSource,

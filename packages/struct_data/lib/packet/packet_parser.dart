@@ -113,11 +113,6 @@ final class HeaderParser(PacketCodec codec, [int? size]) extends PacketBuffer {
     null => null,
   };
 
-  bool? get isLengthFieldValid => switch (lengthFieldOrNull) {
-    final int value => value >= codec.prefixLength && value <= codec.lengthMax,
-    null => null,
-  };
-
   /// Meaningful only after [completePacket] — the checksum covers exactly the frame, so the
   /// view has to end where the frame does. Null on a shape that declares no checksum, which
   /// is asked of the frame's own shape: a control frame is checked against its own check byte

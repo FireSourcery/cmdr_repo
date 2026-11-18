@@ -26,6 +26,12 @@ abstract mixin class FileStorageNotifier<T>() implements FileStorage<T> {
   set progress(double value) => progressNotifier.value = value;
   double get progress => progressNotifier.value;
 
+  void dispose() {
+    fileNotifier.dispose();
+    statusNotifier.dispose();
+    progressNotifier.dispose();
+  }
+
   /// async state notifiers for FutureBuilder, pick open and pick save
   Future<File?> _pickedFile = Future.value(null);
   Future<File?> get pickedFile => _pickedFile;
@@ -37,9 +43,7 @@ abstract mixin class FileStorageNotifier<T>() implements FileStorage<T> {
   Completer<void> userConfirmation = Completer();
   Future<void> get userConfirmed => userConfirmation.future;
   void initUserConfirmation() => userConfirmation = Completer<void>();
-  void confirm() {
-    if (!userConfirmation.isCompleted) userConfirmation.complete();
-  }
+  void confirm() => userConfirmation.complete(); // once per [initUserConfirmation]: a second call throws StateError
 
   // Future<Result<R>> processWithNotify1<R>(Future<R> Function() operation) async {
   //   statusNotifier.value = null;
@@ -54,23 +58,11 @@ abstract mixin class FileStorageNotifier<T>() implements FileStorage<T> {
   // }
 
   // process with notify, async status,
-  // error thrown will pass to widget
-  // statusNotifier and AsyncSnapshot error arrive at same result. although statusNotifier may transition through a number of update
-  Future<R?> processWithNotify<R>(Future<R> Function() operation) async {
+  // statusNotifier carries the stage text; the returned future carries the outcome, a thrown error included
+  Future<R> processWithNotify<R>(Future<R> Function() operation) async {
     // status = FileStorageStatus.ok;
     statusNotifier.value = null;
-    try {
-      operationCompleted = operation();
-      return await operationCompleted;
-      // } on FileStorageStatus catch (e) {
-      //   status = e;
-    } on Exception catch (e) {
-      statusNotifier.value = e.toString();
-    } catch (e) {
-      // status = FileStorageStatus.unknownError;
-      statusNotifier.value = 'Unknown Error: $e';
-    } finally {}
-    return null;
+    return operationCompleted = operation();
   }
 
   // full sequence for future builder

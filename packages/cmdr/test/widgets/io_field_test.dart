@@ -87,6 +87,30 @@ void main() {
     expect(fieldError(tester), isTrue);
   });
 
+  testWidgets('an unparseable submit keeps its text and the error through focus loss and notifications, until a valid submit', (tester) async {
+    final value = ValueNotifier<int>(1);
+    await tester.pumpWidget(
+      host(IOFieldText<int>.config(IOFieldConfig<int>(valueListenable: value, valueGetter: () => value.value, valueSetter: (newValue) => value.value = newValue, valueNumLimits: (min: -10, max: 10)))),
+    );
+
+    await tester.enterText(find.byType(TextField), '-');
+    await tester.testTextInput.receiveAction(TextInputAction.done); // unfocuses
+    await tester.pump();
+    expect(fieldText(tester), '-');
+    expect(fieldError(tester), isTrue);
+
+    value.value = 2;
+    await tester.pump();
+    expect(fieldText(tester), '-');
+    expect(fieldError(tester), isTrue);
+
+    await tester.enterText(find.byType(TextField), '30');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    expect(fieldText(tester), '10'); // the clamped value the setter took, resynced
+    expect(fieldError(tester), isFalse);
+  });
+
   testWidgets('a new listenable replaces the old one, and dispose stops listening', (tester) async {
     final first = ValueNotifier<int>(1);
     final second = ValueNotifier<int>(2);

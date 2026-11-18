@@ -52,4 +52,23 @@ void main() {
       expect(codec.encode(-2.7), -3);
     });
   });
+
+  group('BinaryQuantityCodec clamps a word rounded past the binary range', () {
+    const scale = NumDataScale(1 / 128); // a power of 2, so the half LSB survives the division exactly
+    final halfLsb = scale.coefficient / 2;
+
+    test('half an LSB above the top of a Uint16 range encodes to binaryRange.max', () {
+      const format = Ufract16();
+      final view = scale.viewOf(format.binaryRange.max) + halfLsb;
+      expect(scale.dataOf(view), format.binaryRange.max + 1);
+      expect(BinaryQuantityCodec<num>.of(format, conversion: scale.conversion).encode(view), format.binaryRange.max);
+    });
+
+    test('half an LSB below the bottom of an Int16 range encodes to binaryRange.min', () {
+      const format = Fract16();
+      final view = scale.viewOf(format.binaryRange.min) - halfLsb;
+      expect(scale.dataOf(view), format.binaryRange.min - 1);
+      expect(BinaryQuantityCodec<num>.of(format, conversion: scale.conversion).encode(view), format.binaryRange.min);
+    });
+  });
 }

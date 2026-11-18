@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 
+import '../widgets/dialog/dialog.dart';
+import '../widgets/dialog/dialog_anchor.dart';
 import 'file_storage_notifier.dart';
 import 'file_storage.dart';
 
@@ -31,7 +33,7 @@ abstract class const FileLoadButton({
   @override
   Widget build(BuildContext context) {
     Future<String?> showDialogBegin() {
-      beginAsync();
+      beginAsync().ignore(); // its error is shown by the dialog, through operationCompleted
 
       return showDialog<String>(
         context: context,
@@ -82,125 +84,61 @@ abstract class const FileLoadButton({
   }
 }
 
-// can combine with async confirmation dialogs
-// with nested futures
-class const FileConfirmationDialogButton({
+class const FileConfirmationDialogButton<R>({
   required final FileStorageNotifier fileNotifier,
   required final String title,
   required final IconData iconData,
-  required final AsyncCallback onConfirmOperation,
+  required final Future<R> Function() onConfirmOperation,
+  required final AsyncWidgetBuilder<R> resultContent, // the completed operation, error or ok
   final String confirmationText = 'Confirm?',
+  final DialogButtonStyle? styleId, // of the confirmation
+  final bool enabled = true,
   super.key,
 }) extends StatelessWidget {
-  void _onConfirm() {
-    fileNotifier.confirm();
-    fileNotifier.processWithNotify(onConfirmOperation);
-  }
-
   @override
   Widget build(BuildContext context) {
-    Future<String?> showDialogBegin() {
-      fileNotifier.initUserConfirmation();
+    Widget content(List<Widget> status) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          /// FileName
+          Text(fileNotifier.filePath ?? 'No file selected'),
+          const Divider(color: Colors.transparent),
 
-      return showDialog<String>(
+          /// Progress Status
+          ...status,
+        ],
+      );
+    }
+
+    Future<R?> showDialogBegin() {
+      return showDialog<R>(
         context: context,
         barrierDismissible: false,
         builder: (BuildContext context) {
-          return AlertDialog(
-            // insetPadding: EdgeInsets.all(10),
+          return AsyncConfirmationDialog<R>(
             title: Text(title),
-            content: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                /// FileName
-                Text(fileNotifier.filePath ?? 'No file selected'),
-                const Divider(color: Colors.transparent),
-
-                /// Progress Status
-                FutureBuilder(
-                  future: fileNotifier.userConfirmed,
-                  builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-                    return switch (snapshot.connectionState) {
-                      ConnectionState.waiting => Text(confirmationText),
-                      ConnectionState.none || ConnectionState.active || ConnectionState.done => Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ValueListenableBuilder(
-                            valueListenable: fileNotifier.progressNotifier,
-                            builder: (context, value, child) => LinearProgressIndicator(value: value),
-                          ),
-                          FileOperationText(fileNotifier),
-                        ],
-                      ),
-                    };
-                  },
-                ),
-              ],
-            ),
-
-            /// Buttons
-            actions: <Widget>[
-              FutureBuilder(
-                future: fileNotifier.userConfirmed,
-                builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-                  return switch (snapshot.connectionState) {
-                    ConnectionState.waiting => TextButton(onPressed: () => Navigator.of(context).pop(fileNotifier.status), child: const Text('Cancel')),
-                    ConnectionState.none || ConnectionState.active || ConnectionState.done => const SizedBox.shrink(),
-                  };
-                },
+            styleId: styleId,
+            initialContent: content([Text(confirmationText)]),
+            onConfirm: () => fileNotifier.processWithNotify(onConfirmOperation),
+            onConfirmContent: (BuildContext context, AsyncSnapshot<R> snapshot) => content([
+              ValueListenableBuilder(
+                valueListenable: fileNotifier.progressNotifier,
+                builder: (context, value, child) => LinearProgressIndicator(value: value),
               ),
-
-              FutureBuilder(
-                future: fileNotifier.userConfirmed,
-                builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-                  return switch (snapshot.connectionState) {
-                    ConnectionState.waiting => TextButton(onPressed: _onConfirm, child: const Text('Confirm')),
-                    ConnectionState.none || ConnectionState.active || ConnectionState.done => const SizedBox.shrink(),
-                  };
-                },
+              ValueListenableBuilder(
+                valueListenable: fileNotifier.statusNotifier,
+                builder: (context, value, child) => Text(value ?? ''),
               ),
-              // confirm/ok button
-              // FutureBuilder(
-              //   future: fileNotifier.userConfirmed,
-              //   builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-              //     return switch (snapshot) {
-              //       AsyncSnapshot(connectionState: ConnectionState.waiting) => TextButton(onPressed: _onConfirm, child: const Text('Confirm')),
-
-              //       /// after confirmation
-              //       AsyncSnapshot(connectionState: ConnectionState.none || ConnectionState.active || ConnectionState.done) => FutureBuilder(
-              //           future: fileNotifier.operationCompleted,
-              //           builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
-              //             return switch (snapshot) {
-              //               AsyncSnapshot(connectionState: ConnectionState.waiting) => const CircularProgressIndicator(),
-              //               AsyncSnapshot(connectionState: ConnectionState.none || ConnectionState.active || ConnectionState.done) =>
-              //                 TextButton(onPressed: () => Navigator.of(context).pop(fileNotifier.status), child: const Text('Ok')),
-              //             };
-              //           },
-              //         ),
-              //     };
-              //   },
-              // ),
-
-              /// after confirmation
-              FutureBuilder(
-                future: fileNotifier.userConfirmed.then((_) => fileNotifier.operationCompleted),
-                builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
-                  return switch (snapshot.connectionState) {
-                    ConnectionState.none || ConnectionState.waiting => const SizedBox.shrink(),
-                    ConnectionState.active => const CircularProgressIndicator(),
-                    ConnectionState.done => TextButton(onPressed: () => Navigator.of(context).pop(fileNotifier.status), child: const Text('Ok')),
-                  };
-                },
-              ),
-            ],
+              if (snapshot.connectionState == ConnectionState.done) resultContent(context, snapshot),
+            ]),
           );
         },
       );
     }
 
-    return ElevatedButton.icon(onPressed: showDialogBegin, icon: Icon(iconData), label: Text(title));
+    return ElevatedButton.icon(onPressed: enabled ? showDialogBegin : null, icon: Icon(iconData), label: Text(title));
   }
 }
 

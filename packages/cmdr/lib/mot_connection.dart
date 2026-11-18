@@ -3,14 +3,6 @@
 /// This library provides specialized connection implementations for
 /// embedded devices, including protocol definitions and packet handling.
 ///
-/// ## Features
-///
-/// - Embedded device specific protocols
-/// - Packet serialization/deserialization
-/// - Connection management for embedded devices
-///
-/// ## Usage
-///
 /// ```dart
 /// import 'package:cmdr/mot_connection.dart';
 ///
