@@ -37,7 +37,7 @@ class const IOFieldSlider<T extends num>(final IOFieldConfig<T> config, {super.k
 // Composites
 // convenience for attaching the same config
 class const IOFieldWithSlider<T extends num>(final IOFieldConfig<T> config, {final int breakWidth = 400, super.key}) extends StatelessWidget {
-  factory IOFieldWithSlider.of(IOFieldConfig config, {Key? key}) {
+  factory IOFieldWithSlider.of(IOFieldConfig config) {
     assert(config.valueNumLimits != null);
     return switch (config) {
           IOFieldConfig<int>() => IOFieldWithSlider<int>(config),

@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:struct_data/struct_data.dart';
+
 import 'var_notifier.dart';
 
 /// [VarKey] is an immutable key for [VarNotifier].

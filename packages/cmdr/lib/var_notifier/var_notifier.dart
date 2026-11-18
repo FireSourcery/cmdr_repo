@@ -1,12 +1,7 @@
-import 'package:cmdr/cmdr.dart';
+import 'package:struct_data/struct_data.dart';
 import 'package:flutter/foundation.dart';
 
-export 'package:struct_data/struct_data.dart';
-
-export 'service_io.dart';
-export 'var_cache.dart';
-export 'var_controller.dart';
-export 'var_key.dart';
+import 'var_key.dart';
 
 ///
 /// each retrievable value as a View Model
@@ -38,6 +33,9 @@ class VarNotifier<V> with ChangeNotifier, VarValue<V>, VarValueNotifier<V>, VarS
   /// as outbound data depending on [dataKey]
   MapEntry<int, int> get dataEntry => MapEntry(dataKey, dataValue);
   (int key, int value) get dataPair => (dataKey, dataValue);
+
+  /// Some listener shows the value. A polling var is polled only while it is observed.
+  bool get isObserved => hasListeners;
 
   /// Derived from [VarKey] and cached
   /// reinit on VarKey update
@@ -127,7 +125,8 @@ abstract mixin class VarValueNotifier<V>() implements VarValue<V>, ValueNotifier
   int get dataValue => data;
 
   // periodic polling - don't overwrite user changes, only update if not updatedByView pending
-  void updateByData(int bytesValue, {bool overwriteUpdateByView = false}) {
+  void updateByData(int bytesValue) {
+    if (bytesValue == serverData) return;
     data = bytesValue; // Always update server value
     if (_viewValue == null) notifyListeners(); // Only notify if effective value changed
   }
@@ -290,7 +289,7 @@ mixin class VarValue<V>() {
 ///
 /// alternatively, include code value only, caller handling Enum mapping
 ///
-/// Does not mixin ValueNotifier<VarStatus> to not take up single inheritance
+/// Does not mixin `ValueNotifier<VarStatus>` to not take up single inheritance
 /// S does not have to be generic if all vars share the same status type
 ///
 // todo as async status contain response status handle user iniiated await
@@ -299,6 +298,7 @@ abstract mixin class VarStatusNotifier() implements ChangeNotifier {
   int _statusCode = 0;
   int get statusCode => _statusCode;
   set statusCode(int value) {
+    if (_statusCode == value) return;
     _statusCode = value;
     notifyListeners();
   }

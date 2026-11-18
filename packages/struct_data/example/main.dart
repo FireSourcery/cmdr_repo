@@ -1,4 +1,4 @@
-/// binary_data package examples
+/// struct_data package examples
 ///
 /// Demonstrates bit-level, byte-level, and word-level struct usage,
 /// enum-keyed maps, serialization, and binary format codecs.

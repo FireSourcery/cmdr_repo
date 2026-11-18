@@ -52,7 +52,7 @@ class const Grid4(final Widget upperLeft, final Widget upperRight, final Widget 
   }
 }
 
-class const Grid3(final Widget half, final Widget quarter1, final Widget quarter2, {final Axis direction = Axis.horizontal, final bool isHalfLeading = true, super.key}) extends StatelessWidget {
+class const Grid3(final Widget half, final Widget quarter1, final Widget quarter2, {final Axis direction = Axis.horizontal, super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Flex(

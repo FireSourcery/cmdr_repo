@@ -13,14 +13,14 @@ These libraries are **general-purpose, framework-level** packages designed to be
  
 ## Core Principles
 - **Expression through code**: Use code as the language to express what its doing. Favor code that expresses itself over extensive comments.
-- **Declarative functions**. Favor less local variables. Function body should look like the equation in its docstring, not reconstruct it.
- 
+- **Declarative functions**. Favor less local variables. e.g. function body should look like the equation in its docstring, not reconstruct it.
+  esEssential logic in it's own function. compose error checking.
+-  
 ### Documentation
 - Keep comments concise. Comments are reserved for points that the code cannot express, not what the code is doing.
 - Use visualizations with mermaid diagrams in a separate markdown file for describing what the code is doing
 - Extensive descriptions go in a separate markdown file, such as architecture notes.
-- Markdown stays in `.md` files: a doc comment keeps prose, `[Identifier]` links, backtick literals and short code samples, never a diagram or a `##` section, and points to the `.md` that has them. Why: `../kelly_user_app/doc/decisions/0002_markdown_in_md_files.md`.
-- When referring to a concept that is already modeled by a type or struct in code, refer to that type using `[]` e.g. `[TypeName_T]`.
+- Markdown stays in `.md` files: a doc comment keeps prose, `[Identifier]` links, backtick literals and short code samples, never a diagram or a `##` section, and points to the `.md` that has them. Why: `../kelly_user_app/doc/decisions/0002_markdown_in_md_files.md`. 
 
 ---
 

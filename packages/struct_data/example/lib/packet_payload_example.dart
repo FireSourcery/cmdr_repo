@@ -1,7 +1,7 @@
 import 'dart:ffi';
 import 'dart:typed_data';
 
-import 'package:struct_data/packet/packet.dart';
+import 'package:struct_data/packet.dart';
 
 /// A fixed-size payload: two 32-bit words, cast in place over the packet's payload region.
 @Packed(1)

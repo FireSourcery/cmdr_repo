@@ -2,26 +2,14 @@ part of 'packet.dart';
 
 /// [PacketCodec] — the wire format of one protocol, as const data.
 ///
-/// Successor to `PacketFormat`. Three things changed.
-///
-/// **No factory members.** `PacketFormat<T extends Packet>` required `cast`, `caster`,
-/// `headerOf` and `syncHeaderOf` so that generic code could manufacture a protocol's own
-/// `Packet` subclass. [Packet] is now a mixin over `(codec, byteData)`, so a protocol
-/// contributes data and nothing else — no subclass, no casters. `MotPacketInterface` +
-/// `MotPacket` + `MotPacketHeader` + `MotPacketHeaderControl` collapse into one `const`
-/// subclass of this and two [PacketFrameFormat]s.
-///
-/// **One description of each layout.** `PacketFormat` described the header twice — once as
-/// [ByteField] offsets and once as an `ffi.Struct` — and nothing kept the two in step. The
-/// descriptors are the survivor: they are the only half that can read a *partial* buffer,
-/// which is the parser's whole job. An `ffi.Struct` cast throws below full length.
-///
-/// **Endian is honoured.** Header fields were read through `ByteField.getInOrNull`, which
-/// hardcodes little-endian and never consulted `PacketFormat.endian`. Every access here
-/// passes [endian] explicitly.
+/// A protocol contributes data and nothing else: its frame shapes as [PacketFrameFormat]s and
+/// its id table through [idOf] and [formatOf], with no [Packet] subclass and no casters. Every
+/// descriptor access passes the shape's [PacketFrameFormat.endian].
 ///
 /// `base`, so a protocol must `extend` and inherits the derived members below rather than
 /// reimplementing them.
+///
+/// The frame diagrams, and what changed from `PacketFormat`: `doc/packet_design.md` in this package.
 abstract base class const PacketCodec() {
   /// A complete frame is never longer than this. Sizes every buffer.
   int get lengthMax;
@@ -59,9 +47,8 @@ abstract base class const PacketCodec() {
   ///
   /// This is the codec's, not a shape's, because it is what *chooses* a shape: the parser
   /// reads an id here and only then knows which [PacketFrameFormat] the rest of the frame
-  /// follows. Having one view for the whole protocol is also what retires the old invariant
-  /// that every shape place its delimiter and id identically — there is now one place they
-  /// are read, so there is nothing to keep in step.
+  /// follows. So every shape of the codec places its delimiter and id where this reads them;
+  /// the default reads them through [dataFormat]'s descriptors.
   ///
   /// Only valid once [prefixLength] bytes are present.
   ///
@@ -83,23 +70,17 @@ abstract base class const PacketCodec() {
 /// [PacketFrameFormat] — one frame shape: where its header fields lie, how long the header is,
 /// how its integrity is computed, and how it is read as named fields.
 ///
-/// A protocol has more than one shape. MotProtocol has two, and they disagree about more than
-/// length: the data header is 8 bytes with a 16-bit sum at offset 4, the control frame is
-/// 4 bytes with a 1-byte XOR at offset 3. A single set of descriptors on the codec could
-/// describe only one of them, which is why the previous module could neither write nor check a
-/// control frame's check byte — the data checksum field lies past a control frame entirely.
+/// A protocol has more than one shape, so the descriptors live on the shape, not the codec.
 ///
 /// **A configuration interface with shared derivations.** A `mixin class`, so a shape is a
-/// named `const` class that states the few members it differs on and inherits the rest. Two or
-/// three per protocol, each one readable on its own, rather than one class configured by a
-/// list of named arguments. [lengthField] and [checksumField] default to absent, so a control
-/// shape names neither.
+/// named `const` class that states the few members it differs on and inherits the rest.
+/// [lengthField] and [checksumField] default to absent, so a control shape names neither.
 ///
 /// [headerOf] and [checksumOf] are the two members a shape overrides with behaviour rather
 /// than data — the first to read and write its header as a struct with named fields instead of
-/// through the descriptors, the second where its integrity is not a byte sum. Both are plain
-/// virtual methods; the previous version carried the first as a nullable function field, which
-/// said the same thing with a `?.call(...) ?? default` at the use site.
+/// through the descriptors, the second where its integrity is not a byte sum.
+///
+/// Why a shape is data, and what changed from `PacketFormat`: `doc/packet_design.md` in this package.
 abstract mixin class PacketFrameFormat() {
   /// Header bytes. For a data shape the payload begins here; for a control shape this is the
   /// whole frame.
@@ -110,8 +91,7 @@ abstract mixin class PacketFrameFormat() {
   Endian get endian => Endian.little;
 
   /// Present in every shape. The parser reads these before it knows which shape it has, so
-  /// every format of one codec must place them identically — see
-  /// [PacketCodec.hasConsistentIdPrefix].
+  /// every format of one codec must place them where [PacketCodec.prefixOf] reads them.
   ByteField get startField;
   ByteField get idField;
 

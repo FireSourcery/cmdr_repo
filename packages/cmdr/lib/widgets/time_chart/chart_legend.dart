@@ -67,7 +67,7 @@ class const _LegendListTile({
 
   // final bool isSelected;
 
-  Widget builder(context, child) => Text(valueGetter().toStringAsFixed(1), textAlign: TextAlign.right, style: textStyle);
+  Widget builder(BuildContext context, Widget? child) => Text(valueGetter().toStringAsFixed(1), textAlign: TextAlign.right, style: textStyle);
 
   @override
   Widget build(BuildContext context) {

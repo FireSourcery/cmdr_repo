@@ -37,8 +37,8 @@ class FakeServiceIO(final Map<int, int> device, {final int? batchSize}) with Ser
   int? set(int key, int value) => setBatch([(key, value)])?.single;
 }
 
-/// A readable and writable `int` [VarKey] whose data is its view.
-class const FakeVarKey(@override final int value) with VarKey<int> {
+/// An `int` [VarKey] whose data is its view, readable and writable unless [access] says otherwise.
+class const FakeVarKey(@override final int value, {@override final bool isPolling = false, @override final VarReadWriteAccess access = VarReadWriteAccess.readWrite}) with VarKey<int> {
   @override
   TypeKey<int> get viewType => const TypeKey<int>();
   @override
@@ -48,11 +48,7 @@ class const FakeVarKey(@override final int value) with VarKey<int> {
   @override
   VarStatus varStatusOf(int code) => VarStatus.defaultOf(code);
   @override
-  bool get isPolling => false;
-  @override
   bool get isPushing => false;
-  @override
-  VarReadWriteAccess get access => VarReadWriteAccess.readWrite;
   @override
   List<VarKey>? get dependents => null;
   @override

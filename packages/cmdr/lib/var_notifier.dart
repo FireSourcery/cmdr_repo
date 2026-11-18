@@ -14,8 +14,13 @@
 /// ```
 library;
 
+export 'package:struct_data/struct_data.dart';
+
 // Core variable notifier classes
 export 'var_notifier/var_notifier.dart';
+export 'var_notifier/var_cache.dart';
+export 'var_notifier/var_controller.dart';
+export 'var_notifier/var_key.dart';
 
 export 'var_notifier/service_io.dart';
 

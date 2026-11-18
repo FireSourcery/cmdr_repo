@@ -27,7 +27,7 @@ class FakeLink() implements Link {
   final ValueNotifier<LinkStatus> status = ValueNotifier(const LinkConnected('fake'));
 
   @override
-  LinkStatus connect() => status.value = const LinkConnected('fake');
+  Future<LinkStatus> connect() async => status.value = const LinkConnected('fake');
   @override
   LinkStatus disconnect() => status.value = const LinkDisconnected('fake');
 

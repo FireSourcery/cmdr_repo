@@ -3,14 +3,14 @@
 import 'dart:ffi';
 import 'dart:math';
 
-import '../utilities/basic_types.dart';
+import '../../utilities/basic_types.dart';
 import '../general/enum_types.dart';
 import '../bits/bit_struct.dart';
-import '../src/type_markers.dart';
+import '../type_markers.dart';
 import 'binary_codec.dart';
 
 export 'binary_codec.dart';
-export '../src/type_markers.dart';
+export '../type_markers.dart';
 
 /// [BinaryFormat<S, V>] defines `value` handling
 /// type V to and from a binary representation as an [int],

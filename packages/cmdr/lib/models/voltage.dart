@@ -1,4 +1,4 @@
-import 'package:struct_data/binary_format/quantity_format.dart';
+import 'package:struct_data/struct_data.dart';
 
 class VDivider {
   const VDivider(this.r1, this.r2);

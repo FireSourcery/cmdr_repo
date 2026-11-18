@@ -16,6 +16,11 @@ Future<void> typeKeys(WidgetTester tester, String text) async {
 
 bool fieldError(WidgetTester tester) => tester.widget<TextField>(find.byType(TextField)).statesController!.value.contains(WidgetState.error);
 
+enum _Fruit() {
+  apple,
+  pear,
+}
+
 void main() {
   /// Types [text] into a field with limits [min]..10, expects it to show [shows], then submits and expects [writes].
   Future<void> expectTyped<T extends num>(WidgetTester tester, String text, {required num min, required String shows, List<T> writes = const []}) async {
@@ -132,5 +137,36 @@ void main() {
     second.value = 7;
     await tester.pump();
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a parse error stays with its listenable: a field reused for another shows that one, without the error', (tester) async {
+    final first = ValueNotifier<int>(1);
+    final second = ValueNotifier<int>(2);
+    Widget field(ValueNotifier<int> value) => host(IOFieldText<int>.config(IOFieldConfig<int>(valueListenable: value, valueGetter: () => value.value, valueNumLimits: (min: -10, max: 10))));
+
+    await tester.pumpWidget(field(first));
+    await tester.enterText(find.byType(TextField), '-');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    expect((fieldText(tester), fieldError(tester)), ('-', true));
+
+    await tester.pumpWidget(field(second)); // as a table row keyed by index after a sort
+    expect((fieldText(tester), fieldError(tester)), ('2', false));
+  });
+
+  group('IOFieldMenu', () {
+    const key = ValueKey('menu');
+    final value = ValueNotifier(_Fruit.apple);
+    final config = IOFieldConfig<_Fruit>(valueListenable: value, valueGetter: () => value.value, valueEnumRange: _Fruit.values, tip: 'pick one');
+
+    testWidgets('its key stays on the menu, not on its reader', (tester) async {
+      await tester.pumpWidget(host(IOFieldMenu<_Fruit>.config(config, key: key)));
+      expect(find.byKey(key), findsOneWidget);
+    });
+
+    testWidgets('its tip shows once', (tester) async {
+      await tester.pumpWidget(host(IOFieldMenu<_Fruit>.config(config)));
+      expect(find.byTooltip('pick one'), findsOneWidget);
+    });
   });
 }

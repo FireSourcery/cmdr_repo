@@ -12,9 +12,12 @@
 /// ```
 library;
 
+export 'package:libserialport/libserialport.dart';
+
 // Base connection classes
 export 'connection/base/link.dart';
 export 'connection/base/protocol.dart';
+export 'connection/links/serial_link.dart';
 
 // Connection view widgets
 export 'connection/view/serial_link_view.dart';

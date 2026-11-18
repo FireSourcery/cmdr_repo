@@ -6,20 +6,15 @@ export 'packet.dart';
 
 /// [PacketBuffer] — a fixed allocation that *is* the frame it currently holds.
 ///
-/// Mixes in [Packet], so there is one object rather than a buffer plus two views of it. The
-/// previous version exposed `buffered` (the whole allocation, to write through) and `packet`
-/// (what was valid, to read), and every caller had to pick. Here [lengthInBytes] is the end,
-/// and building simply opens it: while a request is being assembled the whole allocation is
-/// the frame, and the end is brought in once the payload reports its size.
+/// Mixes in [Packet], so the buffer is read and built through one object. [lengthInBytes] is
+/// the end: a request is built through [storage], the whole allocation, and [buildHeader]
+/// brings the end in to the frame it wrote.
 ///
 /// [byteData] is bounded by that end rather than spanning the allocation, so an accessor
 /// cannot read past what is valid — a header field that has not arrived reads as out of
 /// range rather than as stale bytes from the frame before.
 ///
-/// Replaces `PacketBuffer extends ByteStructBuffer<T extends Packet>`. `ByteStructBuffer`
-/// existed to carry a `TypedDataCaster<T>` so a generic buffer could produce a protocol's own
-/// `Packet` subclass; with no subclass to produce there is no caster to carry, and the
-/// intermediate class had no other member and no other user.
+/// What it replaces, and the build order: `doc/packet_design.md` in this package.
 base class PacketBuffer(@override final PacketCodec codec, [int? size]) extends TypedDataBuffer with Packet {
   this : super(size ?? codec.lengthMax);
 
@@ -27,7 +22,7 @@ base class PacketBuffer(@override final PacketCodec codec, [int? size]) extends 
   ///
   /// So an accessor cannot read past what is valid: a header field that has not arrived
   /// reads as out of range rather than as stale bytes from the frame before. Building does
-  /// not go through here — see [bufferAsByteData].
+  /// not go through here — see [storage].
   @override
   ByteData get byteData => ByteData.sublistView(viewLengthBytes);
 

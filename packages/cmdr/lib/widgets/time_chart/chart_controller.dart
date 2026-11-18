@@ -66,12 +66,6 @@ class ChartController({
   //   // start();
   // }
 
-  // attempt to retrieve Entries
-  void loadWithMeta(ChartData data, List<String> keyNames, ChartEntry Function(String) mapper) {
-    chartData = data;
-    // replaceEntries(_chartData.lineEntries.map((e) => ChartEntry(name: e.name, valueGetter: () => 0)));
-  }
-
   /// view data. independent of data generators
   ChartData _chartData; // line data models, derive from entry, file storage
   ChartData get chartData => _chartData;

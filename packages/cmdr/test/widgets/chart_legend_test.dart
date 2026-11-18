@@ -7,7 +7,6 @@ import 'package:flutter_test/flutter_test.dart';
 /// Pins that a legend entry reads as its name and value, and that a selectable one is reached and chosen from the keyboard.
 void main() {
   testWidgets('an entry reads as its name and value; a selectable one is chosen from the keyboard', (tester) async {
-    final semantics = tester.ensureSemantics();
     final tick = ValueNotifier(0);
     addTearDown(tick.dispose);
     final selected = <String>[];
@@ -31,6 +30,5 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     expect(selected, ['Speed']);
-    semantics.dispose();
   });
 }

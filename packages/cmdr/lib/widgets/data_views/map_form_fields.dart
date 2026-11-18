@@ -2,8 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:struct_data/word/word.dart';
-import 'package:struct_data/utilities/basic_ext.dart';
+import 'package:struct_data/struct_data.dart';
 
 import '../num_input_formatters.dart';
 
@@ -195,7 +194,7 @@ class const MapTable<K, V>({super.key, required final Iterable<MapEntry<K, V>> e
 
 /// A text 'word' that is also a 64-bit integer 'word'.
 /// Editable views
-class const StringFormField({required final Word word, final String? label, super.key, final bool isReadOnly = false, final ValueSetter<Word>? onSaved, final int maxLength = 8}) extends StatelessWidget {
+class const StringFormField({required final Word word, final String? label, super.key, final ValueSetter<Word>? onSaved, final int maxLength = 8}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextFormField(

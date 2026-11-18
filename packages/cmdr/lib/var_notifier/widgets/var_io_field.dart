@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:struct_data/struct_data.dart';
 
-import '../../type_ext/stringifier.dart';
+import '../../interfaces/stringifier.dart';
+import '../../widgets/flyweight_menu/flyweight_menu.dart';
+import '../../widgets/flyweight_menu/flyweight_menu_widgets.dart';
 import '../../widgets/io_field/io_field.dart';
+import '../var_cache.dart';
+import '../var_controller.dart';
+import '../var_key.dart';
 import '../var_notifier.dart';
 import 'var_menu.dart';
 
@@ -19,7 +25,6 @@ abstract interface class VarIOField extends StatelessWidget {
     bool showPrefix = true,
     bool showSuffix = true,
     bool isDense = false,
-    Key? key,
   }) {
     // convenience for passing parameters
     _VarIOField<V> local<V>() {
@@ -51,13 +56,11 @@ abstract interface class VarIOField extends StatelessWidget {
 
   factory VarIOField.compact(
     VarNotifier varNotifier, {
-    VarSingleController? controller,
     bool? readOnly,
     bool showLabel = false,
     bool showPrefix = false,
     bool showSuffix = false,
     bool isDense = false,
-    Key? key,
   }) {
     return VarIOField(varNotifier, readOnly: readOnly, showLabel: showLabel, isDense: isDense, showPrefix: showPrefix, showSuffix: showSuffix);
   }
@@ -135,9 +138,9 @@ class const VarIOFieldConfig<V>(
   @override
   InputDecoration get idDecoration {
     return InputDecoration(
-      labelText: (showLabel) ? varNotifier.varKey.label : null,
+      labelText: label,
       prefixIcon: (showPrefix) ? (!isReadOnly ? const Icon(Icons.input) : null) : null,
-      suffixText: (showSuffix) ? varNotifier.varKey.suffix : null,
+      suffixText: units,
       isDense: isDense,
 
       // floatingLabelAlignment: labelAlignment,
@@ -154,6 +157,11 @@ class const VarIOFieldConfig<V>(
     //   showSuffix: showSuffix,
     // );
   }
+
+  @override
+  String? get label => (showLabel) ? varNotifier.varKey.label : null;
+  @override
+  String? get units => (showSuffix) ? varNotifier.varKey.suffix : null;
 
   @override
   bool get isReadOnly => readOnly ?? varNotifier.varKey.isReadOnly;
@@ -173,13 +181,10 @@ class const VarIOFieldConfig<V>(
   String get tip => varNotifier.varKey.tip ?? '';
 
   @override
-  ({num max, num min})? get valueNumLimits {
-    if (varNotifier is VarNotifier<num>) {
-      if (varNotifier.codec case BinaryQuantityCodec c) return c.numLimits;
-      if (varNotifier.codec case NumFormat n) return n.valueRange;
-    }
-    return null;
-  }
+  ({num max, num min})? get valueNumLimits => switch (varNotifier) {
+    VarNotifier<num> numVar => numVar.numLimits,
+    _ => null,
+  };
 
   @override
   List<V>? get valueEnumRange {
@@ -195,6 +200,7 @@ class const VarIOFieldConfig<V>(
   @override
   bool get useSwitchBorder => true;
 
+  /// An [IOFieldConfig] of the values derived from [varNotifier] now, each replaced where given.
   @override
   IOFieldConfig<V> copyWith({
     bool? isReadOnly,
@@ -207,20 +213,25 @@ class const VarIOFieldConfig<V>(
     ValueGetter<bool>? errorGetter,
     Stringifier<V>? valueStringifier,
     List<V>? valueEnumRange,
-    ValueChanged<V>? sliderChanged,
-    bool? useSliderBorder,
+    ({num min, num max})? valueNumLimits,
+    ValueChanged<V>? valueChanged,
     bool? useSwitchBorder,
     IOFieldBoolStyle? boolStyle,
   }) {
-    return VarIOFieldConfig<V>(
-      varNotifier,
-      controller: controller,
-      labelAlignment: labelAlignment,
-      showLabel: showLabel,
-      showPrefix: showPrefix,
-      showSuffix: showSuffix,
-      isDense: isDense,
-      readOnly: isReadOnly ?? readOnly,
+    return IOFieldConfig<V>(
+      idDecoration: idDecoration ?? this.idDecoration,
+      isReadOnly: isReadOnly ?? this.isReadOnly,
+      tip: tip ?? this.tip,
+      valueListenable: valueListenable ?? this.valueListenable,
+      valueGetter: valueGetter ?? this.valueGetter,
+      valueSetter: valueSetter ?? this.valueSetter,
+      errorGetter: errorGetter ?? this.errorGetter,
+      valueStringifier: valueStringifier ?? this.valueStringifier,
+      valueEnumRange: valueEnumRange ?? this.valueEnumRange,
+      valueNumLimits: valueNumLimits ?? this.valueNumLimits,
+      valueChanged: valueChanged ?? this.valueChanged,
+      useSwitchBorder: useSwitchBorder ?? this.useSwitchBorder,
+      boolStyle: boolStyle ?? this.boolStyle,
     );
   }
 }

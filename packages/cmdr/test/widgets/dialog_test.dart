@@ -6,6 +6,46 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// An event shared with its notifier, as a [ChangeNotifier] shared with the value it reports on: [notify] fires with or
+/// without a change of [active]. [listeners] counts the listeners attached.
+class _EventSource() extends ChangeNotifier {
+  bool active = false;
+  int listeners = 0;
+
+  void notify([bool? to]) {
+    active = to ?? active;
+    notifyListeners();
+  }
+
+  @override
+  void addListener(VoidCallback listener) {
+    listeners++;
+    super.addListener(listener);
+  }
+
+  @override
+  void removeListener(VoidCallback listener) {
+    listeners--;
+    super.removeListener(listener);
+  }
+}
+
+/// A [Listenable] that keeps calling a listener after it is removed.
+class _UnremovingListenable() implements Listenable {
+  final List<VoidCallback> _listeners = [];
+
+  void notify() {
+    for (final listener in _listeners) {
+      listener();
+    }
+  }
+
+  @override
+  void addListener(VoidCallback listener) => _listeners.add(listener);
+  @override
+  void removeListener(VoidCallback listener) {}
+}
+
 void main() {
   testWidgets('AsyncConfirmationDialog actions follow confirm, running and done', (tester) async {
     final process = Completer<int>();
@@ -191,6 +231,82 @@ void main() {
 
       expect(find.byIcon(Icons.warning), findsNothing);
       expect(styleOf(tester, 'Confirm'), isNull);
+    });
+  });
+
+  group('DialogAnchor follows its eventNotifier', () {
+    Widget anchor(Listenable notifier, {ValueGetter<bool?>? eventGetter, bool? eventMatch, bool hasDialog = true}) => MaterialApp(
+      home: DialogAnchor<bool>(
+        eventNotifier: notifier,
+        eventGetter: eventGetter,
+        eventMatch: eventMatch,
+        eventDialogBuilder: hasDialog ? (_, _, _) => const AlertDialog(content: Text('event')) : null,
+        child: const Text('field'),
+      ),
+    );
+
+    testWidgets('a new notifier takes the listener from the old one, and dispose removes it', (tester) async {
+      final a = _EventSource();
+      final b = _EventSource();
+      addTearDown(a.dispose);
+      addTearDown(b.dispose);
+      await tester.pumpWidget(anchor(a));
+      await tester.pumpWidget(anchor(b));
+      expect((a.listeners, b.listeners), (0, 1));
+
+      a.notify();
+      await tester.pumpAndSettle();
+      expect(find.text('event'), findsNothing);
+
+      b.notify();
+      await tester.pumpAndSettle();
+      expect(find.text('event'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      expect(b.listeners, 0);
+    });
+
+    testWidgets('eventMatch takes its baseline from the new notifier', (tester) async {
+      final a = _EventSource();
+      final b = _EventSource()..active = true; // mid-event when the anchor moves to it
+      addTearDown(a.dispose);
+      addTearDown(b.dispose);
+      await tester.pumpWidget(anchor(a, eventGetter: () => a.active, eventMatch: true));
+      await tester.pumpWidget(anchor(b, eventGetter: () => b.active, eventMatch: true));
+
+      b.notify();
+      await tester.pumpAndSettle();
+      expect(find.text('event'), findsNothing);
+
+      b
+        ..notify(false)
+        ..notify(true);
+      await tester.pumpAndSettle();
+      expect(find.text('event'), findsOneWidget);
+    });
+
+    testWidgets('on one notifier, the listener follows the dialog builder away and back', (tester) async {
+      final a = _EventSource();
+      addTearDown(a.dispose);
+      await tester.pumpWidget(anchor(a));
+      await tester.pumpWidget(anchor(a, hasDialog: false));
+      expect(a.listeners, 0);
+
+      await tester.pumpWidget(anchor(a));
+      expect(a.listeners, 1);
+      a.notify();
+      await tester.pumpAndSettle();
+      expect(find.text('event'), findsOneWidget);
+    });
+
+    testWidgets('a notification that reaches it after dispose does nothing', (tester) async {
+      final notifier = _UnremovingListenable();
+      await tester.pumpWidget(anchor(notifier));
+      await tester.pumpWidget(const SizedBox());
+
+      notifier.notify();
+      await tester.pumpAndSettle();
+      expect(find.text('event'), findsNothing);
     });
   });
 }

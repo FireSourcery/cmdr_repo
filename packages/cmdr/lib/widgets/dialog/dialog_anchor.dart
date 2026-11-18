@@ -17,6 +17,9 @@ class const DialogAnchor<T>({
     final Notification? notificationMatch, // additional way to match event
     required final Widget child,
   }) extends StatefulWidget {
+  // the notifier listened to: [eventNotifier], while there is an [eventDialogBuilder] to show on it
+  Listenable? get _eventSource => (eventDialogBuilder != null) ? eventNotifier : null;
+
   @override
   State<DialogAnchor> createState() => _DialogAnchorState<T>();
 }
@@ -30,19 +33,29 @@ class _DialogAnchorState<T>() extends State<DialogAnchor<T>> {
   void initState() {
     super.initState();
     _focusNode.addListener(_handleFocusChange);
-    if (widget.eventNotifier != null && widget.eventDialogBuilder != null) {
-      _lastEvent = widget.eventGetter?.call(); // baseline, so mounting mid-event does not open the dialog
-      widget.eventNotifier!.addListener(_showEventDialogAsListener);
-    }
+    _addEventListener();
+  }
+
+  @override
+  void didUpdateWidget(DialogAnchor<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget._eventSource == widget._eventSource) return;
+    oldWidget._eventSource?.removeListener(_showEventDialogAsListener);
+    _addEventListener();
   }
 
   @override
   void dispose() {
-    if (widget.eventNotifier != null && widget.eventDialogBuilder != null) {
-      widget.eventNotifier!.removeListener(_showEventDialogAsListener);
-    }
+    widget._eventSource?.removeListener(_showEventDialogAsListener);
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _addEventListener() {
+    if (widget._eventSource case final Listenable eventSource) {
+      _lastEvent = widget.eventGetter?.call(); // baseline, so mounting mid-event does not open the dialog
+      eventSource.addListener(_showEventDialogAsListener);
+    }
   }
 
   void _handleFocusChange() {
@@ -67,6 +80,7 @@ class _DialogAnchorState<T>() extends State<DialogAnchor<T>> {
   /// the value it reports on. [eventMatch] narrows this to the transition into a matching
   /// [eventGetter]; notifications while the event remains active do not reopen the dialog.
   void _showEventDialogAsListener() {
+    if (!mounted) return; // [Listenable] does not promise to stop calling a removed listener
     if (widget.eventMatch case T match) {
       final T? previous = _lastEvent;
       _lastEvent = widget.eventGetter?.call();

@@ -1,6 +1,10 @@
 import 'dart:async';
+import 'dart:math';
 
 
+import 'service_io.dart';
+import 'var_cache.dart';
+import 'var_key.dart';
 import 'var_notifier.dart';
 
 /// [VarRepo]/[VarCache] with [Serivce]
@@ -34,9 +38,9 @@ class const VarCacheController({required final VarCache cache, required final Se
 
   /// overwrite user changes, e.g. on explicit fetch
   Future<VarStatus?> readOverwrite([Iterable<VarKey>? keys]) async {
-    await readAll(keys);
+    if (await readAll(keys) case final status when status == null || status.isError) return status;
     // todo unify
-    for (final v in cache.varEntries) {
+    for (final v in keys == null ? cache.varEntries : cache.varsOf(keys)) {
       v.discardUserChanges(); // device data wins on explicit fetch
     }
     return VarStatusDefault.success;
@@ -47,14 +51,13 @@ class const VarCacheController({required final VarCache cache, required final Se
   ///
   VarStatus? _onWriteSlice(ServiceSetSlice<int, int, int> slice) {
     if (slice.statuses == null) return null; // no response error
-    cache.updateByDataResponse(slice.pairs, slice.statuses!); // clears scheduled write
-    return VarStatusDefault.success;
+    return cache.updateByDataResponse(slice.pairs, slice.statuses!); // clears scheduled write
   }
 
   // return first error, alternatively continue collecting errors in cache
   Future<VarStatus?> _write(Iterable<(int, int)> pairs) async {
     await for (final event in protocolService.setAll(pairs)) {
-      if (_onWriteSlice(event) == null) return null;
+      if (_onWriteSlice(event) case final status when status == null || status.isError) return status;
     }
     return VarStatusDefault.success;
   }
@@ -84,13 +87,14 @@ class const VarCacheController({required final VarCache cache, required final Se
 
   // send
   Future<VarStatus?> write<V>(VarKey<V> key) async {
-    if (await protocolService.set(key.value, cache[key]?.dataValue ?? 0) case int status) {
-      return (cache[key]?..updateStatusByData(status))?.status;
+    if (cache[key] case VarNotifier notifier) {
+      final (id, sent) = notifier.dataPair;
+      if (await protocolService.set(id, sent) case int status) return (notifier..applyWriteResponse(sent, status)).status;
     }
     return null;
   }
 
-  // maps to protocol service, not cache, so no cache update or status update.
+  // maps to protocol service directly, not through the batch; the response updates the notifier's value and status.
   VarSingleController<V> single<V>(VarNotifier<V> notifier) => VarSingleController(varNotifier: notifier, protocolService: protocolService);
 }
 
@@ -114,7 +118,7 @@ class VarStreamController({required super.cache, required super.protocolService}
   }
 
   VarPollingScope createScope(Iterable<VarKey> keys) {
-    final scope = VarPollingScope._(this, keys.where((e) => !e.isWriteOnly));
+    final scope = VarPollingScope._(this, keys);
     _scopes.add(scope);
     return scope;
   }
@@ -123,7 +127,7 @@ class VarStreamController({required super.cache, required super.protocolService}
 
   // stream will call slices creating a new list, at the beginning of each multi-batch operation
   // while this iterator is accessed, view must not add or remove keys, either by lock or preallocate cache
-  Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => (e.varKey.isPolling && e.hasListeners) || _scopes.any((s) => s._keys.contains(e.varKey))).map((e) => e.varKey);
+  Iterable<VarKey> get _readKeys => cache.varEntries.where((e) => (e.varKey.isPolling && e.isObserved) || _scopes.any((s) => s._keys.contains(e.varKey))).map((e) => e.varKey);
   List<int> _readKeysGetter() => (_readBuffer..clear())..addAll(cache.dataIdsOf(_readKeys));
 
   Iterable<VarKey> get _writeKeys => cache.varEntries.where((e) => e.varKey.isPushing || e.hasPendingChanges).map((e) => e.varKey);
@@ -137,37 +141,58 @@ class VarStreamController({required super.cache, required super.protocolService}
 
   void Function(Object error)? _onError;
 
+  /// The wait before a stream restarts after its first error in a row; each further error doubles it, up to 32 times.
+  static const Duration restartDelay = Duration(milliseconds: 50);
+  int _pollErrors = 0; // in a row, until a slice
+  int _pushErrors = 0;
+
+  /// The restart policy of both streams: reports the first error in a row, and starts [stream] after the backoff.
+  /// The wait belongs to the replacement subscription, so pause, resume and [endPeriodic] act on it.
+  Stream<T> _restart<T>(Stream<T> stream, Object error, int errors) {
+    if (errors == 1) _onError?.call(error);
+    return Stream.fromFuture(Future.delayed(restartDelay * (1 << min(errors - 1, 5)))).asyncExpand((_) => stream);
+  }
+
   // cancelOnError: true cancels the dead subscription, then re-subscribe with a fresh stream. without it, the dead one keeps polling beside its replacement
   // the replacement takes its sibling's pause state, which pause/resume keep in step
   // endPeriodic nulls subscriptions, so the null check prevents restart after intentional stop
   void _restartPollOnError(Object error) {
-    _onError?.call(error);
-    if (pushSubscription == null) return;
-    pollSubscription = _readStream.listen(_onReadSlice, onError: _restartPollOnError, cancelOnError: true);
-    if (pushSubscription!.isPaused) pollSubscription!.pause();
+    if (pollSubscription == null) return;
+    pollSubscription = _restart(_readStream, error, ++_pollErrors).listen(_onPollSlice, onError: _restartPollOnError, cancelOnError: true);
+    if (pushSubscription?.isPaused ?? false) pollSubscription!.pause();
   }
 
   void _restartPushOnError(Object error) {
-    _onError?.call(error);
     if (pushSubscription == null) return;
-    pushSubscription = _writeStream.listen(_onWriteSlice, onError: _restartPushOnError, cancelOnError: true);
+    pushSubscription = _restart(_writeStream, error, ++_pushErrors).listen(_onPushSlice, onError: _restartPushOnError, cancelOnError: true);
     if (pollSubscription?.isPaused ?? false) pushSubscription!.pause();
   }
 
-  ///
+  // a slice ends the errors in a row
+  void _onPollSlice(ServiceGetSlice<int, int> slice) {
+    _pollErrors = 0;
+    _onReadSlice(slice);
+  }
+
+  void _onPushSlice(ServiceSetSlice<int, int, int> slice) {
+    _pushErrors = 0;
+    _onWriteSlice(slice);
+  }
+
+  /// [onError] gets the first error in a row of each stream; the stream restarts after [restartDelay], backing off.
   bool beginPeriodic({void Function(Object error)? onError}) {
     if (!protocolService.isConnected) return false;
     _onError = onError;
-    pollSubscription ??= _readStream.listen(_onReadSlice, onError: _restartPollOnError, cancelOnError: true);
-    pushSubscription ??= _writeStream.listen(_onWriteSlice, onError: _restartPushOnError, cancelOnError: true);
+    pollSubscription ??= _readStream.listen(_onPollSlice, onError: _restartPollOnError, cancelOnError: true);
+    pushSubscription ??= _writeStream.listen(_onPushSlice, onError: _restartPushOnError, cancelOnError: true);
     return true;
   }
 
   Future<void> endPeriodic() async {
-    await pollSubscription?.cancel();
-    pollSubscription = null;
-    await pushSubscription?.cancel();
-    pushSubscription = null;
+    final cancels = [pollSubscription?.cancel(), pushSubscription?.cancel()];
+    pollSubscription = pushSubscription = null; // before the cancels land: a beginPeriodic meanwhile starts fresh streams
+    _pollErrors = _pushErrors = 0; // a burst ends with its run
+    await Future.wait(cancels.nonNulls);
   }
 
   // pause once only.
@@ -206,10 +231,12 @@ class VarStreamController({required super.cache, required super.protocolService}
 }
 
 class VarPollingScope._(final VarStreamController _controller, Iterable<VarKey> keys) {
-  this : _keys = Set.unmodifiable(keys);
+  this : _keys = _readable(keys);
   Set<VarKey> _keys;
 
-  void update(Iterable<VarKey> keys) => _keys = Set.unmodifiable(keys);
+  static Set<VarKey> _readable(Iterable<VarKey> keys) => Set.unmodifiable(keys.where((e) => !e.isWriteOnly));
+
+  void update(Iterable<VarKey> keys) => _keys = _readable(keys);
 
   void dispose() => _controller._releaseScope(this);
 }
@@ -217,7 +244,7 @@ class VarPollingScope._(final VarStreamController _controller, Iterable<VarKey> 
 ///
 /// if a single var update is required. Batch updates via VarCacheController handles most cases.
 /// call service immediately
-/// value will not be synced with cache
+/// the response updates [varNotifier]'s value and status: the cache's entry, where it was resolved from one
 ///
 class const VarSingleController<V>({required final VarNotifier<V> varNotifier, required final ServiceIO<int, int, int> protocolService}) {
   // async send request id, then receiving value
@@ -231,9 +258,8 @@ class const VarSingleController<V>({required final VarNotifier<V> varNotifier, r
   // async send value, then receiving status
   Future<VarStatus?> send([V? value]) async {
     if (value != null) varNotifier.updateByView(value);
-    if (await protocolService.set(varNotifier.dataKey, varNotifier.dataValue) case int statusValue) {
-      return (varNotifier..updateStatusByData(statusValue)).status;
-    }
+    final (key, sent) = varNotifier.dataPair;
+    if (await protocolService.set(key, sent) case int status) return (varNotifier..applyWriteResponse(sent, status)).status;
     return null;
   }
 }

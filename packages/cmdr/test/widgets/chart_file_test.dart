@@ -54,6 +54,14 @@ void main() {
     expect(controller.chartEntries.map((e) => e.name), ['Speed', 'Iq']);
   });
 
+  test('the time column is found by its name, wherever it sits', () async {
+    final reordered = File('${dir.path}/reordered.csv')..writeAsStringSync('Speed,time,Iq\r\n0,0,0.5\r\n100,0.02,1\r\n200,0.04,1.5\r\n');
+    await storage.openParseWithNotify(Future.value(reordered));
+
+    expect(_seriesOf(controller), _fixtureSeries);
+    expect(controller.chartEntries.map((e) => e.name), ['Speed', 'Iq']);
+  });
+
   test('a CSV whose time column is not numeric is refused, and the chart keeps its lines', () async {
     await storage.openParseWithNotify(Future.value(fixtureFile()));
     final clock = File('${dir.path}/clock.csv')..writeAsStringSync('time,Speed\r\n12:00:01,0\r\n');

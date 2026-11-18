@@ -1,21 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:libserialport/libserialport.dart';
 
 import '../links/serial_link.dart';
-export '../links/serial_link.dart';
 
 ///
 /// SerialLinkView
 ///
 class SerialLinkConfigController(final SerialLink serialLink) with ChangeNotifier {
+  /// Taken when the port name changes, not per build: reading a [SerialPort] allocates a native port.
+  late PortDetails? portDetails = _detailsOf(serialLink.portConfigName);
+
   void updatePortName(String name) {
     serialLink.portConfigName = name;
+    portDetails = _detailsOf(name);
     notifyListeners();
   }
 
   void updateBaudRate(int baudRate) {
-    serialLink.portConfig.baudRate = baudRate;
+    serialLink.baudRate = baudRate;
     notifyListeners();
   }
+
+  static PortDetails? _detailsOf(String? name) => (SerialPort.availablePorts.contains(name)) ? SerialPort(name!).takeDetails() : null;
 }
 
 ///
@@ -69,7 +75,7 @@ class const SerialLinkConfigView(super.configController, {super.key}) extends Se
   Widget build(BuildContext context) {
     return PopupMenuButton<int>(
       itemBuilder: itemBuilder,
-      initialValue: serialLink.portConfig.baudRate,
+      initialValue: serialLink.baudRate,
       onSelected: configController.updateBaudRate,
       position: PopupMenuPosition.under,
       clipBehavior: Clip.hardEdge,
@@ -78,7 +84,7 @@ class const SerialLinkConfigView(super.configController, {super.key}) extends Se
         decoration: const InputDecoration(labelText: 'Baud Rate', isDense: false),
         child: ListenableBuilder(
           listenable: configController,
-          builder: (context, child) => Text(serialLink.portConfig.baudRate.toString()),
+          builder: (context, child) => Text(serialLink.baudRate.toString()),
         ),
       ),
     );
@@ -92,7 +98,7 @@ class const SerialLinkPortDetailsView(super.configController, {super.key}) exten
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: configController,
-      builder: (context, child) => PortDetailsView(serialLink.portConfigName),
+      builder: (context, child) => PortDetailsView(serialLink.portConfigName, configController.portDetails),
     );
   }
 }
@@ -100,11 +106,9 @@ class const SerialLinkPortDetailsView(super.configController, {super.key}) exten
 ///
 /// libserialport SerialPort View
 ///
-class const PortDetailsView(final String? serialPortName, {super.key}) extends StatelessWidget {
+class const PortDetailsView(final String? serialPortName, final PortDetails? port, {super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final port = (SerialPort.availablePorts.contains(serialPortName)) ? SerialPort(serialPortName!) : null;
-
     return InputDecorator(
       decoration: const InputDecoration(labelText: 'Port Details'),
       child: ListView(
@@ -113,7 +117,7 @@ class const PortDetailsView(final String? serialPortName, {super.key}) extends S
         shrinkWrap: true,
         children: [
           _ListTile('Port Name', serialPortName),
-          if (port != null) ...[
+          if (port case final PortDetails port) ...[
             _ListTile('Description', port.description),
             _ListTile('Transport', port.transport.toTransport()),
             _ListTile('USB Bus', port.busNumber?.toPadded()),
@@ -153,6 +157,41 @@ class const PortDetailsView(final String? serialPortName, {super.key}) extends S
     // } else {
     //   return const InputDecorator(decoration: InputDecoration(labelText: 'Port Details'));
     // }
+  }
+}
+
+/// The [SerialPort] fields [PortDetailsView] shows, copied out so the native port is freed at once.
+typedef PortDetails = ({
+  String? description,
+  int transport,
+  int? busNumber,
+  int? deviceNumber,
+  int? vendorId,
+  int? productId,
+  String? manufacturer,
+  String? productName,
+  String? serialNumber,
+  String? macAddress,
+});
+
+extension on SerialPort {
+  PortDetails takeDetails() {
+    try {
+      return (
+        description: description,
+        transport: transport,
+        busNumber: busNumber,
+        deviceNumber: deviceNumber,
+        vendorId: vendorId,
+        productId: productId,
+        manufacturer: manufacturer,
+        productName: productName,
+        serialNumber: serialNumber,
+        macAddress: macAddress,
+      );
+    } finally {
+      dispose();
+    }
   }
 }
 

@@ -127,10 +127,10 @@ class ChartData {
   factory ChartData.fromMap(Map<String, List<dynamic>> map) {
     if (map case {'time': List timeList}) {
       if (timeList.every((e) => double.tryParse('$e') != null)) {
-        if (map.entries.skip(1) case Iterable<MapEntry<String, List>> lines) {
+        if (map.entries.where((entry) => entry.key != 'time') case Iterable<MapEntry<String, List>> lines) {
           return ChartData._(
             lineEntries: [for (final line in lines) LineData.fromMapEntry(line)],
-            timeData: LineData.fromMapEntry(map.entries.first),
+            timeData: LineData.fromMapEntry(MapEntry('time', timeList)),
             linesMax: lines.length,
             samplesMax: timeList.length,
           );

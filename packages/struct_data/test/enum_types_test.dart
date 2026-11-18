@@ -1,5 +1,4 @@
-import 'package:struct_data/binary_format/binary_format.dart';
-import 'package:struct_data/general/enum_types.dart';
+import 'package:struct_data/struct_data.dart';
 import 'package:test/test.dart';
 
 enum const Color() { red, green, blue }

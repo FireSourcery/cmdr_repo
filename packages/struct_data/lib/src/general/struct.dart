@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import '../binary_data.dart';
+import 'index_map.dart';
 
 /// [StructData] — zero-cost keyed view over an existing object.
 ///
@@ -39,9 +39,6 @@ extension type const StructData<K extends Field<V>, V>(Object _data) implements 
   // implementation handled by Form
   // depreciate
   Iterable<FieldEntry<K, V>> fieldsAs(StructForm<K, V> type) => type(this).fields;
-  // Iterable<V> valuesAs(StructForm<K, V> type) => type(this).values;
-  // Map<K, V> toMapWith(StructForm<K, V> type) => type.mapWithData(this);
-  // Map<K, V> mapWithFields(StructForm<K, V> type) => IndexMap<K, V>.of(type, type.map((k) => this[k]));
 }
 
 // typedef BinaryStruct<K extends Field<int>> = StructData<K, int>;

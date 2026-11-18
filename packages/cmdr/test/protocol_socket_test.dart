@@ -102,10 +102,11 @@ void main() {
       expect(link.isConnected, isFalse);
     });
 
-    test('a failed write disconnects the link', () async {
+    test('a failed write is reported, and disconnects the link', () async {
       link.onSend = (_) => throw Exception('write failed');
       expect(await socket.requestResponse(MotPacketRequestId.MOT_PACKET_VERSION, null, timeout: _timeout), isNull);
 
+      expect(protocol.errors, [isA<Exception>()]);
       expect(statuses, [isA<LinkDisconnected>()]);
     });
 
@@ -116,6 +117,14 @@ void main() {
       expect(statuses, [isA<LinkDisconnected>()]);
     });
 
+    test('after end, the end of the link stream leaves the link connected', () async {
+      protocol.end();
+      await link.dispose();
+      await pumpEventQueue();
+
+      expect(statuses, isEmpty);
+    });
+
     test('a corrupt frame is reported, and the link stays connected', () async {
       link.receive(_versionFrame(1)..[4] ^= 0xFF);
       await pumpEventQueue();
@@ -124,10 +133,17 @@ void main() {
       expect(statuses, isEmpty);
     });
 
+    test('connect completes with the status it publishes', () async {
+      link.disconnect();
+
+      await expectLater(link.connect(), completion(isA<LinkConnected>()));
+      expect(statuses, [isA<LinkDisconnected>(), isA<LinkConnected>()]);
+    });
+
     test('a reconnect moves the status back, and the next session is watched', () async {
       link.receiveError(Exception('unplugged'));
       await pumpEventQueue();
-      link.connect();
+      await link.connect();
       protocol.begin();
       link.receiveError(Exception('unplugged'));
       await pumpEventQueue();

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
 
+import '../var_cache.dart';
 import '../var_context.dart';
+import '../var_key.dart';
 import '../var_notifier.dart';
 
 /// Widget tools
@@ -48,7 +50,7 @@ class VarBaseBuilder extends StatelessWidget {
 
   final VarNotifier<dynamic> varNotifier;
 
-  /// May be of type Widget Function<G>(VarNotifier value)
+  /// May be of type `Widget Function<G>(VarNotifier value)`
   final Widget Function(VarNotifier) builder;
 
   @override

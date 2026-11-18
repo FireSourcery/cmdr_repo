@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 
 import 'var_notifier.dart';
+import 'var_key.dart';
 
 ///
 /// [VarCache] - Model of Client Side Entity
@@ -53,15 +54,11 @@ class VarCache {
   // in preallocated case, where size is not constrained. deallocate and replace is not necessary
   // remove viewer
   bool deallocate(VarKey varKey) {
-    return ((_cache.remove(varKey.value)?..dispose()) == null); // dispose and remove from cache
+    return ((_cache.remove(varKey.value)?..dispose()) != null); // dispose and remove from cache
   }
 
   /// re run to update VarNotifier reference values
   void reinitAll() => _cache.forEach((_, varEntry) => varEntry.initReferences());
-
-  void allocateAll(Iterable<VarKey> varKeys, [VarNotifier Function(VarKey)? constructor]) {
-    _cache.addEntries(varKeys.map((varKey) => MapEntry(varKey.value, constructor?.call(varKey) ?? VarNotifier.of(varKey))));
-  }
 
   bool get isEmpty => _cache.isEmpty;
   bool contains(VarKey varKey) => _cache.containsKey(varKey.value);
@@ -111,7 +108,7 @@ class VarCache {
 
   // returned values should be lists
   /* [bool overwriteUpdateByView = false] */
-  void updateByData(Iterable<int> ids, Iterable<int> valuesIn, {bool overwriteUpdateByView = false}) {
+  void updateByData(Iterable<int> ids, Iterable<int> valuesIn) {
     assert(valuesIn.length == ids.length); // caller checks packet length, data
 
     if (valuesIn case List<int> valuesList) {
@@ -143,17 +140,20 @@ class VarCache {
   //   -> user function interrupt: set value, set pushPending
   //   clear pushPending
   // if (value == varNotifier.dataValue) varNotifier.lastUpdate = VarLastUpdate.clear; // clear push pending unless value has changed since send
-  void _updateByDataResponse(int id, int value, int status) => _cache[id]?.applyWriteResponse(value, status);
+  VarStatus? _updateByDataResponse(int id, int value, int status) => (_cache[id]?..applyWriteResponse(value, status))?.status;
 
   /// Update Status by mot response to view initiated write, per var status
-  void updateByDataResponse(Iterable<(int id, int value)> pairs, Iterable<int> statusesIn) {
+  /// Returns the first var status that is an error, else success.
+  VarStatus updateByDataResponse(Iterable<(int id, int value)> pairs, Iterable<int> statusesIn) {
     assert(statusesIn.length == pairs.length);
 
+    VarStatus? firstError;
     final iterPairs = pairs.iterator;
     final iterStatuses = statusesIn.iterator;
     while (iterPairs.moveNext() && iterStatuses.moveNext()) {
-      _updateByDataResponse(iterPairs.current.$1, iterPairs.current.$2, iterStatuses.current);
+      if (_updateByDataResponse(iterPairs.current.$1, iterPairs.current.$2, iterStatuses.current) case VarStatus status when status.isError) firstError ??= status;
     }
+    return firstError ?? VarStatusDefault.success;
   }
 
   ///

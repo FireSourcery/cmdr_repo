@@ -3,10 +3,9 @@
 import 'dart:ffi';
 import 'dart:typed_data';
 
-import 'package:struct_data/packet/packet.dart';
+import 'package:struct_data/packet.dart';
 
-export 'package:struct_data/packet/packet.dart';
-export 'package:struct_data/packet/packet_parser.dart';
+export 'package:struct_data/packet.dart';
 
 /// MotProtocol's wire format.
 ///

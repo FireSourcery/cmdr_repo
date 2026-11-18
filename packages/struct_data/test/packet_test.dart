@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:ffi';
 import 'dart:typed_data';
 
-import 'package:struct_data/packet/packet_parser.dart';
+import 'package:struct_data/packet.dart';
 import 'package:test/test.dart';
 
 ///

@@ -3,13 +3,14 @@ import 'package:flutter/services.dart';
 
 import '../num_input_formatters.dart';
 
-import '../../type_ext/stringifier.dart';
+import '../../interfaces/stringifier.dart';
+import '../../interfaces/value_viewer.dart';
 
 /// [IOField] is effectively a view union of IO types styled similar to a [TextField]
 abstract class IOField<T> implements Widget {
   /// Select widget using union config
   /// T functions as generic type, as well as selection parameter, unless explicitly defined
-  factory IOField(IOFieldConfig<T> config, {Key? key}) {
+  factory IOField(IOFieldConfig<T> config) {
     // Nullable type patterns (num?, Enum?, ...) so a nullable value type (T == int?) dispatches
     // to the same widget as its base type; the widgets handle the nullable value.
     return switch (config) {
@@ -49,24 +50,29 @@ abstract class IOField<T> implements Widget {
 class const IOFieldConfig<T>({
   final InputDecoration idDecoration = const InputDecoration(), // using input decoration to hold label fields
   final bool isReadOnly = false, // alternatively move this to constructor parameter
-  final String tip = '',
+  @override final String tip = '',
   //  using Listenable for cases where value is not of the same type as valueListenable
-  required final Listenable valueListenable, // read/output update
-  required final ValueGetter<T> valueGetter, // caller handles nullability via T (e.g. IOFieldConfig<Foo?>)
+  @override required final Listenable valueListenable, // read/output update
+  @override required final ValueGetter<T> valueGetter, // caller handles nullability via T (e.g. IOFieldConfig<Foo?>)
   final ValueSetter<T>? valueSetter,
-  final ValueGetter<bool>? errorGetter, // true on error
+  @override final ValueGetter<bool>? errorGetter, // true on error
   // the single value -> display string interface. defaults to valueGetter().toString().
   // also stringifies each [valueEnumRange] entry for menu labels.
-  final Stringifier<T>? valueStringifier,
+  @override final Stringifier<T>? valueStringifier,
   final List<T>? valueEnumRange, // enum or String selection, alternatively type as enum only
-  final ({num min, num max})? valueNumLimits, // required for num type, slider and input range check on submit
+  @override final ({num min, num max})? valueNumLimits, // required for num type, slider and input range check on submit
   final ValueChanged<T>? valueChanged, // slider only for now
   // this.useSliderBorder = false,
   final bool useSwitchBorder = true,
   final IOFieldBoolStyle boolStyle = IOFieldBoolStyle.latchingSwitch,
-}) {
+}) implements ValueViewer<T> {
   // this : assert(!((T == num || T == int || T == double) && (valueNumLimits == null /*  && valueEnumRange == null */ ))),
   //      assert(!((T == Enum) && (valueEnumRange == null)));
+
+  @override
+  String? get label => idDecoration.labelText;
+  @override
+  String? get units => idDecoration.suffixText;
 
   IOFieldConfig<T> copyWith({
     InputDecoration? idDecoration,
@@ -78,8 +84,8 @@ class const IOFieldConfig<T>({
     ValueGetter<bool>? errorGetter,
     Stringifier<T>? valueStringifier,
     List<T>? valueEnumRange,
-    ValueChanged<T>? sliderChanged,
-    bool? useSliderBorder,
+    ({num min, num max})? valueNumLimits,
+    ValueChanged<T>? valueChanged,
     bool? useSwitchBorder,
     IOFieldBoolStyle? boolStyle,
   }) {
@@ -93,20 +99,12 @@ class const IOFieldConfig<T>({
       errorGetter: errorGetter ?? this.errorGetter,
       valueStringifier: valueStringifier ?? this.valueStringifier,
       valueEnumRange: valueEnumRange ?? this.valueEnumRange,
-      valueChanged: sliderChanged ?? valueChanged,
+      valueNumLimits: valueNumLimits ?? this.valueNumLimits,
+      valueChanged: valueChanged ?? this.valueChanged,
       useSwitchBorder: useSwitchBorder ?? this.useSwitchBorder,
       boolStyle: boolStyle ?? this.boolStyle,
     );
   }
-}
-
-/// Default value -> string conversion when no [Stringifier] is supplied.
-String _stringifyDefault(Object? value) => value.toString();
-
-/// Resolves a value's display string through its [Stringifier], defaulting to [toString].
-/// The single string-viewing interface shared by all [IOField] subtypes.
-String _viewString<T>(ValueGetter<T> valueGetter, Stringifier<T>? valueStringifier) {
-  return (valueStringifier ?? _stringifyDefault)(valueGetter());
 }
 
 // utility for stateless views to rebuild the decorator accounting for error. optional for case of textfield
@@ -133,7 +131,7 @@ class const IODecorator({required final InputDecoration decoration, final bool i
 
 /// Updates on listenable change only, no user input
 class IOFieldReader<T> extends StatelessWidget implements IOField<T> {
-  const IOFieldReader({super.key, required this.decoration, required this.listenable, required this.valueGetter, this.valueStringifier, this.errorGetter, this.tip = ''});
+  IOFieldReader({super.key, required this.decoration, required this.listenable, required this.valueGetter, this.valueStringifier, this.errorGetter, this.tip = ''});
 
   IOFieldReader.config(IOFieldConfig<T> config, {super.key})
     : listenable = config.valueListenable,
@@ -149,9 +147,10 @@ class IOFieldReader<T> extends StatelessWidget implements IOField<T> {
   final String tip;
   final ValueGetter<bool>? errorGetter;
   final Stringifier<T>? valueStringifier;
+  late final ValueStringGetter<T> stringGetter = ValueStringGetter<T>.of(valueGetter, valueStringifier: valueStringifier);
 
   Widget builder(BuildContext context, Widget? child) {
-    return IODecorator(decoration: decoration, isError: errorGetter?.call() ?? false, child: Text(_viewString(valueGetter, valueStringifier)));
+    return IODecorator(decoration: decoration, isError: errorGetter?.call() ?? false, child: Text(stringGetter()));
   }
 
   @override
@@ -203,6 +202,8 @@ abstract class IOFieldText<T>({
         valueStringifier: config.valueStringifier,
         key: key,
       );
+
+  late final ValueStringGetter<T> stringGetter = ValueStringGetter<T>.of(valueGetter, valueStringifier: valueStringifier);
 
   num get numMin => numLimits!.min;
   num get numMax => numLimits!.max;
@@ -264,8 +265,14 @@ class _IOFieldTextState<T>() extends State<IOFieldText<T>> {
   @override
   void initState() {
     focusNode.addListener(updateOnFocusLoss);
-    textController.text = _viewString(widget.valueGetter, widget.valueStringifier);
+    textController.text = widget.stringGetter();
     super.initState();
+  }
+
+  @override
+  void didUpdateWidget(IOFieldText<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.listenable != oldWidget.listenable) isParseError = false; // the error was typed for the old value; [_builder] resyncs to the new one
   }
 
   @override
@@ -278,7 +285,7 @@ class _IOFieldTextState<T>() extends State<IOFieldText<T>> {
 
   void updateOnFocusLoss() {
     if (!focusNode.hasFocus && !isParseError) {
-      textController.text = _viewString(widget.valueGetter, widget.valueStringifier);
+      textController.text = widget.stringGetter();
       // if submit on focus loss
       // onSubmitted(textController.text);
     }
@@ -297,7 +304,7 @@ class _IOFieldTextState<T>() extends State<IOFieldText<T>> {
 
   /// handles updates from getter/listenable. Typing in progress is kept until focus loss.
   Widget _builder(BuildContext context, Widget? child) {
-    if (!focusNode.hasFocus && !isParseError) textController.text = _viewString(widget.valueGetter, widget.valueStringifier);
+    if (!focusNode.hasFocus && !isParseError) textController.text = widget.stringGetter();
     updateError();
     return child!;
   }
@@ -346,7 +353,6 @@ class IOFieldMenu<T> extends StatelessWidget implements IOField<T> {
     this.valueStringifier,
     this.tip = '',
     this.errorGetter,
-    this.initialValue,
   });
 
   IOFieldMenu.config(IOFieldConfig<T> config, {super.key})
@@ -357,7 +363,6 @@ class IOFieldMenu<T> extends StatelessWidget implements IOField<T> {
       errorGetter = config.errorGetter,
       valueEnumRange = config.valueEnumRange!,
       valueStringifier = config.valueStringifier,
-      initialValue = null,
       tip = config.tip;
 
   final Listenable listenable;
@@ -367,11 +372,10 @@ class IOFieldMenu<T> extends StatelessWidget implements IOField<T> {
   final ValueGetter<bool>? errorGetter;
   final List<T> valueEnumRange;
   final Stringifier<T>? valueStringifier;
-  final T? initialValue;
   final String tip;
 
   // cache on widget build. otherwise regenerate string values on each sub widget build
-  late final Map<T, String> _stringMap = {for (final entry in valueEnumRange) entry: (valueStringifier ?? _stringifyDefault)(entry)};
+  late final Map<T, String> _stringMap = {for (final entry in valueEnumRange) entry: (valueStringifier ?? stringifyDefault)(entry)};
   late final _cachedEntries = [for (final entry in valueEnumRange) PopupMenuItem(value: entry, child: Text(_stringMap[entry]!))];
   List<PopupMenuEntry<T>> cachedItemBuilder(BuildContext context) => _cachedEntries; // the menu items do not need dynamic update
   // reuse the cached labels for the selected value; the reader resolves it against the current value.
@@ -379,16 +383,14 @@ class IOFieldMenu<T> extends StatelessWidget implements IOField<T> {
 
   @override
   Widget build(BuildContext context) {
-    final widget = PopupMenuButton<T>(
+    return PopupMenuButton<T>(
       itemBuilder: cachedItemBuilder,
       initialValue: valueGetter(),
       enabled: true,
       onSelected: valueSetter,
       clipBehavior: Clip.hardEdge,
-      child: IOFieldReader<T>(key: key, listenable: listenable, decoration: decoration, tip: tip, valueGetter: valueGetter, valueStringifier: _effectiveStringifier, errorGetter: errorGetter),
+      child: IOFieldReader<T>(listenable: listenable, decoration: decoration, tip: tip, valueGetter: valueGetter, valueStringifier: _effectiveStringifier, errorGetter: errorGetter),
     );
-
-    return Tooltip(message: tip, child: widget);
   }
 }
 

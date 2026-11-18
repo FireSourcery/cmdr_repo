@@ -2,10 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../var_notifier.dart';
 
-export 'var_io_field.dart';
-export 'var_input_dialog.dart';
-export 'var_widget.dart';
-
 class const VarSwitch(final VarNotifier<bool> varNotifier, {super.key}) extends StatelessWidget {
   Widget builder(BuildContext context, Widget? child) => Switch.adaptive(value: varNotifier.value, onChanged: varNotifier.updateByView);
 

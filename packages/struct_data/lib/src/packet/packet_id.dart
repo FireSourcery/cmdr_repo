@@ -23,10 +23,7 @@ abstract interface class PacketId() implements Enum {
 ///
 /// Ack, nack and abort are the universal members, and a protocol may add more — MotProtocol
 /// frames its several PING ids this way. Membership is by *frame shape*, which is what the
-/// framing acts on. That it coincides with the control plane is why the name fits: a liveness
-/// probe and a termination are control traffic just as an acknowledgment is, which is also why
-/// this is not called `PacketSyncId` — only two of the four synchronise anything, and `sync`
-/// already means synchronous execution in Dart and the start delimiter in framing.
+/// framing acts on. Why it is not `PacketSyncId`: `doc/packet_design.md` in this package.
 abstract interface class PacketControlId() implements PacketId {}
 
 /// An id that carries a payload, together with the codec for it.
@@ -41,25 +38,13 @@ abstract interface class PacketPayloadId<V>() implements PacketId {
 /// A payload id that expects an answer: the byte it arrives under, and the codec that reads
 /// it.
 ///
-/// **Two non-nullable members, not three nullable ones.** The original model had `responseId`,
-/// `requestCaster` and `responseCaster` all nullable, and put the nullability on the wrong
-/// axis: `responseId` was null for "the answer comes back under the same byte", which is the
-/// common case, while the response *codec* differs even then — so it was carried separately
-/// and unwrapped with `!` at every call site.
+/// Both casters are required and [responseId] defaults to the request's own byte in the
+/// constructor, so the common case — same byte, different codec — is the short form. One-way
+/// is expressed by *not* being a [PacketRequestId]: the type, rather than a null, carries
+/// whether an answer is expected.
 ///
-/// The fix is that both casters are required and [responseId] defaults to the request's own
-/// byte in the constructor. Same byte, different codec — the common case — is then the short
-/// form, and a different byte is one extra argument. Nothing is nullable, so nothing is
-/// unwrapped.
-///
-/// [responseId] is an `int` rather than a [PacketPayloadId] deliberately. Modelling the answer
-/// as its own id also removes the nullability, but it forces a second id table: [PacketId]
-/// implements [Enum], so every id must be an enum value, and an exchange then spans two rows
-/// in two enums. Nothing downstream needs the answer to *be* an id — routing wants the byte,
-/// and decoding wants the caster — so carrying both directly keeps one row per exchange.
-///
-/// One-way is expressed by *not* being a [PacketRequestId]. The type, rather than a null,
-/// carries whether an answer is expected.
+/// Why two non-nullable members, and why [responseId] is an `int` rather than a
+/// [PacketPayloadId]: `doc/packet_design.md` in this package.
 abstract interface class PacketRequestId<T, R>() implements PacketPayloadId<T> {
   /// The byte the answer arrives under. Defaults to this id's own.
   int get responseId;
@@ -101,27 +86,14 @@ typedef PayloadCaster<V> = Payload<V> Function(TypedData payload);
 /// Built in place on the packet's own buffer, so neither direction allocates a second copy.
 /// An implementation is typically an `ffi.Struct` with named fields, cast over the payload.
 ///
-/// What a payload may depend on, and why: `doc/packet_payload.md` at the repo root.
+/// What a payload may depend on, and why: `lib/src/packet/packet_payload.md` in this package.
 abstract interface class Payload<V>() {
   /// Write `values` into this payload, and return what the framing needs to describe it.
   ///
-  /// **Deliberately not symmetric with [parse].** The two directions do not carry the same
-  /// information, and pretending they do costs correctness:
-  ///
-  /// On parse a header exists, full of values a body may be governed by. On build there is no
-  /// header yet — its fields come from two places, the id table and this payload — so a
-  /// payload does not *read* a header, it *contributes to* one. Handing it a live header to
-  /// write into means the header must be stamped before the payload runs, which is what makes
-  /// a half-built frame possible; and it hands a payload write access to `idField`,
-  /// `startField` and `checksumField`, none of which are its to set. Returning what it decided
-  /// lets the framing write the header once, afterwards, from a payload that cannot corrupt
-  /// it.
-  ///
-  /// The device agrees once `p_TxMeta` is read for what it is: not a view of the frame but a
-  /// normalized staging struct that `BUILD_TX_FRAME` serializes afterwards. A handler there
-  /// also reports metadata for the framing to place — by writing a struct rather than
-  /// returning one. The symmetry on that side is between two staging structs, not between a
-  /// struct and a live frame.
+  /// **Deliberately not symmetric with [parse].** On build there is no header yet: a payload
+  /// contributes its length, and the framing writes the header once, afterwards, so a payload
+  /// never sets `idField`, `startField` or `checksumField`. Why, and the device's
+  /// `p_TxMeta`: `doc/packet_design.md` in this package.
   @pragma('vm:prefer-inline')
   PayloadMeta build(V values);
 
@@ -130,10 +102,11 @@ abstract interface class Payload<V>() {
   /// A full [PacketHeader], not a [PacketHeaderPrefix]: a payload is only ever handed a whole
   /// frame, and only a whole header answers [PacketHeaderPrefix.payloadLength] without a null.
   ///
-  /// Most implementations ignore it: the payload region a [PayloadCaster] is handed is bounded
-  /// exactly, so a variable-length body already knows its own extent without asking. It is
-  /// there for a body governed by its own header — an id distinguishing which of several
-  /// shapes a shared handler is seeing, a flags field.
+  /// The region a [PayloadCaster] is handed runs to the end of [Packet.storage], which on a
+  /// `PacketBuffer` is the whole allocation, so a variable-length body bounds itself by
+  /// [PacketHeader.payloadLength]; a fixed-size body ignores the header. A body governed by its
+  /// own header reads it too — an id distinguishing which of several shapes a shared handler is
+  /// seeing, a flags field.
   @pragma('vm:prefer-inline')
   V parse(covariant PacketHeader header);
 }
@@ -141,10 +114,8 @@ abstract interface class Payload<V>() {
 /// What a payload told the framing: how long its body is.
 ///
 /// A value, not a view — the build side's counterpart to [PacketHeaderPrefix], deliberately
-/// *not* the same type. The two directions do not carry the same information (see
-/// [Payload.build]), so a shared interface would have to be the intersection of what a payload
-/// knows and what a read header knows, which is this one number wearing a name that claims
-/// more.
+/// *not* the same type: the two directions do not carry the same information. See
+/// [Payload.build].
 ///
 /// A field rather than a method, for the same reason the prefix's is a method: this one is
 /// stored, that one is computed.

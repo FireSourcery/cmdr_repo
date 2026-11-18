@@ -12,6 +12,11 @@
 /// ```
 library;
 
+export 'package:libserialport/libserialport.dart';
+
+export 'connection/base/link.dart';
+export 'connection/base/protocol.dart';
+export 'connection/links/serial_link.dart';
 export 'connection/mot_connection/mot_connection.dart';
 export 'connection/mot_connection/mot_packet.dart';
 export 'connection/mot_connection/mot_protocol.dart';

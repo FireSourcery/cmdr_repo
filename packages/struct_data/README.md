@@ -15,9 +15,13 @@ A pure Dart library for structured data using field descriptors. Lightweight ser
 ### Structured Data
 
 - **`StructData`** — Zero-cost extension type providing keyed `operator[]` access over any object via `Field` descriptors. No allocation, no wrapper overhead.
-- **`Serializable`** — Mixin for declarative JSON serialization using enum field keys. Provides `toMap()`, `toJson()`, value equality, and immutable copy helpers — without code generation.
+- **`Serializable`** — Declarative JSON serialization using enum field keys: a typedef of the `StructBase` mixin, keyed by a `SerializableField` enum. Provides `toMap()`, `toJson()` and value equality, with immutable copy helpers from `Immutable` — without code generation.
 - **`EnumMap` / `IndexMap`** — Type-safe, fixed-key collections backed by parallel arrays. Built-in JSON serialization via `Enum.name`.
 - **Utility extensions** — Numeric conversions, typed data slicing, null-safe helpers, and string operations.
+
+### Packets
+
+- **`PacketCodec` / `PacketTransformer`** — A protocol's wire format as `const` data, and framing of a byte stream into packets, with payloads as views over the frame's own bytes. Its own library, `package:struct_data/packet.dart`.
 
 ## Getting Started
 
@@ -25,14 +29,20 @@ Add `struct_data` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  struct_data: ^0.1.0
+  struct_data: ^0.1.3
 ```
 
-Import the full library or only the binary data subset:
+Import the library, and the packet framework where you frame packets:
 
 ```dart
-import 'package:struct_data/struct_data.dart';      // Full library
-import 'package:struct_data/binary_data.dart';       // Binary structs only
+import 'package:struct_data/struct_data.dart';      // Structs, codecs, serialization, utilities
+import 'package:struct_data/packet.dart';           // Packet framework
+```
+
+The `utilities/` files (`basic_types`, `basic_ext`, `num_ext`, `slice`) depend on `dart:` only and import one at a time, for code that wants a helper without the structs:
+
+```dart
+import 'package:struct_data/utilities/num_ext.dart';
 ```
 
 > **Note:** This package uses `dart:ffi` native types (`Uint8`, `Int16`, `Int32`, etc.) as compile-time type markers for field sizing. No FFI calls are made at runtime. Packet may selectively implement over ffi.Struct.
@@ -94,8 +104,8 @@ enum SensorField<V extends NativeType> with WordField<V>, TypedField<V> {
 }
 
 final sensor = const WordStruct<SensorField>(Word.of32s(0x002AA005, 0x00001234));
-print(sensor[SensorField.deviceId]);   // 0x1234
-print(sensor[SensorField.reading]);    // 42
+print(sensor[SensorField.deviceId]);   // 40965 (0xA005)
+print(sensor[SensorField.reading]);    // 4660 (0x1234)
 print(WordForm(SensorField.values)(sensor).toMap().toJson()); // {deviceId: 40965, sensorType: 42, flags: 0, reading: 4660} 
 ```
 
@@ -124,7 +134,7 @@ frame[TelemetryField.value] = -42;
 print(frame[TelemetryField.value]); // -42
 ```
 
-### Serializable mixin
+### Serializable
 
 Declarative JSON serialization without code generation. Define a field enum with `SerializableField`, then mix `Serializable` into the data class:
 
@@ -205,6 +215,26 @@ print(colors[Color.red]);           // 16711680
 print(colors.toJson());             // {red: 16711680, green: 65280, blue: 255}
 ```
 
+### Packets
+
+A protocol is data: a `const` `PacketCodec` subclass names the start byte, the longest frame, its frame shapes (`PacketFrameFormat`) and its id table (`PacketId`). Each payload id carries the `Payload` codec of its body, typically an `ffi.Struct` cast in place over the payload bytes.
+
+```dart
+import 'package:struct_data/packet.dart';
+
+// codec: a PacketCodec; requestId: a PacketRequestId<T, R> from its id table; values: a T
+final out = PacketBuffer(codec);
+out.buildRequest(requestId, values); // the payload first, then the header that describes it
+port.add(out.bytes);
+
+// Each packet is a view of the parser's buffer: read it, or copy it, before the listener returns
+bytesIn.transform(codec.transformer).listen((packet) => print(packet.parseResponse(requestId)));
+```
+
+- A fixed-size payload: [example/lib/packet_payload_example.dart](example/lib/packet_payload_example.dart).
+- A complete two-shape codec: `TestCodec` in [test/packet_test.dart](test/packet_test.dart).
+- The frame diagram, the parse states and the reasons behind the shapes: [doc/packet_design.md](doc/packet_design.md).
+
 ## Architecture
 
 ### Design Principles
@@ -269,7 +299,7 @@ The `example/benchmark.dart` file provides local benchmarks for `BitStruct`, `Wo
 | `BitStruct` (8 fields)   | 0.013 µs    | 0.022 µs | Minimal (bit-packed) | None |
 | `WordStruct` (8 bytes)   | 0.039 µs    | 0.038 µs | Minimal (byte-packed) | None |
 | `ByteStruct` (16 bytes)  | 0.073 µs    | 0.079 µs | Exact (fixed layout) | None |
-| `Serializable mixin`     | 0.197 µs    | 0.150 µs | JSON | None |
+| `Serializable` typedef  | 0.197 µs    | 0.150 µs | JSON | None |
 | json_serializable | ~0.3–0.5 µs | ~0.4–0.6 µs | JSON | build_runner |
 | freezed | ~0.3–0.5 µs | ~0.4–0.6 µs | JSON | build_runner |
 | Protocol Buffers | ~0.5–2.0 µs | ~0.5–2.0 µs | Compact (varint) | protoc |
@@ -280,7 +310,7 @@ Run with `dart run example/benchmark.dart`.
  
 ## Additional Information
 
-- **Minimum SDK:** Dart 3.10.0
+- **Minimum SDK:** Dart 3.13.0
 - **Dependencies:** `collection`, `meta`
 - **License:** MIT
 - **Repository:** [github.com/FireSourcery/cmdr](https://github.com/FireSourcery/cmdr)

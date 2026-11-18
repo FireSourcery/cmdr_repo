@@ -1,5 +1,5 @@
-import '../utilities/basic_ext.dart';
-import '../utilities/num_ext.dart';
+import '../../utilities/basic_ext.dart';
+import '../../utilities/num_ext.dart';
 import 'binary_format.dart';
 
 /// [Quantity Codec]
@@ -41,7 +41,7 @@ class BinaryQuantityCodec<V extends num> implements BinaryCodec<V> {
   /// disabled conversion, direct data to view mapping
   static const NumDataConversion _disabled = (viewOfData: _defaultNumOf, dataOfView: _defaultDataOf);
   static num _defaultNumOf(int data) => data;
-  static int _defaultDataOf(num view) => view.round();
+  static int _defaultDataOf(num view) => view.round(); // nearest, as [NumDataScale.dataOf]
 }
 
 /// Numeric value conversion
@@ -51,6 +51,9 @@ typedef NumDataConversion = ({NumOfData viewOfData, DataOfNum dataOfView});
 
 extension type const NumDataScale(num coefficient) {
   num viewOf(int dataValue) => (dataValue * coefficient);
+
+  /// The nearest word, so the view reads back as entered; `~/` would read back one count low half the time.
+  /// The range is the format's: [BinaryQuantityCodec.encode] clamps the result, so rounding cannot overflow it.
   int dataOf(num viewValue) => (viewValue / coefficient).round();
 
   NumDataConversion? get conversion {

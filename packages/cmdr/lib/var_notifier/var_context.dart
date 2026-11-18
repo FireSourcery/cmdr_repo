@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:struct_data/struct_data.dart';
 
-import 'var_notifier.dart';
+import 'var_controller.dart';
+import 'var_key.dart';
 
 /// Get [VarCacheController] via Context
 /// For library side to include widgets find key type

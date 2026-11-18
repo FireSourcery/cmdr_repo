@@ -1,5 +1,4 @@
-import 'package:struct_data/models/version.dart';
-import 'package:struct_data/word/word_struct.dart';
+import 'package:struct_data/struct_data.dart';
 import 'package:test/test.dart';
 
 enum SerialNumberField(

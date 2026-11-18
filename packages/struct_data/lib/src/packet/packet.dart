@@ -14,22 +14,22 @@ part 'packet_id.dart';
 
 /// [Packet] — everything a frame can answer, over `(codec, byteData)`.
 ///
-/// A `mixin class`, so the two things that hold frame bytes both *are* packets rather than
-/// containing one: [PacketView] for a detached frame, and `PacketBuffer` for a frame being
-/// filled. The buffer previously exposed a `buffered` view for writing and a `packet` view
-/// for reading, and every caller had to know which it wanted; mixing this in means
-/// `buffer.payloadAsList()` and `buffer.parseResponse(...)` say what they mean.
+/// Mixed into the two things that hold frame bytes: [PacketView] for a detached frame, and
+/// `PacketBuffer` for a frame being filled.
 ///
 /// Implementors supply two members. [byteData] is the frame's bytes and [lengthInBytes] is
 /// how many of them are this frame — a buffer overrides the latter, because its backing
 /// allocation outlives any one frame.
 ///
-/// A view or buffer, so a packet handed to a  callback is valid only until that buffer is next written.
-/// That is what lets a frame reach an application with no copy.
+/// A packet is a view over bytes it does not own, so one handed to a callback is valid only
+/// until the buffer under it is next written; copy it to keep it. That is what lets a frame
+/// reach an application with no copy.
 ///
 /// Fields are read without a null in sight. A *partly arrived* frame is not a packet; it is
 /// a `HeaderParser`'s buffer, and the three-state reading it needs —
 /// absent / present-and-wrong / present-and-right — lives there.
+///
+/// Why a `mixin class`, and the frame and parse diagrams: `doc/packet_design.md` in this package.
 abstract mixin class Packet {
   /// A detached view over [byteData].
   factory(PacketCodec codec, ByteData byteData) = PacketView;
@@ -71,14 +71,9 @@ abstract mixin class Packet {
   /// [Header] / [Payload] regions
   ///
   /// Payload accessors describe a data frame. A control frame has no payload, and asking one
-  /// The offset comes from this frame's own [format], so a shape with a shorter header puts
-  /// its payload where that header ends. It could not, while building went through a packet:
-  /// a payload is written before the id is, so an offset read from the buffer's own contents
-  /// was circular. Building now goes through `PacketBuffer` and the whole allocation, taking
-  /// the offset from the id being built, which leaves this side free to ask the frame.
-  ///
-  /// A control shape's header is the whole frame, so its payload is empty rather than an
-  /// error.
+  /// for it gives an empty payload rather than an error: a control shape's header is the whole
+  /// frame. The offset comes from this frame's own [format], so a shape with a shorter header
+  /// puts its payload where that header ends.
   ///
 
   int get payloadOffset => format.headerLength;
@@ -99,10 +94,6 @@ abstract mixin class Packet {
   R? payloadAtOrNull<R extends TypedDataList<int>>([int byteOffset = 0, int? length]) => byteData.arrayOrNullAt<R>(byteOffset + payloadOffset, length);
 
   /// The whole payload, as elements of `R`.
-  ///
-  /// Every call site of [payloadAt] in the Mot payload table spelled this out as
-  /// `payloadAt<Uint16List>(0, parsePayloadLength ~/ 2)` — the divisor restating a width the
-  /// type argument already carries.
   R payloadAsList<R extends TypedDataList<int>>() => payloadAt<R>(0, payloadLength ~/ bytesPerElementOf<R>());
 
   ///
@@ -142,10 +133,7 @@ abstract mixin class Packet {
   /// alias for [header], provided for consistency with the parse methods.
   PacketHeader parseHeader() => header;
 
-  /// Read this frame's payload as [id] declares it.
-  ///
-  /// Takes the id rather than a caster: the id carries its own codec now, so there is one
-  /// way in instead of a caster-taking method plus an id-taking wrapper around it.
+  /// Read this frame's payload as [id] declares it, through the codec the id carries.
   V parsePayload<V>(PacketPayloadId<V> id) => _parseAs<V>(id.caster);
 
   /// Read this frame as the answer to [id] — the same call, through the request's other codec.
@@ -229,7 +217,7 @@ abstract mixin class Packet {
 /// A detached [Packet] over a frame that is exactly its own bytes.
 ///
 /// What the parser hands out: a listener gets a frame, not the buffer that assembled it.
-final class PacketView(final PacketCodec codec, final ByteData byteData) with Packet {
+final class PacketView(@override final PacketCodec codec, @override final ByteData byteData) with Packet {
   PacketView.of(PacketCodec codec, TypedData data) : this(codec, ByteData.sublistView(data));
 
   @override

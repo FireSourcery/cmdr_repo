@@ -20,9 +20,9 @@ export 'packet_buffer.dart';
 /// struct over the buffer: a struct cast throws below full length, and below full length is
 /// exactly where this operates.
 ///
-/// Always copies the remainder rather than shifting a view over it. That double-buffers, and
-/// it is the deliberate trade the previous version made too: the alternative is tracking a
-/// start offset through every field read, and the buffer is a few hundred bytes.
+/// Always copies the remainder rather than shifting a view over it. That double-buffers, the
+/// deliberate trade against tracking a start offset through every field read: the buffer is a
+/// few hundred bytes.
 final class HeaderParser(PacketCodec codec, [int? size]) extends PacketBuffer {
   this : super(codec, size ?? codec.lengthMax * 4) {
     // Every shape must be at least as long as what it takes to size one, or a whole frame of
@@ -227,7 +227,7 @@ class PacketTransformer({required final HeaderParser parser}) extends StreamTran
                 throw PacketStatusException.checksum;
             }
 
-          // Recognised and still arriving.
+          // Recognized and still arriving.
           case HeaderParser(isComplete: false):
             assert(parser.length < parser.codec.lengthMax, 'a frame over lengthMax should have failed isFrameLengthValid');
             return;

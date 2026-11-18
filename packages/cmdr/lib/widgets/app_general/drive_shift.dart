@@ -19,7 +19,6 @@ class const DriveShift({
 }) extends StatefulWidget {
   // final ValueNotifier<Enum>? valueNotifier;
   final Radius radius = const Radius.circular(10.0);
-  final double size = 25;
 
   @override
   State<DriveShift> createState() => _DriveShiftState();
@@ -71,15 +70,18 @@ class _DriveShiftState() extends State<DriveShift> {
 
   Future<void> handleSelect(Enum select) async {
     setState(() => pending = select);
-    await widget.onSelect?.call(select);
+    try {
+      await widget.onSelect?.call(select);
 
-    // handle returning null result as null, null function leaves the request unconfirmed
-    if (widget.confirmSelected case AsyncValueGetter<Enum?> confirmed) {
-      Enum? errorSelect = (await confirmed() == select) ? null : select;
-      if (!mounted) return;
-      mark(WidgetState.error, errorSelect);
+      // handle returning null result as null, null function leaves the request unconfirmed
+      if (widget.confirmSelected case AsyncValueGetter<Enum?> confirmed) {
+        Enum? errorSelect = (await confirmed() == select) ? null : select;
+        if (!mounted) return;
+        mark(WidgetState.error, errorSelect);
+      }
+    } finally {
+      if (mounted && pending == select) setState(() => pending = null);
     }
-    if (mounted && pending == select) setState(() => pending = null);
   }
 
   // short hand wrapper

@@ -19,8 +19,8 @@ abstract interface class Link {
   /// The outcome of the last [connect] or [disconnect], including a disconnect on loss of the link.
   ValueListenable<LinkStatus> get status;
 
-  /// Establish a connection. Returns a [LinkStatus] describing the outcome.
-  LinkStatus connect();
+  /// Establish a connection with the settings the concrete link holds. Completes with a [LinkStatus] describing the outcome.
+  Future<LinkStatus> connect();
 
   /// Tear down the connection. Returns a [LinkStatus] describing the outcome.
   LinkStatus disconnect();
@@ -46,7 +46,7 @@ class const _LinkUninitialized() implements Link {
   static final ValueNotifier<LinkStatus> _status = ValueNotifier(const LinkDisconnected());
 
   @override
-  LinkStatus connect() => const LinkError('Link Uninitialized');
+  Future<LinkStatus> connect() async => const LinkError('Link Uninitialized');
   @override
   LinkStatus disconnect() => const LinkDisconnected();
 

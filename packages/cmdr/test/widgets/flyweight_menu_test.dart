@@ -132,7 +132,7 @@ void main() {
     expect(find.text('selected 2'), findsOneWidget);
   });
 
-  testWidgets('a tap on MenuAnchorOverlay leaves the menu closed; Space and the context-menu keys open it', (tester) async {
+  testWidgets('a tap on MenuAnchorOverlay leaves the menu closed; numpad Enter, Space and the context-menu keys open it', (tester) async {
     final menu = source.create();
     addTearDown(menu.dispose);
     await tester.pumpWidget(host(MenuAnchorOverlay(menuItems: menu.menuItems, child: const Text('gauge'))));
@@ -143,6 +143,7 @@ void main() {
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     for (final (name, press) in <(String, Future<void> Function())>[
+      ('Numpad Enter', () => tester.sendKeyEvent(LogicalKeyboardKey.numpadEnter)),
       ('Space', () => tester.sendKeyEvent(LogicalKeyboardKey.space)),
       ('Menu key', () => tester.sendKeyEvent(LogicalKeyboardKey.contextMenu)),
       (
@@ -164,7 +165,6 @@ void main() {
   });
 
   testWidgets('both menu anchors are buttons that say they show a menu', (tester) async {
-    final semantics = tester.ensureSemantics();
     final menu = source.create();
     addTearDown(menu.dispose);
     await tester.pumpWidget(
@@ -184,7 +184,6 @@ void main() {
     tester.semantics.tap(find.semantics.byLabel('gauge')); // assistive technology activates it as the keyboard does
     await tester.pumpAndSettle();
     expect(find.text('two'), findsOneWidget);
-    semantics.dispose();
   });
 
   testWidgets('a value change does not rebuild the open items', (tester) async {
@@ -207,5 +206,28 @@ void main() {
 
     expect(builds, isEmpty);
     expect(tester.widgetList<MenuItemButton>(find.byType(MenuItemButton)), orderedEquals(items));
+  });
+
+  testWidgets('MenuAnchorOverlay keeps one MenuController across a parent rebuild', (tester) async {
+    final menu = source.create();
+    addTearDown(menu.dispose);
+    final controllers = <MenuController?>[];
+    Widget overlay() => host(
+      MenuAnchorOverlay(
+        menuItems: menu.menuItems,
+        child: Builder(
+          builder: (context) {
+            controllers.add(MenuController.maybeOf(context));
+            return const Text('gauge');
+          },
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(overlay());
+    await tester.pumpWidget(overlay());
+
+    expect(controllers, [isNotNull, isNotNull]);
+    expect(controllers.last, same(controllers.first));
   });
 }

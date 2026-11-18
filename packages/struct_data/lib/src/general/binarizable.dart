@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:struct_data/binary_data.dart';
-import 'package:struct_data/general/enumerated.dart';
+import '../bytes/typed_field.dart';
+import 'enumerated.dart';
 
 // 1. Struct to handle transport only, simplified mapping from Model , saves toBytes().. separately handle map
 // 2. extend ByteStruct (embedded around ByteData) free transport and data view map. separately implement model view map

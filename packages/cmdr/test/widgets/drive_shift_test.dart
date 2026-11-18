@@ -137,4 +137,14 @@ void main() {
     await answer(tester, _Gear.reverse);
     expect(pendingOn('R'), findsNothing);
   });
+
+  testWidgets('a request that throws clears its pending mark, and its error still surfaces', (tester) async {
+    final errors = <Object>[];
+    await pumpShift(tester, onSelect: (_) async => throw StateError('link lost'));
+    await runZonedGuarded(() => tester.tap(find.text('F')), (error, _) => errors.add(error)); // the error a tapped button's future leaves uncaught
+    await tester.pump();
+
+    expect(errors, [isA<StateError>()]);
+    expect(pendingOn('F'), findsNothing);
+  });
 }

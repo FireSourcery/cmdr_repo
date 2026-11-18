@@ -79,7 +79,7 @@ abstract mixin class const ServiceIO<K, V, S>() {
       var keys = keysGetter();
       if (keys.isEmpty) {
         await Future.delayed(const Duration(milliseconds: 50)); // subsitute time of 1 iteration
-        continue;
+        yield* const Stream<Never>.empty(); // a cancel takes effect at a yield, not at an await
       } else {
         yield* getAll(keys, delay: delay);
       }
@@ -92,41 +92,10 @@ abstract mixin class const ServiceIO<K, V, S>() {
       var pairs = pairsGetter();
       if (pairs.isEmpty) {
         await Future.delayed(const Duration(milliseconds: 50));
-        continue;
+        yield* const Stream<Never>.empty();
       } else {
         yield* setAll(pairs, delay: delay);
       }
     }
   }
-}
-
-class ServicePollStreamHandler<K, V, S>(final ServiceIO<K, V, S> protocolService, final Iterable<K> Function() inputGetter, super.onDataSlice) extends ServiceStreamHandler<ServiceGetSlice<K, V>> {
-  @override
-  Stream<ServiceGetSlice<K, V>> get stream => protocolService.pollFlex(inputGetter, delay: const Duration(milliseconds: 1));
-}
-
-class ServicePushStreamHandler<K, V, S>(final ServiceIO<K, V, S> protocolService, final Iterable<(K, V)> Function() inputGetter, super.onDataSlice) extends ServiceStreamHandler<ServiceSetSlice<K, V, S>> {
-  @override
-  Stream<ServiceSetSlice<K, V, S>> get stream => protocolService.push(inputGetter, delay: const Duration(milliseconds: 1));
-}
-
-abstract class ServiceStreamHandler<T>(final void Function(T data) onDataSlice) {
-  // createStream()
-  Stream<T> get stream; // creates a new stream, call from begin() only
-
-  StreamSubscription? streamSubscription;
-  bool get isStopped => streamSubscription == null;
-
-  void _restartOnError(Object error) {
-    if (streamSubscription == null) return; // intentional stop, do not restart
-    final wasPaused = streamSubscription?.isPaused ?? false;
-    streamSubscription = stream.listen(onDataSlice, onError: _restartOnError);
-    if (wasPaused) streamSubscription?.pause();
-  }
-
-  StreamSubscription listenWithRestart() {
-    return streamSubscription ??= stream.listen(onDataSlice, onError: _restartOnError);
-  }
-
-  Future<void> end() async => streamSubscription?.cancel().whenComplete(() => streamSubscription = null);
 }

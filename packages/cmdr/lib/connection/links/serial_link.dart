@@ -2,10 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:libserialport/libserialport.dart';
-export 'package:libserialport/libserialport.dart';
 
 import '../base/link.dart';
-export '../base/link.dart';
 
 ///
 /// libserialport Serial Link
@@ -18,8 +16,14 @@ class SerialLink() implements Link {
   SerialPort? _serialPort; // alternatively allocating a SerialPort('') name is effectively port with internal nullptr
   SerialPortReader? _serialPortReader;
 
-  SerialPortConfig portConfig = SerialPortConfig()
-    ..baudRate = 19200
+  /// The reader isolate's wait on the port, between its checks of it.
+  static const Duration _readerWait = Duration(milliseconds: 500);
+
+  int baudRate = 19200;
+
+  /// Built per session: [SerialPort.dispose] frees the config set on the port.
+  SerialPortConfig _portConfig() => SerialPortConfig()
+    ..baudRate = baudRate
     ..parity = 0
     ..bits = 8
     ..stopBits = 1
@@ -41,26 +45,24 @@ class SerialLink() implements Link {
   final ValueNotifier<LinkStatus> status = ValueNotifier(const LinkDisconnected());
 
   @override
-  LinkStatus connect({String? name, int? baudRate, SerialPortConfig? config}) {
-    portConfigName = name ?? portConfigName;
-    portConfig = config ?? portConfig;
-    portConfig.baudRate = baudRate ?? portConfig.baudRate;
-
+  Future<LinkStatus> connect() async {
     if (portConfigName == null) return status.value = const LinkError('No Port Selected');
-    if (isConnected) _close(); // each connect is a new session. Windows opens a port exclusively, so the held one must go first
-    _serialPort = SerialPort(portConfigName!);
+    _close(); // each connect is a new session. Windows opens a port exclusively, so the held one must go first
 
     try {
+      _serialPort = SerialPort(portConfigName!);
       if (_serialPort!.openReadWrite()) {
-        _serialPort!.config = portConfig; // libserialport configures an open port only
-        _serialPortReader = SerialPortReader(_serialPort!);
+        _serialPort!.config = _portConfig(); // libserialport configures an open port only
+        _serialPortReader = SerialPortReader(_serialPort!, timeout: _readerWait.inMilliseconds);
         return status.value = LinkConnected('$portActiveName');
       } else {
-        // _serialPort!.dispose();
         return status.value = LinkError('Cannot Open $portConfigName ${SerialPort.lastError}');
       }
     } on SerialPortError catch (e) {
+      _close(); // the port may be open: [isConnected] reads false before the status is published
       return status.value = LinkError('Driver ${e.message}');
+    } finally {
+      if (!status.value.isConnected) _close(); // a session that did not open frees its port
     }
   }
 
@@ -69,26 +71,26 @@ class SerialLink() implements Link {
     if (!isConnected) return const LinkDisconnected('Not Connected');
 
     try {
+      final String? name = portActiveName; // the session frees its port
       _close();
-      // portConfig.dispose();
-      return status.value = LinkDisconnected('$portActiveName');
+      return status.value = LinkDisconnected('$name');
     } on SerialPortError catch (e) {
       return LinkError('Driver ${e.message}');
     }
   }
 
-  // close, not dispose: a SerialPort frees the config set on it, and [portConfig] is shared across ports
+  /// Ends the session. [SerialPort.dispose] frees the port and the config [connect] set on it two [_readerWait]s after the close:
+  /// the reader's isolate stops only by reading the closed port, within one of its waits, and closing the reader does not stop it.
   void _close() {
     _serialPortReader?.close();
+    _serialPortReader = null;
     _serialPort?.close();
+    if (_serialPort case final SerialPort port) Future<void>.delayed(_readerWait * 2, port.dispose);
+    _serialPort = null;
   }
 
   @override
-  void dispose() {
-    _close();
-    _serialPort?.dispose();
-    _serialPort = null; // freed: a late disconnect reads [isConnected]
-  }
+  void dispose() => _close();
 
   @override
   Future<Uint8List> recv([int? byteCount]) async {
