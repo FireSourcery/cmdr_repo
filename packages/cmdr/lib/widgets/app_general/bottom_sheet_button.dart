@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 class const BottomSheetButton({
   final ImageProvider? backgroundImage,
-  final Widget? backdrop, // painted behind the button bar, in place of or over [backgroundImage]
+  final Widget? backdrop, // painted over the bar surface and its border, under the button; taps pass through
   final OutlinedBorder? shape,
   final double heightScale = .33, // default
   required final Widget? child, // initial and default bottom sheet
@@ -108,28 +108,17 @@ class BottomSheetButtonState() extends State<BottomSheetButton> {
       child: Stack(
         alignment: Alignment.bottomCenter,
         children: [
+          _MaterialWrap(color: color, theme: theme, shape: shape, child: null), // the bar's surface and border, under the backdrop
           ?switch (widget.backdrop) {
-            Widget backdrop => Positioned.fill(child: backdrop),
+            Widget backdrop => Positioned.fill(child: IgnorePointer(child: backdrop)),
             null => null,
           },
-          _MaterialWrap(color: color, theme: theme, shape: shape, child: _fab),
+          Positioned.fill(child: Center(child: _fab)),
         ],
       ),
     );
   }
 }
-
-// class BottomSheetObserver extends NavigatorObserver {
-// BottomSheetButtonState bottomSheetButtonState;
-// Widget Function(Route route)? onRoute;
-
-//   @override
-//   void didPush(Route route, Route? previousRoute) => bottomSheetButtonState.exitRootBottomSheet();
-//   @override
-//   void didPop(Route route, Route? previousRoute) => bottomSheetButtonState.exitRootBottomSheet();
-//   @override
-//   void didReplace({Route? newRoute, Route? oldRoute}) => bottomSheetButtonState.exitRootBottomSheet();
-// }
 
 class const _MaterialWrap({required final Color color, required final BottomSheetThemeData theme, required final ShapeBorder? shape, required final Widget? child}) extends StatelessWidget {
   // Material? materialWrapOpen(Widget child) => Material(type: MaterialType.card, shadowColor: shadowOpen, elevation: elevationOpen, shape: shape, child: Center(child: child));
@@ -147,34 +136,3 @@ class const _MaterialWrap({required final Color color, required final BottomShee
     );
   }
 }
-
-// late Color color1 = Theme.of(context).colorScheme.outline;
-// late Color color2 = Theme.of(context).colorScheme.outlineVariant;
-// late Color animatedColor = color1;
-// late Timer _timer;
-
-// Widget borderWrap(Widget child) {
-//   return AnimatedContainer(
-//     alignment: Alignment.bottomCenter,
-//     duration: Duration(seconds: 1),
-//     // decoration: ShapeDecoration(shape: widget.shape.copyWith(side: BorderSide(color: animatedColor))),
-//     curve: Curves.linear,
-//     color: animatedColor,
-//     // onEnd: setColor,
-//     child: child,
-//   );
-// }
-
-// @override
-// void initState() {
-//   super.initState();
-//   _timer = Timer.periodic(Duration(seconds: 4), (timer) => setColor());
-// }
-
-// void setColor() {
-//   setState(() {
-//     (animatedColor == color1) ? color2 : color1;
-//     // if (animatedColor == color1) animatedColor = color2;
-//     // if (animatedColor == color2) animatedColor = color1;
-//   });
-// }

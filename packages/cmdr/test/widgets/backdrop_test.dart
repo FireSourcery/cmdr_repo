@@ -28,17 +28,26 @@ void main() {
     expect(find.ancestor(of: find.text('items'), matching: find.byType(Stack)), findsWidgets);
   });
 
-  testWidgets('BottomSheetButton paints its backdrop behind the button, with no image', (tester) async {
+  testWidgets('BottomSheetButton paints its backdrop over the bar surface and its border, under the button, passing taps through', (tester) async {
+    const shape = BeveledRectangleBorder(side: BorderSide(color: Colors.white));
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
-          floatingActionButton: BottomSheetButton(backdrop: backdrop, child: null),
+          floatingActionButton: BottomSheetButton(backdrop: backdrop, shape: shape, child: Text('sheet')),
           floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         ),
       ),
     );
-    expect(find.byKey(const ValueKey('backdrop')), findsOneWidget);
-    expect(find.byType(FloatingActionButton), findsOneWidget);
+    final List<Element> paintOrder = tester.allElements.toList();
+    int indexOf(bool Function(Widget widget) test) => paintOrder.indexWhere((element) => test(element.widget));
+    final int surface = indexOf((widget) => widget is Material && widget.shape == shape);
+    final int light = indexOf((widget) => widget.key == const ValueKey('backdrop'));
+    final int button = indexOf((widget) => widget is FloatingActionButton);
+    expect((surface >= 0, light > surface, button > light), (true, true, true), reason: 'surface, then the backdrop, then the button');
     expect(tester.getSize(find.byKey(const ValueKey('backdrop'))).height, greaterThan(0));
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    expect(find.text('sheet'), findsOneWidget, reason: 'the button opens its sheet through the backdrop');
   });
 }

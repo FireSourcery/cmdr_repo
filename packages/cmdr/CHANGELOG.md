@@ -26,7 +26,7 @@ Changed:
 * Mot wire format: the `MemReadRequest` payload is 8 bytes (was 12), as the firmware reads it; `MotPacketControlId.MOT_PACKET_SYNC_RESV` is retired (commented out) to match the firmware's control-frame ids.
 
 Added:
-* `MainMenu`, `MenuContainer` and `BottomSheetButton` take a `backdrop` widget, painted behind their content; the background image is now optional. The app draws its animated borders there.
+* `MainMenu`, `MenuContainer` and `BottomSheetButton` take a `backdrop` widget; the background image is now optional. The menu paints it behind its content; the button bar paints it over its surface and border and under its button, taps passing through. The app draws its animated borders there.
 
 Fixed:
 * `VarStreamController.endPeriodic` clears its subscriptions before awaiting their cancels, so a `beginPeriodic` in that wait (a fast reconnect) starts new streams instead of leaving the app connected with none.
