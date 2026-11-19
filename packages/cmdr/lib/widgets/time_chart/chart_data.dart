@@ -4,14 +4,10 @@ import 'dart:math';
 
 import 'package:collection/collection.dart';
 
-class LineData {
-  const LineData._(this.name, this.values);
-  LineData.from(this.name, Iterable<double> values, [int? capacity]) : values = QueueList(capacity)..addAll(values);
-  LineData.capacity(this.name, int capacity) : values = QueueList(capacity);
+class LineData._(final String name, final QueueList<double> values) {
+  LineData.from(String name, Iterable<double> values, [int? capacity]) : this._(name, QueueList(capacity)..addAll(values));
+  LineData.capacity(String name, int capacity) : this._(name, QueueList(capacity));
   // LineData.fixed(this.name, int capacity, [Iterable<double>? values]) : values = QueueList(capacity)..add(0);
-
-  final String name;
-  final QueueList<double> values;
 
   // caller calculates excess once for all lines
   void update(double value, [int excess = 0]) {
@@ -63,26 +59,29 @@ class LineData {
   // int get length => values.length;
 }
 
-class ChartData {
-  ChartData._({required this.linesMax, required this.samplesMax, required this.lineEntries, required this.timeData}) : assert(lineEntries.length <= linesMax);
+class ChartData._({
+  required final List<LineData> lineEntries, // indexed parallel with colors list, alternatively use Map<String, List<double>>
+  // final QueueList<double> timeData;
+  required final LineData timeData,
+  required final int linesMax, // alternatively use not growable entries count.
+  required final int samplesMax, // common entry length max
+}) {
+  this : assert(lineEntries.length <= linesMax);
   // ChartData({required this.linesMax, required this.samplesMax, Iterable<List<double>>? lineEntries, required Iterable<double> times})
   //     : lineEntries = [for (final line in lines) LineData.fromMapEntry(line)],
   //       timeData = LineData.capacity(name, samplesMax);
 
   // include 1 initial point as it is required by the view
-  ChartData.zero({required this.linesMax, required this.samplesMax, Iterable<String>? lineNames})
-    : assert((lineNames?.length ?? 0) <= linesMax),
-      timeData = LineData.capacity('time', samplesMax)..update(0.0), // start with 1 element for tMin
-      lineEntries = [
-        if (lineNames != null)
-          for (final name in lineNames) LineData.capacity(name, samplesMax)..update(0.0),
-      ];
-
-  final List<LineData> lineEntries; // indexed parallel with colors list, alternatively use Map<String, List<double>>
-  // final QueueList<double> timeData;
-  final LineData timeData;
-  final int linesMax; // alternatively use not growable entries count.
-  final int samplesMax; // common entry length max
+  ChartData.zero({required int linesMax, required int samplesMax, Iterable<String>? lineNames})
+    : this._(
+        linesMax: linesMax,
+        samplesMax: samplesMax,
+        timeData: LineData.capacity('time', samplesMax)..update(0.0), // start with 1 element for tMin
+        lineEntries: [
+          if (lineNames != null)
+            for (final name in lineNames) LineData.capacity(name, samplesMax)..update(0.0),
+        ],
+      );
 
   // calculate once per update
   int get excessLength => max(0, (timeData.values.length - samplesMax + 1)); // length <= max - 1 before add

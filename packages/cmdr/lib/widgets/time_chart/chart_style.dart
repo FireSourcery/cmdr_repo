@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class const ChartStyle({
     final Color? tooltipColor,
     final Color? backgroundColor,
+    final Color? gridColor,
     final List<Color>? legendColors,
     final TextStyle? lineTextStyle,
     final TextStyle? legendTextStyle,
@@ -15,12 +16,14 @@ class const ChartStyle({
   @override
   ChartStyle copyWith({
     Color? backgroundColor,
+    Color? gridColor,
     List<Color>? legendColors,
     TextStyle? lineTextStyle,
     TextStyle? legendTextStyle,
   }) {
     return ChartStyle(
       backgroundColor: backgroundColor ?? this.backgroundColor,
+      gridColor: gridColor ?? this.gridColor,
       legendColors: legendColors ?? this.legendColors,
       lineTextStyle: lineTextStyle ?? this.lineTextStyle,
       legendTextStyle: legendTextStyle ?? this.legendTextStyle,
@@ -44,6 +47,8 @@ class const ChartStyleDefault() extends ChartStyle {
   // TextStyle get legendTextStyle  => const TextStyle(color: Color(0xff757391), fontSize: 12);
   @override
   Color get backgroundColor => Colors.black26;
+  @override
+  Color get gridColor => ChartColors.mainGridLineColor;
   @override
   List<Color> get legendColors => ChartColors.colorsNeon;
 }

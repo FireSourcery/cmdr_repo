@@ -19,6 +19,7 @@ class TimeChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final backgroundColor = style.backgroundColor ?? const ChartStyleDefault().backgroundColor;
+    final gridLine = FlLine(color: style.gridColor ?? const ChartStyleDefault().gridColor, strokeWidth: 1);
     final colors = style.legendColors ?? const ChartStyleDefault().legendColors;
     final gradients = [for (final color in colors) ChartColors.gradient(color)];
 
@@ -44,7 +45,7 @@ class TimeChart extends StatelessWidget {
           clipData: const FlClipData.all(),
           backgroundColor: backgroundColor,
           lineTouchData: chartController.touchDataWhenStopped, // only when stopped
-          gridData: const FlGridData(show: true, drawVerticalLine: true, drawHorizontalLine: true),
+          gridData: FlGridData(getDrawingHorizontalLine: (_) => gridLine, getDrawingVerticalLine: (_) => gridLine),
           titlesData: FlTitlesData(
             rightTitles: AxisTitles(
               sideTitles: SideTitles(
