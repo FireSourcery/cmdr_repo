@@ -129,7 +129,7 @@ class const EnumFormat<S extends NativeType, V extends Enum>(final List<V> value
 class const EnumOffsetFormat<S extends NativeType, V extends Enum>(super.values, final int zeroIndex) extends EnumFormat<S, V> with EnumCodecByOffset<V> {
   this : assert(S != NativeType, 'Must specify storage type S for EnumOffsetFormat');
   get binaryRange => (min: 0 - zeroIndex, max: values.length - zeroIndex - 1);
-  V decode(int data) => values.byIndex(signedOf(data) + zeroIndex);
+  V decode(int data) => values.byIndexClamped(signedOf(data) + zeroIndex);
   int encode(V view) => (view.index - zeroIndex).clamp(binaryRange.min, binaryRange.max);
 }
 

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 
-
 import 'service_io.dart';
 import 'var_cache.dart';
 import 'var_key.dart';
@@ -93,9 +92,6 @@ class const VarCacheController({required final VarCache cache, required final Se
     }
     return null;
   }
-
-  // maps to protocol service directly, not through the batch; the response updates the notifier's value and status.
-  VarSingleController<V> single<V>(VarNotifier<V> notifier) => VarSingleController(varNotifier: notifier, protocolService: protocolService);
 }
 
 /// `Poll/Push Periodic Process Stream`
@@ -114,7 +110,7 @@ class VarStreamController({required super.cache, required super.protocolService}
 
   @override
   void dispose() {
-    endPeriodic().whenComplete(() => cache.dispose());
+    end().whenComplete(() => cache.dispose());
   }
 
   VarPollingScope createScope(Iterable<VarKey> keys) {
@@ -147,25 +143,22 @@ class VarStreamController({required super.cache, required super.protocolService}
   int _pushErrors = 0;
 
   /// The restart policy of both streams: reports the first error in a row, and starts [stream] after the backoff.
-  /// The wait belongs to the replacement subscription, so pause, resume and [endPeriodic] act on it.
+  /// The wait belongs to the replacement subscription, so [end] acts on it.
   Stream<T> _restart<T>(Stream<T> stream, Object error, int errors) {
     if (errors == 1) _onError?.call(error);
     return Stream.fromFuture(Future.delayed(restartDelay * (1 << min(errors - 1, 5)))).asyncExpand((_) => stream);
   }
 
   // cancelOnError: true cancels the dead subscription, then re-subscribe with a fresh stream. without it, the dead one keeps polling beside its replacement
-  // the replacement takes its sibling's pause state, which pause/resume keep in step
-  // endPeriodic nulls subscriptions, so the null check prevents restart after intentional stop
+  // [end] nulls subscriptions, so the null check prevents restart after intentional stop
   void _restartPollOnError(Object error) {
     if (pollSubscription == null) return;
     pollSubscription = _restart(_readStream, error, ++_pollErrors).listen(_onPollSlice, onError: _restartPollOnError, cancelOnError: true);
-    if (pushSubscription?.isPaused ?? false) pollSubscription!.pause();
   }
 
   void _restartPushOnError(Object error) {
     if (pushSubscription == null) return;
     pushSubscription = _restart(_writeStream, error, ++_pushErrors).listen(_onPushSlice, onError: _restartPushOnError, cancelOnError: true);
-    if (pollSubscription?.isPaused ?? false) pushSubscription!.pause();
   }
 
   // a slice ends the errors in a row
@@ -180,7 +173,7 @@ class VarStreamController({required super.cache, required super.protocolService}
   }
 
   /// [onError] gets the first error in a row of each stream; the stream restarts after [restartDelay], backing off.
-  bool beginPeriodic({void Function(Object error)? onError}) {
+  bool begin({void Function(Object error)? onError}) {
     if (!protocolService.isConnected) return false;
     _onError = onError;
     pollSubscription ??= _readStream.listen(_onPollSlice, onError: _restartPollOnError, cancelOnError: true);
@@ -188,46 +181,29 @@ class VarStreamController({required super.cache, required super.protocolService}
     return true;
   }
 
-  Future<void> endPeriodic() async {
+  Future<void> end() async {
     final cancels = [pollSubscription?.cancel(), pushSubscription?.cancel()];
-    pollSubscription = pushSubscription = null; // before the cancels land: a beginPeriodic meanwhile starts fresh streams
+    pollSubscription = pushSubscription = null; // before the cancels land: a begin meanwhile starts fresh streams
     _pollErrors = _pushErrors = 0; // a burst ends with its run
     await Future.wait(cancels.nonNulls);
   }
 
-  // pause once only.
-  void pause() {
-    if (pollSubscription?.isPaused == false) pollSubscription!.pause();
-    if (pushSubscription?.isPaused == false) pushSubscription!.pause();
-  }
-
-  void resume() {
-    while (pollSubscription?.isPaused == true) {
-      pollSubscription?.resume();
-    }
-    while (pushSubscription?.isPaused == true) {
-      pushSubscription?.resume();
-    }
-  }
-
-  /// Holds the stream for the duration of [action].
+  /// Ends the streams for the duration of [action], and begins them again after if they ran.
   ///
   /// A long link operation — a full config write, a flash save — otherwise interleaves with the
-  /// periodic reads. Restores the stream to the state it was found in, so a page that does not
-  /// stream is not left streaming.
+  /// periodic reads. Ended, not paused: a paused stream would keep its slice in flight until it resumed,
+  /// a view into a reply buffer the action reuses.
   Future<T> hold<T>(Future<T> Function() action) async {
-    final wasActive = isActive;
-    pause();
+    final wasRunning = !isStopped;
+    unawaited(end()); // lands at the next yield: the read in flight finishes, its slice dropped
     try {
       return await action();
     } finally {
-      if (wasActive) resume();
+      if (wasRunning) begin(onError: _onError);
     }
   }
 
   bool get isStopped => (pollSubscription == null && pushSubscription == null);
-
-  bool get isActive => (pollSubscription?.isPaused == false && pushSubscription?.isPaused == false);
 }
 
 class VarPollingScope._(final VarStreamController _controller, Iterable<VarKey> keys) {
@@ -263,3 +239,7 @@ class const VarSingleController<V>({required final VarNotifier<V> varNotifier, r
     return null;
   }
 }
+
+// extension on VarCacheController to provide single var access
+// maps to protocol service directly, not through the batch; the response updates the notifier's value and status.
+// VarSingleController<V> single<V>(VarNotifier<V> notifier) => VarSingleController(varNotifier: notifier, protocolService: protocolService);

@@ -20,6 +20,17 @@ void main() {
     });
   });
 
+  group('byIndexClamped', () {
+    test('returns the member in range', () {
+      expect(Color.values.byIndexClamped(1), Color.green);
+    });
+
+    test('clamps to the nearest member out of range', () {
+      expect(Color.values.byIndexClamped(7), Color.blue);
+      expect(Color.values.byIndexClamped(-1), Color.red);
+    });
+  });
+
   group('list resolve', () {
     test('unknown index is null, never the first or last member', () {
       expect(Color.values.resolve(7), isNull);
@@ -44,10 +55,10 @@ void main() {
       expect(const EnumCodecOffset(Color.values, 1).decode(-1), Color.red);
     });
 
-    test('unknown value throws RangeError, never clamps', () {
-      expect(() => const EnumCodecDefault(Color.values).decode(7), throwsRangeError);
-      expect(() => const EnumCodecOffset(Color.values, 1).decode(2), throwsRangeError);
-      expect(() => const EnumOffsetFormat<Int16, Color>(Color.values, 1).decode(-2), throwsRangeError);
+    test('unknown value clamps to the nearest member', () {
+      expect(const EnumCodecDefault(Color.values).decode(7), Color.blue);
+      expect(const EnumCodecOffset(Color.values, 1).decode(2), Color.blue);
+      expect(const EnumOffsetFormat<Int16, Color>(Color.values, 1).decode(-2), Color.red);
     });
   });
 }

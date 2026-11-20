@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:cmdr/var_notifier.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -32,35 +34,35 @@ void main() {
 
   // runs fake time past the longest backoff, so no timer outlives the test
   Future<void> end(WidgetTester tester) async {
-    controller.endPeriodic();
+    controller.end();
     await tester.pump(const Duration(seconds: 2));
     expect(controller.isStopped, isTrue);
   }
 
-  group('VarStreamController.endPeriodic', () {
-    testWidgets('completes while nothing is polled, and a beginPeriodic after it starts a fresh stream', (tester) async {
-      controller.beginPeriodic();
+  group('VarStreamController.end', () {
+    testWidgets('completes while nothing is polled, and a begin after it starts a fresh stream', (tester) async {
+      controller.begin();
       await tester.pump(round);
       final idle = controller.pollSubscription;
       var ended = false;
-      controller.endPeriodic().whenComplete(() => ended = true);
+      controller.end().whenComplete(() => ended = true);
       await tester.pump(round);
       expect((ended, controller.isStopped), (true, true));
 
       controller.createScope(const [scoped]);
-      controller.beginPeriodic();
+      controller.begin();
       await tester.pump(round);
       expect(controller.pollSubscription, isNot(same(idle)));
       expect(valueOf(scoped), 10);
       await end(tester);
     });
 
-    testWidgets('a beginPeriodic while its cancels are still pending starts a run that stays, as a fast reconnect does', (tester) async {
-      controller.beginPeriodic();
+    testWidgets('a begin while its cancels are still pending starts a run that stays, as a fast reconnect does', (tester) async {
+      controller.begin();
       await tester.pump(round);
-      controller.endPeriodic(); // the idle loops cancel at their next yield, after the 50 ms wait
+      controller.end(); // the idle loops cancel at their next yield, after the 50 ms wait
       controller.createScope(const [scoped]);
-      controller.beginPeriodic();
+      controller.begin();
       await tester.pump(round * 2);
 
       expect(controller.isStopped, isFalse);
@@ -69,11 +71,49 @@ void main() {
     });
   });
 
+  group('VarStreamController.hold', () {
+    testWidgets('a slice in flight at the hold never lands after it, though the action reused its reply buffer', (tester) async {
+      final socket = _SocketLikeService({...device});
+      final shared = VarStreamController(cache: VarCache.preallocate(const [scoped]), protocolService: socket)..createScope(const [scoped]);
+      final seen = <int?>[];
+      shared.cache[scoped]!.addListener(() => seen.add(shared.cache[scoped]!.value as int?));
+      shared.begin();
+      await tester.pump(_SocketLikeService.wire ~/ 2); // the first read is on the wire
+
+      await shared.hold(() async {
+        final read = socket.getBatch(const [3]); // the action's read: key 3's 30 into the slot that held key 1's 10
+        await tester.pump(round);
+        await read;
+      });
+      await tester.pump(round);
+
+      expect(seen.toSet(), {10});
+      expect(shared.isStopped, isFalse);
+      shared.end();
+      await tester.pump(const Duration(seconds: 2));
+      shared.dispose();
+    });
+
+    testWidgets('a running stream begins again with its onError, a stopped one stays stopped', (tester) async {
+      await controller.hold(() async {});
+      expect(controller.isStopped, isTrue);
+
+      controller.createScope(const [scoped]);
+      controller.begin(onError: errors.add);
+      await controller.hold(() async {});
+      await tester.pump(round); // the ended run's last request lands before the fault is queued
+      service.getReplies.add(fail);
+      await tester.pump(round);
+      expect((controller.isStopped, errors.length), (false, 1));
+      await end(tester);
+    });
+  });
+
   group('the restart policy', () {
     testWidgets('a failed poll restarts after restartDelay, doubling with each error in a row, and reports only the first', (tester) async {
       service.getReplies.addAll([fail, fail, fail, fail]);
       controller.createScope(const [scoped]);
-      controller.beginPeriodic(onError: errors.add);
+      controller.begin(onError: errors.add);
       await tester.pump();
       expect(failures, 1);
 
@@ -92,7 +132,7 @@ void main() {
     testWidgets('a slice ends the burst: the next error is reported, and its restart waits restartDelay again', (tester) async {
       service.getReplies.addAll([fail, fail]);
       controller.createScope(const [scoped]);
-      controller.beginPeriodic(onError: errors.add);
+      controller.begin(onError: errors.add);
       await tester.pump(delay * 4);
       expect((failures, valueOf(scoped), errors.length), (2, 10, 1));
 
@@ -108,7 +148,7 @@ void main() {
     testWidgets('a failed push restarts after restartDelay, and the write lands', (tester) async {
       service.setReplies.add(fail);
       controller.cache[scoped]!.updateByView(5);
-      controller.beginPeriodic(onError: errors.add);
+      controller.begin(onError: errors.add);
       await tester.pump();
       expect((failures, errors.length), (1, 1));
 
@@ -122,7 +162,7 @@ void main() {
     testWidgets('the poll stream restarts on its own subscription, whatever the push stream holds', (tester) async {
       service.getReplies.add(fail);
       controller.createScope(const [scoped]);
-      controller.beginPeriodic(onError: errors.add);
+      controller.begin(onError: errors.add);
       controller.pushSubscription?.cancel();
       controller.pushSubscription = null;
       await tester.pump(delay);
@@ -133,29 +173,29 @@ void main() {
 
   // a cancel during a backoff completes in a root zone microtask, which the fake time of testWidgets does not run
   group('in real time, ending during a backoff', () {
-    test('endPeriodic completes and cancels the restart', () async {
+    test('end completes and cancels the restart', () async {
       service.getReplies.add(fail);
       controller.createScope(const [scoped]);
-      controller.beginPeriodic(onError: errors.add);
+      controller.begin(onError: errors.add);
       await Future<void>.delayed(Duration.zero);
       expect(failures, 1);
 
-      await controller.endPeriodic();
+      await controller.end();
       await Future<void>.delayed(delay * 2);
       expect((controller.isStopped, failures, valueOf(scoped)), (true, 1, 0));
     });
 
-    test('a beginPeriodic after it reports its first error', () async {
+    test('a begin after it reports its first error', () async {
       service.getReplies.addAll([fail, fail]);
       controller.createScope(const [scoped]);
-      controller.beginPeriodic(onError: errors.add);
+      controller.begin(onError: errors.add);
       await Future<void>.delayed(Duration.zero);
-      await controller.endPeriodic();
+      await controller.end();
 
-      controller.beginPeriodic(onError: errors.add);
+      controller.begin(onError: errors.add);
       await Future<void>.delayed(Duration.zero);
       expect((failures, errors.length), (2, 2));
-      await controller.endPeriodic();
+      await controller.end();
     });
   });
 
@@ -163,7 +203,7 @@ void main() {
     testWidgets('a polling var is polled while it is observed', (tester) async {
       void listener() {}
       final notifier = controller.cache[polling]!;
-      controller.beginPeriodic();
+      controller.begin();
       await tester.pump(round);
       expect(valueOf(polling), 0);
 
@@ -180,7 +220,7 @@ void main() {
 
     testWidgets('a scope polls its readable keys, from createScope and from update', (tester) async {
       final scope = controller.createScope(const [scoped, writeOnly]);
-      controller.beginPeriodic();
+      controller.begin();
       await tester.pump(round);
       expect([valueOf(scoped), valueOf(writeOnly)], [10, 0]);
 
@@ -195,4 +235,26 @@ void main() {
       await end(tester);
     });
   });
+}
+
+/// Replies as a socket does: after [wire], as a view into one receive buffer, valid until the next reply.
+class _SocketLikeService(final Map<int, int> device) with ServiceIO<int, int, int> {
+  static const wire = Duration(milliseconds: 4);
+  final Uint32List _rx = Uint32List(8);
+
+  @override
+  bool get isConnected => true;
+  @override
+  int? get maxGetBatchSize => null;
+  @override
+  int? get maxSetBatchSize => null;
+
+  @override
+  Future<Iterable<int>> getBatch(Iterable<int> keys) => Future.delayed(wire, () => Uint32List.sublistView(_rx..setAll(0, [for (final key in keys) device[key] ?? 0]), 0, keys.length));
+  @override
+  Iterable<int> setBatch(Iterable<(int, int)> pairs) => List.filled(pairs.length, 0);
+  @override
+  Future<int> get(int key) => getBatch([key]).then((values) => values.single);
+  @override
+  int set(int key, int value) => 0;
 }

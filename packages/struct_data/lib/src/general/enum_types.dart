@@ -3,7 +3,11 @@
 library;
 
 extension EnumByIndex<T extends Enum> on List<T> {
+  /// [defaultValue] when [index] names no member, otherwise throws.
   T byIndex(int index, [T? defaultValue]) => resolve(index) ?? defaultValue ?? (throw RangeError.index(index, this));
+
+  /// The nearest member when [index] names none.
+  T byIndexClamped(int index) => elementAt(index.clamp(0, length - 1));
 
   /// null when [index] is null or out of range. [elementAtOrNull] alone throws on a negative index.
   T? resolve(int? index) => (index != null && index >= 0) ? elementAtOrNull(index) : null;
@@ -21,7 +25,7 @@ abstract interface class EnumCodec<V extends Enum> {
 
 abstract mixin class EnumCodecByIndex<V extends Enum>() implements EnumCodec<V> {
   @override
-  V decode(int data) => values.byIndex(data);
+  V decode(int data) => values.byIndexClamped(data);
   @override
   int encode(V view) => view.index;
 }
@@ -30,7 +34,7 @@ abstract mixin class EnumCodecByIndex<V extends Enum>() implements EnumCodec<V> 
 abstract mixin class EnumCodecByOffset<V extends Enum>() implements EnumCodec<V> {
   int get zeroIndex;
   @override
-  V decode(int data) => values.byIndex(data + zeroIndex);
+  V decode(int data) => values.byIndexClamped(data + zeroIndex);
   @override
   int encode(V view) => view.index - zeroIndex;
 }

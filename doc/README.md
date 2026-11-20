@@ -8,6 +8,7 @@ where `cmdr` and `struct_data` add to it or depart from it. The principles are t
 |---|---|---|
 | [conventions/](conventions/) | Rules followed every time | one topic per file, free-form |
 | [decisions/](decisions/) | What we chose and why; binds later work | `NNNN_title.md` |
+| [findings/](findings/) | What we measured or learned, dated | `YYYY-MM-DD_title.md` |
 
 A folder is created with its first entry. Patterns (`pattern_name.md`) and findings (`YYYY-MM-DD_title.md`) take the
 shapes in [Docs/README.md](../../../FireSourcery_Library/Docs/README.md) of the firmware.

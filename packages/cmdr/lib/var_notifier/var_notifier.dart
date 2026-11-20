@@ -247,7 +247,11 @@ mixin class VarValue<V>() {
       const (double) => newValue.toDouble() as V,
       const (num) => newValue as V,
       const (bool) => (newValue != 0) as V,
-      _ => viewOf(newValue as int), // stored as data
+      // stored as data. A device value clamps on decode; file or user input naming no view is refused
+      _ => switch (viewOf(newValue as int)) {
+        final V named when dataOf(named) == newValue => named,
+        _ => throw RangeError.value(newValue, 'numView', 'names no view'),
+      },
     };
   }
 
