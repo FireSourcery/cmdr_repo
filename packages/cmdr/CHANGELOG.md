@@ -1,6 +1,7 @@
 ## Unreleased
 
 Breaking:
+* `MotConnection` is no longer part of cmdr: a consumer builds its own over `Protocol`, `SerialLink` and `MotProtocolSocket`. `mot_connection.dart` keeps the link, the protocol and the Mot packet.
 * `serial_link.dart`, `serial_link_view.dart`, `mot_connection/mot_connection.dart`, `var_notifier/var_notifier.dart`, `time_chart/time_chart.dart`, `var_widgets.dart` and `var_menu.dart` no longer re-export what they import (libserialport, `Link`, `Protocol`, struct_data, the chart and var widget files, the flyweight menu). Import the barrels (`connection.dart`, `mot_connection.dart`, `var_notifier.dart`, `widgets.dart`), or the flyweight files directly.
 * `SerialLink.connect()` takes no arguments: set `portConfigName` and `baudRate` first. `baudRate` (an `int`) replaces `portConfig`, which is now built for each session.
 * `Link.status` (`ValueListenable<LinkStatus>`) is a new member of `Link`. It publishes the outcome of every `connect` and `disconnect`, a lost link included. `MotConnection.status` is the serial link's, a `ValueListenable` and no longer a `ValueNotifier` it sets.
@@ -13,9 +14,12 @@ Breaking:
 * `FileConfirmationDialogButton` is generic and takes `styleId`, `enabled` and `resultContent`.
 * `FileStorageNotifier`: `confirm()` completes once (a second call throws), `processWithNotify` returns `Future<R>` and rethrows, and `dispose()` is new.
 * `VarStreamController`: `beginPeriodic` and `endPeriodic` are `begin` and `end`. `pause`, `resume` and `isActive` are removed: a paused stream delivered its slice in flight on resume, a view into a reply buffer reused meanwhile. `hold` ends the streams for its action and begins them again if they ran.
-* Removed, with no callers: `VarCache.allocateAll`; `ServiceStreamHandler` and its two subclasses; the parameters `updateByData(overwriteUpdateByView:)`, `VarIOField(key:)`, `VarIOField.compact(key:, controller:)`, `IOField(key:)`, `IOFieldMenu.initialValue`, `IOFieldWithSlider.of(key:)`, `IOFieldConfig.copyWith(useSliderBorder:)`, `StringFormField.isReadOnly`, `Grid3.isHalfLeading`, `DriveShift.size` and `ChartController.loadWithMeta`.
+* Removed, with no callers: `VarCache.allocateAll`; `ServiceStreamHandler` and its two subclasses; the parameters `updateByData(overwriteUpdateByView:)`, `VarIOField(key:)`, `VarIOField.compact(key:, controller:)`, `IOField(key:)`, `IOFieldMenu.initialValue`, `IOFieldWithSlider` (the whole class), `IOFieldConfig.copyWith(useSliderBorder:)`, `StringFormField.isReadOnly`, `Grid3.isHalfLeading`, `DriveShift.size` and `ChartController.loadWithMeta`.
 
 Changed:
+* `MainMenu` replaces no route when the selected destination is selected again (`MainMenuController.navigate`). A collapsed rail names each destination in a tooltip; `LogoButton` takes `tooltip`; `BottomSheetButton` takes `openTooltip` and `closeTooltip`.
+* `VarStreamController` takes `restartDelay` (default 50 ms) and `maxRestartDoublings` (default 5) in place of the static `restartDelay`, and reports one error per outage: the first of either stream while the other runs clean.
+* `ValueStringGetter.of` with no stringifier shows `nullString` for a null value, not `null`. `IOFieldReader` takes `valueStringGetter`.
 * An idle `pollFlex` or `push` loop yields after each idle wait, so `VarStreamController.end` cancels it there. A write that must go out while the streams are ended is a direct `VarCacheController.write` or `writeAll`.
 * `Protocol` disconnects its link when a read or write fails or the link's stream ends, and `Link.status` reports it.
 * Dialogs take a `styleId` (`DialogButtonStyle`). `DialogButtonStyle.warning` shows the warning icon and the warning Confirm style.

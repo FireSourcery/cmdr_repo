@@ -131,7 +131,7 @@ class const IODecorator({required final InputDecoration decoration, final bool i
 
 /// Updates on listenable change only, no user input
 class IOFieldReader<T> extends StatelessWidget implements IOField<T> {
-  IOFieldReader({super.key, required this.decoration, required this.listenable, required this.valueGetter, this.valueStringifier, this.errorGetter, this.tip = ''});
+  IOFieldReader({super.key, required this.decoration, required this.listenable, required this.valueGetter, this.valueStringifier, this.valueStringGetter, this.errorGetter, this.tip = ''});
 
   IOFieldReader.config(IOFieldConfig<T> config, {super.key})
     : listenable = config.valueListenable,
@@ -139,7 +139,8 @@ class IOFieldReader<T> extends StatelessWidget implements IOField<T> {
       valueGetter = config.valueGetter,
       tip = config.tip,
       errorGetter = config.errorGetter,
-      valueStringifier = config.valueStringifier;
+      valueStringifier = config.valueStringifier,
+      valueStringGetter = null;
 
   final Listenable listenable;
   final ValueGetter<T> valueGetter;
@@ -147,7 +148,10 @@ class IOFieldReader<T> extends StatelessWidget implements IOField<T> {
   final String tip;
   final ValueGetter<bool>? errorGetter;
   final Stringifier<T>? valueStringifier;
-  late final ValueStringGetter<T> stringGetter = ValueStringGetter<T>.of(valueGetter, valueStringifier: valueStringifier);
+
+  /// The text itself, for a reader that shows something other than [valueGetter]'s value.
+  final ValueGetter<String>? valueStringGetter;
+  late final ValueStringGetter<T> stringGetter = ValueStringGetter<T>.of(valueGetter, valueStringifier: valueStringifier, valueStringGetter: valueStringGetter);
 
   Widget builder(BuildContext context, Widget? child) {
     return IODecorator(decoration: decoration, isError: errorGetter?.call() ?? false, child: Text(stringGetter()));

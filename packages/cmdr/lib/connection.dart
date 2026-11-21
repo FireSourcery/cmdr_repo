@@ -6,9 +6,8 @@
 /// ```dart
 /// import 'package:cmdr/connection.dart';
 ///
-/// // Create a serial link
-/// final link = SerialLink();
-/// final protocol = MotProtocol(link);
+/// // A protocol puts a wire format over a link
+/// final protocol = Protocol(SerialLink(), codec); // codec: a PacketCodec
 /// ```
 library;
 

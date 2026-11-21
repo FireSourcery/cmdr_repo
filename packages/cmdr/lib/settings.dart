@@ -6,11 +6,11 @@
 /// ```dart
 /// import 'package:cmdr/settings.dart';
 ///
-/// // Define a setting
-/// final mySetting = Setting<String>('my_key', defaultValue: 'default');
+/// // Settings are an enum with SharedPrefSetting, each member a typed key
+/// enum AppSetting<T>() with SharedPrefSetting<T> { ... }
 ///
-/// // Use settings controller
-/// final controller = SettingsController(SettingsService());
+/// // The controller updates and persists them, and notifies its listeners
+/// final controller = SettingsController();
 /// ```
 library;
 

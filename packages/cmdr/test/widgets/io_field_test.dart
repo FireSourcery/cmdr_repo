@@ -154,6 +154,14 @@ void main() {
     expect((fieldText(tester), fieldError(tester)), ('2', false));
   });
 
+  testWidgets('IOFieldReader shows its valueStringGetter text', (tester) async {
+    await tester.pumpWidget(
+      host(IOFieldReader<int>(decoration: const InputDecoration(), listenable: ValueNotifier(1), valueGetter: () => 1, valueStringGetter: () => 'Running')),
+    );
+    expect(find.text('Running'), findsOneWidget);
+    expect(find.text('1'), findsNothing);
+  });
+
   group('IOFieldMenu', () {
     const key = ValueKey('menu');
     final value = ValueNotifier(_Fruit.apple);

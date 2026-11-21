@@ -34,33 +34,3 @@ class const IOFieldSlider<T extends num>(final IOFieldConfig<T> config, {super.k
   Widget build(BuildContext context) => ListenableBuilder(listenable: config.valueListenable, builder: builder);
 }
 
-// Composites
-// convenience for attaching the same config
-class const IOFieldWithSlider<T extends num>(final IOFieldConfig<T> config, {final int breakWidth = 400, super.key}) extends StatelessWidget {
-  factory IOFieldWithSlider.of(IOFieldConfig config) {
-    assert(config.valueNumLimits != null);
-    return switch (config) {
-          IOFieldConfig<int>() => IOFieldWithSlider<int>(config),
-          IOFieldConfig<double>() => IOFieldWithSlider<double>(config),
-          IOFieldConfig<num>() => IOFieldWithSlider<num>(config),
-          _ => throw TypeError(),
-        }
-        as IOFieldWithSlider<T>;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return (constraints.maxWidth > breakWidth)
-            ? Row(
-                children: [
-                  Expanded(child: IOFieldText<T>.config(config)),
-                  Expanded(flex: 2, child: IOFieldSlider<T>(config)),
-                ],
-              )
-            : OverflowBar(children: [IOFieldText<T>.config(config), IOFieldSlider<T>(config)]);
-      },
-    );
-  }
-}

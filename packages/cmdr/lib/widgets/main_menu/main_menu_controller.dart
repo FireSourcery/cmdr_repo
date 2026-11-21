@@ -35,6 +35,11 @@ class MainMenuController(final List<MenuEntry> initialMenuList, {final GlobalKey
   int get selectedIdByIndex => indexOf(selectedId);
   set selectedIdByIndex(int value) => selectedId = idOf(value);
 
+  /// Selects the destination at [index]; the one already selected stays as it is, its page and state kept.
+  void navigate(int index) {
+    if (index != selectedIdByIndex) selectedIdByIndex = index;
+  }
+
   String get selectedRoute => menuList[indexOf(selectedId)].route ?? '';
   String get selectedLabel => menuList[indexOf(selectedId)].label;
 }

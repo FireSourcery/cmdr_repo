@@ -12,6 +12,8 @@ class const BottomSheetButton({
   final Icon iconClose = const Icon(Icons.keyboard_arrow_down, size: 50),
   // this.iconInactive = const Icon(Icons.circle_outlined, size: 50),
   final Icon? iconInactive,
+  final String openTooltip = 'Show panel',
+  final String closeTooltip = 'Hide panel',
   super.key,
 }) extends StatefulWidget {
   // final Color shadowClosed =  Colors.black;
@@ -34,8 +36,8 @@ class BottomSheetButtonState() extends State<BottomSheetButton> {
   // late final double elevationOpen = theme.elevation ?? 10;
   // late final double elevationClosed = theme.elevation ?? 10;
 
-  late final FloatingActionButton fabOpen = FloatingActionButton(onPressed: expand, child: widget.iconOpen);
-  late final FloatingActionButton fabClose = FloatingActionButton(onPressed: collapse, child: widget.iconClose);
+  late final FloatingActionButton fabOpen = FloatingActionButton(onPressed: expand, tooltip: widget.openTooltip, child: widget.iconOpen);
+  late final FloatingActionButton fabClose = FloatingActionButton(onPressed: collapse, tooltip: widget.closeTooltip, child: widget.iconClose);
   late final FloatingActionButton fabNull = FloatingActionButton(onPressed: null, child: widget.iconInactive);
 
   // mutable

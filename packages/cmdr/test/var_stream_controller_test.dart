@@ -11,7 +11,7 @@ void main() {
   const writeOnly = FakeVarKey(2, access: VarReadWriteAccess.writeOnly);
   const polling = FakeVarKey(3, isPolling: true);
   const device = {1: 10, 2: 20, 3: 30};
-  const delay = VarStreamController.restartDelay;
+  const delay = Duration(milliseconds: 50); // the default restartDelay
   const tick = Duration(milliseconds: 1);
   const round = Duration(milliseconds: 60); // past the 50 ms idle wait of a stream with no keys
 
@@ -110,6 +110,43 @@ void main() {
   });
 
   group('the restart policy', () {
+    testWidgets('the default restartDelay is 50 ms', (tester) async {
+      expect(controller.restartDelay, delay);
+    });
+
+    testWidgets('a controller built with restartDelay 10 ms and maxRestartDoublings 2 restarts after 10, 20, 40, 40 ms', (tester) async {
+      controller = VarStreamController(cache: VarCache.preallocate(const [scoped]), protocolService: service, restartDelay: const Duration(milliseconds: 10), maxRestartDoublings: 2);
+      service.getReplies.addAll([fail, fail, fail, fail, fail]);
+      controller.createScope(const [scoped]);
+      controller.begin(onError: errors.add);
+      await tester.pump();
+      expect(failures, 1);
+
+      for (final (wait, attempt) in [(10, 2), (20, 3), (40, 4), (40, 5)]) {
+        await tester.pump(Duration(milliseconds: wait) - tick);
+        expect(failures, attempt - 1);
+        await tester.pump(tick);
+        expect(failures, attempt);
+      }
+      await end(tester);
+    });
+
+    testWidgets('an outage that fails both streams reports one error, and a new outage reports again', (tester) async {
+      service.getReplies.add(fail);
+      service.setReplies.add(fail);
+      controller.cache[scoped]!.updateByView(5);
+      controller.createScope(const [scoped]);
+      controller.begin(onError: errors.add);
+      await tester.pump();
+      expect((failures, errors.length), (2, 1));
+
+      await tester.pump(delay * 2); // both restart and land a slice
+      service.getReplies.add(fail);
+      await tester.pump(round);
+      expect((failures, errors.length), (3, 2));
+      await end(tester);
+    });
+
     testWidgets('a failed poll restarts after restartDelay, doubling with each error in a row, and reports only the first', (tester) async {
       service.getReplies.addAll([fail, fail, fail, fail]);
       controller.createScope(const [scoped]);

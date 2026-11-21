@@ -78,7 +78,7 @@ void main() {
     test('send reverts a rejected value to the device value', () async {
       service.setReplies.add((_) => [rejected]);
 
-      expect((await controller.single(controller.cache[keys.first]!).send(5))?.code, rejected);
+      expect((await VarSingleController(varNotifier: controller.cache[keys.first]!, protocolService: service).send(5))?.code, rejected);
       expect(viewOf(controller.cache[keys.first]!), (false, 10, rejected));
     });
 

@@ -6,9 +6,8 @@
 /// ```dart
 /// import 'package:cmdr/file_storage.dart';
 ///
-/// // Use file storage
-/// final csvStorage = CsvFileStorage();
-/// final jsonStorage = JsonFileStorage();
+/// // A storage parses and builds its contents; the handlers form needs no subclass
+/// final storage = JsonFileStorage.handlers(fromJson, toJson, defaultName: 'config.json');
 /// ```
 library;
 

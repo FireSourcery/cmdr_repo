@@ -10,7 +10,7 @@ packet framework come from its sibling, `struct_data`.
 |---|---|
 | `cmdr.dart` | Every library below except `mot_connection.dart` and `type_ext.dart`. Re-exports `struct_data` (bit/byte structs, codecs) |
 | `connection.dart` | `Link` (a transport) and `Protocol` (request/response over a `Link` and a `PacketCodec`); `SerialLink` over libserialport; `SerialLinkView` |
-| `mot_connection.dart` | MotProtocol: `MotConnection`, the `MotPacketCodec` wire format and its payload table, `MotProtocolSocket` |
+| `mot_connection.dart` | MotProtocol: the `MotPacketCodec` wire format and its payload table, `MotProtocolSocket`, with the link and protocol it runs over |
 | `file_storage.dart` | Multiple file format support (CSV, JSON, Intel HEX); reactive file storage with notifications; file open/save buttons and dialogs |
 | `interfaces.dart` | `ServiceIO`, the get/set/poll/push service the var controllers run over |
 | `models.dart` | ADC config, surface speed, thermistor and voltage divider models |
@@ -39,7 +39,7 @@ flutter pub get
 
 | Folder | Holds |
 |---|---|
-| `lib/connection/` | `base/`: `Link`, `Protocol`, `ProtocolSocket`; `links/`: `SerialLink`; `mot_connection/`: `MotConnection`, `MotPacketCodec` and payloads, `MotProtocolSocket`; `view/`: `SerialLinkView` |
+| `lib/connection/` | `base/`: `Link`, `Protocol`, `ProtocolSocket`; `links/`: `SerialLink`; `mot_connection/`: `MotPacketCodec` and payloads, `MotProtocolSocket`; `view/`: `SerialLinkView` |
 | `lib/file_storage/` | `FileStorage`, `FileStorageNotifier`, `HexFileStorage`, `CsvFileStorage`, `JsonFileStorage`, file views |
 | `lib/interfaces/` | Parked, commented out: `NumUnion`, `ValueViewer` |
 | `lib/models/` | `adc_config`, `surface_speed`, `thermistor`, `voltage` |

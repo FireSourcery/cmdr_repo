@@ -7,8 +7,9 @@
 /// import 'package:cmdr/models.dart';
 ///
 /// // Use models
-/// final voltage = Voltage(12.5);
-/// final direction = Direction.forward;
+/// const divider = VDivider(47000, 4700);
+/// const battery = VBattery(42.0, 54.6);
+/// const adc = AdcConfig(3.3, 4095);
 /// ```
 library;
 

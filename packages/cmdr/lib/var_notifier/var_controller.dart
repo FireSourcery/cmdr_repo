@@ -103,7 +103,14 @@ class const VarCacheController({required final VarCache cache, required final Se
 //
 // if an entry is removed from the cache map, listener will still exist synced with previously allocated Var.
 // it will no longer be updated by Streams.
-class VarStreamController({required super.cache, required super.protocolService}) extends VarCacheController {
+/// [restartDelay] is the wait before a stream restarts after its first error in a row; each further error doubles it, up to
+/// [maxRestartDoublings] times.
+class VarStreamController({
+  required super.cache,
+  required super.protocolService,
+  final Duration restartDelay = const Duration(milliseconds: 50),
+  final int maxRestartDoublings = 5,
+}) extends VarCacheController {
   final List<int> _readBuffer = []; // reuse allocation, no new List each cycle
   final List<(int, int)> _writeBuffer = [];
   final Set<VarPollingScope> _scopes = {};
@@ -137,16 +144,14 @@ class VarStreamController({required super.cache, required super.protocolService}
 
   void Function(Object error)? _onError;
 
-  /// The wait before a stream restarts after its first error in a row; each further error doubles it, up to 32 times.
-  static const Duration restartDelay = Duration(milliseconds: 50);
   int _pollErrors = 0; // in a row, until a slice
   int _pushErrors = 0;
 
-  /// The restart policy of both streams: reports the first error in a row, and starts [stream] after the backoff.
-  /// The wait belongs to the replacement subscription, so [end] acts on it.
+  /// The restart policy of both streams: reports the error that starts an outage, the first of either stream while the
+  /// other runs clean, and starts [stream] after the backoff. The wait belongs to the replacement subscription, so [end] acts on it.
   Stream<T> _restart<T>(Stream<T> stream, Object error, int errors) {
-    if (errors == 1) _onError?.call(error);
-    return Stream.fromFuture(Future.delayed(restartDelay * (1 << min(errors - 1, 5)))).asyncExpand((_) => stream);
+    if (_pollErrors + _pushErrors == 1) _onError?.call(error);
+    return Stream.fromFuture(Future.delayed(restartDelay * (1 << min(errors - 1, maxRestartDoublings)))).asyncExpand((_) => stream);
   }
 
   // cancelOnError: true cancels the dead subscription, then re-subscribe with a fresh stream. without it, the dead one keeps polling beside its replacement
@@ -172,7 +177,7 @@ class VarStreamController({required super.cache, required super.protocolService}
     _onWriteSlice(slice);
   }
 
-  /// [onError] gets the first error in a row of each stream; the stream restarts after [restartDelay], backing off.
+  /// [onError] gets the error that starts an outage; each stream restarts after [restartDelay], backing off.
   bool begin({void Function(Object error)? onError}) {
     if (!protocolService.isConnected) return false;
     _onError = onError;

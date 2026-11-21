@@ -7,8 +7,8 @@
 /// import 'package:cmdr/widgets.dart';
 ///
 /// // Use in your Flutter app
-/// VarIoField(varKey: myVarKey)
-/// ChartWidget(data: chartData)
+/// VarIOField(varNotifier)
+/// TimeChart(chartController: chartController)
 /// ```
 library;
 

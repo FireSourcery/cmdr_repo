@@ -32,6 +32,14 @@ void main() {
     expect(getter(), 'v5');
   });
 
+  test('no stringifier shows nullString for null, never "null"', () {
+    value = null;
+    expect(ValueStringGetter<int>.of(nullableValue)(), '');
+    expect(ValueStringGetter<int>.of(nullableValue, nullString: '-')(), '-');
+    value = 5;
+    expect(ValueStringGetter<int>.of(nullableValue)(), '5');
+  });
+
   test('a stringifier that takes null receives it', () {
     value = null;
     expect(ValueStringGetter<int>.of(nullableValue, valueStringifier: (int? v) => 'got $v', nullString: '-')(), 'got null');

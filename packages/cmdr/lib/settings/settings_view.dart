@@ -76,7 +76,7 @@ abstract class SettingTypedWidget extends StatelessWidget {
         // SharedPrefSetting<V> implements Setting<V?>, so cast to the nullable form (Setting<V> would throw).
         valueSetter: (value) async => await settingsController.updateSetting<V?>(setting as Setting<V?>, value),
         // label: setting.label,
-        valueStringifier: (setting is Setting<Enum>) ? (value) => (value as Enum).name.titleCase : (value) => value.toString(),
+        valueStringifier: (setting is Setting<Enum>) ? (value) => (value as Enum?)?.name.titleCase ?? '' : null, // unset shows empty
         tip: setting.tip ?? '',
       );
       return _SettingTypedWidget<V?>(config);

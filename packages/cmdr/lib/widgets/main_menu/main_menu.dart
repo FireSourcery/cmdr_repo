@@ -18,14 +18,14 @@ class const MainMenu({
     return NavigationRail(
       selectedIndex: menuController.selectedIdByIndex,
       extended: menuController.isExpanded,
-      onDestinationSelected: (index) => menuController.selectedIdByIndex = index,
+      onDestinationSelected: menuController.navigate,
       labelType: NavigationRailLabelType.none,
       useIndicator: useIndicator,
       leading: Column(
         children: [
           MenuLeading(
-            collapsedButton: LogoButton.icon(onPressed: menuController.toggleExpanded),
-            expandedButton: LogoButton.wide(onPressed: menuController.toggleExpanded),
+            collapsedButton: LogoButton.icon(onPressed: menuController.toggleExpanded, tooltip: 'Expand menu'),
+            expandedButton: LogoButton.wide(onPressed: menuController.toggleExpanded, tooltip: 'Collapse menu'),
           ),
           // const Divider(thickness: 0, color: Colors.transparent),
         ],
@@ -34,7 +34,7 @@ class const MainMenu({
         for (final entry in menuController.menuList)
           NavigationRailDestination(
             padding: const EdgeInsets.symmetric(vertical: 15), // padding matches M2 theme
-            icon: Icon(entry.icon),
+            icon: menuController.isExpanded ? Icon(entry.icon) : Tooltip(message: entry.label, child: Icon(entry.icon)), // collapsed, the label is hidden
             label: Text(entry.label, textAlign: TextAlign.center),
           ),
       ],

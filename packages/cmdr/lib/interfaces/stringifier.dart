@@ -13,18 +13,19 @@ String stringifyDefault(Object? value) => value.toString();
 /// A value's display string as one closure, resolved once from the parameters the caller has:
 /// `valueStringGetter` > `valueStringifier` over `valueGetter` > [stringifyDefault].
 ///
-/// Runtime type tests choose the closure. A stringifier that takes null, or a getter that cannot return it, is called
-/// directly; only a nullable getter under a non-null stringifier tests each value, showing `nullString` for null.
+/// Runtime type tests choose the closure. A given stringifier that takes null, or a getter that cannot return it, is called
+/// directly; a nullable getter otherwise tests each value, showing `nullString` for null. [stringifyDefault] takes null,
+/// so it is applied after that test rather than matched by it.
 /// `.call` tears it off as a [ValueGetter<String>].
 extension type const ValueStringGetter<T>._(ValueGetter<String> _getter) {
   factory ValueStringGetter.of(ValueGetter<T?> valueGetter, {Stringifier<T>? valueStringifier, ValueGetter<String>? valueStringGetter, String nullString = ''}) {
     return ValueStringGetter._(
       valueStringGetter ??
-          switch ((valueStringifier ?? stringifyDefault, valueGetter)) {
+          switch ((valueStringifier, valueGetter)) {
             (Stringifier<T?> stringifier, _) => () => stringifier(valueGetter()),
-            (final stringifier, ValueGetter<T> getter) => () => stringifier(getter()),
+            (final stringifier, ValueGetter<T> getter) => () => (stringifier ?? stringifyDefault)(getter()),
             (final stringifier, _) => () => switch (valueGetter()) {
-              T value => stringifier(value),
+              T value => (stringifier ?? stringifyDefault)(value),
               null => nullString,
             },
           },
