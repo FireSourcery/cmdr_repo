@@ -11,7 +11,7 @@ class const LogoImage({super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).extension<LogoTheme>()!;
-    return ImageIcon(theme.imageIcon, size: 69);
+    return Image(image: theme.imageIcon!, width: 69, height: 69);
   }
 }
 
@@ -27,7 +27,7 @@ class const LogoIconButton({super.buttonStyle, super.onPressed, super.key}) exte
       child: ElevatedButton(
         onPressed: onPressed,
         style: style!.copyWith(padding: WidgetStateProperty.all(const EdgeInsets.all(15))),
-        child: ImageIcon(theme.imageIcon!, size: 69), // > 100 - padding
+        child: const LogoImage(), // > 100 - padding
       ),
     );
   }

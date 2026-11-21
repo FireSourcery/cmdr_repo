@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 /// A flyweight factory: one list of [FlyweightMenuItem] views shared by every [FlyweightMenu] created from it.
 ///
 /// Init-time binding: `create()` gives each instance its own [MenuItemButton]s, bound to that instance's notifier,
-/// around the shared item views. The earlier build-time design is kept in `flyweight_menu_v0.dart`; the reasons for
-/// the change are in `doc/decisions/0002_flyweight_menu_binds_at_creation.md`.
+/// around the shared item views. The earlier build-time design is kept in `flyweight_menu_v0.dart`.
 class const FlyweightMenuSource<T>({
   required final List<FlyweightMenuItem<T>> menuItems,
   final T? defaultKey,

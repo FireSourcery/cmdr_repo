@@ -33,8 +33,7 @@ flutter pub get
 
 `pubspec.yaml` names `struct_data` in hosted form (`struct_data: ^0.1.3`). Inside the workspace it resolves to
 `packages/struct_data`; a consumer outside it overrides `struct_data` with this repository's copy, because pub.dev's
-`struct_data` 0.1.3 differs from it under the same version
-([decision 0001](../../doc/decisions/0001_hosted_sibling_dependency.md)).
+`struct_data` 0.1.3 differs from it under the same version.
 
 ### Layout
 
@@ -72,6 +71,5 @@ flutter test
 ## Additional information
 
 - Changes: [CHANGELOG.md](CHANGELOG.md).
-- The library's conventions and decisions: [doc/README.md](../../doc/README.md) at the repository root. The guide for
-  agents is the root [CLAUDE.md](../../CLAUDE.md).
+- The guide for agents is the root [CLAUDE.md](../../CLAUDE.md).
 - Not published (`publish_to: none`): pub.dev's `cmdr` is an unrelated package, so a rename comes first.

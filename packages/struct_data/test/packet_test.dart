@@ -46,7 +46,7 @@ final class const TestCodec() extends PacketCodec {
 }
 
 /// MotProtocol's real control frame: `{Start, SyncId, Option, Checksum}` with
-/// `Checksum = Start ^ SyncId ^ Option` (MotPacket.c:50). A shape whose integrity is not a
+/// `Checksum = Start ^ SyncId ^ Option`. A shape whose integrity is not a
 /// byte sum, and whose field sits where the data shape's payload would be.
 /// `[Start, Id, Length, Sequence, Checksum:2, Flex:2]` then payload.
 final class const TestDataFormat() with PacketFrameFormat {

@@ -14,13 +14,14 @@ These libraries are **general-purpose, framework-level** packages designed to be
 ## Core Principles
 - **Expression through code**: Use code as the language to express what its doing. Favor code that expresses itself over extensive comments.
 - **Declarative functions**. Favor less local variables. e.g. function body should look like the equation in its docstring, not reconstruct it.
-  esEssential logic in it's own function. compose error checking.
--  
+  Essential logic in its own function; error checking composes around it.
+- **Adding logic is a decision**: removing logic from a function needs no case, adding it to a working one does. A check for correctness, not a repair, wraps the function in another one, so the original keeps its direct expression.
 ### Documentation
 - Keep comments concise. Comments are reserved for points that the code cannot express, not what the code is doing.
 - Use visualizations with mermaid diagrams in a separate markdown file for describing what the code is doing
 - Extensive descriptions go in a separate markdown file, such as architecture notes.
-- Markdown stays in `.md` files: a doc comment keeps prose, `[Identifier]` links, backtick literals and short code samples, never a diagram or a `##` section, and points to the `.md` that has them. Why: `../kelly_user_app/doc/decisions/0002_markdown_in_md_files.md`. 
+- Markdown stays in `.md` files: a doc comment keeps prose, `[Identifier]` links, backtick literals and short code samples, never a diagram or a `##` section, and points to the `.md` that has them.
+- The library stands alone: nothing here names a consumer or another repository. A module's notes ship with its package.
 
 ---
 
@@ -99,7 +100,7 @@ dart format <files>
 - Minimum SDK constraints defined in each package's `pubspec.yaml`
 
 ### Naming
-- Effective Dart, except enums that mirror firmware ids (`MotPacketRequestId`, `MotPacketControlId`, …): they keep the C names and order of `FireSourcery_Library/Motor/MotProtocol/`.
+- Effective Dart, except enums that mirror firmware ids (`MotPacketRequestId`, `MotPacketControlId`, …): they keep the C names and order of the Mot protocol.
 
 ### Architecture Patterns
 - **VarNotifier pattern**: Reactive state management using `VarNotifier`, `VarKey`, `VarCache`, and `VarController`. This is the primary state management approach — prefer it over raw `ValueNotifier`/`ChangeNotifier` for domain values.
@@ -177,12 +178,11 @@ dart format <files>
 - **BitStruct field order** — bit fields are packed LSB-first by default; verify bit offset calculations match your hardware specification.
 - **Packet framing** — when implementing a new `PacketTransformer`, handle partial packets and buffer accumulation correctly in the stream transformer.
 - **File paths** — use `path` package for cross-platform path handling in file storage implementations.
-- **Primary constructors** are the house style: `class const X(final int a) extends Y`, initializers after `this :`. Run `dart fix` one `--code` at a time and read the diff (traps: app README, "Local development").
-- **pub.dev names** — pub.dev's `cmdr` is an unrelated package, and pub.dev's `struct_data` 0.1.3 differs from the local copy under the same version. cmdr's pubspec names struct_data in hosted form so it stays publishable; the workspace resolves it locally, consumers override it ([decision 0001](doc/decisions/0001_hosted_sibling_dependency.md)).
+- **Primary constructors** are the house style: `class const X(final int a) extends Y`, initializers after `this :`. Run `dart fix` one `--code` at a time and read the diff.
+- **pub.dev names** — pub.dev's `cmdr` is an unrelated package, and pub.dev's `struct_data` 0.1.3 differs from the local copy under the same version. cmdr's pubspec names struct_data in hosted form so it stays publishable; the workspace resolves it locally, consumers override it.
 - **Commented-out code** is design intent parked mid-implementation, not dead code.
 
 ## Changing library code
-Why, with instances: [doc/conventions/library_code.md](doc/conventions/library_code.md). Index of the library's docs: [doc/README.md](doc/README.md).
 - A fix goes inside the expression or loop the file already has. Needing a new construction to make it fit is the signal to look again.
 - A constraint every caller already meets is an `assert`, not runtime checking. Runtime handling is for wire data and user input.
 - An anomaly something downstream absorbs (the device wraps `Angle16`'s 65536 to 0) gets a one-line comment and a test pinning it, not a guard.

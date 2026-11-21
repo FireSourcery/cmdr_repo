@@ -62,11 +62,11 @@ final class const MotDataFormat() with PacketFrameFormat {
 }
 
 /// The control shape: `[Start, SyncId, Option, Checksum]`, checked by
-/// `Checksum = Start ^ SyncId ^ Option` — `MotPacket_BuildControl`, MotPacket.c:50.
+/// `Checksum = Start ^ SyncId ^ Option` — `MotPacket_BuildControl`.
 ///
 /// The previous module wrote only the first two bytes and left the rest as it found them, so
 /// this check byte went out as whatever the last frame had there. The device does not verify
-/// it today (`MotPacket_IsValid`'s control branch is commented out at MotPacket.c:150), which
+/// it today (`MotPacket_IsValid`'s control branch is commented out), which
 /// is why that was latent rather than broken.
 final class const MotControlFormat() with PacketFrameFormat {
   @override

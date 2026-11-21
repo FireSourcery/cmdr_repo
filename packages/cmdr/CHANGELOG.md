@@ -4,7 +4,7 @@ Breaking:
 * `serial_link.dart`, `serial_link_view.dart`, `mot_connection/mot_connection.dart`, `var_notifier/var_notifier.dart`, `time_chart/time_chart.dart`, `var_widgets.dart` and `var_menu.dart` no longer re-export what they import (libserialport, `Link`, `Protocol`, struct_data, the chart and var widget files, the flyweight menu). Import the barrels (`connection.dart`, `mot_connection.dart`, `var_notifier.dart`, `widgets.dart`), or the flyweight files directly.
 * `SerialLink.connect()` takes no arguments: set `portConfigName` and `baudRate` first. `baudRate` (an `int`) replaces `portConfig`, which is now built for each session.
 * `Link.status` (`ValueListenable<LinkStatus>`) is a new member of `Link`. It publishes the outcome of every `connect` and `disconnect`, a lost link included. `MotConnection.status` is the serial link's, a `ValueListenable` and no longer a `ValueNotifier` it sets.
-* `FlyweightMenu` binds its item buttons when it is created ([decision 0002](../../doc/decisions/0002_flyweight_menu_binds_at_creation.md)). `FlyweightMenuItem` is a data class, not a widget; `FlyweightMenu` holds its `FlyweightMenuSource` and builds its own `MenuItemButton`s. The `FlyweightMenuContext` lookup is gone; the first design is parked, unexported, in `flyweight_menu_v0.dart`.
+* `FlyweightMenu` binds its item buttons when it is created. `FlyweightMenuItem` is a data class, not a widget; `FlyweightMenu` holds its `FlyweightMenuSource` and builds its own `MenuItemButton`s. The `FlyweightMenuContext` lookup is gone; the first design is parked, unexported, in `flyweight_menu_v0.dart`.
 * `Link.connect` returns `Future<LinkStatus>`. `SerialLink` reaches libserialport only when it opens a port, and frees a closed port one second after closing it: its reader isolate stops only by reading the closed port, within one of its 500 ms waits.
 * `DriveShift` renders the gear the device reports: `actual` (a `ValueListenable<Enum?>`) replaces `initialSelect`, and `onSelect` is an `AsyncValueSetter<Enum>`, so a request shows pending until it and `confirmSelected` answer.
 * `IOFieldConfig.copyWith(sliderChanged:)` is `valueChanged:`, the field it always set.
@@ -12,7 +12,7 @@ Breaking:
 * `PortDetailsView` takes a `PortDetails?` snapshot (`SerialLinkConfigController.portDetails`, taken when the port name changes); no native port is opened in `build`.
 * `FileConfirmationDialogButton` is generic and takes `styleId`, `enabled` and `resultContent`.
 * `FileStorageNotifier`: `confirm()` completes once (a second call throws), `processWithNotify` returns `Future<R>` and rethrows, and `dispose()` is new.
-* `VarStreamController`: `beginPeriodic` and `endPeriodic` are `begin` and `end`. `pause`, `resume` and `isActive` are removed: a paused stream delivered its slice in flight on resume, a view into a reply buffer reused meanwhile ([finding](../../doc/findings/2026-11-20_stale_poll_slice.md)). `hold` ends the streams for its action and begins them again if they ran.
+* `VarStreamController`: `beginPeriodic` and `endPeriodic` are `begin` and `end`. `pause`, `resume` and `isActive` are removed: a paused stream delivered its slice in flight on resume, a view into a reply buffer reused meanwhile. `hold` ends the streams for its action and begins them again if they ran.
 * Removed, with no callers: `VarCache.allocateAll`; `ServiceStreamHandler` and its two subclasses; the parameters `updateByData(overwriteUpdateByView:)`, `VarIOField(key:)`, `VarIOField.compact(key:, controller:)`, `IOField(key:)`, `IOFieldMenu.initialValue`, `IOFieldWithSlider.of(key:)`, `IOFieldConfig.copyWith(useSliderBorder:)`, `StringFormField.isReadOnly`, `Grid3.isHalfLeading`, `DriveShift.size` and `ChartController.loadWithMeta`.
 
 Changed:
@@ -39,7 +39,7 @@ Fixed:
 * `DialogAnchor` follows a replaced `eventNotifier`.
 
 Dependencies:
-* `flutter_libserialport` moved here from the app: it builds and deploys the C library `libserialport` loads. `quiver` and `flutter_form_builder` removed.
+* `flutter_libserialport` moved into this package: it builds and deploys the C library `libserialport` loads. `quiver` and `flutter_form_builder` removed.
 * Lints: `flutter_lints`, then the shared rules of the repository root.
 
 ## 0.0.1

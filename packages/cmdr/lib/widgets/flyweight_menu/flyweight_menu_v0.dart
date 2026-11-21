@@ -6,8 +6,8 @@ import 'flyweight_menu_widgets.dart' show MenuAnchorButton, MenuAnchorOverlay;
 /// The first flyweight menu design, kept for reference. Not exported; `flyweight_menu.dart` is the live one.
 ///
 /// Build-time binding: the shared [FlyweightMenuItem] is a widget, and each press finds the menu it is rendered under
-/// through [FlyweightMenuContext], an [InheritedNotifier] that every anchor wraps around its panel. Why this was
-/// replaced by the init-time copy: `doc/decisions/0002_flyweight_menu_binds_at_creation.md`.
+/// through [FlyweightMenuContext], an [InheritedNotifier] that every anchor wraps around its panel. Replaced
+/// by the init-time copy in `flyweight_menu.dart`.
 class const FlyweightMenuSource<T>({
   required final List<FlyweightMenuItem<T>> menuItems,
   final T? defaultKey,
